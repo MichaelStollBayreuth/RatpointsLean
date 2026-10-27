@@ -352,7 +352,7 @@ class EndToEnd(unittest.TestCase):
         self.assertIn('deviation of \\lname{Ratpoints.Model.f\\_g}: an \\texttt{Int} for a '
                       '\\texttt{long}.', t)
         self.assertIn('excluded (interface): the \\texttt{stdio} header', t)
-        self.assertIn('\\csource{a.c}{8}{9}: not yet recorded (2 lines of code)', t)
+        self.assertIn('\\csource{a.c}{8}{9}: not recorded (2 lines of code)', t)
 
     def test_checkout_below_a_directory_named_generated(self):
         self.place_blueprint(self.root / 'generated' / 'clone' / 'bp')

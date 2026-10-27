@@ -1,0 +1,611 @@
+% The main theorems: the entry points of the search, the statements on the points that a search
+% finds, its refusals, the delivery, the output without the exact check and the output of the
+% program, the proofs in outline, the block, lag and thread lemmas, and what comparator certifies.
+\chapter{The main theorems}\label{chap:theorems}
+
+This chapter states what is proved about the search of the model, the counterpart of the library
+function \verb|find_points|: which points it finds, without duplicates and in which order, which
+inputs it refuses, what it delivers to a callback and without the exact check, and what the program
+\verb|ratpoints-lean| prints. Comparator certifies nine of these statements and the two on the
+brute-force reference, eleven in all (Section~\ref{sec:comparator}). The proofs in outline
+(Section~\ref{sec:theoremsProofs}) reduce them to what Chapters~\ref{chap:setup}
+to~\ref{chap:output} prove part by part: that the test of the sieve lets every point through and
+that the parts compose to the search.
+
+Throughout, $c$ is a coefficient list of degree~$d$ (Definition~\ref{def:binaryForm}), $H$ a natural
+number, $s$ the options of the sieve and~$o$ the options of a search (Definition~\ref{def:Options}).
+The search intervals of~$o$ are read by the values of their ends (\lname{Ratpoints.domainValues}),
+except where their well-formedness is tested, which reads their bits (\lname{Ratpoints.domainBits}).
+A triple \emph{lies in the search region of~$o$} when it lies in the search region of these values
+and of the range of the denominators from $o.\mathrm{bLow}$ to $o.\mathrm{bHigh}$
+(Definition~\ref{def:regionSpec}). The hypothesis
+\[ h_S\colon\quad 0 \le o.\mathrm{sturm} \;\to\; \mathrm{SturmTheorem} \]
+assumes Sturm's theorem (Definition~\ref{def:sturmTheorem}) only when the Sturm step is on, so that
+a statement with~$h_S$ holds outright for a search without the Sturm step.
+
+\section{The search}\label{sec:theoremsSearch}
+
+The model has three entry points, one inside the next: the search with a callback and a print
+channel, which the program runs; the search with a callback, the library function as a caller
+without \verb|RATPOINTS_VERBOSE| sees it; and $\mathrm{findPoints}$, which collects the points in a
+list. The statements speak about the last two.
+
+\begin{definition}[The search for the points]\label{def:findPoints}
+  \uses{def:Options, def:deliver, def:maxDegree, def:setupSearch, def:searchPoints, def:callback, def:libraryReport}
+  \lean{Ratpoints.findPointsVerbose, Ratpoints.findPointsWith, Ratpoints.findPoints}
+  \leanok
+  The search with a callback and a print channel models the library function \verb|find_points|, the
+  function \verb|find_points_work| that it calls and the start of \verb|find_points_work_1|
+  (\csource{ratpoints.h}{436}{437}, \csource{find_points.c}{4523}{4528},
+  \csource{find_points.c}{4624}{4633}, among others). It makes the refusals of the program in its
+  order (Lemma~\ref{lem:setupOrder}), first those of the coefficient list, the height bound and the
+  leading zeros (errors 3, 5, 4 and~8), then those of the set-up (Definition~\ref{def:setupSearch}),
+  which may also return at once after the Sturm step with nothing delivered; otherwise it runs the
+  search of the polynomial that the set-up hands on (Definition~\ref{def:searchPoints}). A refusal
+  comes with the data of the callback as the report has left it; otherwise the search returns its
+  outcome (Definition~\ref{def:Options}). The print channel prints the report of the library under
+  \verb|-v| into the data of the callback (Definition~\ref{def:libraryReport}). The search with a
+  callback is this search with the data dropped from a refusal and, by default, the print channel
+  that prints nothing; $\mathrm{findPoints}(c, H, s, o)$ is the list of the array that it gives for
+  the callback that appends each point and never stops (\lname{Ratpoints.appendPoint}), from the
+  empty array, or its refusal.
+\end{definition}
+
+\begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
+  \uses{def:setupUs1, def:twoAdic, def:packing, def:choiceOfModuli, def:pointsAtInfinity, def:Shape, def:correction, def:deliver, def:callback, def:libraryReport, def:reversal}
+  \lean{Ratpoints.searchPoints, Ratpoints.chooseAndSearch, Ratpoints.sieving, Ratpoints.Setup.useCLong}
+  \leanok
+  For the polynomial that the set-up hands on, with the flags of the check (the flag of the reversal
+  and the two options of the output), the range of the denominators and the intervals that the Sturm
+  step leaves, with its flag \verb|sturm_empty|, the search sets up the tests on the denominators
+  (\csource{find_points.c}{4900}{4914}) and the 2-adic information, and returns with nothing
+  delivered when no class modulo~$64$ admits a numerator and there is no point at infinity
+  (\csource{find_points.c}{4954}{4959}); it tests whether the coefficients are all \verb|long|s,
+  (Definition~\ref{def:maxDegree}; \csource{find_points.c}{4814}{4823}), which chooses how the tables reduce them modulo a prime; it
+  chooses the moduli
+  (Definition~\ref{def:choiceOfModuli}), with nothing delivered when the curve has no points modulo
+  a prime (\csource{find_points.c}{4996}{5006}); it delivers the points at infinity
+  (Definition~\ref{def:pointsAtInfinity}) and returns when the callback has stopped the search or
+  the Sturm step has left no interval (\csource{find_points.c}{5100}{5103},
+  \csource{find_points.c}{5105}{5106}); otherwise it runs over the blocks of the denominators of the
+  shape of the loop (Definition~\ref{def:Shape}) with the correction of the moduli
+  (Definition~\ref{def:correction}, \csource{find_points.c}{5137}{5139}). Each point is mapped back
+  to the caller's curve when the flag of the reversal is set (Definition~\ref{def:reversal}). The
+  outcome has the bits of the flags, the search intervals that the Sturm step leaves (those that
+  this search is given), and the numbers of the moduli of the last block that the run sifts
+  (\csource{find_points.c}{5210}{5213}), $0$ after a return before the sieve.
+\end{definition}
+
+\section{The points that a search finds}\label{sec:theoremsPoints}
+
+\begin{theorem}[Membership]\label{thm:membership}
+  \uses{def:findPoints, def:IsPoint, def:regionSpec, def:sturmTheorem, def:Options, def:bruteForce}
+  \lean{Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok, Ratpoints.toFinset_eq_filter_points_of_findPoints_eq_ok}
+  \leanok
+  Assume~$h_S$ and that the exact check is on, $o.\mathrm{noCheck} = \mathrm{false}$, and let
+  $\mathrm{findPoints}(c, H, s, o)$ return the list~$L$. A triple $p = (x, y, z)$ lies in~$L$ if and
+  only if~$p$ is a normalized point of height at most~$H$ on $y^2 = F_c(x, z)$
+  (Definition~\ref{def:IsPoint}), $y \ge 0$ if~$o.\mathrm{noY}$ is set, and~$p$ lies in the search
+  region of~$o$. Indeed~$L$ is a permutation of the brute-force reference
+  $\mathrm{bruteForce}(c, H)$ filtered by the last two conditions; and when neither option of the
+  output is set, the set of the elements of~$L$ is $\mathrm{points}(c, H)$ filtered by the search
+  region of~$o$.
+\end{theorem}
+
+\begin{proof}
+  \uses{lem:findPointsList, lem:searchDens, lem:swapPoint_bijection, thm:bruteForce}
+  \leanok
+  By Lemma~\ref{lem:findPointsList}(3), $L$ is what the brute-force reference of the polynomial
+  searched finds at infinity and over the denominators of its search up to the largest, mapped back
+  after a reversal and filtered by the two conditions. Mapped back, these are a permutation of the
+  points of $\mathrm{bruteForce}(c, H)$ at infinity or with a denominator up to the largest
+  (Lemmas~\ref{lem:searchDens} and~\ref{lem:swapPoint_bijection}), and the search region holds no
+  point with a larger one; the reference finds exactly the points (Theorem~\ref{thm:bruteForce}).
+\end{proof}
+
+\begin{theorem}[No duplicates]\label{thm:nodup}
+  \uses{def:findPoints}
+  \lean{Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.nodup_map_bruteForce_of_reversal_eq_ok}
+  \leanok
+  For all~$c$, $H$, $s$ and~$o$, if $\mathrm{findPoints}(c, H, s, o)$ returns the list~$L$, then~$L$
+  has no duplicates.
+\end{theorem}
+
+\begin{proof}
+  \uses{lem:findPointsList, lem:searchList, lem:searchDens, lem:swapPoint_bijection, thm:bruteForce}
+  \leanok
+  By Lemma~\ref{lem:findPointsList}(1), $L$ is the list of a search for a sound test. With the exact
+  check on, Lemma~\ref{lem:searchList}(2) makes it a sublist of the brute-force reference of the
+  polynomial searched, mapped back; the denominators of the search have no duplicates
+  (Lemma~\ref{lem:searchDens}), and the reference of a reversed polynomial, mapped back, is a
+  permutation of that of~$c$ (Lemma~\ref{lem:swapPoint_bijection}), which has no duplicates
+  (Theorem~\ref{thm:bruteForce}). With the exact check off, Lemma~\ref{lem:searchList}(3).
+\end{proof}
+
+No duplicates needs no hypothesis at all: neither Sturm's theorem nor the exact check.
+
+\begin{theorem}[The order of the points]\label{thm:order}
+  \uses{def:findPoints, def:orderedPoints, def:regionSpec, def:sturmTheorem, def:maxDegree, def:Options}
+  \lean{Ratpoints.eq_orderedPoints_of_findPoints_eq_ok, Ratpoints.pointsOfDen_eq_pointsWithDen, Ratpoints.pointsOfDen_zero_eq_pointsWithDen, Ratpoints.findPoints_sturm_neg_eq_ok}
+  \leanok
+  Assume~$h_S$ and that the exact check is on, $o.\mathrm{noCheck} = \mathrm{false}$. Let
+  $\mathrm{findPoints}(c, H, s, o)$ return the list~$L$, let~$r$ be true when~$o$ allows the
+  reversal and its search region is the whole box of~$H$, and~$B$ the largest denominator of the
+  search, $o.\mathrm{bHigh}$ if $1 \le o.\mathrm{bHigh} \le H$ and~$H$ otherwise
+  (Definition~\ref{def:regionSpec}). Then~$L$ is
+  \[ \mathrm{orderedPoints}(\mathrm{maxDivisors}, r, c, H, B) \]
+  (Definition~\ref{def:orderedPoints}) with the points left out that have $y < 0$
+  when~$o.\mathrm{noY}$ is set or do not lie in the search region of~$o$. Moreover, the search with
+  the Sturm step off and the other options as in~$o$ returns~$L$ too.
+\end{theorem}
+
+\begin{proof}
+  \uses{lem:findPointsList, lem:swapPoint_bijection, lem:searchDens, lem:searchIntervals, def:searchRegion, lem:sturmCoverage, thm:refusals}
+  \leanok
+  Lemma~\ref{lem:findPointsList}(3) gives~$L$ as in the proof of Theorem~\ref{thm:membership}. The
+  normalized options have the switch~$r$ and the largest denominator~$B$
+  (Lemma~\ref{lem:searchIntervals}); the reversal check with~$r$ hands on
+  $\mathrm{searchedPoly}(r, c)$ (Lemma~\ref{lem:swapPoint_bijection}); the denominators of its
+  search from~$1$ to~$B$ are those of $\mathrm{searchDenominators}$ (Lemma~\ref{lem:searchDens});
+  and over a denominator $1 \le z \le H$, or the candidate $(1, 0)$, the reference finds the points
+  with the denominator~$z$, or~$0$. For the last statement, the search with the step off refuses
+  only where the search with the step on refuses too (Theorem~\ref{thm:refusals}), and otherwise
+  both lists are given by the first statement, which does not mention the depth.
+\end{proof}
+
+So the list is the same for every value of the options of the sieve, which change the moduli and the
+work but not the points or their order; and with the exact check on, the depth of the Sturm step
+does not change it either. This last statement is proved, not certified.
+
+\section{The refusals}\label{sec:theoremsRefusals}
+
+The refusals of the search are those of the program (Chapter~\ref{chap:setup}). Two theorems say
+exactly which inputs they are, with the Sturm step on and off; so a search that refused every input
+would not meet the statements of this chapter.
+
+\begin{theorem}[The refusals]\label{thm:refusals}
+  \uses{def:findPoints, def:binaryForm, def:binaryFormPoly, def:regionSpec, def:maxDegree, def:Options}
+  \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg}
+  \leanok
+  Let $n + 1$ be the length of~$c$ and $N = 2 \lceil n/2 \rceil$. With the Sturm step on
+  ($0 \le o.\mathrm{sturm}$), $\mathrm{findPoints}(c, H, s, o)$ refuses if and only if
+  \begin{enumerate}
+    \item $c$ has fewer than two or more than $\mathrm{maxDegree} + 1$ entries,
+    \item $H = 0$ or $H \ge 2^{63}$,
+    \item the binary form~$\Phi_c$ (Definition~\ref{def:binaryFormPoly}) is not squarefree, or
+    \item the search intervals of~$o$ are not well formed (Definition~\ref{def:regionSpec}).
+  \end{enumerate}
+  With the Sturm step off ($o.\mathrm{sturm} < 0$), it refuses if and only if (1), (2) or (4) holds,
+  or $d + 2 \le N$, or~$o$ allows the reversal, its search region is the whole box of~$H$, $d$ is
+  even and $c_0 = c_1 = 0$.
+\end{theorem}
+
+\begin{proof}
+  \uses{lem:setupOrder, lem:squarefree_binaryFormPoly, lem:reversal_swap, lem:chain_squarefree, lem:searchIntervals, lem:sturmStep}
+  \leanok
+  The search refuses in the order of Lemma~\ref{lem:setupOrder}, a natural number being a
+  \verb|long| exactly when it is below~$2^{63}$. The leading zeros lower $\lceil n/2 \rceil$ exactly
+  when $d + 2 \le N$, and then $Z^2 \mid \Phi_c$; the reversal check refuses exactly in the case
+  stated, and then $X^2 \mid \Phi_c$ (Lemmas~\ref{lem:squarefree_binaryFormPoly}
+  and~\ref{lem:reversal_swap}); malformed search intervals are refused
+  (Lemma~\ref{lem:searchIntervals}); and the Sturm step, when it is on, refuses exactly when the
+  remainder chain is none (Lemma~\ref{lem:sturmStep}), which after the tests before it means
+  that~$\Phi_c$ is not squarefree (Lemma~\ref{lem:chain_squarefree}). As each refusal of the form
+  implies that~$\Phi_c$ is not squarefree, the disjunctions come out as stated.
+\end{proof}
+
+Without the Sturm step the search refuses only some of the forms that are not squarefree, as
+ratpoints does under \verb|-s|, and searches the others; the statements on the points hold for these
+searches too.
+
+\section{The delivery and the options of the output}\label{sec:theoremsDelivery}
+
+The library delivers each point to the callback where it finds it and stops when a call sets the
+flag \verb|*quit| (Chapter~\ref{chap:output}). By the protocol this comes to a fold of the list of
+$\mathrm{findPoints}$ (Definition~\ref{def:deliver}), so that the statements on the list carry over
+to every callback.
+
+\begin{theorem}[The protocol of the delivery]\label{thm:protocol}
+  \uses{def:findPoints, def:deliver, def:Options}
+  \lean{Ratpoints.map_findPointsWith_eq_map_findPoints, Ratpoints.info_total_eq_of_findPointsWith_eq_ok, Ratpoints.exists_findPointsWith_eq_ok_of_findPoints_eq_ok}
+  \leanok
+  For all~$c$, $H$, $s$ and~$o$, every callback and its data: the search with the callback, with the
+  print channel that prints nothing, refuses exactly when $\mathrm{findPoints}(c, H, s, o)$ refuses,
+  with the same refusal; and when $\mathrm{findPoints}(c, H, s, o)$ returns the list~$L$, the search
+  with the callback returns an outcome whose data and count are those of the delivery of~$L$ to the
+  callback from its data, the count~$0$ and the flag of the stop clear. So the calls of the callback
+  are those for the points of~$L$, in their order, up to and including the first call that stops the
+  search, and the count is the sum of the weights that these calls return.
+\end{theorem}
+
+\begin{proof}
+  \uses{lem:setupOrder, lem:searchList, lem:searchIntervals, lem:sturmStep}
+  \leanok
+  Both searches make the same refusals, which do not depend on the callback, and otherwise search
+  the same polynomial over the same range of the denominators and the intervals that the Sturm step
+  leaves, or both return at once after the Sturm step (Lemma~\ref{lem:setupOrder}). The intervals
+  are well formed and the range lies in $1, \dots, H$ (Lemmas~\ref{lem:searchIntervals}
+  and~\ref{lem:sturmStep}), so that Lemma~\ref{lem:searchList}(1) gives the data and the count of
+  the search with the callback as those of the delivery of the list of the search with the appending
+  callback. The proof rests on the contract of the search, with one test of the sieve for every
+  callback, not on an argument about the control flow.
+\end{proof}
+
+The protocol speaks of the data and the count only. The rest of the outcome is described in
+Section~\ref{sec:outputBack}; the numbers of the moduli used depend on where the callback stops the
+search. The report under \verb|-v|, which comes through the print channel, is compared with that of
+the C program and not proved (Chapter~\ref{chap:ccode}).
+
+Under \verb|RATPOINTS_NO_CHECK| the library delivers, each with $y = 0$ and mapped back after a
+reversal, the candidate at infinity of the polynomial searched when that polynomial has points at
+infinity (odd degree or a square leading coefficient), and every numerator that passes the sieve,
+the test for common factors and the third stage, whether or not it gives a point. Which candidates
+pass depends on the moduli and is not specified; the theorem below says that each is a triple
+$(x, 0, z)$ with $(x, z)$ normalized, of height at most~$H$ and in the search region, and that they
+include the points, in the order in which the search with the exact check finds them.
+
+\begin{theorem}[The output without the exact check]\label{thm:noCheck}
+  \uses{def:findPoints, def:IsPoint, def:regionSpec, def:sturmTheorem, def:Options}
+  \lean{Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck, Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck, Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck}
+  \leanok
+  Let the exact check be off, $o.\mathrm{noCheck} = \mathrm{true}$, and let the search
+  $\mathrm{findPoints}(c, H, s, o)$ return the list~$L$.
+  \begin{enumerate}
+    \item Every element $(x, y, z)$ of~$L$ has $y = 0$ and the pair $(x, z)$ normalized and of
+      height at most~$H$ (Definition~\ref{def:IsPoint}), and lies in the search region of~$o$.
+    \item Assume~$h_S$. For every normalized point $(x, y, z)$ of height at most~$H$ in the search
+      region of~$o$, the triple $(x, 0, z)$ lies in~$L$.
+    \item If the search with the same~$s$ and~$o$ with $\mathrm{noCheck}$ cleared and~$\mathrm{noY}$
+      set returns the list~$L'$, then~$L'$ with each~$y$ replaced by~$0$ is a sublist of~$L$.
+  \end{enumerate}
+\end{theorem}
+
+\begin{proof}
+  \uses{lem:findPointsList, lem:searchList, def:searchRegion, lem:searchIntervals, lem:reversal_swap, thm:membership}
+  \leanok
+  By Lemma~\ref{lem:findPointsList}(1), $L$ and~$L'$ are the lists of searches with the same sound
+  test over the same region, which differ only in the flags of the check. Item~(1): the pair by
+  Lemma~\ref{lem:searchList}(3); the region, without a reversal, by Lemma~\ref{lem:searchList}(4),
+  since the region that the search uses lies in that of~$o$ (Definition~\ref{def:searchRegion},
+  Lemma~\ref{lem:searchIntervals}), and after a reversal, which comes only for the whole box
+  (Lemma~\ref{lem:reversal_swap}), since every normalized pair of height at most~$H$ lies in it.
+  Item~(3) is Lemma~\ref{lem:searchList}(5). Item~(2): $(x, |y|, z)$ lies in~$L'$ by
+  Theorem~\ref{thm:membership}, and item~(3) puts $(x, 0, z)$ into~$L$.
+\end{proof}
+
+Items~(1) and~(3) do not need Sturm's theorem. The two searches of item~(3) choose the same moduli
+and make the same corrections, which depend neither on the callback nor on the options of the output
+(Chapter~\ref{chap:moduli}).
+
+\section{What the program prints}\label{sec:theoremsProgram}
+
+The program \verb|ratpoints-lean| runs the search with the callback of \verb|main.c|, which prints
+the points (Chapter~\ref{chap:output}). For a command line that it reads as~$c$, $H$, $s$, $o$ and
+the settings of the output, it searches with the options~$s'$ of~$s$ with the array size that
+\verb|main.c| sets and the options~$o'$ of~$o$ with the search intervals of the command line joined
+(Definition~\ref{def:cliNumbers}).
+
+\begin{theorem}[What the program prints]\label{thm:cliRun}
+  \uses{def:cliRun, def:cliProcess, def:cliInput, def:cliNumbers, def:findPoints, def:deliver, def:IsPoint, def:regionSpec, def:sturmTheorem}
+  \lean{Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.run_eq_of_findPoints_eq_ok, Ratpoints.Cli.run_eq_of_onePoint, Ratpoints.Cli.inRegion_iff_of_input_eq_ok, Ratpoints.Cli.intervalsWF_joinIntervals_of_input_eq_ok, Ratpoints.Cli.mem_filter_keeps_iff_of_input_eq_ok}
+  \leanok
+  Let the program read a command line as above, and call the points of a list that the callback of
+  the program keeps (Definition~\ref{def:cliProcess}), under \verb|-1| only the first of them, its
+  \emph{counted points} (\lname{Ratpoints.Cli.countedPoints}).
+  \begin{enumerate}
+    \item Without \verb|-v|: if $\mathrm{findPoints}(c, H, s', o')$ returns the list~$L$ and the
+      search with the callback of the program the outcome~$r$, the program prints the head of its
+      report, the string before the points, the counted points of~$L$ (none under \verb|-z|) in the
+      format, separated by the string between the points, the string after the points and the end of
+      the report for~$r$, with the status~$0$; the count of~$r$ is the number of the counted points
+      of~$L$.
+    \item Under \verb|-q|, which clears \verb|-v|, the program prints, whenever
+      $\mathrm{findPoints}(c, H, s', o')$ returns~$L$, the same without the head and the end of the
+      report; under \verb|-q -1| without \verb|-z| the one point printed is the first point of~$L$
+      that the callback keeps.
+    \item The callback keeps a point unless it lies at infinity under \verb|-i|, or $z \ne 0$, the
+      command line gives search intervals and~$x/z$ does not lie in their exact intervals. When
+      every argument of the command line has fewer than~$2^{56}$ characters, the joined intervals
+      are well formed (Definition~\ref{def:regionSpec}), so that the library does not refuse them.
+    \item Assume~$h_S$ and that the exact check is on. If $\mathrm{findPoints}(c, H, s', o')$
+      returns~$L$, a triple lies in~$L$ and is kept by the callback exactly when it is a normalized
+      point $(x, y, z)$ of height at most~$H$ (Definition~\ref{def:IsPoint}) with $y \ge 0$ under
+      \verb|-y| and $z \ne 0$ under \verb|-i|, and, for $z \ne 0$, with~$z$ in the range of the
+      denominators of \verb|-dl| and \verb|-du| and~$x/z$ in the exact intervals of the command line
+      when there are such intervals.
+  \end{enumerate}
+\end{theorem}
+
+\begin{proof}
+  \uses{thm:protocol, thm:membership, lem:cliNumbers}
+  \leanok
+  The delivery of any list to the callback of the program prints its counted points in turn and
+  counts them, stopping under \verb|-1| at the first point kept
+  (\lname{Ratpoints.Cli.deliver\_process}); by the protocol (Theorem~\ref{thm:protocol}) the search
+  with the callback gives the data and the count of the delivery of~$L$; without \verb|-v|, which
+  \verb|-q| clears (\lname{Ratpoints.Cli.verbose\_eq\_false\_of\_input\_eq\_ok}), the print channel
+  prints nothing. Items~(3) and~(4) rest on an invariant of the reading of the intervals
+  (\lname{Ratpoints.Cli.Intervals.ReadsWF}): the exact ends are those of increasing and disjoint
+  intervals, and the doubles of each interval hold it for $|x| \le H$. For arguments of fewer
+  than~$2^{56}$ characters (\verb|scan_end| stops accumulating the digits of an exponent at
+  \verb|LONG_MAX/20|) the doubles of the lower ends after the first are the largest doubles at most
+  their exact ends (Lemma~\ref{lem:cliNumbers}), so that the join makes intervals that are
+  increasing and strictly apart. Item~(4) is then membership (Theorem~\ref{thm:membership}) on the
+  joined intervals with the test of the callback.
+\end{proof}
+
+\section{The search as a filter of the reference}\label{sec:theoremsProofs}
+
+The theorems come from one description of what a search delivers, in terms of a test of the sieve of
+which the proofs use two properties: it lets the numerator of every point through, and it depends
+neither on the callback nor on the options of the output. In the search it is the 2-adic word of the
+class of the denominator (Chapter~\ref{chap:denominators}), the rows of the moduli of its block
+(Chapters~\ref{chap:moduli} and~\ref{chap:rows}) and the test for common factors
+(Chapter~\ref{chap:sieve}); the exact check then decides, so that the list of a search is a filter
+of the brute-force reference, up to the order and the region.
+
+\begin{definition}[The list of a search]\label{def:searchList}
+  \uses{def:pointsAtInfinity, def:checkNumWith, def:Shape, def:regionSpec, def:bruteForce}
+  \lean{Ratpoints.searchList, Ratpoints.IsSoundTest}
+  \leanok
+  For the coefficient list~$c$ of its degree, $H$, the denominators from $b_{\mathrm{low}}$ to
+  $b_{\mathrm{high}}$, intervals~$D$ of values, a test~$S(b, a)$ of the numerators~$a$ over the
+  denominators~$b$, and the flags of the check: the points at infinity with the flags
+  (Definition~\ref{def:pointsAtInfinity}), followed, for the denominators~$b$ of the search from
+  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order of its loop (Definition~\ref{def:Shape}),
+  by the points with the flags (Definition~\ref{def:checkNumWith}) of the numerators
+  $a = -H, \dots, H$ with~$a/b$ in one of the intervals of~$D$ and~$S(b, a)$. The test is
+  \emph{sound} when, over each denominator~$b$ of the search, it holds for every numerator
+  $a \in [-H, H]$ over which the brute-force reference finds a point $(a, y, b)$.
+\end{definition}
+
+\begin{lemma}[The list of a sound test]\label{lem:searchList}
+  \uses{def:searchList, def:searchPoints, def:regionSpec, def:deliver, def:bruteForce, def:IsPoint, def:checkNumWith, lem:choiceOfModuli, lem:runRows}
+  \lean{Ratpoints.exists_isSoundTest_run_searchPoints, Ratpoints.run_searchPoints_eq_deliver, Ratpoints.exists_isSoundTest_run_sieveRun, Ratpoints.Sieve.IsSoundRun, Ratpoints.searchList_of_noCheck_eq_false, Ratpoints.exists_eq_of_mem_searchList_of_noCheck, Ratpoints.nodup_searchList_of_noCheck, Ratpoints.mem_region_of_mem_searchList, Ratpoints.map_searchList_sublist}
+  \leanok
+  For the list of a search of~$c$ with the denominators from $b_{\mathrm{low}}$ to
+  $b_{\mathrm{high}}$, intervals~$D$, a test~$S$ and the flags of the check:
+  \begin{enumerate}
+    \item Let $1 \le H < 2^{63}$, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, and let the
+      search intervals be well formed. For the normalized options of the sieve and either value of
+      \verb|sturm_empty| there is a sound test~$S$ such that the search of~$c$ of its degree
+      (Definition~\ref{def:searchPoints}), with the print channel that prints nothing, gives, for
+      every callback, every setting of the flags of the check and every delivery whose flag of the
+      stop is clear, the data and the count of the delivery of the list of the search for~$S$, the
+      values of the search intervals (none when \verb|sturm_empty| is set) and these flags. So the
+      search with any callback gives the data and the count of the delivery of the list that the
+      search with the appending callback gives. The run over the blocks has the corresponding
+      contract, for sound arguments (\lname{Ratpoints.Sieve.IsSoundRun}), a well-formed first
+      decision of the choice and the bounds of well-formed search intervals.
+    \item If~$S$ is sound, $d \ge 1$ and the exact check is on, the list is what the brute-force
+      reference finds over the candidate $(1, 0)$, followed by what it finds over the denominators
+      of the search and the numerators $a \in [-H, H]$ with~$a/b$ in~$D$, each point mapped back
+      when the flag of the reversal is set, without those with $y < 0$ under~$\mathrm{noY}$.
+    \item With the exact check off, $1 \le H$, $1 \le b_{\mathrm{low}}$ and
+      $b_{\mathrm{high}} \le H$, whatever~$D$ and~$S$, every element is $(x, 0, z)$ with $(x, z)$
+      normalized and of height at most~$H$, and the list has no duplicates.
+    \item Without the flag of the reversal and for $1 \le b_{\mathrm{low}}$, every element has
+      $z = 0$, or $b_{\mathrm{low}} \le z \le b_{\mathrm{high}}$ and~$x/z$ in~$D$.
+    \item For the same~$D$, $S$ and flag of the reversal, the list with the exact check on
+      and~$\mathrm{noY}$ set, each~$y$ replaced by~$0$, is a sublist of the list with the exact
+      check off, for either value of~$\mathrm{noY}$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:twoAdic_point, lem:choiceOfModuli, lem:exitByPrime, def:pointsAtInfinity, thm:blocks, lem:numeratorRanges, lem:shapes, lem:rowsAdmitPoints, lem:runRows, def:sift, lem:checkNumWith, lem:deliverList, lem:swapPoint_bijection}
+  \leanok
+  (1): by cases on the 2-adic information and the result of the choice of the moduli, which depend
+  neither on the callback nor on the flags; the test is chosen after them. At either exit the curve
+  has no points (Lemmas~\ref{lem:twoAdic_point}, \ref{lem:choiceOfModuli}
+  and~\ref{lem:exitByPrime}), and the test that lets nothing through is sound. Otherwise the result
+  of the choice is what the run needs (Lemma~\ref{lem:choiceOfModuli}), and after the points at
+  infinity the run delivers, by the block lemma (Theorem~\ref{thm:blocks}) and the contract of one
+  denominator (Definition~\ref{def:sift}), the points with the flags of the numerators in the ranges
+  of the intervals (Lemma~\ref{lem:numeratorRanges}) that pass the class word of~$b$ and survive the
+  entries of its block. This test is sound, since the shape lets the denominator of every point
+  through in the order of the search (Lemmas~\ref{lem:shapes} and~\ref{lem:searchDens}), the class
+  word admits the numerator of every point (Lemma~\ref{lem:twoAdic_point}), and every entry is sound
+  (Lemma~\ref{lem:rowsAdmitPoints}). (2): a sound test leaves out only numerators over which the
+  reference finds nothing; (2) and~(5) then hold numerator by numerator and at infinity
+  (Lemma~\ref{lem:checkNumWith}). (3): the survivors are $(a, 0, b)$ with $\gcd(a, b) = 1$,
+  $|a| \le H$ and~$b$ in the range, distinct over distinct denominators
+  (Lemma~\ref{lem:searchDens}), and the map of the reversal is injective on normalized pairs
+  (Lemma~\ref{lem:swapPoint_bijection}). (4) is read off the definition.
+\end{proof}
+
+\begin{lemma}[The list of a search for the points]\label{lem:findPointsList}
+  \uses{def:findPoints, def:searchList, def:searchRegion, lem:setupOrder, def:regionSpec, def:sturmTheorem, def:bruteForce, lem:searchDens, def:remainderChain}
+  \lean{Ratpoints.exists_searchList_of_findPoints_eq_ok, Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.exists_eq_filter_inIntervals_of_findPoints_eq_ok, Ratpoints.exists_eq_filter_inRegion_of_findPoints_eq_ok, Ratpoints.elim_searchRegion_pointsOfDen_filter, Ratpoints.map_append_flatMap_filter_eq_filter_inRegion}
+  \leanok
+  Let $\mathrm{findPoints}(c, H, s, o)$ return the list~$L$, let~$c'$ and~$\mathrm{rev}$ be the list
+  and the flag that the reversal check of the normalized options hands on, and let the normalized
+  range of the denominators run from $b'_{\mathrm{low}}$ to $b'_{\mathrm{high}}$.
+  \begin{enumerate}
+    \item The predicate \lname{Ratpoints.IsSearchedPoly} of what a successful search guarantees
+      after its refusals (Lemma~\ref{lem:setupOrder}) holds for~$c'$ and~$\mathrm{rev}$, and there
+      is a sound test~$S$ over that range such that~$L$ is the list of the search of~$c'$ for~$S$
+      and the region that the search uses (Definition~\ref{def:searchRegion}), with the
+      flag~$\mathrm{rev}$ and the options of the output of~$o$, or the empty list when that region
+      is none; for every choice of the two options of the output, with the other options unchanged,
+      $\mathrm{findPoints}$ returns the list for the same~$S$ and region with that choice.
+    \item With the exact check on, $L$ is what the brute-force reference of~$c'$ finds over the
+      candidate $(1, 0)$ and over the denominators of its search from $b'_{\mathrm{low}}$ to
+      $b'_{\mathrm{high}}$ with the numerators in the region that the search uses, mapped back after
+      a reversal, without the points with $y < 0$ under~$\mathrm{noY}$.
+    \item If moreover~$h_S$ holds, $L$ is what the reference of~$c'$ finds over the candidate
+      $(1, 0)$ and over the denominators of its search from~$1$ to $b'_{\mathrm{high}}$ with all the
+      numerators $-H, \dots, H$, mapped back after a reversal, without the points with $y < 0$
+      under~$\mathrm{noY}$ and those outside the search region of~$o$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:searchList, lem:setupOrder, lem:searchIntervals, lem:sturmStep, def:searchRegion, lem:searchDens, lem:reversal_swap}
+  \leanok
+  (1): after the refusals the search of~$c'$ runs over the normalized range, which lies in
+  $1, \dots, H$, and over well-formed intervals (Lemmas~\ref{lem:setupOrder},
+  \ref{lem:searchIntervals} and~\ref{lem:sturmStep}), so that Lemma~\ref{lem:searchList}(1) applies
+  with the appending callback; the options of the output enter only the flags of the check, which
+  the test precedes. (2) follows by Lemma~\ref{lem:searchList}(2). (3): under~$h_S$, the region that
+  the search uses holds, among the numerators of the points of a denominator, exactly those
+  with~$a/b$ in the caller's intervals, and when the step returns at once the polynomial searched
+  has no point at infinity (Definition~\ref{def:searchRegion}); the denominators from
+  $b'_{\mathrm{low}}$ on are those from~$1$ that are at least $b'_{\mathrm{low}}$
+  (Lemma~\ref{lem:searchDens}); and a reversal comes only for the whole box
+  (Lemma~\ref{lem:reversal_swap}).
+\end{proof}
+
+\section{The blocks, the lag and the threads}\label{sec:theoremsBlocks}
+
+The run sifts the denominators in blocks, each with the moduli of the decision of the correction in
+force for it, and the correction may append a decision after each block (Chapter~\ref{chap:moduli}).
+A decision is the first block for which it holds, with the ends~$s_2$ and~$s_3$ of the second and
+third stages from that block on; the decision in force for block~$i$ is the last whose first block
+is at most~$i$ (Definition~\ref{def:blocks}). The block lemma is a step of the proofs above
+(Lemma~\ref{lem:searchList}). The lag lemma and the thread lemma are not used by them: they state
+the property on which the pool of threads of the C code relies, so that the output of the model,
+which sifts the blocks in turn, is also that of ratpoints with threads. None of the three is a
+statement of the challenge.
+
+\begin{theorem}[The block lemma]\label{thm:blocks}
+  \uses{def:blocks, lem:blocks, def:correction, lem:correction, lem:choiceOfModuli, lem:runRows, def:deliver, def:checkNumWith, def:exactBounds}
+  \lean{Ratpoints.Sieve.blockPoints, Ratpoints.Sieve.SieveRunLoopInvariant, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.exists_run_sieveRun_eq_deliver}
+  \leanok
+  Let the run satisfy the hypotheses of Lemma~\ref{lem:blocks} other than those on block~$i$ and its
+  decision, the sieve entries having what \lname{Ratpoints.Sieve.IsRunEntries} asks (their tables of
+  inverses, the reciprocals of their moduli in their order, the row offsets of the classes with a
+  pattern for all of them, and prime entries where they count no factor; they need not be sound),
+  let the word of the classes mark those with a nonzero pattern, and let the decision of the choice
+  be well formed. Then the run delivers the points of its blocks in order, block~$i$ those of its
+  denominators that pass the tests of the shape, each with the first~$s_3$ entries of the decision
+  of block~$i$, which depends neither on the callback nor on the flags of the output. So, when the
+  loop of the shape visits no denominator twice, there is for each denominator~$b$ a
+  number~$s_3(b)$, independent of the callback and the flags, such that the run delivers, over the
+  denominators of the loop that pass its tests and in its order, the points with the flags of the
+  numerators in the ranges of~$b$ that pass the class word of~$b$ and survive the first~$s_3(b)$
+  entries.
+\end{theorem}
+
+\begin{proof}
+  \uses{lem:blocks, lem:correction, lem:deliverList}
+  \leanok
+  The invariant of the loop over the blocks (\lname{Ratpoints.Sieve.SieveRunLoopInvariant}): the
+  delivery is that of the points of the blocks done, and until a stop the state of the correction is
+  its closed form after their folds and the store fits all the entries. Each block delivers its
+  points by Lemma~\ref{lem:blocks}, with a well-formed decision by Lemma~\ref{lem:correction}; a
+  stop in a block ends the run before any decision that its fold appends is read, and the delivery
+  after a stop is that of the whole list (Lemma~\ref{lem:deliverList}). The form per denominator
+  follows, as the blocks, concatenated, visit the denominators of the loop in its order
+  (Lemma~\ref{lem:blocks}).
+\end{proof}
+
+\begin{theorem}[The lag lemma]\label{thm:lag}
+  \uses{def:blocks, def:correction, lem:correction}
+  \lean{Ratpoints.Sieve.Decision.InForce.unique, Ratpoints.Sieve.getElem!_findDecision_correctionAfter}
+  \leanok
+  For the arguments of a run and every block~$i$, the decision in force for block~$i$ among the
+  decisions after the folds of the first~$k$ blocks is the decision of block~$i$ for every
+  $k \ge i - \mathrm{adaptLag}$: block~$i$ reads only decisions made at the folds of blocks at least
+  $\mathrm{adaptLag} + 1$ before it.
+\end{theorem}
+
+\begin{proof}
+  \uses{lem:correction, def:exactBounds}
+  \leanok
+  The decision in force for a block, the last whose first block is at most it, is unique, and
+  decisions appended for later blocks change neither it nor its index. After~$k$ folds the decisions
+  are those after any $m \le k$ folds followed by decisions for the blocks from
+  $m + \mathrm{adaptLag} + 1$ on (Lemma~\ref{lem:correction}); take $m = i - \mathrm{adaptLag}$.
+\end{proof}
+
+\begin{theorem}[The thread lemma]\label{thm:threads}
+  \uses{thm:blocks, thm:lag, lem:blocks, lem:correction, lem:runRows, def:deliver, def:exactBounds}
+  \lean{Ratpoints.Sieve.deliverSlots, Ratpoints.Sieve.deliverSlots_spec, Ratpoints.Sieve.toList_info_run_runBlock_appendPoint, Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun}
+  \leanok
+  Under the hypotheses of Theorem~\ref{thm:blocks}, let each block~$i$ be sifted alone with the
+  appending callback into a slot, from the empty array, with the decisions after the folds of any
+  $k_i \ge i - \mathrm{adaptLag}$ blocks and a store of its own that fits all the entries. Then
+  delivering the slots in the order of the blocks to a callback whose flag is clear, with a return
+  after the slot in which a call stops the search, gives what the run delivers.
+\end{theorem}
+
+\begin{proof}
+  \uses{thm:lag, lem:blocks, lem:deliverList, thm:blocks, def:checkNumWith}
+  \leanok
+  By the lag lemma (Theorem~\ref{thm:lag}) the decision of each slot is that of its block, and the
+  points of a block do not depend on the store that it starts from as long as the store fits
+  (Lemma~\ref{lem:blocks}); so slot~$i$ holds the points of block~$i$, and the delivery of the slots
+  in order is the delivery of their concatenation (Lemma~\ref{lem:deliverList}), which is what the
+  run delivers (Theorem~\ref{thm:blocks}).
+\end{proof}
+
+The pool of threads of the C code meets these hypotheses: a thread starts block~$i$ only once the
+blocks before block $i - L$ are folded, $L$ being \verb|RP_ADAPT_LAG|
+(\csource{find_points.c}{4292}{4296}); the tables of rows that the threads share only gain complete
+rows, published once built (\csource{init.c}{180}{180}, \csource{init.c}{241}{241},
+\csource{init.c}{391}{391}, \csource{init.c}{443}{443}), so that they fit all the entries whenever a
+thread reads them (\csource{find_points.c}{3160}{3160}, \csource{find_points.c}{3533}{3535}); and
+the calling thread delivers the slots in the order of the blocks. The threads themselves stay
+outside the model (Chapter~\ref{chap:ccode}), and \verb|ratpoints-lean| accepts \verb|-t| and
+ignores it.
+
+\section{What comparator certifies}\label{sec:comparator}
+
+Comparator, a checker for Lean proofs built into Lake, takes a challenge, a file that states
+theorems with \verb|sorry|, and a solution, a file that proves them, and checks the solution
+independently of the build of the repository. The files are in the folder \verb|comparator|: the
+challenge \verb|Challenge.lean|, the solution \verb|Solution.lean|, and \verb|challenges.json|,
+which lists the eleven statements and the permitted axioms; \verb|scripts/run-comparator.sh| runs
+the check.
+
+The challenge may import only Mathlib and the model, which the layout check enforces. It restates
+verbatim the definitions of the four files of the specification with their decidability instances
+(Chapter~\ref{chap:spec}), all but the finite set $\mathrm{points}(c, H)$
+(Section~\ref{sec:specBruteForce}), and imports exactly the Mathlib modules among the public imports
+of these files, so that the restated definitions elaborate to the same terms as there. It imports
+the whole model (\verb|Ratpoints.Model|), of which the statements mention the search with and
+without a callback and the brute-force reference; the options, the options of the sieve and the
+doubles of the search intervals; the outcome, the answer of a callback, the delivery and its
+reference; and the constants $\mathrm{maxDegree}$ and $\mathrm{maxDivisors}$. A definition of the
+model elaborates without Mathlib, to other instance terms, and is never restated: the model counts
+as the code that the executable runs, while the specification is reproduced, so that a library that
+specified something else would be rejected.
+
+The eleven statements are statements of this blueprint, each named as its theorem in the library
+with \verb|challenge_| in place of \verb|Ratpoints.| (the challenge spells out the maps of the
+search intervals to their values and bits, which the library abbreviates): the two statements of the
+brute-force reference (Theorem~\ref{thm:bruteForce}), the first statements of membership and of the
+order (Theorems~\ref{thm:membership} and~\ref{thm:order}), no duplicates (Theorem~\ref{thm:nodup}),
+the two refusal theorems (Theorem~\ref{thm:refusals}), the three statements without the exact check
+(Theorem~\ref{thm:noCheck}) and the first statement of the protocol (Theorem~\ref{thm:protocol}).
+They hold for every coefficient list, height bound, options of a search and options of the sieve, so
+for every choice of the moduli and every correction that the search makes; Sturm's theorem enters as
+the hypothesis~$h_S$ of membership, the order and item~(2) without the exact check. The solution
+proves each statement by its theorem in the library.
+
+\verb|lake comparator| builds and exports both files in a sandbox, without loading the \verb|.olean|
+files of the project into its own process, and accepts the solution when each of its theorems states
+the same as the theorem of the challenge, comparing the full bodies, not only the types, of every
+definition that the statement reaches; when the proofs use only the permitted axioms,
+\verb|propext|, \verb|Quot.sound| and \verb|Classical.choice|, so that a proof by
+\verb|native_decide| or \verb|bv_decide| would fail (the layout check forbids both in the project);
+and when the kernel accepts them. With \verb|--paranoid| it checks the solution with six kernels:
+Lean's kernel in its default and in its paranoid mode, \verb|lean4lean|, \verb|nanoda|,
+\verb|con-leche| and \verb|con-ron| (the flag \verb|enable_nanoda| of \verb|challenges.json| does
+not switch \verb|nanoda| off under \verb|--paranoid|). On 2026-10-27,
+\verb|lake comparator --paranoid| accepted the eleven statements with all six.
+
+What one has to read, then, is the challenge: the specification as restated there and, of the model,
+the types that the statements mention and the reference of the delivery, a fold of a few lines.
+Comparator does not certify that the executable \verb|ratpoints-lean|, which imports only the model
+and is compiled by the compiler of Lean, runs the model: the layout check keeps \verb|partial|,
+\verb|unsafe|, \verb|implemented_by|, \verb|extern| and experimental options out of the model's own
+code (Section~\ref{sec:ccodeCI}), while the primitives of Lean core that the compiler implements
+natively, on machine words, arrays, thunks and \verb|Float|, remain trusted
+(Section~\ref{sec:overviewTrust}); no proof reads the value of a \verb|Float|
+(Remark~\ref{rem:moduliFloats}). Nor does comparator say anything about the C code
+(Chapter~\ref{chap:ccode}), or about the theorems outside the challenge (the forms of membership
+with the permutation and the set of the points, the depth of the Sturm step, the program theorem,
+the block, lag and thread lemmas): they are proved in the same library, but one has to read their
+Lean statements to know what they say.

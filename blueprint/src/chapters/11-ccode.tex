@@ -1,0 +1,304 @@
+\chapter{The link to the C code}\label{chap:ccode}
+
+Lean has no semantics of C, and no theorem of this blueprint speaks about the C code of ratpoints:
+the theorems speak about the model, which mirrors the C code component by component, with the same
+loops, tables, bit arrays of 64-bit words and index arithmetic. This chapter describes what ties
+the model to the C code of release~3.1.1: the record of which declaration models which lines of C,
+and its checks; the lines that no declaration models; the departures of the model from the C code;
+the differential tests of the program \verb|ratpoints-lean| against the C program; the builds with
+other values of the compile-time constants; and CI. The nodes of the chapters before this one cite
+the main ranges of their definitions; Appendix~\ref{chap:correspondence}, generated from the
+record, lists every range with its owners and their deviations, or its exclusion.
+
+The link is not a proof. That a definition does what its lines of C do is checked by reading the
+two side by side; the record makes sure that every line of C is accounted for, that each claim is
+made for a definite text on both sides, and that a change on either side is noticed; the
+differential tests check the correspondence on behaviour, on finitely many inputs. Comparator
+certifies the statements about the model and says nothing about the C code
+(Section~\ref{sec:comparator}).
+
+\section{The record}\label{sec:ccodeRecord}
+
+Every line number refers to one commit of ratpoints, the pin: release~3.1.1, tag \verb|v3.1.1|,
+commit \verb|1a99853|, named in \verb|correspondence/ratpoints.toml| and, for the links of the
+blueprint, in the macro \verb|\ratpointscommit|. The record covers \verb|find_points.c|,
+\verb|sift.c|, \verb|init.c|, \verb|sturm.c|, the headers \verb|rp-private.h|, \verb|ratpoints.h|
+and \verb|primes.h|, the generators of tables \verb|gen_find_points_h.c| and
+\verb|gen_init_sieve_h.c|, and the program \verb|main.c|. Every line of code of these files, that
+is, every line that holds something besides white space and comments (a line of the preprocessor
+counts), lies in exactly one recorded range, and no two ranges overlap.
+
+A range is modelled when the docstring of a public declaration of the model names it, in a
+paragraph that begins with \verb|C:|; an optional paragraph that begins with \verb|Deviation:| says
+where the declaration departs from the C code. The docstring of \lname{Ratpoints.Sieve.squaresMod},
+for instance, ends with
+\begingroup\small
+\begin{verbatim}
+C: `find_points.c:37`, `gen_find_points_h.c:69-88`
+
+Deviation: a function of `p`, computed when it is called, for the row of `p` in the table
+`squares` that the build generates and that `find_points.c` includes. -/
+\end{verbatim}
+\endgroup
+A range may have several owners (line~37 of \verb|find_points.c| includes three generated tables
+and is a range of the three functions that compute them), and a declaration that calls another,
+which models a part of its C code, cites the lines around that part. A private declaration carries
+no record, since no node can name it. A range is excluded when a table \verb|[[excluded]]| of the
+record gives it, with a kind and the reason (Section~\ref{sec:ccodeExclusions}).
+
+The script \verb|scripts/correspondence.py| checks the record. It reads the docstrings of the model
+with the help of \verb|scripts/Correspondence.lean|, and the C files at the pin from a clone of
+ratpoints, and it checks:
+\begin{enumerate}
+  \item that the pin is a commit of the clone, to which its tag points where the clone has the tag,
+    that every range lies within the lines of a file of the record, that no line lies in two ranges,
+    and that every exclusion has a known kind and a reason;
+  \item that every range and every C link of the blueprint is locked: for every range, the lock
+    holds the SHA-256 hash of its text at the pin and its owners (the declarations that model it, or
+    its exclusion), and for every link the hash of the text that it shows; a range whose text or
+    owners differ from those of the lock, and a new link, are reported until they have been compared
+    with their counterparts by hand and locked again by \verb|scripts/correspondence.py lock|, which
+    writes the lock into \verb|correspondence/lock.json|;
+  \item that the appendix is the one that the record generates, and that every link inside a node
+    of the dependency graph that names declarations with \verb|\lean| is one of the ranges of the
+    model declarations that the node names, exactly as recorded (a node need not cite all of
+    them; prose and remarks may link to any range);
+  \item with \verb|--complete|, which CI passes, that every line of code lies in a range.
+\end{enumerate}
+After a move of the pin, a range counts as locked when some locked range has its text and its
+owners, and a link when some locked link shows its text, wherever their lines are; so a move of the
+pin to another release of ratpoints makes the check report exactly the ranges whose text or owners
+changed and the links whose text changed (\verb|correspondence/README.md| describes the procedure).
+
+\section{The exclusions}\label{sec:ccodeExclusions}
+
+An excluded range has one of the kinds \verb|threads|, \verb|memory|, \verb|instrumentation|,
+\verb|interface| and \verb|other|.
+
+\verb|threads|: the pool of threads, with which ratpoints sieves the blocks of its loop over the
+denominators apart (\csource{find_points.c}{4129}{4519}), its set-up in the search, the atomic loads
+and stores of the fields that the threads share (\csource{rp-private.h}{76}{84}), the fields of the
+arguments that hold the number of threads and the pool, and the default of one thread in
+\verb|main.c|. The model sieves the blocks in turn. The thread lemma (Theorem~\ref{thm:threads})
+shows that blocks sifted apart and delivered in their order give the same; that the pool of the C
+code meets its hypotheses is read off the C code (Chapter~\ref{chap:theorems}).
+
+\verb|memory|: the buffers of the sieve entries, the rows, the tables, the words of the forbidden
+divisors and the prime powers, with their alignment and enlargement
+(\csource{find_points.c}{181}{270}) and their release (\csource{find_points.c}{377}{416}), the
+arrays of the run and of a worker, the copy of the caller's intervals in the Sturm step, the GMP
+variables that \verb|main.c| initializes and releases, and the failures for lack of memory,
+error~10 of the program among them. The model allocates nothing itself and cannot fail for lack of
+memory; such failures inside modelled ranges, such as the drop of the forbidden divisors beyond
+the table whose words find no memory, are deviations of their owners.
+
+\verb|instrumentation|: the output under \verb|DEBUG|, the timers and counters of
+\verb|RP_PHASE_TIMING| and \verb|RP_PHASE_COUNTS| (\csource{sift.c}{55}{176}), the report of
+\verb|RP_PRIME_STATS|, \verb|RP_STOP_AFTER|, \verb|RP_MOD_CHOICE|, \verb|RP_MOD_COUNTS|, the check
+\verb|RP_VERIFY_MODULI| of the rows (\csource{init.c}{299}{353}) and two probes for a benchmark,
+all compiled only on request or empty in the default build. Output under \verb|DEBUG| inside a
+modelled block goes with the block, whose deviation says that the model prints nothing there; the
+report under \verb|RATPOINTS_VERBOSE| (\verb|-v|) is modelled (Chapter~\ref{chap:output}).
+
+\verb|interface|: what only another caller of the library meets: \verb|find_points_init|
+(\csource{find_points.c}{272}{375}) and its prototype, the input fields of the arguments that
+\verb|find_points_work| saves and puts back, the checks of arrays that only such a caller can fail
+(\csource{find_points.c}{4618}{4623}), the declaration of the arguments in \verb|main.c| and the
+initialization of the fields that the model passes as values, and the prototype of the Sturm step.
+
+\verb|other|: lines without meaning for the model: the includes, those of the vector intrinsics
+among them, and the prototypes; the inlining attributes and the pragma that unrolls the loops of
+\verb|tail_leg| (\csource{sift.c}{466}{472}); \verb|FLOOR|, \verb|RATPOINTS_DEFAULT_SP1| and
+\verb|RATPOINTS_DEFAULT_SP2|, which the C code reads nowhere, and a count stored that nothing reads;
+the text of message~1, which \verb|main| never prints (\csource{main.c}{977}{978}); the frames of
+the \verb|main| functions of the generators of tables; and the arm of \verb|exact_scale| for a build
+without a 128-bit integer type (\csource{find_points.c}{3239}{3256}), since the default build
+compiles the arm with \verb|unsigned __int128|.
+
+\section{The deviations}\label{sec:ccodeDeviations}
+
+The \verb|Deviation:| paragraphs record, declaration by declaration, where the model departs from
+its lines of C. Most of the departures are of the following kinds. None corrects the C code: the
+model is that of release~3.1.1 as it is.
+
+\emph{Integer types.} The model computes with natural numbers and integers where the C code has
+\verb|long|s, \verb|int|s, \verb|unsigned long|s and GMP integers, and with rational numbers for GMP
+rationals; where a value of the C code could leave its type, the range obligation is a lemma that
+the deviation names. Lean's 64-bit words stand where the C code depends on the words themselves: in
+the bit arrays, the reductions by a reciprocal and the counters of the run, which wrap as
+\verb|unsigned long|s wrap; in the test for common factors (\lname{Ratpoints.Sieve.relprime}), whose
+step without branches acts on the two's complement of a negative \verb|long| and shifts it
+arithmetically, as gcc defines these operations, which the C standard leaves to the implementation;
+and in the bits of the numerators of an interval, the forms of the ends of the intervals and the
+numerators of the Sturm step, whose arithmetic wraps where that of the \verb|long|s would overflow,
+on no path that the search takes. The 128-bit products are taken on two words, the high word from
+four products of 32-bit halves (\lname{Ratpoints.Sieve.mulHi}). The height bound is a natural
+number, refused from~$2^{63}$ on with error~4, as the program refuses such a height when it reads
+it.
+
+\emph{Pointers and buffers.} Arrays and indices stand for pointers into arrays, an option for a
+pointer that may be null, and values returned, often structures, for what the C code writes
+through pointers or into buffers of its caller; state that the C code reaches through pointers,
+such as the delivery of the points, the tables of rows (\lname{Ratpoints.Sieve.RowStore}) and the
+counters, is passed and returned. A search gives back what the program reads
+(Definition~\ref{def:Options}), not the other fields that the C code leaves in the arguments. The
+end of a row that is not built yet is~$p$ (\lname{Ratpoints.Sieve.setRows}), where \verb|set_rows|
+adds~$p$ to the null pointer (\csource{find_points.c}{3149}{3170}), which the C standard leaves
+undefined; this happens in ordinary runs, whenever \verb|set_rows| reports a row as missing, and the
+end is set again when the row is built, before it is read.
+
+\emph{Generated tables.} The squares, the inverses and the rows of~$0$ of the primes, which the
+build generates into \verb|find_points.h|, are functions of the prime, computed when they are
+called: \lname{Ratpoints.Sieve.squaresMod}, \lname{Ratpoints.Sieve.inversesMod} and
+\lname{Ratpoints.Sieve.sieves0}. The functions that the build generates into \verb|init_sieve.h|,
+one for each prime, which build its rows, are two functions, \lname{Ratpoints.Sieve.sieveInit1} and
+\lname{Ratpoints.Sieve.sieveInit2}, with the prime an argument; and a pointer to such a function is
+the kind of the builder, with a match on it (Chapter~\ref{chap:rows}).
+
+\emph{Vector code.} A bit array of the default build is a vector of $256$~bits; in the model it is
+$\mathrm{rbaPack} = 4$ consecutive words of an array of \verb|UInt64|, and the \verb|&| of two bit
+arrays the \verb|&| of their words (\lname{Ratpoints.Sieve.andBitArray}). The registers of the
+chunked first stage are a vector of $\mathrm{chunk} = 16$ bit arrays, the code that the build
+unrolls under \verb|#if (RATPOINTS_CHUNK >= k)| is a loop over them
+(\lname{Ratpoints.Sieve.chunkSieve}), and the conditional compilation that chooses an arm is a test
+on the constant (Chapter~\ref{chap:sieve}). The other builds differ in these constants
+(Section~\ref{sec:ccodeConstants}).
+
+\emph{Doubles.} The doubles of the search region are their IEEE~754 bits (\lname{Ratpoints.Double}),
+with a function, which owns no range of C, for each operation that ratpoints applies to them, as gcc
+and glibc compute it with rounding to nearest; \verb|strtod| and \verb|printf| under \verb|%f| are
+modelled by their values, not by glibc's algorithms (Chapter~\ref{chap:region}). The doubles of the
+cost model are Lean's \verb|Float|, with the platform's arithmetic, \verb|log| and \verb|pow|, and
+no proof reads their values; the sorts by \verb|qsort| are a stable merge sort
+(\lname{Ratpoints.sortFrom}), which gives the order of glibc's \verb|qsort|, a stable merge sort
+whenever it can allocate its buffer, since no key is a NaN (Chapter~\ref{chap:moduli}). Where the C
+code computes in \verb|double| what the model computes exactly (the comparison of $2pH$ with the
+limit of the third stage, the integer square roots of the shapes), the deviation shows that the
+outcome is the same.
+
+\emph{Structure and the program.} The model has one function, \lname{Ratpoints.findPointsVerbose},
+for \verb|find_points|, \verb|find_points_work| and the start of \verb|find_points_work_1|, whose
+rest is \lname{Ratpoints.findPointsWork}; parts of long functions and bodies of loops are functions
+of their own; arrays that the C code fills once per denominator under a flag are thunks; and the
+report under \verb|RATPOINTS_VERBOSE| goes through a print channel of the search. The program writes
+its output once, at the end, where \verb|main.c| prints after every point; it differs from ratpoints
+on a closed pipe and on format words that are not UTF-8, where the runtime of Lean acts otherwise
+than that of C (Chapter~\ref{chap:output}).
+
+\emph{Inputs that ratpoints never meets.} Where the C code would overflow or divide by zero on an
+input that it is never given, the model takes a defined value, and the contract excludes the input
+or the proofs show that it does not occur: the negation of~$-2^{63}$ in the test for common factors
+wraps, and the integer square root rounded up gives~$1$ at~$0$. The loop that counts the trailing
+zeros does not end on~$0$, as in the C code (\lname{Ratpoints.Sieve.ctz}), and the masks of the
+forbidden valuations drop the bound $m < 63$ of the C code, which never binds for a height that is a
+\verb|long| (Chapter~\ref{chap:denominators}).
+
+\section{The differential tests}\label{sec:ccodeTests}
+
+The script \verb|scripts/difftest.py| runs \verb|ratpoints-lean|, the model compiled by Lean
+(Chapter~\ref{chap:output}), on the test suites of ratpoints and on further command lines, and
+compares it with the outputs that the suites record and with the C program at the pin on the same
+command line; the C program must be the default build, without the machine-dependent tuning that
+\verb|make tune| writes. Every list of points is compared in its order. Under \verb|-q| the points
+are compared with a recorded output and byte for byte with the output of the C program, and so are
+the outputs with the options and formats of the output and the reports, with messages 3, 4 and~8 on
+the search region, the moduli used and the search intervals, the banner exchanged for that of the C
+program, also under \verb|-v|, where the report of the library comes between the points. The
+outputs that \verb|test4.sh| filters are compared after the filter and as a whole; those that
+\verb|test3.sh| filters, as a whole, before the filter. Under \verb|-x|, where the program prints
+the pairs that survive the sieve, the pairs are compared byte for byte with the C program, since the
+model chooses and corrects its moduli as ratpoints does, and, without a format and without
+\verb|-v|, they also pass a check that does not depend on the moduli: normalized coprime pairs in
+the range of the height and in the search region, none repeated, and the points among them the
+same, in the same order, in both outputs. Exit statuses and messages are compared exactly, but for
+the banner and the usage; \verb|ratpoints-lean| must write nothing to its standard error (a panic
+of the Lean runtime ends it); and failed writes are compared too.
+
+The default suites search up to the height~$30000$, and above it in narrow search regions. Since the
+choice of the moduli computes with the \verb|log| and \verb|pow| of the platform's C library, which
+glibc does not round correctly and chooses by the processor, the comparisons that depend on it (the
+pairs under \verb|-x|, message~4 and the report under \verb|-v|) are made with both programs on one
+machine; CI runs both on its runner. On the state of the project that this blueprint describes, the
+suites make these comparisons, none of which fails:
+\begin{center}
+\small
+\begin{tabular}{@{}lp{0.68\textwidth}r@{}}
+  suite & what it runs & comparisons \\
+  \hline
+  \verb|test4| & the runs of \verb|test4.sh|, against \verb|testbase4| and the C program, but
+    for~$13$ above the height~$30000$ & $590$ \\
+  \verb|test3| & the runs of \verb|test3.sh| & $21$ \\
+  \verb|rptest| & the curves of \verb|testdata.h|, \verb|testdata-many.h| and
+    \verb|testdata-degrees.h| at the height~$100$, against their recorded points & $1206$ \\
+  \verb|random| & random polynomials of degree~$1$ to~$8$ at heights up to~$30$ & $300$ \\
+  \verb|outputs| & random options of the output, formats and strings & $300$ \\
+  \verb|errors| & hand-written command lines for every check of \verb|main.c| and every option,
+    the refusals, the report under \verb|-v|, searches stopped at once at the height~$10^{12}$,
+    failed writes & $384$ \\
+  \verb|fuzz| & random command lines & $800$ \\
+  \verb|params| & the options that set the moduli and the cut points & $272$ \\
+  \verb|high| & point-rich curves up to the height~$30000$, and curves on which the C program
+    corrects its moduli & $19$ \\
+  \verb|regions| & random search regions and ranges of the denominators & $400$ \\
+  \verb|depths| & random depths of the Sturm step & $300$ \\
+  \verb|tuning| & random values of the tuning options & $300$ \\
+  \verb|threads| & the C program with \verb|-t 4| and \verb|-t 7| & $205$ \\
+  \verb|verbose| & random searches under \verb|-v| & $300$ \\
+  \hline
+  & the default suites & $5397$ \\
+  \hline
+  \verb|test4high| & the runs of \verb|test4.sh| at the heights $40000$ to~$100000$ & $13$ \\
+  \verb|adapt| & searches at the heights $16383$ to~$50000$ on which the C program corrects its
+    moduli, under \verb|-x| with and without \verb|-A| & $92$ \\
+\end{tabular}
+\end{center}
+The last two suites are not run by default, nor the comparison of a build of the C program with a
+fixed length of the blocks (\verb|-DRP_BLOCK_LEN=3|) with \verb|ratpoints-lean| built with the same
+length (\lname{Ratpoints.blockLen}), which tests the boundaries of the blocks. The \verb|#guard|
+examples of the model, which every build runs, compare components with values taken from the C
+program, gcc and glibc, none of which depends on the \verb|log| or \verb|pow| of the platform.
+
+\section{Other values of the constants}\label{sec:ccodeConstants}
+
+The file \verb|Ratpoints/Model/Constants.lean| holds the constants that the C code fixes when it is
+compiled, each a definition with the value of the default build and a docstring that names its
+macro: among them the bound on the degree (\lname{Ratpoints.maxDegree}), the number of bits of the
+moduli, the width of a bit array (\lname{Ratpoints.rbaPack}), the chunk of the first stage
+(\lname{Ratpoints.chunk}), the default depth of the Sturm step, the limits of the reductions by a
+reciprocal, the doubles that tune the cost model and the constants of the blocks
+(\lname{Ratpoints.adaptLag}, \lname{Ratpoints.blockLen}). No proof depends on their values beyond a
+few facts that the file decides: that the width, the chunk and the array sizes are positive, that
+the limits of the reductions are at most~$2^{32}$, that a bit array has $2^{\mathrm{rbaShift}}$ bits
+with $\mathrm{rbaShift} < 32$, that $\mathrm{maxBitsInPrime} \le 10$, that the bound on the degree
+is positive and below~$2^{57}$, that a fixed length of the blocks is positive, and a few more of
+that kind.
+
+The author checks this by building copies of the project, with all its proofs and without the
+\verb|#guard| examples of the model, which test the default values, for eleven other sets of
+values, each of which builds: two that change every constant, one to small values (among them bit
+arrays of~$64$~bits, the chunk~$1$, the lag~$0$ and blocks of length~$1$) and one to large values
+(bit arrays of~$512$~bits, the chunk~$17$, which compiles the other arm of the first stage, the
+lag~$1000$); four that change the chunk alone, to~$2$, $3$, $5$ and~$12$; three that pair the
+chunked first stage with the widths of the other builds, $512$, $128$ and~$64$~bits; one with the
+lag~$1$ and blocks of length~$3$; and one with one block wanted. So the proofs hold for the models
+of the configurations of the C code that differ in these constants, the widths of the bit arrays of
+all its builds among them. The check runs outside CI; anyone can repeat it by changing the values
+in \verb|Ratpoints/Model/Constants.lean|, removing the \verb|#guard| examples of the model and
+building the project.
+
+\section{Continuous integration}\label{sec:ccodeCI}
+
+The workflow \verb|.github/workflows/build-project.yml| runs on every push to the main branch and on
+every pull request. It checks the layout (\verb|scripts/check_layout.py|: the imports of each part;
+no \verb|partial|, \verb|unsafe|, \verb|implemented_by|, \verb|extern| or experimental option in the
+model, which would let the executable run code that the proofs do not see; and nowhere a tactic that
+adds an axiom, such as \verb|native_decide|), the style of the Lean code and the length of its
+lines, and the listing \verb|Ratpoints.lean| of the modules; builds, with every warning a failure,
+the model, the specification and the proofs, \verb|ratpoints-lean| and the solution of comparator,
+and then the challenge, whose \verb|sorry|s warn by design; runs the tests of the scripts; checks
+the record with \verb|--complete| against ratpoints at the pin; and builds the C program at the pin
+and runs the default suites of the differential tests against it. The build fails if a main theorem
+depends on an axiom beyond \verb|propext|, \verb|Classical.choice| and \verb|Quot.sound|, by the
+guards \verb|#print axioms| under \verb|#guard_msgs|. Comparator (Section~\ref{sec:comparator}),
+the suites \verb|test4high| and \verb|adapt|, the pair with a fixed length of the blocks and the
+builds with other values of the constants run outside CI.

@@ -60,257 +60,55 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B, C1, C2, D, E, F, in its four sub-stages F1 to F4, G, H and I. Stage A set up the
-    Lake project with the libraries of the model (Lean core and Std only), the specification and the
-    proofs, the CI, the blueprint, the correspondence record with its checking script, and the
-    comparator harness, and settled the specification in the blueprint. Stage B: the specification
-    in Lean (the binary form, the normalized points of height at most H, the finite set of them, and
-    the binary form over Q that the refusals speak about), the brute-force reference in the model
-    with the theorems that it lists exactly these points, each once, certified by comparator, the
-    command-line program ratpoints-lean, which reads its command line as the C program does, with
-    its checks, messages and exit statuses, and the differential tests that compare it with the C
-    program (the test suites of ratpoints, hand-written and random command lines). Stage C1: the
-    plain sieve in the skeleton of the C code (the compile-time constants of the C code as
-    definitions, the sieving parameters with their well-formedness, the tables of a prime and their
-    rows, the sieve of one denominator, its survivors, the denominators, the points at infinity),
-    the contracts of its loops proved with the program logic of Lean core, and the theorem that for
-    every well-formed choice of the parameters it returns the list of the brute-force reference; the
-    main theorems (the membership and no-duplicates theorems for findPoints, its refusals in the
-    form of stage C1, and the well-formedness of the parameters that the options of the program
-    give) are certified by comparator; ratpoints-lean runs the sieve with the parameters of its
-    options, and the differential tests have a suite of parameters. Stage C2: the sieve on the bit
-    arrays of 64-bit words of the C code (the width of the bit arrays as a constant of the build and
-    the array size of the pieces as a parameter, the operations on bit arrays and the lowest set bit
-    as in the C code, the rows of a denominator as words, each made when first needed, the first
-    stage over a piece, the check of a numerator, the walk through the set bits of a word, the scan
-    up to a sentinel, one piece with the masks at its ends, one denominator in pieces, and the run),
-    with the contracts of its loops proved with the program logic of Lean core for every width of
-    the bit arrays, and the plain sieve of stage C1 kept as its reference; findPoints and
-    ratpoints-lean run it, and the main theorems keep their statements; the differential tests
-    search up to height 30000, and the runs of test4.sh above that height, up to 100000, form a
-    suite run locally. Stage D: the set-up of the search as the C code does it before the sieve,
-    with the options of the library that change the refusals and the order of the output (whether
-    the polynomial may be reversed, and the depth of the Sturm step, of which the set-up reads only
-    the sign): the refusal of a binary form that is not squarefree when the leading zeros lower the
-    even degree, in the reversal check and by the remainder chain of the Sturm step, computed row by
-    row as the C code computes it, with its contract and the proof that it detects exactly a
-    repeated factor; the reversal check in its three cases, the reflection of the polynomial that
-    exchanges x and z in the binary form, and the map of the points of a reversed search, a
-    bijection of the points of bounded height that the check of a survivor and the points at
-    infinity apply; the coefficients as C longs with the helper mod of the C code and its range
-    obligations; the table of a prime with the exit when the curve has no points modulo that prime;
-    and the search of the polynomial handed on. The output of findPoints is a permutation of the
-    brute-force reference, so that the membership and no-duplicates theorems hold for every option;
-    the refusal theorems say that with the Sturm step on findPoints refuses exactly the inputs with
-    fewer than two or more than maxDegree + 1 coefficients, H = 0 (since stage F2 also H >= 2^63)
-    and a binary form that is not squarefree, and with it off exactly what the C program refuses
-    under -s; both refusal theorems and the main theorems with the options argument are stated for
-    comparator, with the binary form over Q restated in the challenge; the lemmas on homogenizations
-    and their squarefreeness are candidates for Mathlib; ratpoints-lean reads the options -k, -K, -s
-    and -S and refuses a form that is not squarefree with error 8 as the C program does with the
-    same options; and the differential tests compare the refusals and these options. Stage E: the
-    side of the denominators as the C code has it, with the compile-time constants of this part of
-    the C code as definitions: the valuation; the 2-adic information with the classes of the
-    denominators modulo 64, the word of the class as the starting value of the first stage of the
-    sieve, and the exit when no class admits a numerator; for odd degree the squares and the
-    divisors of the leading coefficient times squares (the factorization over the table of primes,
-    the squarefree divisors and the slopes of the valuation test); for even degree the forbidden
-    divisors, tested with words of 64 denominators and by their valuations (the Newton polygon at a
-    prime), and the Jacobi test, by the binary algorithm and by tables, both proved to compute the
-    Jacobi symbol of Mathlib; and the four shapes of the loop over the denominators with their lists
-    and tests, the run over a shape and its reduction to the reference; the contracts of the stage
-    are proved with the program logic of Lean core in files with Mathlib, and the lemmas of
-    Mathlib's generality are candidates for Mathlib. The output of findPoints is the list of the
-    points at infinity followed by the points of the brute-force reference of the polynomial
-    searched over the denominators in the order of the loop of its search, each mapped back after a
-    reversal: a permutation of the reference, and the reference itself when the options forbid the
-    reversal and the search does not take the divisors times squares; the main theorems, the refusal
-    theorems and the statements for comparator keep their statements; ratpoints-lean prints the
-    points in the order of the C program, and the differential tests compare every point list in its
-    order (3219 comparisons in the default suites). Stage F1: the tables and the moduli as the C
-    code has them: the table of a prime as examine_prime computes it, a component with its contract,
-    by Horner's rule with the Barrett reduction on the fixed schedule of the C code, exact for the
-    primes below 2^maxBitsInPrime, with the range obligation of its accumulator, handing back the
-    coefficients modulo the prime and its entry at infinity; the loop of the tables of sieving_info
-    with the exit and the forbidden divisors prime by prime, and the second loop of the forbidden
-    divisors from the number of primes examined; prime powers as moduli, with the tables of
-    examine_power and the inverses by the extended Euclidean algorithm, and products of prime
-    powers, with the factors of a modulus over the table as add_moduli finds them and the sieve
-    entry of a modulus of any kind, sound without the Chinese remainder theorem, and the range
-    obligations of the longs of these computations; the parameters gain the number of primes
-    examined, and their well-formedness, which the statements for comparator import from the model,
-    admits the composite moduli below 2^maxBitsInPrime that factor over the first numPrimes primes
-    of the table, and no longer the primes of the table from 2^maxBitsInPrime on; the output, the
-    main theorems, the refusal theorems and the statements for comparator keep their text, and the
-    differential tests agree as before (3219 comparisons in the default suites). Stage F2: the
-    stages of the sieve and the check as the C code has them: the first stage with the first moduli
-    of the parameters, the second stage on each bit array that the first leaves nonzero, in both
-    arms of the build (the whole bit array, or one word at a time), and the test of a candidate, the
-    test for common factors by the binary algorithm of relprime on the 64-bit longs of the C code,
-    with the mask of the arithmetic shift and the trailing zeros of a word, followed by the third
-    stage, one numerator at a time against the tables of its primes; the reductions by a
-    multiplication with the reciprocal of a modulus (RP_MULMOD and RP_MULDIV), exact for u p < 2^64,
-    the reciprocal a field of the sieve entries and of the tables of the Jacobi test, which reduces
-    with it too; the table of the third stage and the products of the check made once per
-    denominator, when its first numerator needs them; the contracts of these components proved with
-    the program logic of Lean core, with the range obligations of their longs; the staged sieve
-    gives the numerators of the sieve with all the moduli in the first stage, in the same order, for
-    prime entries in the third stage, which the well-formedness of the parameters gives. findPoints
-    refuses a height bound of 2^63 or more, which is not a C long, with error 4, as the program does
-    when it reads one, so that the refusal theorems refuse H = 0 or H >= 2^63; the membership and
-    no-duplicates theorems keep their statements; the parameters of the command line take the cut
-    points of the stages by the counting rules of ratpoints where these do not depend on the curve,
-    so that a run without options uses all three stages (11, 11 and 8 of the first 30 primes), and
-    the well-formedness theorem of these parameters keeps its text; the differential tests compare
-    every point list in its order (3315 comparisons in the default suites, among them option sets
-    that run the second and the third stage after few moduli in the first, and 13 in the suite run
-    locally). Stage F3: the packing of the numerators as the C code has it: the classes of the
-    denominators modulo 64, whose admitted numerators lie in one residue class a0 modulo a stride
-    2^k, with the pattern of each class packed to its stride, so that bit t of the sieve of a
-    denominator stands for the numerator a0 + 2^k t; the rows of offsets that the packings share,
-    with the inverses of the strides, and the fields bias, rbainv and dinv of the sieve entries set
-    as the C code sets them; the residues of a denominator divided by its stride in the three
-    branches of fill_bp_list; the bits of the heights on 64-bit signed words in both forms of
-    numerators_to_bits; the row indices of the first two stages with the offsets, reduced by mod_mul
-    with the reciprocal of the modulus where the word numbers of a piece allow it (the test small)
-    and by a division otherwise, the reciprocals stepped with the moduli; the stride in the
-    extraction; and the reductions by a reciprocal on 64-bit words, the high half of the 128-bit
-    product from the products of the 32-bit halves; the contracts proved with the program logic of
-    Lean core in files without Mathlib, with the range obligations of the longs; a row is unchanged
-    when the residue and the numerator are multiplied by the same unit, given tables of inverses
-    that invert, so the packed sieve keeps exactly the numerators that the unpacked one keeps, in
-    the same order, and the output, the main theorems, the refusal theorems, the statements for
-    comparator, the parameters and their well-formedness do not change; the differential tests agree
-    as before (3315 comparisons in the default suites and 13 in the suite run locally). Stage F4:
-    the first stage as the default build of the C code compiles it, with the chunk RATPOINTS_CHUNK =
-    16 as a constant of the build: the chunked arm, which takes a chunk of bit arrays at a time in
-    registers, and-s the rows of the moduli into them from starts that it steps through each row and
-    does the tail of a piece in legs of 8, 4, 2 and 1 bit arrays, and the arm one row at a time for
-    the other chunks, chosen as the conditional compilation of the C code chooses them, with the
-    array size rounded up to a multiple of the chunk; the rows as ratpoints builds and keeps them,
-    each of m + chunk - 1 bit arrays for the modulus m, the last ones copies of the first: the row
-    of 0 of a prime the pattern sieves0 that the build generates, the other rows of a prime from the
-    functions that the build generates from CODE_INIT_SIEVE1 and CODE_INIT_SIEVE2, those of a prime
-    power from lay_out_pattern and those of a product from the rows of its factors, each builder
-    storing its row in the table of rows of its entry, the entries reached as the C code reaches
-    them; the tables of rows made with the entries, the missing rows of a denominator built before
-    it by the loop of sift, and the tables of rows handed on through the run as state; the tables of
-    a prime power as bit arrays of words, as examine_power fills them, and the words of the
-    forbidden divisors among the first numPrimes primes of the table read from sieves0; the
-    contracts proved with the program logic of Lean core for every value of the chunk, those of the
-    first stage and of the builders in files without Mathlib: the arms leave the same words, the
-    rows that the builders build are the closed forms of the admission tests, and the store of the
-    tables of rows fits the entries of the run, so the output, the main theorems, the refusal
-    theorems, the statements for comparator, the parameters and their well-formedness do not change;
-    the differential tests agree as before (3315 comparisons in the default suites and 13 in the
-    suite run locally). Stage G: the delivery of the points to the callback of the caller as the C
-    code has it: the callback with the caller's data, the value that each call returns, added to the
-    count, and the stop that it may request, threaded with a delivery (the data, the count and the
-    flag of the stop) through the components that the C code passes process and info through, the
-    flag tested where the C code tests quit, in the exact check and at infinity between the calls
-    with +y and -y, in the walk after each check, after each bit array, piece and denominator, and
-    after the points at infinity, where the search returns before it sieves; the points at infinity
-    delivered call by call as the C code delivers them; the sieving split off the search, and each
-    arm of the extraction a function of its own; the search with a callback findPointsWith, with
-    findPoints its instance with the callback that appends each point to an array, so that it
-    returns the list of before when neither option of the output is set; the options of the output
-    RATPOINTS_NO_CHECK and RATPOINTS_NO_Y as fields of the options, copied into the flags of the
-    check; and the bits of the flags that the program reads after the search written back. The
-    contracts on the delivery, proved with the program logic of Lean core in the files of the
-    contracts they replace, give the protocol: for well-formed parameters, the search with any
-    callback gives the data and the count of the reference of the delivery, a fold over the list of
-    findPoints up to the first call that stops the search, and refuses exactly what findPoints
-    refuses. The specification gains a file with the order in which ratpoints finds the points (the
-    points at infinity of the polynomial searched, then its denominators in the order of the loop of
-    the search, ascending but for the divisors of the leading coefficient in the order of binary
-    counting over its primes, the numerators ascending, +y before -y, mapped back after a reversal),
-    and the order theorem says that findPoints returns that list, filtered by RATPOINTS_NO_Y, when
-    RATPOINTS_NO_CHECK is clear; under RATPOINTS_NO_CHECK it returns the triples (x, 0, z) of
-    normalized pairs of height at most H that survive the sieve, each once, among them those of all
-    the points. The statements for comparator are twelve: membership with RATPOINTS_NO_CHECK clear
-    and y >= 0 under RATPOINTS_NO_Y, no duplicates for every option, the two theorems of the
-    brute-force reference, both refusal theorems and the well-formedness of the parameters of the
-    program, and, new, the order theorem over the file of the order, restated verbatim, three
-    statements under RATPOINTS_NO_CHECK and the protocol; comparator accepted all twelve on
-    2026-10-17. ratpoints-lean runs the search with a callback, with the callback of main.c, and
-    reads the options of the output of main.c (-x -X -y -Y -z -Z -1 -i -I and the formats and
-    strings of -f -fs -fm -fe), with the report that main.c prints without -q but for the messages
-    on the search region, the search intervals and the moduli used; a theorem says what it prints,
-    in particular that -1 prints the first point of the list that -i keeps; and the differential
-    tests compare the reports exactly, with the banner exchanged, -x exactly against the C program
-    with the moduli pinned, and the searches that a stop ends at the height 10^12 (3784 comparisons
-    in the default suites and 13 in the suite run locally). Stage H: the search region of the caller
-    as the C code has it: the doubles of the C code as their IEEE bits, with a model function for
-    each operation that ratpoints applies to them (the conversions, the comparisons, nextafter,
-    fabs, frexp, ldexp and the truncations), checked against gcc and glibc, and proved to compute on
-    their values; the exact bounds of the numerators of the search intervals as exact_bounds makes
-    them, with the high word of the 128-bit product, and the bits of an interval of numerators; the
-    sieve of a denominator over the intervals, set up at the first interval that interval_bits does
-    not report empty, as the C code sets it up; the range of the denominators b_low to b_high; the
-    search intervals and the range in the options, their normalization with
-    RATPOINTS_NO_REVERSE_AUTO, and the refusal RATPOINTS_BAD_ARGS of search intervals that are not
-    well formed; and the Sturm step as sturm.c has it: the signs of the rows of the remainder chain
-    at dyadic points by Horner's rule, the counts at +-infinity, the bisection as a well-founded
-    recursion on long numerators and exponents, the intersection with the caller's intervals, and
-    the search intervals that it leaves written back; the contracts of the sieve and of the loops of
-    the Sturm step proved with the program logic of Lean core in files without Mathlib. The
-    specification gains a file with the values of the doubles, the search intervals that ratpoints
-    accepts and the points in the search region, and a file with Sturm's theorem as a proposition
-    over Mathlib's Sturm sequence and sign variations, which Mathlib does not have yet: the rows of
-    the remainder chain are positive multiples of the Sturm sequence, and under Sturm's theorem the
-    intervals that the Sturm step leaves at a depth of at most 55 hold every point of the box in the
-    caller's search intervals, so that with the exact check on the search with the step off gives
-    the same list; the bounds of the arrays of the Sturm step of the C code hold under it too. The
-    statements for comparator stay twelve, the challenge restating both files: membership, the order
-    theorem and two of the statements under RATPOINTS_NO_CHECK hold for the points in the search
-    region, membership, the order and the coverage under RATPOINTS_NO_CHECK assuming Sturm's theorem
-    when the Sturm step is on, a hypothesis, not an axiom; both refusal theorems add the search
-    intervals that are not well formed, the refusal of c_0 = c_1 = 0 without the Sturm step only for
-    the whole box; comparator accepted all twelve on 2026-10-18. ratpoints-lean reads -l -u -dl -du
-    as main.c reads them, the ends by strtod with the upper half of its faithful rounding proved,
-    the doubles outward of them, joins the intervals, tests the search region in its callback and
-    prints the messages on the search region and on the search intervals; a theorem says which
-    points it prints; and the differential tests compare the runs of test4.sh and test3.sh with a
-    search region, random search regions and depths of the Sturm step, and -x exactly against the C
-    program with the moduli pinned (4530 comparisons in the default suites and 13 in the suite run
-    locally). Stage I: the choice of the moduli and of the cut points of the three stages by the
-    curve, as sieving_info makes it: the tuning macros of ratpoints.h and the other constants of the
-    choice as definitions; the doubles of the C code as Lean core's Float, with the log and pow of
-    the C library of the platform, as the C code calls glibc's, so that the choice agrees with that
-    of ratpoints on a machine with the same library; the densities of the moduli from the tables of
-    examine_prime and examine_power; the cost model of the C code (prime_cost, phase_1_key,
-    check_cost, downstream_factor and the rules of the first two stages) and the estimate of the run
-    (run_shape with its samples, and the mean bits per word); the pool of the candidates with the
-    composite moduli of add_moduli and make_modulus, the first two stages by take_entries, the third
-    stage and the reserve, the loop of the tables with its exit and the forbidden divisors, and the
-    final sort; the counters of the sieve as 64-bit words beside the delivery, with their closed
-    forms; the blocks of the loop over the denominators with their plan, the four loops of the
-    shapes over a block, one block with the decision in force, and the correction of the moduli
-    between the blocks (run_fold with its lag, and adapt_primes), with the block lemma and the lag
-    lemma; the threads left out, with the theorem on what they preserve, that each block sifted
-    apart gives its points and that its points delivered block by block in order give what the run
-    delivers (not certified); the numbers of the moduli used in the outcome; and the report of the
-    library under -v through a print channel of the search with a callback. The contracts are proved
-    with the program logic of Lean core, those of the pool of the candidates, the counters and the
-    plan of the blocks in files without Mathlib, and no proof reads the value of a double. The
-    theorems and the statements for comparator take the options of the sieve with no hypothesis on
-    them, in place of the sieving parameters, which are internal to the search, the result of its
-    choice of the moduli, with no well-formedness of their own; the statements for comparator are
-    eleven, the well-formedness of the parameters of the program no longer among them; comparator
-    --paranoid accepted all eleven on 2026-10-25, and comparator accepted them again with the choice
-    of the moduli and the run over the blocks on 2026-10-25, with the numbers of the moduli used in
-    the outcome on 2026-10-25 and with the report under -v on 2026-10-26; comparator --paranoid
-    accepted the eleven statements as they read now on 2026-10-27. ratpoints-lean prints the
-    numbers of the moduli used (message 4) and under -v the report of the library between the
-    points, reads the tuning options -r -R -U -C -A -Q -W into the options of the sieve, and checks
-    and ignores -t, the number of threads, since the model sieves the blocks in turn on one thread;
-    every line of code of the C files is recorded, and the check of the correspondence requires it;
-    and the differential tests compare on one machine, with the C program built there, the pairs
-    under -x exactly, message 4 and the output under -v byte for byte, random values of the tuning
-    options, and the C program on four and seven threads (5397 comparisons in the default suites, 13
-    in the suite run locally above height 30000 and 92 in the local suite of the searches in which
-    ratpoints corrects its moduli). Next: a review of the whole development, and the blueprint
-    consolidated into a description of its final state.
+    The whole of the C library of ratpoints 3.1.1 and of its command-line program, but for the
+    threads, the management of memory, the calling conventions of the library, the instrumentation
+    for development and debugging, and a few lines without a counterpart in Lean (the includes,
+    macros that the C code does not use, the arm of a build without a 128-bit integer type). The
+    specification: the binary form of even degree of a coefficient list, the normalized points of
+    height at most H on y^2 = F(x, z), the finite set of them, and the binary form over Q that the
+    refusals speak about; the order in which ratpoints finds the points; the values of the doubles
+    that bound the search intervals, the search intervals that ratpoints accepts and the points in
+    the search region of the caller; and Sturm's theorem as a proposition over Mathlib's Sturm
+    sequence and sign variations, which Mathlib does not have. The executable model, on Lean core
+    and Std without Mathlib, mirrors the hardware-independent structure of the C code: the checks of
+    the input and the refusals, the squarefree test by the remainder chain of the Sturm step, the
+    reversal of the polynomial with the map of its points, the points at infinity and the exit at a
+    prime modulo which the curve has no points; the doubles of the search intervals as their IEEE
+    bits, with a model function for each operation that ratpoints applies to them, the exact bounds
+    of the numerators, the range of the denominators and the Sturm step, which narrows the search
+    intervals by bisection to those where the polynomial may be >= 0; the choice of the moduli and
+    of the cut points of the three stages of the sieve by the cost model of the C code, in Lean
+    core's Float with the log and pow of the C library of the platform; the tables of the primes, of
+    the prime powers and of the products of them, computed as the C code computes them, and their
+    rows, built by the builders of ratpoints and kept in its tables of rows; the 2-adic information
+    with the classes of the denominators modulo 64, the divisors of the leading coefficient for odd
+    degree, the forbidden divisors and the Jacobi test, and the loop over the denominators in its
+    four shapes and its order, in blocks, with the correction of the moduli between them; the sieve
+    of a denominator on bit arrays of 64-bit words in three stages, the first in chunks of 16 bit
+    arrays as the default build compiles it, with the numerators packed by the stride of their
+    class, the reductions by a multiplication with the reciprocal of the modulus, the extraction of
+    the set bits, the test for common factors on 64-bit longs and the exact check; the delivery of
+    the points to the callback of the caller with its stops, the options RATPOINTS_NO_CHECK and
+    RATPOINTS_NO_Y and the flags written back; the report of the library under RATPOINTS_VERBOSE;
+    and the command-line program ratpoints-lean, which reads its command line and prints the points
+    and the report as the program of ratpoints does. The compile-time constants of the C code are
+    definitions of the model, and no proof depends on their values beyond a few facts checked by
+    decide. The contracts of the components are proved with the program logic of Lean core. The main
+    theorems say that, for every value of the options of the sieve, whatever moduli the search
+    chooses, findPoints refuses exactly the inputs that ratpoints refuses and otherwise returns,
+    with the exact check on, exactly the points of height at most H in the search region (assuming
+    Sturm's theorem when the Sturm step is on), without duplicates, in the order of ratpoints; with
+    the statements under RATPOINTS_NO_CHECK, the protocol of the delivery and the two theorems of
+    the brute-force reference they are the eleven statements of comparator/challenges.json, which
+    lake comparator --paranoid accepted on 2026-10-27. Proved but not certified: what ratpoints-lean
+    prints, that the Sturm step keeps every point under Sturm's theorem, and that the blocks of the
+    run, sifted apart and delivered in their order, as the threads of ratpoints deliver them, give
+    what the run delivers. Every line of code of the C files is recorded, with the declarations that
+    model it or the reason for its exclusion, and CI checks the record against the C code at the
+    pinned commit; the differential tests compare ratpoints-lean with the C program, built on the
+    same machine (5397 comparisons in the default suites, 13 in the suite of the runs of test4.sh
+    above height 30000 and 92 in the suite of the searches in which ratpoints corrects its moduli,
+    none failed).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -378,37 +176,35 @@ automation:
       models: ["claude-opus-5-5"]
       framework: "Claude Code"
       tool_setup: >
-        Interactive agent sessions directed by the author, with the conventions of the author's
-        Lean projects (Mathlib's style and naming, short proofs) enforced: a per-commit
-        verification chain (a build without warnings with Mathlib's standard linters, a project
-        style lint, a layout check of the imports and of the restrictions on the model, the
-        correspondence check against the C code at the pinned commit, the blueprint's
-        declaration check, and a diff of the types of all declarations), with sub-agents for
-        research, for drafts of the Lean code of each item of a stage (written in a separate copy
-        and transplanted into the repository after review, through the verification chain), and
-        for the review of the C ranges and of the code; at the end of each stage the project is
-        also built with other values of the compile-time constants of the C code, to check that no
-        proof depends on them. The statements of comparator/challenges.json are certified with
-        Lake's lake comparator --paranoid (Lean v4.35.0 and later), which builds and exports the
-        project in a sandbox and checks the export with Lean's kernel and the five external
-        checkers bundled with Lean.
+        Interactive agent sessions directed by the author, with the conventions of the author's Lean
+        projects (Mathlib's style and naming, short proofs) enforced: a per-commit verification
+        chain (a build without warnings with Mathlib's standard linters, a project style lint, a
+        layout check of the imports and of the restrictions on the model, the correspondence check
+        against the C code at the pinned commit, the blueprint's declaration check, and a diff of
+        the types of all declarations), with sub-agents for research, for drafts of the Lean code
+        (written in a separate copy and transplanted into the repository after review, through the
+        verification chain), and for the review of the C ranges and of the code; the project is also
+        built with other values of the compile-time constants of the C code, to check that no proof
+        depends on them. The statements of comparator/challenges.json are certified with Lake's lake
+        comparator --paranoid (Lean v4.35.0 and later), which builds and exports the project in a
+        sandbox and checks the export with Lean's kernel and the five external checkers bundled with
+        Lean.
       cost:
         wall_time: ""
         spend_usd: "subscription-based usage"
         hardware: "API-only"
       prompting_notes: >
-        The design was fixed by the author on 2026-10-08, after two rounds of independent review,
-        on the basis of an analysis of the whole C library (its components one by one, the
-        specification, the history of the bugs, a survey of the Lean tooling, prototypes). Each
-        stage begins with a blueprint chapter (components, contracts, proposed names), drafted from
-        research and a prototype in a separate copy and reviewed by the author before the Lean code
-        of the stage enters the repository; for sub-stage F4 and stages G, H and I, at the author's
-        leave, the code was drafted and committed while he reviewed the chapter, and it is pushed
-        only after his review.
+        The design was fixed by the author after two rounds of independent review, on the basis of
+        an analysis of the whole C library (its components one by one, the specification, the
+        history of the bugs, a survey of the Lean tooling, prototypes). Each part of the model was
+        planned in a blueprint chapter (components, contracts, proposed names), drafted from
+        research and a prototype in a separate copy and reviewed by the author, and its code was
+        pushed only after his review. A review of the whole development at the end simplified the
+        proofs, and the blueprint describes the result.
   spend_usd: "subscription-based usage (no metered API spend)"
   notes: >
-    The C defects found while this project was planned were fixed first, in ratpoints 3.1.1, so
-    that the specification describes the fixed behaviour.
+    The model is that of ratpoints 3.1.1, which fixes the defects of the C code that the analysis
+    for this project found, so that the specification describes the fixed behaviour.
 
 # fidelity
 fidelity:
@@ -431,7 +227,7 @@ fidelity:
     rationals; the callback is a Lean function that takes the coordinates and the caller's data and
     returns its value, whether it stops the search, and the new data, for the C function with the
     pointers info and quit; and the theorems that read the points with the Sturm step on assume
-    Sturm's theorem, which Mathlib does not have yet (Ratpoints.SturmTheorem, a hypothesis, not an
+    Sturm's theorem, which Mathlib does not have (Ratpoints.SturmTheorem, a hypothesis, not an
     axiom). Where the library function find_points and the command-line program differ (the order of
     the checks on the input), the model follows the program. Each deviation is recorded with its
     component in the correspondence record.
@@ -441,9 +237,9 @@ review:
   status: "unchecked"
   reviewers: []
   notes: >
-    No review by others yet; the main theorems are certified by comparator (status.main_results).
-    Each stage chapter of the blueprint is reviewed by the author before its Lean code is
-    written.
+    No review by others; the main theorems are certified by comparator (status.main_results). The
+    author reviewed the plan of each part of the model, a blueprint chapter, before its code was
+    pushed.
 
 # alignment - how source statements map to formal declarations.
 alignment:
@@ -455,39 +251,25 @@ alignment:
       status: "formalized"
       note: >
         the specification (Ratpoints.binaryForm, Ratpoints.IsNormalizedPair, Ratpoints.IsPoint,
-        Ratpoints.points); the
-        brute-force reference Ratpoints.bruteForce lists exactly these points, each once
-        (Ratpoints.mem_bruteForce_iff, Ratpoints.nodup_bruteForce), certified by comparator
+        Ratpoints.points); the brute-force reference Ratpoints.bruteForce lists exactly these
+        points, each once (Ratpoints.mem_bruteForce_iff, Ratpoints.nodup_bruteForce), certified by
+        comparator
     - source: "find_points returns each such point exactly once"
       lean: "Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok"
       module: "Ratpoints.Proof.Output"
       status: "partially-formalized"
       note: >
-        for the sieve on the bit arrays of words of stage C2 with the set-up of stage D (the
-        refusals, the reversal, the exit), the side of the denominators of stage E (the 2-adic
-        information, the tests on the denominators, the loop over them in its four shapes), the
-        tables and the moduli of stage F1 (the table of a prime as the C code builds it, the loop of
-        the tables, prime powers and products of them as moduli), the stages of the sieve and the
-        check of stage F2 (the second and the third stage, the test for common factors on the longs
-        of the C code, the reductions by a reciprocal, the cut points of the stages), the packing of
-        the numerators of stage F3 (the classes with their strides, the rows of offsets, the
-        residues of a denominator divided by its stride, the bits of the heights, the row indices of
-        the first two stages with the test small) and the chunked first stage and the rows of stage
-        F4 (both arms of the first stage with the chunk of the default build, the rows built by the
-        builders of the C code and kept in the tables of rows of its entries) and the choice of the
-        moduli and the cut points by the curve and the blocks of the run with the correction of the
-        moduli between them of stage I, every value of the options of the sieve, whatever moduli the
-        search chooses, the array size of the pieces included, and every value of the options, the
-        delivery to the callback of stage G included, membership with RATPOINTS_NO_CHECK clear and y
-        >= 0 under RATPOINTS_NO_Y, since stage H for the points in the search region of the options,
+        for every value of the options of the sieve, whatever moduli the search chooses, and every
+        value of the options of the search: with RATPOINTS_NO_CHECK clear, the list holds exactly
+        the points in the search region of the options, those with y >= 0 under RATPOINTS_NO_Y,
         assuming Sturm's theorem when the Sturm step is on
-        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
-        certified by comparator, through the reference of the polynomial searched
-        (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the brute-force reference
-        filtered by RATPOINTS_NO_Y and the search region
+        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok), and for every option it has no duplicates
+        (Ratpoints.nodup_of_findPoints_eq_ok), both certified by comparator; the proofs go through
+        the reference of the polynomial searched (Ratpoints.exists_eq_of_findPoints_eq_ok) and the
+        permutation of the brute-force reference filtered by RATPOINTS_NO_Y and the search region
         (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok); the threads, which the model leaves
-        out, deliver the blocks in their order
-        (Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun, not certified by comparator)
+        out, sift the blocks apart and deliver them in their order, which gives what the run
+        delivers (Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun, not certified by comparator)
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree, search intervals that are not well formed"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.Output"
@@ -495,9 +277,9 @@ alignment:
       note: >
         for every value of the options of the sieve, with the Sturm step on, as in a run without
         options (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg), and without it, the
-        refusals of the C program under -s
-        (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg), both certified by comparator, and
-        since stage H both with the search intervals that are not well formed
+        refusals of the C program under -s (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg),
+        both with the search intervals that are not well formed among the refusals, and both
+        certified by comparator
     - source: "the order of the output"
       lean: "Ratpoints.eq_orderedPoints_of_findPoints_eq_ok"
       module: "Ratpoints.Proof.Output"
@@ -526,13 +308,13 @@ alignment:
       module: "Ratpoints.Proof.Output"
       status: "formalized"
       note: >
-        under RATPOINTS_NO_CHECK every element (x, y, z) of the list has y = 0 and a normalized
-        pair (x, z) of height at most H (Ratpoints.IsNormalizedPair) and lies in the search region
+        under RATPOINTS_NO_CHECK every element (x, y, z) of the list has y = 0 and a normalized pair
+        (x, z) of height at most H (Ratpoints.IsNormalizedPair) and lies in the search region
         (Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck), every point (x, y, z)
-        gives the element (x, 0, z)
-        (Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck), and the list of the search with
-        the exact check and RATPOINTS_NO_Y, with y replaced by 0, is a sublist of it
-        (Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck); all three certified by comparator
+        gives the element (x, 0, z) (Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck), and
+        the list of the search with the exact check and RATPOINTS_NO_Y, with y replaced by 0, is a
+        sublist of it (Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck); all three certified by
+        comparator
     - source: "what the command-line program prints"
       lean: "Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok"
       module: "Ratpoints.Proof.Cli"
@@ -561,10 +343,10 @@ alignment:
       module: "Ratpoints.Proof.SturmCoverage"
       status: "partially-formalized"
       note: >
-        assuming Sturm's theorem (Ratpoints.SturmTheorem, a hypothesis until Mathlib has it), the
-        intervals that the Sturm step leaves at a depth of at most 55, for a polynomial of degree
-        1 <= d < 2^57, hold every rational x with |x| <= 2^63 and F(x) >= 0 in the caller's
-        intervals (Ratpoints.Sturm.covers_computeSturm), which the search keeps
+        assuming Sturm's theorem (Ratpoints.SturmTheorem, a hypothesis, not an axiom), the intervals
+        that the Sturm step leaves at a depth of at most 55, for a polynomial of degree 1 <= d <
+        2^57, hold every rational x with |x| <= 2^63 and F(x) >= 0 in the caller's intervals
+        (Ratpoints.Sturm.covers_computeSturm), which the search keeps
         (Ratpoints.searchRegion_covers), so that with the exact check on the Sturm step changes only
         the speed (Ratpoints.findPoints_sturm_neg_eq_ok)
 

@@ -1,0 +1,409 @@
+% The moduli of the sieve: the table of a prime and the loop of the tables, prime powers and
+% products as moduli, the cost model in doubles, the choice of the moduli and of the cut points of
+% the stages, the blocks of the run and the correction of the moduli between them.
+\chapter{The choice of the moduli and the blocks}\label{chap:moduli}
+
+The sieve of one denominator (Chapter~\ref{chap:sieve}) removes a numerator when the row of one of
+its moduli does not admit it. This chapter says what the moduli are, how the search chooses them, as
+ratpoints does in \verb|sieving_info|, and how it runs over the denominators in blocks, between
+which it may correct its choice, as \verb|adapt_primes| does. A modulus is a prime of the table of
+ratpoints, a power of such a prime or a product of such powers; its rows come from tables computed
+from the curve (Chapter~\ref{chap:rows}). The search ranks the candidates by a model of what each
+costs and what it says, computed in doubles.
+
+None of this changes the points that the search finds or their order, whatever the values of the
+doubles: the theorems hold for every choice that the search makes (Section~\ref{sec:moduliOutput}).
+
+\section{The table of a prime and the loop of the tables}\label{sec:moduliPrimeTable}
+
+Write $f = \sum_{i \le d} c_i x^i$ and $F(x, z) = \sum_{i \le d} c_i x^i z^{D - i}$ with
+$D = d + (d \bmod 2)$ (Definition~\ref{def:binaryForm}). For a point $(a, y, b)$ with
+$\gcd(a, b) = 1$ and a prime $p \nmid b$, $F(a, b) \equiv b^D f(a b^{-1}) \bmod p$, and~$b^D$ is the
+square of a unit, so that $f(a b^{-1})$ is a square modulo~$p$, zero included; for $p \mid b$,
+$p \nmid a$. These two facts are all that the rows of a prime rest on.
+
+\begin{definition}[The table of a prime]\label{def:tableOfPrime}
+  \lean{Ratpoints.primeTable, Ratpoints.maxBitsInPrime, Ratpoints.numPrimes, Ratpoints.Sieve.Entry, Ratpoints.Sieve.examinePrime, Ratpoints.Sieve.Entry.admits}
+  \leanok
+  The primes of the sieve are the odd primes below~$1024$ in increasing order
+  (\csource{primes.h}{29}{40}), which \verb|decide| checks; ratpoints chooses its moduli among the
+  $\mathrm{numPrimes}$ of them below $2^{\mathrm{maxBitsInPrime}}$, the~$53$ primes up to~$251$ for
+  the~$8$ bits of the default build, whose Makefile passes \verb|PRIME_SIZE| $= 8$ in place of the
+  header's own default~$7$ (\csource{rp-private.h}{321}{323}, \csource{rp-private.h}{325}{361}).
+  The table of a prime~$p$ has $p + 1$ entries: entry $x < p$ says whether $f(x)$ is a square
+  modulo~$p$, and entry~$p$ whether there are points at infinity modulo~$p$, that is, whether~$d$
+  is odd or~$c_d$ is a square modulo~$p$; it is kept with~$p$ and the inverses modulo~$p$
+  (\csource{rp-private.h}{542}{555}). The row of the denominator~$b$ admits the numerator~$a$ when,
+  for $r = b \bmod p$ and $x = a \bmod p$, the entry at $x r^{-1} \bmod p$ is true if $r \ne 0$,
+  and $x \ne 0$ if $r = 0$. This admission test is what the bit of~$a$ in the row of~$r$ says in
+  ratpoints.
+\end{definition}
+
+ratpoints computes this table in \verb|examine_prime|, by Horner's rule with Barrett's reduction;
+that it is the table of Definition~\ref{def:tableOfPrime} is shown in Chapter~\ref{chap:rows}.
+
+\begin{definition}[The loop of the tables]\label{def:tablesLoop}
+  \uses{def:tableOfPrime, def:sieveEntry, def:costModel, def:IsPoint, def:Options, def:bitArrays, def:forbidden, def:reciprocal, def:rowStore, def:runTables, lem:exitByPrime, lem:hornerBarrett, lem:primeRows}
+  \lean{Ratpoints.TableLoop, Ratpoints.examineInLoop, Ratpoints.raiseLimit, Ratpoints.tablesLoop, Ratpoints.TableLoop.WF, Ratpoints.tablesLoop_spec}
+  \leanok
+  The loop of \verb|sieving_info| over the primes of the table while fewer than the number to look
+  at, the normalized value of \verb|-p|, have been looked at (\csource{find_points.c}{2601}{2605}).
+  The examination of a prime (\csource{find_points.c}{2606}{2626}) gives its table, the coefficients
+  modulo~$p$, its density (the share of the numerators that its rows let through) and a code: $-1$,
+  the exit, when the curve has no points modulo~$p$ (Chapter~\ref{chap:setup}); $0$ when the prime
+  says nothing; $2$ when it says only that numerator and denominator are coprime; $1$ otherwise. A
+  prime that says something becomes a candidate with its key for the first stage, and its table of
+  rows goes into the store; while fewer than their bound have been found, the coefficients
+  modulo~$p$ give the forbidden divisor of~$p$ (Chapter~\ref{chap:denominators}). When the caller
+  left the number of primes to the library, the loop looks at one more prime, at most
+  $\mathrm{numPrimes}$ in all, while the first two stages would be short of candidates that say
+  more than coprimality (\csource{find_points.c}{2694}{2705}).
+
+  The contract: for options that look at no more than $\mathrm{numPrimes}$ primes, an exit means
+  that the curve has no points of any height; otherwise at most $\mathrm{numPrimes}$ primes are to
+  be looked at, each table that the loop keeps, that of a prime that says something, is that of
+  Definition~\ref{def:tableOfPrime} for one of the first $\mathrm{numPrimes}$ primes, every
+  candidate is a prime of the table with the sieve entry of its table, the forbidden divisors are
+  sound, and the store holds the tables of rows of the primes.
+\end{definition}
+
+\section{Prime powers and products}\label{sec:moduliComposite}
+
+ratpoints also sieves with odd composite moduli from~$9$ up to $\mathrm{compositeMax} = 64$,
+products of at most three powers of primes looked at. The tables of a power $q = p^e$ of a prime,
+which \verb|examine_power| computes (Chapter~\ref{chap:rows}), test the numerator against~$f$ when
+$p \nmid b$, and the denominator against the reversed polynomial
+$\tilde f(t) = \sum_k c_k t^{D - k}$ when $p \mid b$, since then $p \nmid a$ and
+$F(a, b) \equiv a^D \tilde f(b a^{-1}) \bmod q$. No Chinese remainder theorem is needed for a
+product: its entry only intersects the conditions of its factors, and each factor needs only that
+its modulus divides the product.
+
+\begin{definition}[The sieve entry of a modulus]\label{def:sieveEntry}
+  \uses{def:tableOfPrime, def:bitArrays, def:reciprocal, def:rowStore}
+  \lean{Ratpoints.Sieve.Power, Ratpoints.Sieve.Power.admits, Ratpoints.Sieve.bitAt, Ratpoints.Sieve.Factor, Ratpoints.Sieve.SieveEntry, Ratpoints.Sieve.SieveEntry.admits, Ratpoints.Sieve.survives, Ratpoints.primeEntry}
+  \leanok
+  The tables of a prime power $q = p^e$ are the bit arrays \verb|fsq|, bit $x < q$ set when $f(x)$
+  is a square modulo~$q$, and \verb|gsq|, bit~$t$ set when $p \mid t$ and $\tilde f(t)$ is a square
+  modulo~$q$, with the inverses of the units (\csource{rp-private.h}{531}{534}). Its row of~$b$
+  admits~$a$, for $r = b \bmod q$ and $x = a \bmod q$, when bit $x r^{-1}$ of \verb|fsq| is set if
+  $p \nmid r$, and when $p \nmid x$ and bit $r x^{-1}$ of \verb|gsq| is set if $p \mid r$. A
+  factor is a prime with its table or a prime power with its tables. The sieve entry of a
+  modulus~$m$ holds its factors, the reciprocal of~$m$, with which the sieve reduces, the fields of
+  the packing (Chapter~\ref{chap:sieve}), the reference to its table of rows and the kind of its
+  builder (Chapter~\ref{chap:rows}), its density, and the count of its factors, $0$ for a prime,
+  $1$ for a prime power and their number for a product (\csource{rp-private.h}{542}{555}). Its row
+  of~$b$ admits~$a$ when the row of every factor admits $a \bmod m$ at $b \bmod m$; a numerator
+  survives a list of entries for~$b$ when the row of~$b$ of every entry admits it, the interface
+  between the sieve and the check.
+\end{definition}
+
+The composite moduli that the choice offers (\lname{Ratpoints.addModuli}) are the odd~$m$ from~$9$
+up to $\mathrm{compositeMax} = 64$ and below $2^{\mathrm{maxBitsInPrime}}$ whose table the run can
+pay for and that factor into at most three powers of primes looked at, each among the first~$64$
+primes of the table and each saying something (\csource{find_points.c}{2346}{2349}); the entry of
+one that the choice takes is made from the codes of its factors (\lname{Ratpoints.makeModulus}),
+with the inverse of $\mathrm{rbaLength}$ modulo~$m$ by the extended Euclidean algorithm
+(\csource{find_points.c}{2414}{2426}, \csource{find_points.c}{2434}{2470}).
+
+\begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_sound}
+  \uses{def:tableOfPrime, def:sieveEntry, def:binaryForm, def:bitArrays, def:reciprocal, def:rowStore, lem:modinv}
+  \lean{Ratpoints.Sieve.admits_examinePrime_of_sq_eq, Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm, Ratpoints.Sieve.admits_run_examinePower_of_sq_eq, Ratpoints.Sieve.SieveEntry.IsSound, Ratpoints.Sieve.Factor.IsSound, Ratpoints.Sieve.isSound_prime_examinePrime, Ratpoints.Sieve.isSound_power_run_examinePower, Ratpoints.IsModulusEntry, Ratpoints.isModulusEntry_of_forall_isSound, Ratpoints.IsModulusEntry.isSound}
+  \leanok
+  Let~$b$ be a natural number and~$a$, $y$ integers with $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
+  \begin{enumerate}
+    \item For a prime~$p$, the row of~$b$ in the table of~$p$ admits~$a$.
+    \item For a prime~$p$ and $e \ge 1$ with~$p^e$ within the words of the bit arrays, the row
+      of~$b$ in the tables of~$p^e$ admits~$a$.
+    \item A factor is sound for~$m$ when its row of $b \bmod m$ admits $a \bmod m$ for every such
+      $(a, y, b)$, its inverses serve the scaling of the rows by a unit modulo~$m$, its builder has
+      what it needs, and its tables are those of Definition~\ref{def:tableOfPrime} or of
+      \verb|examine_power|. A prime of the sieve that divides~$m$ is a sound factor for~$m$, and so
+      is a power $p^e \mid m$ of one, for $e \ge 1$ and $0 < m < 2^{\mathrm{maxBitsInPrime}}$.
+    \item A sieve entry is sound when its modulus is positive and its row of~$b$ admits~$a$ for
+      every such $(a, y, b)$. An entry of an odd modulus $1 < m < 2^{\mathrm{maxBitsInPrime}}$
+      with sound factors whose moduli multiply to~$m$, the reciprocal and the bias of~$m$ and an
+      inverse $x < m$ of $\mathrm{rbaLength}$ modulo~$m$ is an entry of~$m$ as the choice makes it
+      ($\mathrm{IsModulusEntry}$), whatever its density, count, reference and builder; such an
+      entry is sound.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{def:tableOfPrime, def:sieveEntry, lem:productRows}
+  \leanok
+  The entry of the table of~$p$ at $t < p$ is true whenever $f(t)$ is a square modulo~$p$. For
+  $p \nmid b$, $b$ is a unit modulo~$p^e$, and in any commutative ring $F(k b, b) = b^D f(k)$, with
+  $b^D$ the square of the unit~$b^{D/2}$; so $f(a b^{-1})$ is a square. For $p \mid b$,
+  $p \nmid a$, which is all that the table of~$p$ asks; modulo~$p^e$,
+  $F(a, b) = a^D \tilde f(b a^{-1})$, by the same identity with~$a$ and~$b$ exchanged. Zero counts
+  as a square, so a high power of~$p$ dividing $F(a, b)$ needs no case of its own. A factor whose
+  modulus divides~$m$ reads $b \bmod m$ and $a \bmod m$ as it reads~$b$ and~$a$, and an entry
+  admits~$a$ when every factor does.
+\end{proof}
+
+\section{The cost model}\label{sec:moduliCosts}
+
+ratpoints ranks the candidate moduli by what each costs per word of numerators swept, divided by
+what it says: a modulus of density~$r$ says $-\log r$.
+
+\begin{definition}[The cost model]\label{def:costModel}
+  \uses{def:sieveEntry, def:Double, def:bitArrays, def:packing}
+  \lean{Ratpoints.ModulusCandidate, Ratpoints.primeCost, Ratpoints.primeKey, Ratpoints.phase1Key, Ratpoints.phase1Wants, Ratpoints.phase2Offset, Ratpoints.checkCost, Ratpoints.runShape}
+  \leanok
+  A candidate modulus carries its density, key and cost, its mask of primes, its sieve entry and
+  the codes of its factors (\csource{find_points.c}{147}{149}). Its cost per word swept, in units of
+  an \verb|and| of the first stage, is a part for every word, the cost of its entry in the list of
+  the moduli of a denominator and, in the first two stages, the costs of its set-up and, for a
+  positive cost of a row, of its table of rows, spread over the~$U$ words and the~$V$ denominators
+  of the run (\csource{find_points.c}{1220}{1235}); its key is that cost over $-\log r$
+  (\csource{find_points.c}{1241}{1247}), with a variant for the first stage
+  (\csource{find_points.c}{1256}{1270}). The rule of the first stage always takes the first
+  candidate and then the next while the survivors per word that it removes, weighted by what a
+  surviving word costs further on, exceed a target times its cost
+  (\csource{find_points.c}{1583}{1589}); the second stage adds as many moduli as an offset, $11$ by
+  default, scaled by $1/(1 + u_0/U)$ (\csource{find_points.c}{1619}{1626}). The run is estimated
+  from~$64$ samples of each segment of the loop over the denominators
+  (\csource{find_points.c}{1939}{1944}), and the cost of an exact check from the bit lengths of the
+  coefficients and of~$H$ (\csource{find_points.c}{1285}{1318}). Every expression is computed in
+  \verb|Float|, in the order of the operations of the C code; there is no contract.
+\end{definition}
+
+\begin{remark}[Why no proof reads a double]\label{rem:moduliFloats}
+  The doubles are values of Lean core's \verb|Float|, IEEE~754 binary64 with the arithmetic of the
+  platform, as the C code, compiled without fused multiply-adds and without \verb|-ffast-math|,
+  computes them; \verb|log| and \verb|pow| are the functions of the platform's C library. No
+  contract of the choice, the blocks or the correction reads the value of a \verb|Float|: each
+  states only what the natural numbers of the C code do, the cut points staying within the pool and
+  the entries from the end of the second stage on counting no factor, which holds whatever the
+  doubles are, NaN included. So the theorems hold for every choice that the cost model may make, and
+  nothing is proved about the quality of the choice. Since glibc's \verb|log| and \verb|pow| are
+  not correctly rounded and glibc chooses their variant by the processor, the choice of ratpoints
+  depends on the machine; the model calls the same routines of the same library (on glibc an older
+  symbol version of them, with the same values on every argument that occurs here), and the
+  differential tests compare the choices of the two programs on one machine
+  (Chapter~\ref{chap:ccode}).
+\end{remark}
+
+\section{The choice of the moduli and of the cut points}\label{sec:moduliChoice}
+
+In \verb|sieving_info| (\csource{find_points.c}{2522}{3103}) the first stage takes candidates in
+the order of their keys, and so does the second, after the rest is keyed again by the cost of a word
+that survives the first; each drops every candidate that shares a prime with one taken, so that the
+moduli of the first two stages are pairwise coprime. The third stage takes the prime of least
+density left while each pays for itself; the primes left after it are the reserve of the correction
+(Section~\ref{sec:moduliCorrection}).
+
+\begin{definition}[The choice of the moduli]\label{def:choiceOfModuli}
+  \uses{def:Options, def:tablesLoop, def:sieveEntry, def:costModel, def:rowStore, def:forbidden, def:runTables, lem:hornerBarrett}
+  \lean{Ratpoints.Params, Ratpoints.SievingInfo, Ratpoints.SieveOptions.tuning, Ratpoints.addModuli, Ratpoints.makeModulus, Ratpoints.takeEntries, Ratpoints.firstStages, Ratpoints.thirdStage, Ratpoints.choiceEnd, Ratpoints.choiceTail, Ratpoints.sievingInfo}
+  \leanok
+  The choice for the curve, with the options of the sieve as the search normalizes them
+  (Definition~\ref{def:Options}), takes these steps:
+  \begin{enumerate}
+    \item the tuning, from \verb|-r|, \verb|-R|, \verb|-U| and \verb|-C| or the defaults
+      (\csource{find_points.c}{2569}{2575});
+    \item the first estimate, the loop of the tables with its exit, which returns the prime, and
+      the further forbidden divisors (\csource{find_points.c}{2522}{2532});
+    \item the estimate and the keys again, the composite moduli with their entries (\verb|add_moduli|,
+      Section~\ref{sec:moduliComposite}) and the sort
+      (\csource{find_points.c}{2808}{2812}, \csource{find_points.c}{2816}{2823},
+      \csource{find_points.c}{2826}{2826});
+    \item the first stage, the value of \verb|-n| or as many as its rule wants, and the second, the
+      value of \verb|-N| or the offset, each taking candidates in their order
+      (\csource{find_points.c}{2490}{2508}, \csource{find_points.c}{2843}{2846},
+      \csource{find_points.c}{2864}{2871});
+    \item the third stage, up to the value of \verb|-P| more or while each prime pays for itself,
+      looking at further primes, with the exit, when no prime left pays
+      (\csource{find_points.c}{2973}{2975}, \csource{find_points.c}{3009}{3016});
+    \item the end: the third stage and the reserve sorted by density from~$s_2$ on, the entries of
+      all the candidates, their reciprocals and the store with the tables of rows of every entry
+      (\csource{find_points.c}{3024}{3034}).
+  \end{enumerate}
+  The result holds the cut points $s_1 \le s_2 \le s_3$, the ends of the three stages, the number of
+  primes looked at and the estimates of the run (\csource{ratpoints.h}{395}{397}), with the sieve
+  entries of all the moduli, the reserve included, their reciprocals, the forbidden divisors, the
+  store of the tables of rows and the switch of the checked loop.
+\end{definition}
+
+\begin{lemma}[The choice is what the run needs]\label{lem:choiceOfModuli}
+  \uses{def:Options, def:choiceOfModuli, def:tablesLoop, lem:sieveEntry_sound, lem:runRows, def:IsPoint, def:blocks}
+  \lean{Ratpoints.IsSievingInfo, Ratpoints.Sieve.EntriesWF, Ratpoints.Sieve.DecisionWF, Ratpoints.IsChoiceEntry, Ratpoints.addModuli_spec, Ratpoints.makeModulus_spec, Ratpoints.ChoicePoolWF, Ratpoints.firstStages_spec, Ratpoints.thirdStage_spec, Ratpoints.sievingInfo_spec}
+  \leanok
+  For options that look at no more than $\mathrm{numPrimes}$ primes, the checked loop only for even
+  degree, and any values of the doubles: an exit of the choice means that the curve has no points
+  of any height; otherwise the result is what the run needs:
+  \begin{enumerate}
+    \item every sieve entry is sound (Lemma~\ref{lem:sieveEntry_sound}), with the tables of
+      inverses of its factors and the fields that the packing reads;
+    \item every entry that counts no factor has a single factor, a table of its modulus
+      $1 < p \le 2^{32}$ whose table of inverses gives every nonzero residue below~$p$ a nonzero
+      residue below~$p$, and the reciprocal of~$p$: the shape that the third stage of the sieve
+      needs;
+    \item the reciprocals are those of the moduli of the entries, in their order, and the store
+      fits all the entries, the reserve included;
+    \item the first decision, the ends~$s_2$ and~$s_3$ from block~$0$ on, is well formed:
+      $s_1 \le s_2 \le s_3 \le$ the number of the entries, and every entry from~$s_2$ on counts no
+      factor;
+    \item the forbidden divisors are sound (Chapter~\ref{chap:denominators}), and the checked loop
+      is on only for even degree.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:sieveEntry_sound, def:tablesLoop, lem:runRows, def:forbidden, lem:candidate, lem:exitByPrime, lem:hornerBarrett}
+  \leanok
+  The loop of the tables gives the state of Definition~\ref{def:tablesLoop}. The loops of
+  \verb|add_moduli| keep a pool ($\mathrm{ChoicePoolWF}$) of primes with their entries and of
+  composites whose codes name tables that the choice holds and whose factors multiply to the
+  modulus, so that the entry made from such codes at a position is an entry of its modulus, with
+  the reference and the builder of the position ($\mathrm{IsChoiceEntry}$,
+  Lemma~\ref{lem:sieveEntry_sound}). The stages keep every property of the candidates that does
+  not read their key and cost and leave the cut points within the pool; the third stage exits only
+  at a prime modulo which the curve has no points. The doubles enter only through values that no
+  conjunct reads.
+\end{proof}
+
+So the result of the choice needs no well-formedness of its own. The search normalizes the options
+of the sieve before the choice (\lname{Ratpoints.SieveOptions.normalize}), which bounds the number
+of primes looked at by $\mathrm{numPrimes}$, so that the theorems need no hypothesis on the options.
+
+\section{The blocks of the run}\label{sec:moduliBlocks}
+
+The run cuts the steps of the loop of the shape (Chapter~\ref{chap:denominators}) into about~$1024$
+blocks of consecutive steps and sifts each block with the moduli of the decision of the correction
+in force for it; the model sifts the blocks in turn, as ratpoints does without threads. No proof
+depends on the values of the constants of the blocks and of the correction but for the positivity
+of a block length that the build fixes (\lname{Ratpoints.blockLen\_pos}).
+
+\begin{definition}[The blocks of the run]\label{def:blocks}
+  \uses{def:Shape, def:sift, def:deliver, def:callback, def:counters}
+  \lean{Ratpoints.Sieve.Shape.segments, Ratpoints.Sieve.BlockPlan, Ratpoints.Sieve.blockLength, Ratpoints.Sieve.Shape.blockPlan, Ratpoints.Sieve.BlockPlan.steps, Ratpoints.Sieve.Shape.blockLoop, Ratpoints.Sieve.Decision, Ratpoints.Sieve.Decision.InForce, Ratpoints.Sieve.findDecision, Ratpoints.Sieve.runBlock}
+  \leanok
+  The steps of a shape form segments (\csource{find_points.c}{3812}{3837}): the~$k$ of the squares
+  $k^2$, for each divisor~$s$ of the divisor shape the~$k$ of $s k^2$, both within
+  $[b_{\mathrm{low}}, b_{\mathrm{high}}]$, or the words of~$64$ denominators, or the denominators.
+  The blocks have length
+  $\lfloor \mathrm{steps}/1024 \rfloor + 1$, at least~$16$, or the length that the build fixes
+  (\csource{find_points.c}{3838}{3842}), and cut each segment into consecutive pieces
+  (\csource{find_points.c}{3843}{3850}). A decision of the correction is the first block that it is
+  for, with the ends~$s_2$ and~$s_3$ from that block on; the decision in force for block~$i$ is the
+  last whose first block is at most~$i$ (\csource{find_points.c}{3908}{3910}). Block~$i$
+  (\csource{find_points.c}{3889}{3898}) hands each denominator of its steps that passes the tests
+  of the shape to the sieve of one denominator, with the sieve entries cut by the decision in force
+  into the first two stages, the first ending at~$s_1$, and the third; it returns when the callback
+  stops the search, and reports its counters with its decision.
+\end{definition}
+
+\begin{lemma}[A block delivers the points of its denominators]\label{lem:blocks}
+  \uses{def:blocks, lem:choiceOfModuli, lem:runRows, def:deliver, def:callback, def:checkNumWith, def:exactBounds, def:counters}
+  \lean{Ratpoints.Sieve.BlockPlan.WF, Ratpoints.Sieve.Shape.blockPlan_spec, Ratpoints.Sieve.Shape.flatMap_blockDens, Ratpoints.Sieve.findDecision_spec, Ratpoints.Sieve.runBlock_spec}
+  \leanok
+  The plan of the blocks is well formed, with blocks of at least one step, and the denominators of
+  the blocks, concatenated in order, are those of the shape from $b_{\mathrm{low}}$ to
+  $b_{\mathrm{high}}$ in the order of its loop. When the first decision is for block~$0$, the
+  decision found for block~$i$ is the one in force. Let the callback not have stopped the search,
+  the pieces have at least one bit array, the sieve entries be fit for the run (of the shape that
+  the third stage needs where they count no factor, with the tables of inverses of their factors,
+  their reciprocals in order and the row offsets of the classes; soundness is not needed here), the
+  word of the classes have bit~$j$ set exactly when class~$j$ admits a numerator, the decision in
+  force be well formed, the forbidden divisors be as the shape of the words needs them, $i$ be below
+  the number of the blocks, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$,
+  and the store fit all the entries. Then block~$i$ keeps the store so and delivers, in order, over
+  the denominators of its steps that pass the tests of the shape, the points that the exact check
+  finds among the numerators that survive the first~$s_3$ entries of its decision, for every choice
+  of the words of the classes and the ranges of the numerators that the packing and the bounds
+  give; and when the callback has not stopped the search within it, its report is a closed form in
+  the arguments of the run, which reads neither the callback nor the flags of the output.
+\end{lemma}
+
+\begin{proof}
+  \uses{def:blocks, def:sift, lem:runRows, lem:deliverList, lem:shapes}
+  \leanok
+  The plan is arithmetic of the quotients by the length, which is positive. The loop of each shape,
+  for a step with a contract on each denominator, delivers the concatenation of their lists in
+  order; a stop of the callback ends it with the delivery of a prefix, which is that of the whole
+  list (Lemma~\ref{lem:deliverList}). The step is the sieve of one denominator
+  (Definition~\ref{def:sift}) with the entries $E_{:s_2}$ and $(E_{s_2:})_{:s_3 - s_2}$, which
+  concatenate to~$E_{:s_3}$. Building rows never removes one, so that the store keeps fitting the
+  entries.
+\end{proof}
+
+\section{The correction of the moduli}\label{sec:moduliCorrection}
+
+The sieving thread counts, for each block, the words that the first stage sweeps, the bit arrays
+that survive it, the numerators extracted, those prime to the denominator, those that pass the
+third stage and the calls of the sieve, all before the exact check, so that the counts depend
+neither on the flags of the output nor, in a block in which the callback does not stop the search,
+on the callback. From the rates that the run has shown, \verb|adapt_primes| fits the survivors per
+word as a linear function of the product of the densities; with \verb|-A 2| or more (not by
+default) it walks the end~$s_2$ of the second stage up through the entries beyond it, or down,
+above~$s_1$ and not past a composite modulus; and without \verb|-P| it computes the end~$s_3$ of
+the third stage again from the new~$s_2$. A decision made at the fold of block~$j$ is for the
+blocks from $j + \mathrm{adaptLag} + 1$ on, with the lag $\mathrm{adaptLag} = 32$ of
+\verb|RP_ADAPT_LAG| (\csource{find_points.c}{1379}{1381}).
+
+\begin{definition}[The correction of the moduli]\label{def:correction}
+  \uses{def:Options, def:blocks, def:choiceOfModuli, def:costModel, def:callback}
+  \lean{Ratpoints.Sieve.RunCounts, Ratpoints.Sieve.adaptPrimes, Ratpoints.Sieve.Correction, Ratpoints.Sieve.runFold, Ratpoints.Sieve.sieveRun, Ratpoints.adaptLag}
+  \leanok
+  The counters of the run, the sums of the counters of the blocks folded
+  (Definition~\ref{def:counters}), those from the extracted numerators on restarted when a block sifted with another~$s_2$ is folded
+  (\csource{find_points.c}{1363}{1367}). The correction (\csource{find_points.c}{1383}{1388}), when
+  the run has swept enough words, sets the next one at twice the words swept and computes the
+  rates, the walk of~$s_2$ under \verb|-A 2| or more and the end of the third stage, every double
+  in the order of the C code.
+  The fold of block~$j$ (\csource{find_points.c}{4114}{4127}) adds its counters to the state of the
+  correction and appends a decision for the blocks from $j + \mathrm{adaptLag} + 1$ on when the
+  correction changes an end. The run starts from the decision of the choice for
+  block~$0$, sifts each block with the decisions made before it and folds its report, returns after
+  the block in which the callback stopped the search, and gives the ends~$s_2$ and~$s_3$ of the
+  last block folded, the moduli used (\csource{find_points.c}{5152}{5160}).
+\end{definition}
+
+\begin{lemma}[The correction keeps the decisions well formed]\label{lem:correction}
+  \uses{def:correction, lem:choiceOfModuli, lem:blocks}
+  \lean{Ratpoints.Sieve.Correction.WF, Ratpoints.Sieve.adaptPrimes_spec, Ratpoints.Sieve.runFold_spec, Ratpoints.Sieve.runFold_decisions_spec, Ratpoints.Sieve.correctionAfter, Ratpoints.Sieve.blockDecision, Ratpoints.Sieve.wf_correctionAfter}
+  \leanok
+  For any values of the doubles: when the latest decision and the decision with $s_3 = s_2$ for the
+  end~$s_2$ under which the counters of the run were counted are well formed, so is the decision
+  that the correction makes. A state of the correction is well formed when its first decision is for
+  block~$0$ and its decisions, the latest one and the one for the end of the counters are well
+  formed; the fold of a block whose decision is one of the state keeps it so, adds one block folded
+  and appends decisions only for the blocks from $\mathrm{folded} + \mathrm{adaptLag} + 1$ on. The
+  state after the folds of the first~$k$ blocks, each with its report in closed form
+  (Lemma~\ref{lem:blocks}), and the decision of each block are functions of the arguments of the
+  run that read neither the callback nor the flags of the output, well formed when the decision of
+  the choice is.
+\end{lemma}
+
+\begin{proof}
+  \uses{def:correction, def:exactBounds}
+  \leanok
+  The walk up ends at most at the number of the entries and passes only entries from the old~$s_2$
+  on; the walk down ends at least at~$s_1$ and passes only entries that count no factor; the third
+  stage ends between the new~$s_2$ and the number of the entries. The contracts of these loops
+  state only what the natural numbers do, also where the walks compare costs that may be NaN. The
+  closed form follows by induction on the number of folds.
+\end{proof}
+
+\section{Why the choice does not change the output}\label{sec:moduliOutput}
+
+By the block lemma (Theorem~\ref{thm:blocks}) and Lemma~\ref{lem:correction}, the run delivers,
+over each denominator~$b$, the points that the exact check finds among the numerators that survive
+the first $s_3(b)$ entries, with $s_3(b)$ independent of the callback and the flags
+(\lname{Ratpoints.Sieve.exists\_run\_sieveRun\_eq\_deliver}); every entry is sound
+(Lemma~\ref{lem:choiceOfModuli}), so every point survives, whatever the choice and the corrections.
+The choice changes only which candidates reach the exact check, and so the output under
+\verb|RATPOINTS_NO_CHECK|, the numbers of the moduli used and the report under \verb|-v|
+(Chapter~\ref{chap:output}). The statement under \verb|RATPOINTS_NO_CHECK| that compares its output
+with that of the exact check (Theorem~\ref{thm:noCheck}) compares two searches with the same
+options of the sieve and the same region, which differ only in the flags of the output (the second
+has the exact check on and \verb|NO_Y| set); neither the choice nor the decisions read these flags
+or the callback.
+
+With threads (\verb|-t|) ratpoints sifts the blocks apart in a pool, which the model leaves out
+(Chapter~\ref{chap:ccode}). The lag and thread lemmas (Theorems~\ref{thm:lag}
+and~\ref{thm:threads}) prove that blocks sifted apart, block~$i$ once the blocks before block
+$i - \mathrm{adaptLag}$ are folded and each with a store of its own, and delivered in their order
+give what the run delivers; that the pool of the C code works so is read off the C code, not
+proved.

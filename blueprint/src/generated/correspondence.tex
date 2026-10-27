@@ -3,11 +3,11 @@
 
 \chapter{The correspondence with the C code}\label{chap:correspondence}
 
-The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). The C files below are those of the library and \texttt{main.c}, whose parts that the command-line program does not mirror are to be excluded. Every line of code of them lies in at most one recorded range: a range is either modelled by the Lean declarations named, or excluded from the model with a reason. Each recorded range is checked against the text it had when it was reviewed.
+The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). The C files below are those of the library and \texttt{main.c}, whose parts that the command-line program does not mirror are excluded. Every line of code of them lies in exactly one recorded range: a range is either modelled by the Lean declarations named, or excluded from the model with a reason. Each recorded range is checked against the text it had when it was reviewed.
 
 \begin{center}
 \begin{tabular}{lrrrr}
-file & lines of code & modelled & excluded & not yet recorded \\
+file & lines of code & modelled & excluded & not recorded \\
 \hline
 \texttt{find\_points.c} & 3244 & 2589 & 655 & 0 \\
 \texttt{sift.c} & 820 & 660 & 160 & 0 \\

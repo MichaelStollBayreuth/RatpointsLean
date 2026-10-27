@@ -1,104 +1,14 @@
-\chapter*{About this blueprint}
-\addcontentsline{toc}{chapter}{About this blueprint}
-
-ratpoints is a C program that finds the rational points of bounded height on curves
-$y^2 = F(x, z)$, where $F$ is a binary form of even degree with integer coefficients, by sieving.
-This blueprint describes a Lean~4 development that verifies it in four parts:
-\begin{enumerate}
-  \item a \emph{specification}, short enough to read in full: the binary form of the polynomial,
-    the predicate ``is a normalized point of height at most $H$'', the list of these points in the
-    order in which ratpoints finds them, and the search region that the caller may give, its
-    intervals bounded by the values of doubles;
-  \item an \emph{executable model} of ratpoints in Lean, which mirrors the hardware-independent
-    structure of the C code function by function: the same loops, tables, bit arrays of 64-bit
-    words and index arithmetic; it uses only Lean core and \verb|Std|, not Mathlib, so that the
-    executable and the differential tests do not depend on the proofs;
-  \item \emph{proofs} that the model meets the specification, for every value of the options of
-    the sieve, from which the search takes its sieving parameters;
-  \item the \emph{link to the C code}: a record of which Lean definition models which lines of C,
-    and differential tests that run the model and the C program on the same inputs.
-\end{enumerate}
-Lean has no semantics of C, so the last part is a record and a test, not a proof. What one has to
-read and trust is the specification, with the reference of the delivery of the model, a fold of a
-few lines, of which the protocol of the callback speaks (Theorem~\ref{thm:protocol}), the fact that
-the executable runs the model, and, until Mathlib has Sturm's theorem, the statement of it that the
-theorems about the Sturm step assume.
-The main theorems are certified by \href{https://github.com/leanprover/comparator}{Comparator},
-which checks the proofs of the library against statements written down separately, over a
-verbatim copy of the specification, with the standard axioms only
-(Section~\ref{sec:comparator-ab}).
-
-The C code is that of one release of ratpoints, at present 3.1.1, which fixed the defects found
-while this project was planned, so that the specification describes the fixed behaviour. The
-project moves to each new release, and a new optimization of the C code comes, as far as
-possible, with its soundness proof here.
-
-\emph{How to read the nodes.} A definition node of the specification states what it defines. A
-node of the model describes one component (a C function, a loop, or a small group of helpers): it
-names the Lean definition and its contract with \verb|\lean|, says in words what the contract
-promises, and links to the C code it models at the commit of ratpoints that the project pins.
-Each component with a loop is one definition with its contract, a separate \verb|@[spec]| theorem
-proved with the program logic of Lean core; the other components are specified by ordinary
-lemmas. The appendix records, for every line of code of the C files, the Lean
-declarations that model it or the reason why the model leaves it out.
-
-\emph{Stages.} The work proceeds in stages, each of which begins with a chapter of this blueprint
-that lists the components of the stage with their contracts and proposed names:
-\begin{itemize}
-  \item[A] the set-up: the repository, the libraries, the CI, the correspondence record and the
-    comparator harness; and the specification, settled before any Lean code
-    (Chapter~\ref{chap:spec});
-  \item[B] the specification in Lean, a brute-force reference proved to compute it, and the
-    command-line program (Chapter~\ref{chap:spec});
-  \item[C1] the plain sieve in the skeleton of the C code, with the theorem that the output is
-    exactly the set of points, without duplicates (Chapter~\ref{chap:sieve});
-  \item[C2] the bit arrays of 64-bit words of the C code, a data refinement under which the
-    theorems keep their statements (Chapter~\ref{chap:words});
-  \item[D] the set-up: the degree, the squarefree test and the refusals, the reversal, the exit when
-    there are no points modulo a prime, and the points at infinity (Chapter~\ref{chap:setup});
-  \item[E] the 2-adic information and the side of the denominators: the classes modulo $64$, the
-    divisors of the leading coefficient, the forbidden divisors and the Jacobi test, and the loop
-    over the denominators in the order of the C program (Chapter~\ref{chap:denominators});
-  \item[F1] the tables and the moduli: the table of a prime as the C code builds it, handing back
-    its data to the forbidden divisors in the loop of the tables, and prime powers and products of
-    them as moduli (Chapter~\ref{chap:tables});
-  \item[F2] the stages of the sieve and the check: the second and third stages, the test for
-    common factors, the caches of the check, the reductions by a multiplication with the reciprocal
-    of a modulus, and the cut points of the command line (Chapter~\ref{chap:stages});
-  \item[F3] the packing of the numerators of a class of the denominators by its stride, with the
-    reductions by a reciprocal on $64$-bit words (Chapter~\ref{chap:packing});
-  \item[F4] the first stage in chunks of bit arrays as the default build compiles it, and the rows
-    as the builders of ratpoints lay them out and its sieve entries keep them
-    (Chapter~\ref{chap:rows});
-  \item[G] the delivery of the points to the callback of the caller, with its stops, the options of
-    the output and the flags written back; the order of the output in terms of the polynomial; and
-    the callback, the formats and the report of the command-line program
-    (Chapter~\ref{chap:output});
-  \item[H] the search region of the caller: the search intervals, whose ends are the doubles of the
-    C code, with the exact bounds of the numerators, and the range of the denominators; the Sturm
-    step that narrows the intervals to those where the polynomial may be $\ge 0$, with Sturm's
-    theorem as a hypothesis; and the options of the region and the messages on it of the
-    command-line program (Chapter~\ref{chap:region});
-  \item[I] the choice of the moduli and of the cut points of the stages by the curve, with the cost
-    model of the C code; the blocks of the loop over the denominators, with the correction of the
-    moduli between them; the numbers of the moduli used, the report of the library under \verb|-v|
-    and the tuning options of the command-line program; and the threads left out, with the property
-    that they preserve proved: the blocks sifted apart and delivered in their order give what the
-    run delivers (Chapter~\ref{chap:moduli}).
-\end{itemize}
-
-\input{chapters/01-spec}
-\input{chapters/02-sieve}
-\input{chapters/03-words}
+\input{chapters/01-overview}
+\input{chapters/02-spec}
+\input{chapters/03-theorems}
 \input{chapters/04-setup}
-\input{chapters/05-denominators}
-\input{chapters/06-tables}
-\input{chapters/07-stages}
-\input{chapters/08-packing}
-\input{chapters/09-rows}
+\input{chapters/05-region}
+\input{chapters/06-moduli}
+\input{chapters/07-rows}
+\input{chapters/08-denominators}
+\input{chapters/09-sieve}
 \input{chapters/10-output}
-\input{chapters/11-region}
-\input{chapters/12-moduli}
+\input{chapters/11-ccode}
 
 \appendix
 \input{generated/correspondence}

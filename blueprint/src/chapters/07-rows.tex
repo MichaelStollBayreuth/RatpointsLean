@@ -1,0 +1,392 @@
+\chapter{Tables and rows}\label{chap:rows}
+
+This chapter describes how ratpoints computes the tables of its moduli and how it builds and keeps
+the rows that the sieve reads (Chapter~\ref{chap:sieve}). Chapter~\ref{chap:moduli} says what the
+tables say and why their \emph{admission tests} let the numerator of every point through: the row
+of a denominator~$b$ in the sieve entry of a modulus admits a numerator~$a$ when the tables allow
+$F(a, b)$ to be a square. Each builder is proved to build the \emph{closed form} of its row, the
+array of words whose bits are the values of the admission test, so that every row of a run lets
+every point through. The contracts of the tables, which reason modulo~$p$ and~$p^e$, use Mathlib,
+the others Lean core and \verb|Std| only; the proofs use that the constants $\mathrm{rbaPack}$ and
+$\mathrm{chunk}$ (Chapter~\ref{chap:sieve}) are positive, never their values.
+
+\section{The tables as ratpoints computes them}\label{sec:rowsResidues}
+
+\verb|examine_prime| (\csource{find_points.c}{1683}{1826}) computes the table of a prime~$p$
+(Definition~\ref{def:tableOfPrime}) by Horner's rule in \verb|unsigned long|s with Barrett's
+reduction, on a fixed schedule (\csource{find_points.c}{1628}{1655},
+\csource{find_points.c}{1716}{1747}): below $\mathrm{maxPrimeEven} = 2^{\mathrm{maxBitsInPrime}}$
+an accumulator below~$p$ survives $\mathrm{hornerSteps} = 64/\mathrm{maxBitsInPrime} - 1$ steps
+$s \mapsto s a + c$ within 64 bits, and ratpoints examines no larger prime. For a factor $q = p^e$
+with $e \ge 2$, \verb|examine_power| (\csource{find_points.c}{2254}{2331}) computes the tables of
+Definition~\ref{def:sieveEntry}.
+
+\begin{lemma}[The table of a prime as ratpoints computes it]\label{lem:hornerBarrett}
+  \uses{def:tableOfPrime}
+  \lean{Ratpoints.Sieve.examinePrime?, Ratpoints.Sieve.examinePrime?_spec, Ratpoints.hornerSteps, Ratpoints.Sieve.barrett, Ratpoints.Sieve.hornerBarrett, Ratpoints.Sieve.barrett_eq, Ratpoints.Sieve.HornerInvariant, Ratpoints.pow_hornerSteps_add_one_lt, Ratpoints.Sieve.hornerBarrett_spec}
+  \leanok
+  Barrett's reduction of~$u$ modulo~$p$ with the reciprocal~$m$ is
+  $r = u - \lfloor u m / 2^{64} \rfloor\, p$, and $r - p$ when $r \ge p$
+  (\csource{find_points.c}{1639}{1650}); the value of~$f$ at~$a$ modulo~$p$ is Horner's rule
+  from~$c_d$ on the coefficients reduced modulo~$p$, with Barrett's reduction at the end and, for
+  $d > \mathrm{hornerSteps}$, after every $\mathrm{hornerSteps}$ steps
+  (\csource{find_points.c}{1726}{1731}, \csource{find_points.c}{1737}{1744}); the table is made of
+  these values and handed back with the coefficients modulo~$p$, or none, the exit, when no entry
+  of it is true (\csource{find_points.c}{1683}{1697}). Then:
+  \begin{enumerate}
+    \item for $p > 0$ and $u < 2^{64}$, Barrett's reduction with
+      $m = \lfloor (2^{64} - 1)/p \rfloor$ gives $u \bmod p$;
+    \item for $p < \mathrm{maxPrimeEven}$, $a < p$ and coefficients below~$p$, the schedule gives
+      $f(a) \bmod p$, and the accumulator stays below $p^{\mathrm{hornerSteps} + 1} < 2^{64}$;
+    \item for $0 < p < \mathrm{maxPrimeEven}$ the computed entry, the prime with its table and its
+      inverses, is that of Definition~\ref{def:tableOfPrime}, with the coefficients modulo~$p$, or
+      none exactly when no entry of that table is true.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{def:tableOfPrime}
+  \leanok
+  Write $2^{64} - 1 = m p + t$ with $t < p$; then $u/p - u m/2^{64} = u (1 + t)/(p\, 2^{64})$ lies
+  in $[0, 1)$, so the quotient is $\lfloor u/p \rfloor$ or one less. The invariant of Horner's loop:
+  the accumulator is congruent modulo~$p$ to the value of the polynomial of the coefficients read,
+  and below $p^{k + 1}$, where $k \le \mathrm{hornerSteps}$ counts the steps since the last
+  reduction, and $p^{64/\mathrm{maxBitsInPrime}} \le 2^{64}$ since
+  $p < 2^{\mathrm{maxBitsInPrime}}$, whatever the degree. For~(3), both ways of reducing the
+  coefficients agree, and the loop over the residues makes the entries of the reference table
+  by~(2).
+\end{proof}
+
+\begin{lemma}[The tables of a prime power]\label{lem:modinv}
+  \uses{def:sieveEntry}
+  \lean{Ratpoints.Sieve.examinePower, Ratpoints.Sieve.examinePower_spec, Ratpoints.Sieve.modinv, Ratpoints.Sieve.ModinvInvariant, Ratpoints.Sieve.modinv_spec, Ratpoints.Sieve.unitInverses, Ratpoints.Sieve.unitInverses_spec, Ratpoints.modWords, Ratpoints.Sieve.setBitAt, Ratpoints.Sieve.setSquareBits, Ratpoints.Sieve.setSquareBits_spec, Ratpoints.maxPrimeEven_le_sixty_four_mul_modWords}
+  \leanok
+  The tables of $m = p^e$ as \verb|examine_power| makes them from the coefficients reduced
+  modulo~$m$ (\csource{find_points.c}{2267}{2282}), in bit arrays of
+  $\mathrm{modWords} = \lceil \mathrm{maxPrimeEven}/64 \rceil$ words, bit~$x$ in bit $x \bmod 64$
+  of word $\lfloor x/64 \rfloor$ (\csource{rp-private.h}{523}{523}): the bits of the squares
+  $x^2 \bmod m$, $x < m$, set in a bit array~\verb|sq| (\csource{find_points.c}{2283}{2284}); the
+  bits of \verb|fsq| and \verb|gsq| set where the values of~$f$ and of the reversed polynomial, by
+  Horner's rule, are marked in~\verb|sq|; and the inverses by the extended Euclidean algorithm
+  \verb|modinv| (\csource{find_points.c}{2241}{2252}), $0$ for the residues divisible by~$p$
+  (\csource{find_points.c}{2302}{2303}). Then:
+  \begin{enumerate}
+    \item for $1 < m$ and~$x$ prime to~$m$, \verb|modinv| gives the inverse of~$x$ modulo~$m$ in
+      $[0, m)$; for a prime~$p$ and $e \ge 1$, every entry of the inverses is below~$p^e$, and the
+      entry of a unit $x < p^e$ is its inverse;
+    \item $\mathrm{maxPrimeEven} \le 64\,\mathrm{modWords}$, and for $m \le 64\,\mathrm{modWords}$
+      a bit array of $\mathrm{modWords}$ words gets the bit of every square modulo~$m$ set;
+    \item for a prime~$p$, $e \ge 1$ and $p^e \le 64\,\mathrm{modWords}$, the tables of~$p^e$ have
+      these inverses, bit $x < p^e$ of \verb|fsq| set whenever~$f(x)$ is a square modulo~$p^e$, and
+      bit $t < p^e$ of \verb|gsq|, for $p \mid t$, set whenever the reversed polynomial of the even
+      degree $D = d + (d \bmod 2)$ takes a square value at~$t$; only this direction is needed, since
+      a further bit loses no point.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  The Euclidean loop runs on remainders~$r_i$ and cofactors~$s_i$ from $r_0 = m$, $r_1 = x \bmod m$,
+  $s_0 = 0$, $s_1 = 1$, with the invariant $r_i \equiv s_i x \bmod m$,
+  $\gcd(r_0, r_1) = \gcd(m, x)$, $r_0 > 0$, cofactors of opposite signs with
+  $|s_0|\, r_1 + |s_1|\, r_0 = m$; it ends since~$r_1$ decreases, with $r_0 = 1$, and keeps the
+  cofactors in $[-m, m]$, the range of their \verb|long|s. For~(3), a value that is a square
+  modulo~$m$ is $y^2 \bmod m$ for some $y < m$, so that its bit in~\verb|sq| is set by~(2), and the
+  loops over the residues and the multiples of~$p$ set the bit of the residue.
+\end{proof}
+
+\section{The closed form of a row}\label{sec:closedRow}
+
+A row of the modulus~$m$ has $m + \mathrm{chunk} - 1$ bit arrays of $\mathrm{rbaPack}$ words;
+bit~$t$ of word~$j$ stands for the number $64 j + t$ (\csource{init.c}{252}{258}), and the last
+$\mathrm{chunk} - 1$ bit arrays are copies of the first ones, for the chunked first stage. Which
+numerator a bit stands for is the business of the packing (Chapter~\ref{chap:sieve}).
+
+\begin{lemma}[The closed form of a row]\label{lem:closedRow}
+  \uses{def:sieveEntry, def:firstStage}
+  \lean{Ratpoints.Sieve.closedRow, Ratpoints.Sieve.wordOfBits, Ratpoints.Sieve.getLsbD_closedRow, Ratpoints.Sieve.getElem!_closedRow_mod, Ratpoints.Sieve.SieveEntry.wraps_closedRow, Ratpoints.Sieve.PatternBits, Ratpoints.Sieve.RowWords, Ratpoints.Sieve.RowWords.toArray_eq_closedRow}
+  \leanok
+  The \emph{closed form} of the row of a residue~$r$ modulo~$m$, for an admission test
+  $\mathrm{adm}$, which says whether the row of~$r$ admits a number~$N$, is the array of
+  $(m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words whose word~$j$ has bit~$t$ set exactly when
+  $t < 64$ and $\mathrm{adm}(r)$ admits $64 j + t$. With the admission test of a sieve entry, of
+  the table of a prime or of the tables of a prime power, it is the row that ratpoints builds; it
+  has no C code of its own. Then:
+  \begin{enumerate}
+    \item bit~$t$ of word $j < (m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ is $t < 64$ and
+      $\mathrm{adm}(r)(64 j + t)$;
+    \item for $m > 0$ and a test that does not change when a multiple of~$m$ is added to the
+      number, word~$j$ is word $j \bmod m\,\mathrm{rbaPack}$, so that the closed form of a row of a
+      sieve entry of positive modulus repeats its first~$m$ bit arrays after them;
+    \item a word \emph{holds} $n \le 64$ bits of a pattern~$g$ of period~$m$ from~$s$ on when its
+      bit $t < n$ is $g((s + t) \bmod m)$ and its other bits are clear; if
+      $g(N \bmod m) = \mathrm{adm}(r)(N)$ for every~$N$, an array of
+      $(m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words whose word~$j$ holds the 64 bits of~$g$
+      from~$64 j$ on is the closed form; the contracts of the builders conclude by this.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  Two words are equal when their bits are. For~(2), the numbers $64 j + t$ and
+  $64 (j \bmod m\,\mathrm{rbaPack}) + t$ differ by a multiple of~$m$, and the test of a sieve entry
+  reduces the numerator modulo its modulus first. For~(3), both bits are $g((64 j + t) \bmod m)$.
+\end{proof}
+
+\section{The tables of rows and the builders}\label{sec:rowBuilders}
+
+A sieve entry of ratpoints (\csource{rp-private.h}{542}{555}) holds the array \verb|sieve| of the
+rows of its residues, \verb|NULL| for a row not built, and the pointer \verb|init| to its builder.
+A prime has its row of~$0$ from the table \verb|sieves0| that the build generates
+(\csource{gen_find_points_h.c}{102}{134}, \csource{find_points.c}{1820}{1821}) and the others
+absent; a prime power has one entry, made when a modulus first needs it, and a product an entry of
+its own that points to the entries of its factors (\csource{find_points.c}{2414}{2475}). The
+builders are generated for each prime from \verb|CODE_INIT_SIEVE1| for $p < 64$
+(\csource{init.c}{118}{183}) and from \verb|CODE_INIT_SIEVE2| for $p > 64$
+(\csource{init.c}{186}{244}); a prime power has \verb|_ratpoints_sieve_init_power|
+(\csource{init.c}{355}{393}) and a product \verb|_ratpoints_sieve_init_product|
+(\csource{init.c}{395}{445}). A builder publishes its row in the entry, where it stays for the run.
+
+\begin{definition}[The tables of rows]\label{def:rowStore}
+  \lean{Ratpoints.Sieve.EntryRef, Ratpoints.Sieve.RowStore, Ratpoints.Sieve.RowStore.row?, Ratpoints.Sieve.RowStore.publish, Ratpoints.Sieve.RowInit, Ratpoints.Sieve.sieveInit}
+  \leanok
+  A \emph{reference} to an entry, for a pointer to it: a prime by itself, a prime power by its
+  prime and its exponent, a product by the position of its modulus among the moduli. The
+  \emph{store} maps each reference to its table of rows, $m$ rows for the modulus~$m$, each present
+  or absent; \emph{publishing} a row puts it into the table of a reference and leaves a store
+  without that table as it is. The kinds of builder, for the pointer \verb|init|
+  (\csource{rp-private.h}{497}{498}): the function of a prime below~$64$ from
+  \verb|CODE_INIT_SIEVE1| and that of a prime above~$64$ from \verb|CODE_INIT_SIEVE2|, which the
+  primes of the table have (\csource{gen_init_sieve_h.c}{48}{62}), and the builders of a prime power
+  and of a product. A sieve entry holds the reference to its table of rows and the kind of its
+  builder: for a prime or a prime power those of its one factor, for a product its own
+  (\lname{Ratpoints.Sieve.SieveEntry.refInit}).
+\end{definition}
+
+\begin{lemma}[The rows of a prime]\label{lem:primeRows}
+  \uses{lem:closedRow, def:rowStore, def:tableOfPrime}
+  \lean{Ratpoints.Sieve.sieves0, Ratpoints.Sieve.sieves0_eq_closedRow, Ratpoints.Sieve.extract_sieves0, Ratpoints.Sieve.initFourLoop, Ratpoints.Sieve.initFourLoop_spec, Ratpoints.Sieve.initReplicate, Ratpoints.Sieve.initReplicate_spec, Ratpoints.Sieve.sieveInit1, Ratpoints.Sieve.sieveInit1_spec, Ratpoints.Sieve.sieveInit2, Ratpoints.Sieve.sieveInit2_spec}
+  \leanok
+  The row of~$0$ of a prime~$p$: the~$p$ words of the forbidden divisor~$p$, whose word~$r$ has
+  bit~$t$ clear exactly when $p \mid 64 r + t$ (\lname{Ratpoints.Sieve.forbiddenRow}), written
+  $\mathrm{rbaPack}$ times and followed by the copies (\csource{gen_find_points_h.c}{122}{134}).
+  The other rows by one function for the primes below~$64$ and one for those above, from the table
+  of the prime, the reference, the residue~$b$ and the store: bit $a < p$ of the pattern the entry
+  of the table at $a d \bmod p$ for the inverse~$d$ of~$b$, by a loop that steps four residues by
+  $4 d \bmod p$ (\csource{init.c}{72}{83}), rotated into the first~$p$ words, the copies
+  (\csource{init.c}{99}{111}), and the row published in the table of the reference
+  (\csource{init.c}{178}{183}, \csource{init.c}{239}{244}). Then:
+  \begin{enumerate}
+    \item for $p > 0$ the row of~$0$ is the closed form of the row of~$0$ of every table of~$p$,
+      and its first~$p$ words are those that the forbidden divisors read
+      (Chapter~\ref{chap:denominators});
+    \item for the table of a prime $p < 64$ and $0 < b < p$ whose inverse in the table is
+      below~$p$, the function from \verb|CODE_INIT_SIEVE1| returns the closed form of the row
+      of~$b$, and the store with it published in the table of the reference; the same holds for
+      $p \ge 64$ with $p \bmod 64 \ne 0$ and the function from \verb|CODE_INIT_SIEVE2|.
+  \end{enumerate}
+  The builders need no primality and nothing of the table of squares.
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:closedRow}
+  \leanok
+  The loop keeps four lanes at the residues $s + (a + k)\, d \bmod p$, $k < 4$, and its word holds
+  the bits below~$a$ of the pattern. \verb|CODE_INIT_SIEVE1| rotates the words of the row out of
+  two words by the shifts $\delta = (\lfloor 64/p \rfloor + 1)\, p \bmod 64$ and $64 - \delta$,
+  \verb|CODE_INIT_SIEVE2| out of a ring of $\lfloor p/64 \rfloor + 1$ words by $p \bmod 64$ and
+  $64 - (p \bmod 64)$; every shift executed lies in $[0, 63]$, where the shifts of the C code are
+  defined, since $\delta \in [1, 63]$ for $p < 64$ and $p \bmod 64 \ne 0$ otherwise. With the
+  copies, word~$j$ holds the 64 bits from~$64 j$ on of the pattern read at $N d \bmod p$, the
+  admission test at $b \ne 0$, and Lemma~\ref{lem:closedRow}(3) concludes. At $b = 0$ every lane
+  would stay at~$0$, which is why the row of~$0$ comes from \verb|sieves0|, whose words are right
+  since the multiples~$p i$, $i < 64$, are the multiples of~$p$ below~$64 p$.
+\end{proof}
+
+\begin{lemma}[The rows of a prime power]\label{lem:powerRows}
+  \uses{lem:closedRow, def:rowStore, def:sieveEntry, lem:modinv}
+  \lean{Ratpoints.Sieve.layOutPattern, Ratpoints.Sieve.PatClear, Ratpoints.Sieve.layOutPattern_spec, Ratpoints.Sieve.powerPatternUnit, Ratpoints.Sieve.powerPatternNonunit, Ratpoints.Sieve.sieveInitPower, Ratpoints.Sieve.sieveInitPower_spec}
+  \leanok
+  The layout of a pattern of period~$m$: word $x < m\,\mathrm{rbaPack}$ of the row the 64 bits from
+  the offset $64 x \bmod m$ on of the pattern repeated through $w = \lfloor (m + 127)/64 \rfloor$
+  words, then the copies (\csource{init.c}{259}{267}, \csource{init.c}{280}{297}). The row of the
+  residue~$b$ of a prime power~$m$, from its tables, the reference and the store: for a unit~$b$,
+  bit~$x$ of the pattern set when bit $x b^{-1} \bmod m$ of \verb|fsq| is
+  (\csource{init.c}{369}{375}), and for $p \mid b$, bit~$x$ of a unit~$x$ set when bit
+  $b x^{-1} \bmod m$ of \verb|gsq| is (\csource{init.c}{378}{385}); the pattern laid out, and the
+  row published in the table of the reference (\csource{init.c}{391}{393}). Then:
+  \begin{enumerate}
+    \item for $0 < m \le 64\,\mathrm{modWords}$ and a pattern whose bits~$x$ with
+      $m \le x < 64 \lceil m/64 \rceil$ are clear, word~$j$ of the row holds the 64 bits of the
+      pattern, read with period~$m$, from~$64 j$ on;
+    \item for $b < m \le 64\,\mathrm{modWords}$ whose entry in the table of inverses is below~$m$,
+      the builder returns the closed form of the row of~$b$, and the store with it published in the
+      table of the reference.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:closedRow}
+  \leanok
+  The repeated pattern has at every bit $N < 64 w$ the bit $N \bmod m$ of the pattern, and
+  $64 w \ge m + 64$, so the window at $64 x \bmod m$ is the window at~$64 x$ of the periodic
+  pattern; the C code's guard against a shift by~64 keeps every shift in $[1, 63]$. The patterns
+  set the bits that the admission test of the prime power reads: \verb|fsq| at~$x b^{-1}$ for a
+  unit~$b$, and for $p \mid b$, \verb|gsq| at~$b x^{-1}$ for a unit~$x$ and nothing for $p \mid x$.
+\end{proof}
+
+\begin{lemma}[The rows of a product]\label{lem:productRows}
+  \uses{lem:closedRow, def:rowStore, def:sieveEntry, lem:primeRows, lem:powerRows}
+  \lean{Ratpoints.Sieve.initFactorRow, Ratpoints.Sieve.Factor.Buildable, Ratpoints.Sieve.Factor.Builds, Ratpoints.Sieve.initFactorRow_spec, Ratpoints.Sieve.factorRows, Ratpoints.Sieve.productCopy, Ratpoints.Sieve.productAnd, Ratpoints.Sieve.sieveInitProduct, Ratpoints.Sieve.FactorRowsPre, Ratpoints.Sieve.ProductRowsPre, Ratpoints.Sieve.RowStore.Grows, Ratpoints.Sieve.sieveInitProduct_spec}
+  \leanok
+  The row of the residue~$b$ of a product: the rows of its factors at~$b$ modulo their moduli, read
+  from their tables or built into them through the pointer of the entry of each factor
+  (\csource{init.c}{407}{414}); the first laid down in blocks of its length
+  (\csource{init.c}{419}{423}), the others and-ed in (\csource{init.c}{424}{429}), the copies
+  (\csource{init.c}{430}{430}), and the row published (\csource{init.c}{443}{445}). A factor is
+  \emph{buildable} when its builder has what it needs: a prime $p > 0$ with its inverses below~$p$
+  and $p \bmod 64 \ne 0$ for $p \ge 64$, or a prime power $0 < m \le 64\,\mathrm{modWords}$ with
+  its inverses below~$m$; it may be called below its modulus, for a prime not at~$0$. Then:
+  \begin{enumerate}
+    \item a buildable factor called where it may be called returns the closed form of its row and
+      publishes it in the table given;
+    \item if the product has a positive modulus~$m$ and a factor, the moduli of its factors
+      divide~$m$, its factors are buildable, the rows present in their tables are closed forms, a
+      row absent below the modulus of a factor is one where its builder may be called, and two
+      factors with one reference have the same closed forms, then the builder returns the closed
+      form of the row of~$b$, and the store has \emph{grown} by rows of the factors (the tables
+      keep their sizes, no row is replaced, every new row is the closed form of a factor whose
+      table it is in), with the row of the product published.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:closedRow}
+  \leanok
+  (1) is Lemma~\ref{lem:primeRows} or~\ref{lem:powerRows}, by the kind. For~(2), the invariant of
+  the loop over the factors: their rows before the position of the loop are closed forms, and the
+  store has grown by rows of the factors; a row read is a closed form also when a factor before it
+  with the same reference built it. Each modulus~$q$ of a factor divides~$m$, so word~$y$ of the
+  row is the and of the words $y \bmod q\,\mathrm{rbaPack}$ of the rows of the factors, as the
+  admission test of the product is the and of theirs
+  (\lname{Ratpoints.Sieve.toArray\_eq\_closedRow\_of\_productWord}).
+\end{proof}
+
+\section{The rows of a run}\label{sec:runRows}
+
+The sieve sets up a denominator by \verb|set_rows| (\csource{find_points.c}{3149}{3170}), the row
+of the residue of each modulus of the first two stages from its entry, perhaps absent. It builds
+each absent row by the function of the entry, under the lock of the tables when threads share them
+and after reading the pointer again, since another thread may have built it in the meantime
+(\csource{find_points.c}{3522}{3554}); the model, which has no threads, reads it again as well.
+Within a run the moduli of the first two stages are pairwise coprime (Chapter~\ref{chap:moduli}),
+so that each table of rows is reached through one modulus; the contracts also admit entries that
+share a table. The run hands the store on from one denominator and one block to the next.
+
+\begin{definition}[The tables of rows of a run]\label{def:runTables}
+  \uses{def:rowStore, def:sieveEntry, def:firstStage, lem:primeRows, lem:productRows, def:packing}
+  \lean{Ratpoints.Sieve.primeRows, Ratpoints.Sieve.SieveEntry.addTables, Ratpoints.Sieve.SieveEntry.fetchRow, Ratpoints.Sieve.setRows, Ratpoints.Sieve.buildRows}
+  \leanok
+  The table of rows of a prime~$p$: its row of~$0$ that of Lemma~\ref{lem:primeRows}, the other
+  $p - 1$ rows absent (\csource{find_points.c}{1820}{1821}). The tables of rows of a sieve entry,
+  each made only when its reference is absent: that of each factor, and for a product its own
+  (\csource{find_points.c}{2427}{2427}, \csource{find_points.c}{2471}{2471}). The row of a
+  residue~$b$ of a sieve entry \emph{read or built}: the row in its table when it is there, and
+  otherwise the row that its builder builds into it. The sieve specs of a denominator, as
+  \verb|set_rows| makes them (\csource{find_points.c}{3149}{3170}): for each entry of the first two
+  stages its modulus, the offset of the row of the class and its row at its residue of~$b$, absent
+  when it is not built, with the end~$p$. The missing rows of a denominator: each sieve spec of the
+  first two stages without a row gets the row read or built of its entry at its residue
+  (\csource{find_points.c}{3522}{3554}).
+\end{definition}
+
+\begin{lemma}[The rows of a run are closed forms]\label{lem:runRows}
+  \uses{def:runTables, lem:closedRow, def:sieveEntry, lem:sieveEntry_sound, def:firstStage, def:packing}
+  \lean{Ratpoints.Sieve.SieveEntry.fetchRow_spec, Ratpoints.Sieve.StoreHolds, Ratpoints.Sieve.SieveEntry.RowsFit, Ratpoints.Sieve.RowStore.Fits, Ratpoints.Sieve.runRows, Ratpoints.Sieve.RowStore.MadeFor, Ratpoints.Sieve.RowStore.madeFor_nil, Ratpoints.Sieve.RowStore.MadeFor.foldl_addTables, Ratpoints.Sieve.RowStore.MadeFor.storeHolds, Ratpoints.IsModulusEntry.rowsFit_runRows, Ratpoints.Sieve.buildRows_setRows_map_spec, Ratpoints.Sieve.RowStore.Fits.buildRows_setRows}
+  \leanok
+  A store \emph{holds} a function~$R$ of the references and the residues for a list of entries when
+  every row present in the table of a reference~$\rho$ at~$r$ is $R(\rho, r)$ and the table of every
+  prime factor of the entries has its row of~$0$. An entry at the position~$n$ \emph{fits}~$R$ when
+  it has the reference and the kind of builder of that position (and, with one factor, the modulus
+  of that factor), a positive modulus, a factor, moduli of the factors dividing its modulus and
+  buildable factors, and~$R$ at its reference and at those of its factors is the closed form of
+  their rows; a store \emph{fits} a list of entries when it holds some~$R$ for them that every entry
+  fits. The \emph{rows of the references} of a run are the closed forms of the rows of the table of
+  a prime, of the tables of a prime power and of the entry of a product at its position; a store is
+  \emph{made for} a list of entries when it holds the rows of the references of every run whose
+  entries begin with the list, and every table of rows of a prime in it, or of a prime factor of the
+  entries, has its row of~$0$. Then:
+  \begin{enumerate}
+    \item if the row present in the table of an entry at~$b$ is the closed form, and the builder
+      has what it needs when the row is absent, the row read or built is the closed form of the
+      row of~$b$, and the store is the same or has grown by rows of the factors, with the row
+      published;
+    \item the store of the loop of the tables, which holds the rows of~$0$ of the primes and no
+      others, is made for no entries; adding the tables of rows of further entries, each with the
+      reference and the kind of builder of its position and with positive primes, gives a store
+      made for the longer list; a store made for the entries of a run holds the rows of their
+      references for them; and an entry of a modulus as the choice makes it
+      (Chapter~\ref{chap:moduli}) fits the rows of the references of the run at its position;
+    \item for a store that holds~$R$ for a list~$L$, entries of~$L$ that fit~$R$ at their positions
+      and residues below their moduli, the sieve specs that \verb|set_rows| makes and the missing
+      rows complete have the closed forms of the rows of their entries at their residues, the
+      offsets of the class, the start~$0$ and the end~$p$, and the store after them holds~$R$
+      for~$L$; so a store that fits the entries of a run fits them after each denominator.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:primeRows, lem:productRows, lem:modinv}
+  \leanok
+  (1) by the cases of the definition and Lemma~\ref{lem:productRows}. (2) The rows of~$0$ are
+  \verb|sieves0|, the closed form for every table of the prime, and a table made only when absent
+  holds no other row; two entries that reach one table have one closed form, since~$R$ depends on
+  the reference only and the rows of a prime power do not depend on the switch of its density
+  (\lname{Ratpoints.Sieve.admits\_run\_examinePower}). (3) The invariant of the loop over the
+  specs: the store holds~$R$, and the specs before the position of the loop have their closed
+  forms; a row present is~$R$ at its reference, a row built is a closed form by~(1), and a builder
+  of a prime is never called at~$0$, whose row is present from the start.
+\end{proof}
+
+The choice of the moduli applies item~(2) to its entries
+(\lname{Ratpoints.IsChoiceEntries.fits\_foldl\_addTables}), which are sound
+(Lemma~\ref{lem:sieveEntry_sound}), and item~(3) hides the store from the sieve of one denominator
+(Chapter~\ref{chap:sieve}).
+
+\begin{lemma}[Every row lets every point through]\label{lem:rowsAdmitPoints}
+  \uses{lem:sieveEntry_sound, def:sieveEntry, def:binaryForm, def:bruteForce}
+  \lean{Ratpoints.Sieve.SieveEntry.IsSound.admits_of_sq_eq, Ratpoints.Sieve.survives_of_mem_pointsOfDen}
+  \leanok
+  The row of~$b$ of a sound entry admits~$a$ for every triple $(a, y, b)$ with $\gcd(a, b) = 1$
+  and $y^2 = F(a, b)$, and the numerator of every point with the denominator~$b$ that the
+  brute-force reference lists (\lname{Ratpoints.BruteForce.pointsOfDen}) survives every list of
+  sound entries for~$b$.
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:sieveEntry_sound, def:bruteForce}
+  \leanok
+  A point of the reference has $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, and a numerator survives a
+  list of entries when every entry admits it.
+\end{proof}
+
+Every row that the run reads is the closed form of the admission test of its entry
+(Lemma~\ref{lem:runRows}), whose bit at a number is the test at that number
+(Lemma~\ref{lem:closedRow}); so the sieve never clears the bit of the numerator of a point, which
+the membership theorem (Theorem~\ref{thm:membership}) needs, through the contract of the sieve of
+one denominator (Definition~\ref{def:sift}) and the block lemma (Theorem~\ref{thm:blocks}).
+
+\section{Where the model differs from the C code}\label{sec:rowsDeviations}
+
+Chapter~\ref{chap:ccode} summarizes the general differences (the generated tables as functions of
+the prime, two builder functions for the primes, the store for the arrays reached through pointers,
+no threads). The \verb|long|s are natural numbers or integers, with the range obligations as
+lemmas: the accumulator of Horner's rule below~$2^{64}$, the cofactors of the extended Euclidean
+algorithm in $[-m, m]$, and the inverses of a prime power below~$2^{16}$, the range of their
+\verb|unsigned short|
+(\lname{Ratpoints.Sieve.getElem!\_inv\_run\_examinePower\_lt\_two\_pow\_16}). Barrett's reduction
+has the form with the 128-bit product, which the default build compiles, and the branch of
+the schedule of Horner's rule is chosen for each residue, where \verb|examine_prime| chooses it
+once. The probes \verb|RP_INIT_NOACC| and \verb|RP_INIT_NOREP| (\csource{init.c}{88}{93},
+\csource{init.c}{97}{98}), whose tables are wrong by design, and the check
+\verb|RP_VERIFY_MODULI| (\csource{init.c}{299}{353}) are excluded.

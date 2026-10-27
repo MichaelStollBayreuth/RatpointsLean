@@ -1,0 +1,453 @@
+\chapter{The sieve of one denominator}\label{chap:sieve}
+
+For each denominator~$b$ that the loop over the denominators visits and that passes the tests of
+Chapter~\ref{chap:denominators}, the search looks for the points $(a : y : b)$ with
+$\gcd(a, b) = 1$, $|a| \le H$ and $a/b$ in a search interval. ratpoints does this with a sieve. The
+numerators become the bits of bit arrays of 64-bit words, packed by the stride of the 2-adic class
+of~$b$. The rows of the moduli for~$b$, which say for which numerators the form can be a square
+modulo the modulus (Chapter~\ref{chap:rows}), are and-ed into them, in a first stage over every bit
+array and a second stage over the bit arrays that the first one leaves nonzero. Each numerator whose
+bit survives is tested for common factors with~$b$, then against the primes of a third stage, and
+then checked exactly; its points go to the callback (Chapter~\ref{chap:output}).
+
+This chapter describes the model of this sieve, \lname{Ratpoints.Sieve.sift} and its parts, and its
+contract (Definition~\ref{def:sift}): from a delivery whose flag of the stop is clear, the sieve
+of~$b$ delivers, in increasing order, what the exact check finds for the numerators of the search
+intervals that pass the 2-adic word of the class of~$b$ and survive the rows of all the moduli. The
+block lemma (Theorem~\ref{thm:blocks}), and through it the main theorems, rests on this contract:
+as every row and the 2-adic word let the numerator of every point through
+(Chapters~\ref{chap:rows} and~\ref{chap:denominators}), the sieve delivers the points of the
+brute-force reference over~$b$ with their numerators in the ranges.
+Theorem~\ref{thm:sift_eq_checkDen} restates the contract, with the exact check on, as the check of a
+plain sieve; no main theorem needs it. The moduli, the cut points of the stages and the tables of
+rows come from Chapter~\ref{chap:moduli}, the search intervals and the ranges of their numerators
+from Chapter~\ref{chap:region}.
+
+\section{The sieve in the C code and in the model}\label{sec:sieveC}
+
+In the C code the sieve of a denominator is \verb|sift| (\csource{find_points.c}{3442}{3617}), which
+cuts the bits of each search interval into pieces for \verb|_ratpoints_sift0|
+(\csource{sift.c}{498}{1305}), and each numerator that survives goes through \verb|accepted|
+(\csource{sift.c}{438}{446}) to the exact check (\csource{find_points.c}{5250}{5338}). The model has
+a component for each step, in the sections below, with the data and the loops of the default build.
+
+A C \verb|long| is an integer or a natural number, with a lemma that it stays in range, except in
+the test for common factors and the bits of an interval, which compute on 64-bit words. The
+contracts use Lean core and \verb|Std| only; that of a component which finds points says that, from
+a delivery whose flag of the stop is clear, it returns the reference of the delivery
+(Definition~\ref{def:deliver}) of the list of the points it finds.
+
+\begin{definition}[The counters of the sieve]\label{def:counters}
+  \lean{Ratpoints.Sieve.Counters}
+  \leanok
+  The six counters that the sieve keeps for the correction of the moduli
+  (Chapter~\ref{chap:moduli}), $64$-bit words that wrap (\csource{rp-private.h}{579}{581}): the
+  words that the first stage sweeps, the bit arrays that survive it, the numerators extracted, those
+  prime to the denominator, those that pass the third stage, and the calls of the sieve.
+\end{definition}
+
+\section{Bit arrays of words}\label{sec:bitArrays}
+
+A bit array of the C code is a vector of words, with macros for its operations in each build
+(\csource{rp-private.h}{113}{300}). In the model it is~$\mathrm{rbaPack}$ consecutive \verb|UInt64|
+words of an array, one definition of each operation serving every build; the proofs read the bits
+through \verb|BitVec.getLsbD|, whose lemmas Lean core has, and need no \verb|bv_decide|.
+
+\begin{definition}[Bit arrays of words]\label{def:bitArrays}
+  \lean{Ratpoints.rbaPack, Ratpoints.rbaLength, Ratpoints.Sieve.andBitArray, Ratpoints.Sieve.clearLowBits, Ratpoints.Sieve.clearHighBits, Ratpoints.Sieve.isZeroAt, Ratpoints.Sieve.getLsbD_clearLowBits, Ratpoints.Sieve.getLsbD_clearHighBits, Ratpoints.Sieve.ctz, Ratpoints.Sieve.ctz_spec}
+  \leanok
+  A bit array has $\mathrm{rbaPack} = 4$ words, $\mathrm{rbaLength} = 256$ bits, as in the default
+  build (\csource{rp-private.h}{172}{172}, \csource{rp-private.h}{174}{175}); bit~$t$ of bit
+  array~$j$ is bit $t \bmod 64$ of word $\mathrm{rbaPack} \cdot j + \lfloor t/64 \rfloor$. The
+  operations: bit array~$j$ of an array of words and-ed with bit array~$x$ of a row, word by word
+  (\verb|AND|, \csource{rp-private.h}{176}{176}); the lowest~$s$ bits of bit array~$0$, or the
+  highest~$s$ bits of bit array~$j$, cleared for $s < \mathrm{rbaLength}$ (\verb|MASKL|,
+  \verb|MASKU|, \csource{rp-private.h}{206}{213}, \csource{rp-private.h}{214}{221}), so that the low
+  mask keeps bit~$t$ of word~$y$ exactly when $s \le 64 y + t$ and the high mask keeps it in a word
+  $y < \mathrm{rbaPack}\,(j + 1)$ exactly when $64 y + t + s < \mathrm{rbaLength}\,(j + 1)$; and
+  whether bit array~$j$ is zero (\verb|TEST|, \verb|TESTZ|, \csource{rp-private.h}{179}{202}). The
+  lowest set bit of a word $x \ne 0$ comes from the loop of \verb|RP_CTZL| for a compiler without
+  the builtin, which shifts~$x$ right while its lowest bit is clear
+  (\csource{rp-private.h}{429}{444}); its contract: the count is the number of trailing zeros
+  of~$x$.
+\end{definition}
+
+The proofs use of the width only $\mathrm{rbaPack} > 0$ and, for the packing, $\mathrm{rbaLength} =
+2^{\mathrm{rbaShift}}$ with $\mathrm{rbaShift} < 32$, so they hold for every build
+(Chapter~\ref{chap:ccode}).
+
+\section{Reductions by a reciprocal}\label{sec:reciprocal}
+
+ratpoints reduces modulo~$p$ by a multiplication with the reciprocal of~$p$ wherever that is exact:
+the row indices of the first two stages, the residues of a denominator for its stride and for the
+third stage, the offsets of the rows, the third stage, the first word of the forbidden divisors of
+a block and the Jacobi test (Chapter~\ref{chap:denominators}). The reciprocal is a field of the
+sieve entry (Chapter~\ref{chap:moduli}).
+
+\begin{definition}[The reductions by a reciprocal]\label{def:reciprocal}
+  \lean{Ratpoints.Sieve.magic, Ratpoints.Sieve.mulHi, Ratpoints.Sieve.mulMod, Ratpoints.Sieve.mulDiv, Ratpoints.Sieve.modMul}
+  \leanok
+  The reciprocal of~$p$ is $\mathrm{magic}(p) = \lfloor (2^{64} - 1)/p \rfloor + 1$. The high half
+  $\mathrm{mulHi}(a, b)$ of the 128-bit product of two words, which the C code takes from gcc's
+  \verb|__uint128_t| (\csource{rp-private.h}{404}{408}, \csource{rp-private.h}{409}{410}), comes in
+  the model from the four products of their 32-bit halves, no partial sum leaving a word. The
+  remainder by the reciprocal~$m$, \verb|RP_MULMOD|, is $\mathrm{mulHi}(m u \bmod 2^{64}, p)$, and
+  the quotient, \verb|RP_MULDIV|, is $\mathrm{mulHi}(u, m)$, the arguments cast to words as the
+  macros cast them; the builds that compile no 128-bit product (no such type, or
+  \verb|RP_MULMOD_DIVIDE| or \verb|RP_NO_INT128| set) divide instead
+  (\csource{rp-private.h}{413}{414}, \csource{rp-private.h}{415}{416}), with the same results
+  wherever the multiplication is exact. The remainder of an integer~$a$, \verb|mod_mul|, is the
+  remainder~$r$ of~$|a|$, and $p - r$ for negative~$a$ with $r \ne 0$ (\csource{sift.c}{243}{247}).
+\end{definition}
+
+\begin{lemma}[The reductions are exact]\label{lem:reciprocal}
+  \uses{def:reciprocal}
+  \lean{Ratpoints.Sieve.toNat_mulHi, Ratpoints.Sieve.mulMod_magic, Ratpoints.Sieve.mulDiv_magic, Ratpoints.Sieve.modMul_magic}
+  \leanok
+  For all words, $\mathrm{mulHi}(a, b) = \lfloor a b / 2^{64} \rfloor$. For $0 < p$ and
+  $u p < 2^{64}$ the remainder with the reciprocal of~$p$ is $u \bmod p$; for $1 < p$ and
+  $u p < 2^{64}$ the quotient is $\lfloor u/p \rfloor$; for $0 < p$ and $|a|\,p < 2^{64}$,
+  \verb|mod_mul| gives the Euclidean remainder $a \bmod p$.
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  With $a = 2^{32} a_1 + a_0$ and $b = 2^{32} b_1 + b_0$, the middle sum of the halves is below
+  $3 \cdot 2^{32}$, and its high half is the carry. With $\mathrm{magic}(p)\, p = 2^{64} + \delta$,
+  $0 \le \delta < p$, and $u = k p + s$, $s < p$, we have $\mathrm{magic}(p)\, u = k\, 2^{64} +
+  (s\, 2^{64} + u \delta)/p$, the second part an integer below~$2^{64}$ as $u \delta < 2^{64}$: the
+  high half of the product is~$k$, and its low half times~$p$ has the high half~$s$. The
+  reciprocal~$2^{64}$ of~$1$ reads as~$0$ on a word, as in the C code, which spoils the quotient but
+  not the remainder.
+\end{proof}
+
+The C code reduces so only values below~$2^{32}$ modulo moduli below~$2^{10}$, which the contracts
+of the callers prove; it divides larger values with its helper \verb|mod|
+(\lname{Ratpoints.Sieve.modLong}, the Euclidean remainder) or, in the third stage and its set-up,
+with the operator~\verb|%|.
+
+\section{The packing of the numerators}\label{sec:packing}
+
+The 2-adic information gives for each class of the denominators modulo~$64$ the word~$w$ of the
+numerators modulo~$64$ that a point can have (Chapter~\ref{chap:denominators}). In most classes the
+set bits of~$w$ lie in one residue class $a_0 \bmod 2^k$, and ratpoints sieves only that class:
+bit~$n$ of the sieve of~$b$ stands for the numerator $a_0 + 2^k n$, and bit~$t$ of the bit array
+with the \emph{word number}~$i$ is the bit $n = \mathrm{rbaLength}\, i + t$. Each modulus~$p$ then
+reads the row of $b\, 2^{-k} \bmod p$, at the bit array $(i + \mathrm{offset}) \bmod p$, with an
+offset computed once per run for each packing and each modulus.
+
+\begin{definition}[The packing]\label{def:packing}
+  \uses{def:bitArrays, def:reciprocal, def:sieveEntry, def:rowStore, def:tableOfPrime}
+  \lean{Ratpoints.Sieve.NumClass, Ratpoints.Sieve.numClasses, Ratpoints.Sieve.packPattern, Ratpoints.Sieve.classOffsets, Ratpoints.Sieve.classRows, Ratpoints.Sieve.fillBpList, Ratpoints.Sieve.numeratorsToBits}
+  \leanok
+  A class (\csource{rp-private.h}{494}{495}) has a pattern, a stride exponent~$k$, a
+  residue~$a_0$ and the position of its row of offsets. The class of a word~$w$ of the 2-adic
+  information (\csource{find_points.c}{1064}{1081}): for $w = 0$ the stride~$1$ and the pattern~$0$;
+  otherwise, for the lowest set bit~$a$ of~$w$, the largest $k \le 6$ below $\mathrm{numStrides}$
+  such that every set bit of~$w$ is $\equiv a \bmod 2^k$, $a_0 = a \bmod 2^k$, and the pattern whose
+  bit~$t$ is bit $(a_0 + 2^k t) \bmod 64$ of~$w$ (\csource{find_points.c}{1082}{1094}); with the
+  classes the word \verb|den_bits| of the classes whose word is not~$0$. The offsets
+  (\csource{find_points.c}{1142}{1158}): for each entry of an odd modulus~$p$ the inverses
+  $\mathrm{dinv}[k] = 2^{-k} \bmod p$ and $(2^k\,\mathrm{rbaLength})^{-1} \bmod p$, by halvings, and
+  for each packing $(k, a_0)$ of a class with a nonzero pattern a row with the offset
+  $a_0\,(2^k\,\mathrm{rbaLength})^{-1} \bmod p$ plus the bias of~$p$, the least multiple of~$p$ from
+  $\mathrm{rowBias} = 2^{31}$ on (\csource{find_points.c}{1164}{1182}). The residues
+  $b\,\mathrm{dinv}[k] \bmod p$ of a denominator for the moduli of the first two stages, in three
+  branches by the size of~$b$ (\csource{find_points.c}{3639}{3679}). The bits
+  $\lceil (\mathrm{low} - a_0)/2^k \rceil$ to $\lfloor (\mathrm{high} - a_0)/2^k \rfloor$ of an
+  interval of numerators, by arithmetic shifts of signed 64-bit words, in a plain form and in a form
+  that splits each end into its multiple of~$2^k$ and its rest, which cannot overflow
+  (\csource{find_points.c}{3355}{3370}).
+\end{definition}
+
+\begin{lemma}[What the packing computes]\label{lem:packing}
+  \uses{def:packing, lem:reciprocal, def:firstStage, def:rowStore, def:sieveEntry, def:tableOfPrime, lem:closedRow}
+  \lean{Ratpoints.Sieve.NumClass.Packs, Ratpoints.Sieve.numClasses_spec, Ratpoints.Sieve.SieveEntry.PackedFor, Ratpoints.Sieve.classOffsets_spec, Ratpoints.Sieve.fillBpList_eq_map, Ratpoints.Sieve.toInt_numeratorsToBits, Ratpoints.Sieve.SieveEntry.admits_mul, Ratpoints.Sieve.SieveEntry.reads_closedRow}
+  \leanok
+  \begin{enumerate}
+    \item The class of~$w$ \emph{packs}~$w$: it is \emph{well formed} ($k \le 6$,
+      $k < \mathrm{numStrides}$, $a_0 < 2^k$), every set bit of~$w$ is $\equiv a_0 \bmod 2^k$, and
+      bit~$t$ of its pattern is bit $(a_0 + 2^k t) \bmod 64$ of~$w$; bit~$j$ of \verb|den_bits| is
+      set exactly when $j < 64$ and the word of~$j$ is not~$0$.
+    \item For entries of odd moduli $1 < p \le \mathrm{maxPrimeEven}$ with their reciprocals, the
+      inverse of~$\mathrm{rbaLength}$ and a bias in $p\ZZ \cap [\mathrm{rowBias}, \mathrm{rowBias}
+      + p)$, well-formed classes and an array large enough, every class with a nonzero pattern gets
+      a row whose offset~$o$ for each entry is \emph{packed for} it: $\mathrm{rowBias} \le o <
+      \mathrm{rowBias} + 2p$, $o\, 2^k\,\mathrm{rbaLength} \equiv a_0 \bmod p$ and
+      $\mathrm{dinv}[k]\, 2^k \equiv 1 \bmod p$ with $\mathrm{dinv}[k] < p$; nothing else changes.
+    \item For entries with $0 < p \le \mathrm{maxPrimeEven}$, their reciprocals and
+      $\mathrm{dinv}[k] < p$, the residues of a denominator are $b\,\mathrm{dinv}[k] \bmod p$.
+    \item For a well-formed class the split form gives the bits $-\lfloor (a_0 - \mathrm{low})/2^k
+      \rfloor$ and $\lfloor (\mathrm{high} - a_0)/2^k \rfloor$, and so does the plain form when
+      $a_0 - \mathrm{low} < 2^{63}$ and $\mathrm{high} - a_0 \ge -2^{63}$.
+    \item If the tables of inverses of the factors of an entry invert their units and
+      $v u \equiv 1 \bmod p$, the row of~$u b$ admits~$u a$ exactly when the row of~$b$
+      admits~$a$; so the closed form of the row of~$b'$ with $2^k b' \equiv b$
+      (Chapter~\ref{chap:rows}), read at an offset~$o$ with $o\, 2^k\,\mathrm{rbaLength} \equiv
+      a_0$, has at bit~$j$ the admission of $a_0 + 2^k j$ by the row of~$b$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:reciprocal}
+  \leanok
+  (1) The mask of the multiples of~$2^k$ is empty beyond $k = 6$, which ends the loop over the
+  strides; the scatter puts bit~$a$ at $(a - a_0)/2^k$, and the doubling repeats the pattern.
+  (2) A halving multiplies by $2^{-1}$ modulo~$p$; the rows occupy disjoint ranges of the array,
+  one for each key $2^k + a_0$; the values reduced are below $64\, p$, so the reductions are exact
+  (Lemma~\ref{lem:reciprocal}), and so in~(3). (4) The arithmetic shift by~$k$ is the floor of the
+  quotient by~$2^k$, the and with $2^k - 1$ the Euclidean remainder. (5) The table of a prime is
+  read at $a\, b^{-1}$, that of a prime power at $a\, b^{-1}$ or $b\, a^{-1}$, which~$u$ does not
+  change. Read at the offset~$o$, bit~$j$ is the admission of $o\,\mathrm{rbaLength} + j$ by the
+  row of~$b'$, and multiplied by the unit~$2^k$ this index becomes $a_0 + 2^k j$ modulo~$p$.
+\end{proof}
+
+So the packed sieve keeps exactly the numerators of the class $a_0 \bmod 2^k$ that a sieve without
+the packing keeps, in the same order, and the pattern lets the bit~$n$ through exactly when~$w$ lets
+$a_0 + 2^k n$ through (\lname{Ratpoints.Sieve.NumClass.Packs.classBit\_bits}); a numerator outside
+the class is one that~$w$ rejects. The third stage is not packed.
+
+\section{The first stage}\label{sec:firstStage}
+
+The first stage and-s the rows of the first~$s_1$ moduli into every bit array of a piece, the bit
+arrays with the word numbers $w_0, \dots, w_0 + n - 1$, from the pattern of the class. The C code
+has two arms of it, which the preprocessor chooses by the number \verb|RATPOINTS_CHUNK| of
+registers: for a chunk from~$2$ to~$16$ the chunked arm, which and-s the rows of all the moduli into
+a chunk of bit arrays in registers; otherwise the arm that and-s one row at a time into the whole
+piece. The model has both and chooses between them by the same test.
+
+\begin{definition}[The first stage]\label{def:firstStage}
+  \uses{def:bitArrays, def:reciprocal, lem:reciprocal, def:tableOfPrime}
+  \lean{Ratpoints.chunk, Ratpoints.Sieve.SieveSpec, Ratpoints.Sieve.SieveSpec.Fits, Ratpoints.Sieve.andWords, Ratpoints.Sieve.andRows, Ratpoints.Sieve.chunkStarts, Ratpoints.Sieve.andRowsChunked, Ratpoints.Sieve.tailLegs, Ratpoints.Sieve.andRows_spec, Ratpoints.Sieve.andRowsChunked_spec}
+  \leanok
+  The chunk is~$16$, as in the default build (\csource{rp-private.h}{222}{224}). A sieve spec
+  (\csource{rp-private.h}{378}{379}) holds a modulus~$p$, its row for the denominator at hand
+  ($p + \mathrm{chunk} - 1$ bit arrays), the offset of the row, and a start and an end for the
+  chunked arm. It \emph{fits} when $0 < p \le \mathrm{maxPrimeEven}$,
+  $\mathrm{rowBias} \le \mathrm{offset} < \mathrm{rowBias} + 2p$, its end is~$p$, and bit array
+  $x < p + \mathrm{chunk} - 1$ of its row is bit array $x \bmod p$. The test \verb|small| says
+  whether the word numbers of the piece lie between $-\mathrm{rowBias}$ and $\mathrm{rowBias} -
+  2\,\mathrm{maxPrimeEven}$; then the sums of a word number and an offset are reduced with the
+  reciprocal, and otherwise by \verb|mod|. The arm one row at a time (\csource{sift.c}{943}{1022})
+  sets every bit array to the class pattern and then, for each modulus, and-s bit array~$j$ with bit
+  array $(w_0 + \mathrm{offset} + j) \bmod p$ of the row. The chunked arm sets the start of each
+  row to $(w_0 + \mathrm{offset}) \bmod p$ (\csource{sift.c}{596}{606}); with no modulus in the
+  stage ($s_1 = 0$) it writes the class pattern into every bit array, and otherwise it finds where
+  the whole chunks end (\csource{sift.c}{608}{620}). A whole chunk is loaded into registers as the
+  class pattern and-ed with the first row from its start on, and-ed with the other rows and stored,
+  each start moving on by the chunk modulo~$p$; the $t < \mathrm{chunk}$ bit arrays after the whole
+  chunks go in legs of~$8$, $4$, $2$ and~$1$ registers, one for each set bit of~$t$
+  (\csource{sift.c}{915}{940}). The contract of each arm (of the chunked one under
+  $\mathrm{chunk} \le 16$): for specs that fit, the reciprocals of their moduli and the bounds of
+  \verb|small|, word $y < n\,\mathrm{rbaPack}$ of the piece is the class pattern and-ed, for each
+  spec, with word $y \bmod \mathrm{rbaPack}$ of bit array $(w_0 + \mathrm{offset} + \lfloor
+  y/\mathrm{rbaPack} \rfloor) \bmod p$ of its row.
+\end{definition}
+
+The chunked arm reads what the other arm reads: from the start $s = (w_0 + \mathrm{offset} + c)
+\bmod p$ of the chunk at the bit array~$c$, bit array $s + j < p + \mathrm{chunk} - 1$ of the row
+is bit array $(w_0 + \mathrm{offset} + c + j) \bmod p$. That the legs store each bit array of a
+tail once is decided for each $t < 16$; the test that chooses the arm gives $\mathrm{chunk} \le
+16$. The rows that the run reads fit (Chapter~\ref{chap:rows}). The masks of the ends of a piece
+come after the first stage, as in the C code.
+
+\section{The second stage and the extraction}\label{sec:extraction}
+
+\begin{definition}[The second stage and the extraction]\label{def:extraction}
+  \uses{def:bitArrays, def:reciprocal, def:firstStage, def:candidate, def:packing, def:deliver, lem:reciprocal, def:callback, def:checkNumWith, def:tableOfPrime, lem:checkNumWith, lem:deliverList, def:counters}
+  \lean{Ratpoints.Sieve.secondStage, Ratpoints.Sieve.walkWord, Ratpoints.Sieve.siftBitArray, Ratpoints.Sieve.siftBitArrayWhole, Ratpoints.Sieve.scanPiece, Ratpoints.Sieve.secondStage_spec, Ratpoints.Sieve.walkWord_spec, Ratpoints.Sieve.siftBitArray_spec, Ratpoints.Sieve.scanPiece_spec}
+  \leanok
+  The second stage on a copy of the bit array with the word number~$i$: for each of its moduli in
+  turn, while the copy is nonzero, the copy is and-ed with bit array $(i + \mathrm{offset}) \bmod p$
+  of the row, the index reduced as in the first stage (\csource{sift.c}{1175}{1202}). The walk
+  through a word~$x$ whose bit~$t$ stands for $a_0 + s t$: while $x \ne 0$, the numerator of the
+  lowest set bit goes to the test of a candidate and, if it passes, to the exact check
+  (Definition~\ref{def:candidate}), the walk returning if the callback has stopped the search;
+  then~$x$ becomes $x \mathbin{\&} (x - 1)$ (\csource{sift.c}{262}{264},
+  \csource{sift.c}{1227}{1255}). A bit array (\csource{sift.c}{1213}{1226},
+  \csource{sift.c}{1257}{1264}): the second stage on the copy and, if the copy is still nonzero,
+  the walk through each of its words, bit~$t$ of word~$\kappa$ standing for
+  $a_0 + 2^k(\mathrm{rbaLength}\, i + 64\kappa + t)$. The scan of a piece
+  (\csource{sift.c}{1061}{1082}): a sentinel of ones just past the piece; the zero bit arrays are
+  stepped over, the scan stops at the sentinel, and each other bit array is sifted as above. The
+  contracts, for specs that fit, the reciprocals of their moduli and the bounds of \verb|small|,
+  from a delivery whose flag is clear: the copy after the second stage is the copy and-ed with the
+  rows of all the moduli of the stage; the walk, and a bit array in either arm, deliver in
+  increasing order the points of the numerators of the set bits (of~$x$, and of the words and-ed
+  with the rows of the second stage) that pass the test of a candidate; and if, for a
+  test~$\varphi$ of the bits, bit~$t$ of word~$y$ of the piece and-ed with the rows of the second
+  stage is $t < 64 \wedge \varphi(\mathrm{rbaLength}\, w_0 + 64 y + t)$, the scan delivers in the
+  same way the points of the numerators $a_0 + 2^k j$ of the bits~$j$ of the piece that
+  pass~$\varphi$ and the test of a candidate.
+\end{definition}
+
+Stopping the second stage early loses nothing, since a zero bit array stays zero. A build with
+\verb|USE_LONG_IN_PHASE_2| and-s one word at a time (\lname{Ratpoints.Sieve.secondStageWord}); the
+model has both arms, chosen by the constant \lname{Ratpoints.useLongInPhase2}, false as in the
+default build, and proves that they deliver the same points
+(\lname{Ratpoints.Sieve.siftBitArray\_spec}). The walk ends since clearing the lowest set bit makes
+the word smaller, the scan since the sentinel is not zero.
+
+\section{The test of a candidate and the exact check}\label{sec:candidate}
+
+\begin{definition}[The test of a candidate and the exact check]\label{def:candidate}
+  \uses{def:bitArrays, def:reciprocal, def:deliver, def:callback, def:sieveEntry, def:tableOfPrime, def:counters}
+  \lean{Ratpoints.Sieve.relprime, Ratpoints.Sieve.relprimeOdd, Ratpoints.Sieve.checkOf, Ratpoints.Sieve.fillChecks, Ratpoints.Sieve.stage3, Ratpoints.Sieve.accepted, Ratpoints.Sieve.checkPoint}
+  \leanok
+  The test for common factors on signed 64-bit words (\csource{sift.c}{318}{327}): for $m = 0$,
+  whether $n = 1$; otherwise~$m$ replaced by~$-m$ when it is negative, false when~$m$ and~$n$ are
+  both even, and else the binary algorithm on their odd parts: while $n \ne m$, with $d = m - n$ and
+  the mask $d \gg 63$, $n$ becomes $n + (d \mathbin{\&} \mathrm{mask})$ and~$m$ becomes
+  $(d \oplus \mathrm{mask}) - \mathrm{mask}$ shifted right by its trailing zeros; the result is
+  whether~$m$ ends as~$1$ (\csource{sift.c}{328}{342}). What the third stage needs of the entry of a
+  prime~$p$ for~$b$ (\csource{sift.c}{414}{428}): the entry of its table of inverses at $b \bmod p$,
+  or~$0$ when $p \mid b$; the bias~$p H$ when $2 p H < 2^{32}$, else~$0$; the reciprocal and the
+  table of~$p$; for the entries of the stage, a thunk made once per denominator
+  (\csource{sift.c}{405}{413}). The third stage for~$a$: each prime whose inverse is not~$0$
+  rejects~$a$ when its table says that~$f$ is not a square modulo~$p$ at the residue of
+  $a\, b^{-1}$, reduced with the reciprocal after adding the bias if there is one, and by division
+  otherwise (\csource{sift.c}{291}{301}). The test of a candidate: $a$ is prime to~$b$ and passes
+  the third stage (\csource{sift.c}{438}{446}). The exact check
+  (\csource{find_points.c}{5250}{5338}): unless~$\mathrm{noCheck}$, for the value~$v$ of Horner's
+  rule at~$a$ on the products $c_k b^{d - k}$ (a thunk made once per denominator), times~$b$ for
+  odd~$d$, so that $v = F_c(a, b)$ (Definition~\ref{def:binaryForm}), and
+  $y = \lfloor \sqrt{v} \rfloor$: when $v = y^2$, the call with $(a : y : b)$ and then, unless that
+  call stopped the search, $y = 0$ or~$\mathrm{noY}$, the call with $(a : -y : b)$;
+  under~$\mathrm{noCheck}$ one call with $(a : 0 : b)$; the points mapped back to the caller's curve
+  after a reversal.
+\end{definition}
+
+\begin{lemma}[The test of a candidate]\label{lem:candidate}
+  \uses{def:candidate, def:callback, def:checkNumWith, def:sieveEntry, def:counters}
+  \lean{Ratpoints.Sieve.relprime_spec, Ratpoints.Sieve.SieveEntry.IsPrimeEntry, Ratpoints.Sieve.all_admits_fillChecks, Ratpoints.Sieve.accepted_spec, Ratpoints.Sieve.acceptedPoints_eq_ite}
+  \leanok
+  For words $m > -2^{63}$ and $n > 0$ the test for common factors gives whether $\gcd(m, n) = 1$.
+  A \emph{prime entry} is a sieve entry whose single factor is a table of the kind of a prime, of a
+  modulus $1 < p \le 2^{32}$ ($p$ need not be prime), whose table of inverses holds a value in
+  $[1, p - 1]$ at each nonzero residue below~$p$ (that these are inverses is not needed), and whose
+  modulus and reciprocal are those of~$p$. For prime entries, $\gcd(a, b) = 1$ and $|a| \le H$, the
+  third stage lets~$a$ through exactly when the rows of~$b$ in all the entries admit~$a$. For
+  $0 < b < 2^{63}$ and $|a| < 2^{63}$ the test of a candidate is $\gcd(a, b) = 1$ followed by the
+  third stage. So for prime entries in the third stage with their reciprocals, $0 < b < 2^{63}$ and
+  $|a| \le H < 2^{63}$, the points that the extraction delivers for~$a$ are those of the check with
+  the flags (\lname{Ratpoints.Sieve.checkNumWith}, the points of the exact check if
+  $\gcd(a, b) = 1$) when the rows of the third stage admit~$a$, and none otherwise.
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:reciprocal, def:tableOfPrime}
+  \leanok
+  For positive words, $d = m - n$ is a word and the step gives $\min(m, n)$ and the odd part of
+  $|m - n|$; the invariant keeps both values odd and positive, so that no step leaves the range of
+  a \verb|long| and the arithmetic of the 64-bit words is that of the C code; their~$\gcd$ stays
+  the same and their sum decreases, so that the loop ends at $m = n = \gcd$. For $m \ne 0$, $-m$ is
+  a word, and removing the powers of~$2$ changes whether the~$\gcd$ is~$1$ only when both are even.
+  In the third stage an entry whose modulus~$p$ does not divide~$b$ is not skipped, since its table
+  of inverses is not~$0$ there; the biased value lies in $[H, 2pH - H]$, both reductions are exact
+  (Lemma~\ref{lem:reciprocal}), and the residue read is where the row of~$b$ reads the table
+  (Chapter~\ref{chap:moduli}). An entry with $p \mid b$ is skipped, and its row admits~$a$, since
+  $p \nmid a$ by the~$\gcd$.
+\end{proof}
+
+The check with the flags is the check of the reference (\lname{Ratpoints.Sieve.checkNum}, what the
+brute-force reference finds for one numerator, mapped back after a reversal), without the points
+with $y < 0$ under~$\mathrm{noY}$, and the one survivor $(a, 0, b)$ under~$\mathrm{noCheck}$
+(Chapter~\ref{chap:output}). The third stage of the run holds only primes of the table, also after a
+correction of the moduli (Chapter~\ref{chap:moduli}), and these are prime entries.
+
+\section{One denominator}\label{sec:siftDen}
+
+\begin{definition}[The sieve of one denominator]\label{def:sift}
+  \uses{def:firstStage, def:extraction, def:candidate, def:packing, def:bitArrays, def:deliver, def:bruteForce, lem:packing, lem:candidate, lem:reciprocal, lem:runRows, def:callback, def:checkNumWith, def:exactBounds, lem:deliverList, def:counters}
+  \lean{Ratpoints.Sieve.siftPiece, Ratpoints.Sieve.siftBits, Ratpoints.Sieve.sift, Ratpoints.Sieve.siftPiece_spec, Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.sift_spec, Ratpoints.Sieve.RowStore.Fits.fits_run_sift}
+  \leanok
+  One piece (\csource{sift.c}{498}{531}): the test \verb|small|, a fresh array with room for the
+  sentinel, the first stage with the first~$s_1$ moduli in the arm that $1 < \mathrm{chunk} \le 16$
+  chooses, the masks of the ends (\csource{sift.c}{1030}{1041}) and the scan with the moduli of the
+  second stage. The bits from~$\mathrm{low}$ to~$\mathrm{high}$ of an interval
+  (\csource{find_points.c}{3563}{3612}): the word numbers from
+  $\lfloor \mathrm{low}/\mathrm{rbaLength} \rfloor$ to
+  $\lfloor \mathrm{high}/\mathrm{rbaLength} \rfloor$ in pieces of at most~$A$ bit arrays, the first
+  and the last masked. One denominator (\csource{find_points.c}{3442}{3488}): for each search
+  interval the bits of its numerators within the height bound (Chapter~\ref{chap:region}); at the
+  first interval that the height bound does not rule out (also one without numerators) the sieve
+  specs (Definition~\ref{def:runTables}), the modulus, the offset of the row of the class and the
+  row of the residue of~$b$ for the stride of each entry of the first two stages, the missing rows
+  built into their tables (Chapter~\ref{chap:rows}); then the bits of the interval in pieces. Each
+  returns when the callback stops the search. The contract of one denominator: for $A \ge 1$,
+  $0 < b < 2^{63}$, $H < 2^{63}$, prime entries in the third stage, the reciprocals of all the
+  entries, the residues $b\,\mathrm{dinv}[k] \bmod p$ of the entries of the first two stages, whose
+  tables of inverses invert, tables of rows that fit them, and a delivery whose flag is clear: for
+  every word~$w$ that the class packs, a row of offsets packed for the class, and the ranges of the
+  numerators that the bounds of the search intervals give at~$b$, the delivery is that of the points
+  of the check with the flags of the numerators $-H, \dots, H$ that lie in a range, pass~$w$ and
+  survive the entries of all three stages, in increasing order; when the callback does not stop the
+  search, the counters of the sieve grow by a closed form that depends neither on the callback and
+  the flags nor on the tables of rows; and the tables of rows afterwards fit the entries again.
+\end{definition}
+
+The contracts compose from the bottom: the walk gives that of a bit array, the bit arrays that of
+the scan, and the scan with either arm of the first stage and the masks that of a piece; the pieces
+of an interval lie end to end. Lemma~\ref{lem:packing} turns the bits into numerators and the rows
+for the stride into the rows of~$b$, and Lemma~\ref{lem:candidate} the test of a candidate into the
+rows of the third stage. The counters (Definition~\ref{def:counters}), which feed the correction
+of the moduli (Chapter~\ref{chap:moduli}), are counted before the exact check, as in the C code.
+
+\section{The stages compute the plain sieve}\label{sec:siftTheorem}
+
+The plain sieve, a sieve in its simplest form, models no C code.
+
+\begin{definition}[The plain sieve]\label{def:plainSieve}
+  \uses{def:bruteForce, def:sieveEntry}
+  \lean{Ratpoints.Sieve.sieveDen, Ratpoints.Sieve.checkDen, Ratpoints.Sieve.sieveDen_spec, Ratpoints.Sieve.checkDen_spec}
+  \leanok
+  For a denominator~$b$, the height bound~$H$ and a list of sieve entries
+  (Chapter~\ref{chap:moduli}): an array of $2H + 1$ Booleans, entry~$i$ for the numerator
+  $a = i - H$, all true at the start, each and-ed in turn with the row of~$b$ in every entry at~$a$.
+  Its contract: entry~$i$ is the survivor test \lname{Ratpoints.Sieve.survives} at $i - H$, the
+  conjunction of the rows. The check of such an array takes the numerators whose entry is true, in
+  increasing order, and tests and checks each as the brute-force reference does. Its contract: if
+  entry~$i$ is $\varphi(i - H)$ for a test~$\varphi$ of the numerators, the result is what the
+  brute-force reference (Definition~\ref{def:bruteForce}) finds over~$b$ and the numerators
+  $-H, \dots, H$ that pass~$\varphi$.
+\end{definition}
+
+\begin{theorem}[The stages compute the plain sieve]\label{thm:sift_eq_checkDen}
+  \uses{def:sift, def:plainSieve, def:deliver, lem:runRows, def:callback, def:exactBounds, def:reversal, def:counters}
+  \lean{Ratpoints.Sieve.run_sift_eq_deliver_checkDen}
+  \leanok
+  Let $A \ge 1$, $0 < b < 2^{63}$ and $H < 2^{63}$; let the class pack a word~$w$ and have a row of
+  offsets packed for it, the entries of the first two stages have tables of inverses that invert and
+  tables of rows that fit them, the entries of the third stage be prime entries, and the bounds of
+  the search intervals give the ranges of the numerators at~$b$. Then, with the exact check on, from
+  a delivery whose flag is clear, \verb|sift| on~$b$, with the reciprocals of the entries and the
+  residues of~$b$ for the stride, delivers the points that the check of the plain sieve with the
+  entries of all three stages finds, restricted to the numerators that lie in a range and pass~$w$,
+  mapped back after a reversal, and without those with $y < 0$ under~$\mathrm{noY}$.
+\end{theorem}
+
+\begin{proof}
+  \uses{def:sift, def:plainSieve, def:checkNumWith, lem:checkNumWith}
+  \leanok
+  The check of the plain sieve gives what the brute-force reference finds for the numerators that
+  survive all the entries (Definition~\ref{def:plainSieve}), and the sieve delivers the points of
+  the check with the flags of the numerators in the ranges that pass~$w$ and survive all the
+  entries (Definition~\ref{def:sift}). Without~$\mathrm{noCheck}$ this check is the check of the
+  reference, mapped back and filtered by~$\mathrm{noY}$, and filtering the numerators filters the
+  points of the reference by their numerators. A numerator survives a concatenation of lists of
+  entries exactly when it survives each list (\lname{Ratpoints.Sieve.survives\_append}), so that
+  the entries of the three stages together give the survivor test of all of them.
+\end{proof}
+
+\section{Where the model differs from the C code}\label{sec:sieveDeviations}
+
+The \verb|Deviation:| paragraphs of the components record each difference, and
+Chapter~\ref{chap:ccode} sorts them by kind. The high half of a 128-bit product comes from the
+32-bit halves, and the lowest set bit from the loop for a compiler without the builtin. The test
+for common factors and the bits of an interval compute on 64-bit words in two's complement with the
+arithmetic shift, which the C standard leaves to the implementation and gcc defines so; the words
+wrap where a \verb|long| would overflow only in the plain form of the bits, for an end
+within~$a_0$ of~$-2^{63}$; there both the C code and the model use the split form. The comparison
+$2pH < 2^{32}$ is made on natural numbers, for one of \verb|double|s, with the same outcome for
+every $H < 2^{63}$. The flag of the stop is tested after each walk, bit array, piece and interval,
+where the C code returns from within the walk.

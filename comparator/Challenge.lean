@@ -26,12 +26,12 @@ checks this): the main theorems speak about the model's `findPoints` and `findPo
 are trusted in the sense that they are the code the executable runs, while the specification is
 reproduced here, so that a solution that changed it would be rejected.
 
-The file has eleven statements; `comparator/README.md` records how they came in, stage by stage,
-and when Comparator accepted them. Two are about the brute-force reference: `Ratpoints.bruteForce`
-finds exactly the points (`Ratpoints.IsPoint`), without duplicates. The other nine hold for every
-coefficient list `c`, height bound `H`, options of the search `o : Ratpoints.Options` and options of
-the sieve `s : Ratpoints.SieveOptions`, with no hypothesis on `s`, with which the search chooses its
-moduli from the curve:
+The file has eleven statements, which `comparator/challenges.json` lists; `comparator/README.md`
+describes them and gives the date on which Comparator last accepted them. Two are about the
+brute-force reference: `Ratpoints.bruteForce` finds exactly the points (`Ratpoints.IsPoint`),
+without duplicates. The other nine hold for every coefficient list `c`, height bound `H`, options
+of the search `o : Ratpoints.Options` and options of the sieve `s : Ratpoints.SieveOptions`, with
+no hypothesis on `s`, with which the search chooses its moduli from the curve:
 
 * membership: with the exact check on (`o.noCheck = false`) and assuming Sturm's theorem
   (`Ratpoints.SturmTheorem`) when the Sturm step is on, the list of `Ratpoints.findPoints` holds

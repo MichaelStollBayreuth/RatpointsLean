@@ -9,11 +9,10 @@ repository = "https://github.com/MichaelStollBayreuth/ratpoints"
 tag = "v3.1.1"
 commit = "1a998538dfa835bb1bce6047e75302cc01517443"
 
-# Every line of code of these files is to lie in exactly one recorded range: modelled (a `C:`
-# paragraph of a docstring of the model) or excluded (an [[excluded]] table below); until the end
-# of the project a line lies in at most one, and `correspondence.py check --complete` then
-# requires exactly one. Of main.c, the model covers the parts the command-line program mirrors;
-# the rest is to be excluded explicitly.
+# Every line of code of these files lies in exactly one recorded range: modelled (a `C:`
+# paragraph of a docstring of the model) or excluded (an [[excluded]] table below), as
+# `correspondence.py check --complete` requires. Of main.c, the model covers the parts the
+# command-line program mirrors; the rest is excluded explicitly.
 [files]
 paths = ["find_points.c", "sift.c", "init.c", "sturm.c", "rp-private.h", "ratpoints.h",
   "primes.h", "gen_find_points_h.c", "gen_init_sieve_h.c", "main.c"]
@@ -26,8 +25,7 @@ paths = ["find_points.c", "sift.c", "init.c", "sturm.c", "rp-private.h", "ratpoi
 #   kind = "threads"
 #   reason = "the pool threads deliver the blocks in loop order; the model runs them in turn"
 #
-# with `kind` one of parameters (the choice of the sieving parameters, which the theorems
-# quantify over), threads, memory, instrumentation (counters, verbose output), interface (the
+# with `kind` one of threads, memory, instrumentation (counters, debugging output), interface (the
 # library's calling conventions) and other.
 
 [[excluded]]

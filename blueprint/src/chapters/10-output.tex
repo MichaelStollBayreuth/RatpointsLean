@@ -1,1596 +1,398 @@
-% Stage G: the delivery of the points to the callback of the caller, with the stop that it may
-% request, tested where the C code tests quit; the search with a callback, what it gives back and
-% the bits of the flags written back; the options of the output RATPOINTS_NO_CHECK and
-% RATPOINTS_NO_Y; the protocol of the delivery; the order of the points stated in terms of the
-% polynomial; and the options of the output, the callback, the formats and the report of the
-% command-line program, with the theorem on what it prints.
-\chapter{The delivery of the points and the output}\label{chap:output}
+\chapter{Delivery and the program}\label{chap:output}
 
-Stage~G models how ratpoints hands its points to its caller. The library function \verb|find_points|
-returns no list: for each point that it finds it calls a function \verb|process| of the caller with
-the coordinates, the caller's data \verb|info| and a pointer to a flag \verb|quit|, adds the value
-that the call returns to a count \verb|total|, which it returns, and stops the search as soon as a
-call sets the flag. The model threads the callback and a \emph{delivery}, the data, the count and
-the flag, through the components that the C code passes \verb|process| and \verb|info| through, and
-tests the flag where the C code tests \verb|quit|: in the exact check and at infinity between the
-calls with $+y$ and $-y$, in the walk through the set bits of a word after each check, after each
-piece of bit arrays, after each denominator, and after the points at infinity, where the search
-returns before it sieves. The search with a callback is \verb|findPointsWith|; \verb|findPoints|
-keeps its type and is the instance of it whose callback appends each point to an array and never
-stops the search. With the delivery come the two options of the library that change what it
-delivers: \verb|RATPOINTS_NO_Y|, under which only the point with $y \ge 0$ of a pair goes to the
-callback, and \verb|RATPOINTS_NO_CHECK|, under which every numerator that passes the sieve goes to
-it with $y = 0$, without the exact check. They are the fields $\mathrm{noCheck}$ and $\mathrm{noY}$
-of the options of the search, bits of the word of flags that also holds the switch of the reversal;
-and the bits of the flags that the program reads after the search, whether the polynomial was
-reversed and whether the denominators were the squares or divisors of the leading coefficient times
-squares, are written back in the result.
+The library function \verb|find_points| of ratpoints returns no list of points: it hands each point
+that it finds to a function of its caller, the callback, which may count it, print it or stop the
+search. This chapter describes how the model does the same, with the callback, its weights and its
+stop, the options of the output \verb|RATPOINTS_NO_CHECK| and \verb|RATPOINTS_NO_Y|, what a search
+writes back and the report of the library under \verb|RATPOINTS_VERBOSE|; and the program
+\verb|ratpoints-lean|, which reads the command line of ratpoints and prints what ratpoints prints,
+but for its banner. The reference of the delivery, with which the statements compare a search,
+belongs to the specification (Definition~\ref{def:deliver}); the theorems on what a search delivers
+and what the program prints are in Chapter~\ref{chap:theorems}; the components of the sieve that
+pass the delivery on are those of Chapter~\ref{chap:sieve}.
 
-The order of the points is stated in terms of the polynomial: the specification has a file that
-defines the list of the points in the order of ratpoints, the points at infinity of the polynomial
-searched first, then its denominators in the order of the loop of the search, ascending but for the
-divisors of the leading coefficient in the order of binary counting over its primes, the numerators
-ascending and $+y$ before $-y$, mapped back after a reversal; and a theorem says that
-\verb|findPoints| returns that list. The command-line program has the options of the output of
-\verb|main.c| (\verb|-x -X -y -Y -z -Z -1 -i -I| and the formats and strings of
-\verb|-f -fs -fm -fe|), its callback \verb|process|, which prints the points as they are delivered,
-and the report that \verb|main.c| prints without \verb|-q|, with the messages on the search region
-(message~3) and on the search intervals that the search gives back (message~8) since stage~H, and
-on the moduli used (message~4) since stage~I; a theorem says what the program prints, in
-particular that \verb|-1| prints the first point of the list that the callback keeps.
+\section{The callback and the delivery}\label{sec:outputCallback}
 
-With the appending callback the delivery of a list is that list, so \verb|findPoints| returns the
-list of the earlier stages whenever neither option of the output is set, and neither \verb|Params|
-nor \verb|Params.WF| changes (stage~I makes the parameters internal to the search and drops their
-well-formedness, Chapter~\ref{chap:moduli}). Of the statements that comparator certifies, membership
-has the hypothesis that the exact check is on and, under \verb|RATPOINTS_NO_Y|, the conclusion
-$y \ge 0$, since under \verb|RATPOINTS_NO_CHECK| the list holds survivors that are no points and
-under \verb|RATPOINTS_NO_Y| only one point of each pair; no duplicates keeps its text, which
-quantifies over the options of the output too; the two theorems of the reference, both refusal
-theorems and the well-formedness of the parameters of the program keep their text. Five statements
-are new: the order theorem, over the file of the order, which the challenge restates verbatim; the
-protocol of the delivery, by which the search with any callback gives the data and the count of the
-delivery of the list of \verb|findPoints|, up to the first stop; and three statements on the output
-under \verb|RATPOINTS_NO_CHECK|; like membership and no duplicates, all five are for well-formed
-parameters. So comparator certifies twelve statements (Section~\ref{sec:certifiedG}); the five new
-ones came in with their theorems, and \verb|lake comparator --paranoid|, with Lean's kernel and the
-five external checkers bundled with Lean, accepted all twelve on 2026-10-17, the date that
-Chapters~\ref{chap:spec} and~\ref{chap:sieve} and \verb|comparator/README.md| record; stage~H
-changes six of them, for the search region of the options, and comparator accepted the twelve in
-their form of stage~H on 2026-10-18 (Section~\ref{sec:certifiedH}); stage~I takes the options of the
-sieve in place of the parameters and drops the well-formedness of the parameters of the program,
-leaving eleven (Section~\ref{sec:certifiedI}).
+The header of the library declares the callback of \verb|find_points| and \verb|find_points_work|
+(\csource{ratpoints.h}{436}{437}, \csource{ratpoints.h}{441}{442}) as
+\verb|int proc(long, long, const mpz_t, void*, int*)|; the manual names its parameters \verb|x|,
+\verb|z|, \verb|y|, \verb|info| and \verb|quit|. The library adds the value that each call returns
+to a count \verb|total|, which it returns, or one of the negative codes of an error
+(\csource{ratpoints.h}{427}{430}); a call stops the search by setting \verb|*quit|, which the
+library clears before the search and tests after the steps that may have made calls
+(Section~\ref{sec:outputStops}), so that it is clear at every call. Every refusal of the input comes
+before the first call; only \verb|RATPOINTS_NO_MEMORY| can come after calls, when an allocation
+fails, and the model has no allocation that can fail. The callback of the model and the delivery
+that a search threads through its components are those of Definition~\ref{def:deliver}; the delivery
+stands for the pointer \verb|info|, for the counts \verb|total| of the functions of the search as
+one running count, and for the flags of the stop of the points at infinity and of the sieve
+(\csource{find_points.c}{4570}{4571}, \csource{find_points.c}{3129}{3129}).
 
-As in the other stages, since the aim of the project is to verify the C code as far as that can be
-done, the model follows the C code where the C code has its data and its tests, at its interface
-too: the callback takes the C's arguments $(x, z, y)$ and the caller's data and gives back the
-weight, the stop and the new data; the flag is tested where the C code tests \verb|quit|; the points
-at infinity are delivered as the C code delivers them; and the bits of the flags that the program
-reads are written back as \verb|find_points| writes them. So a stop stops the search:
-\verb|ratpoints-lean '1 0 1' 1000000000000 -q -1| returns at once after the point at infinity, as
-ratpoints does, and since the run over the blocks of stage~I a stop in the sieve returns as soon as
-the block in which it comes is done, as in the C code. The speed of the model is not an aim.
-
-\section{What the C code does}\label{sec:outputC}
-
-\paragraph{The callback.} The prototypes of \verb|find_points| and \verb|find_points_work| give the
-callback as \verb|int proc(long x, long z, const mpz_t y, void *info, int *quit)|
-(\csource{ratpoints.h}{436}{437}, \csource{ratpoints.h}{441}{442}). The library passes \verb|info|
-through unchanged, adds the value that each call returns to its count \verb|total|, which the manual
-calls a weight for counting the points, ``usually 1'', and returns the count, or one of the negative
-codes of an error (\csource{ratpoints.h}{427}{430}, with the comment of \verb|RATPOINTS_NO_MEMORY|
-up to line 433). Every refusal of the input (\verb|RATPOINTS_NON_SQUAREFREE|,
-\verb|RATPOINTS_BAD_ARGS|, \verb|RATPOINTS_WORK_LENGTH_TOO_SMALL|) comes before the first call.
-\verb|RATPOINTS_NO_MEMORY| can come after calls: once the points at infinity are delivered, the
-search can still fail for lack of memory for its arrays (lines 5127-5128 and 5137-5139 of
-\verb|find_points.c|), or for the points of a block on a sieving thread (lines 5146-5148); the
-points delivered before it are points of the curve, but the search is incomplete, as the manual
-says. The model cannot meet this code, since its search has no allocation that can fail, nor
-\verb|RATPOINTS_WORK_LENGTH_TOO_SMALL|. A call stops the search by setting \verb|*quit|, which the
-library clears before the search and tests after each call, so that it is clear at every call. With
-threads the calling thread makes the same calls in the same order (Theorem~\ref{thm:threads}). The
-word \verb|args->flags| holds the options of the caller (\csource{ratpoints.h}{403}{411}): without
-\verb|RATPOINTS_NO_CHECK|, \verb|RATPOINTS_NO_Y| is the only one that changes which points are
-delivered. \verb|RATPOINTS_NO_REVERSE| changes only the order of the calls: the search runs in the
-reversed coordinates and maps each point back. \verb|RATPOINTS_NO_JACOBI| changes nothing that is
-delivered. Under \verb|RATPOINTS_NO_CHECK|, which delivers every survivor of the sieve with $y = 0$,
-both of them also change which pairs are delivered (see the end of the next paragraph).
-\verb|RATPOINTS_VERBOSE| changes only what the library prints; \verb|find_points_work_1| keeps the
-bits of the input (\csource{find_points.c}{4606}{4606}) and sets the internal ones
-(\csource{ratpoints.h}{414}{421}).
-
-\paragraph{The calls.} There are points at infinity when the degree $d$ of the polynomial searched
-is odd or $c_d$ is a square (\verb|point_at_infty|, \csource{find_points.c}{4894}{4899}); then
-\verb|find_points_work_1| calls the callback with $(a, b) = (1, 0)$, or $(0, 1)$ after a reversal
-(\csource{find_points.c}{5068}{5099}): under \verb|RATPOINTS_NO_CHECK| once, with $y = 0$; otherwise
-for odd $d$ once, with $y = 0$, and for even $d$ with $y = \sqrt{c_d}$ and then, unless that call
-set \verb|quit| or \verb|RATPOINTS_NO_Y| is set, with $-\sqrt{c_d}$. If a call set \verb|quit|, it
-returns the count (\csource{find_points.c}{5100}{5103}) and does not sieve: \verb|sieving_info| has
-run before the points at infinity, and the block of the sieving
-(\csource{find_points.c}{5115}{5167}) comes after. In the sieve, each numerator $a$ of the
-denominator $b$ that passes the test of a candidate goes through \verb|RP_CHECK_POINT|
-(\csource{sift.c}{202}{205}) to \verb|_ratpoints_check_point| (\csource{find_points.c}{5250}{5338}):
-without \verb|RATPOINTS_NO_CHECK| it computes $v = F(a, b)$, times $b$ for odd degree, and $y =
-\lfloor \sqrt{v} \rfloor$, and when $v \ge 0$ and $v = y^2$ it calls the callback with the point
-mapped back after a reversal, $(b, y, a)$ for $a \ge 0$ and $(-b, y, -a)$ for $a < 0$, and then,
-unless that call set \verb|quit|, $y = 0$ or \verb|RATPOINTS_NO_Y| is set, with $-y$; under
-\verb|RATPOINTS_NO_CHECK| it calls the callback once, with the pair mapped in the same way and $y =
-0$, whether or not it gives a point. \verb|RATPOINTS_NO_CHECK| is read nowhere else but in a line of
-the output under \verb|RATPOINTS_VERBOSE|, \verb|RATPOINTS_NO_Y| nowhere else at all: the reversal,
-the Sturm step, the exits, the tests on the denominators, the sieve and the third stage run as
-without them. Conversely, the moduli, the third stage, the Jacobi test, the reversal and the search
-region of the Sturm step change what \verb|RATPOINTS_NO_CHECK| delivers: the numerators that pass
-the sieve.
-
-\paragraph{The stop.} The flag is tested only right after a call of the callback, and each function
-returns its count at once when it is set: \verb|_ratpoints_sift0| after each \verb|RP_CHECK_POINT|
-(\csource{sift.c}{1250}{1251} and \csource{sift.c}{1287}{1288}, the first word of a bit array and
-the others, and \csource{sift.c}{1168}{1169} in the arm of \verb|USE_LONG_IN_PHASE_2|; the arms
-under \verb|DEBUG|, lines 1240-1241 and 1279-1280, are the same walk without their output,
-Definition~\ref{def:walkWord}); \verb|sift| after each call of \verb|_ratpoints_sift0|
-(\csource{find_points.c}{3611}{3611}; line 3610 is the stop of a thread of the pool, excluded with
-the threads); \verb|run_block| after each \verb|sift|, in each shape
-(\csource{find_points.c}{3928}{3928}, \csource{find_points.c}{3957}{3957},
-\csource{find_points.c}{4044}{4044}, \csource{find_points.c}{4068}{4068}); and the loop over the
-blocks after each block (\csource{find_points.c}{5158}{5158}). The points at infinity use a local
-flag (\csource{find_points.c}{4571}{4571}), the sieve the flag of the sieving thread, which
-\verb|worker_init| clears (\csource{find_points.c}{3129}{3129}); the first is clear when the sieve
-starts, since a stop at infinity returns before it. So the calls made are those of the search that
-no call stops, up to and including the first call that sets \verb|quit|, and the count is the sum of
-the values that these calls return.
-
-\paragraph{The flags written back.} \verb|find_points_work_1| sets \verb|RATPOINTS_REVERSED| in the
-reversal check and \verb|RATPOINTS_USE_SQUARES| and \verb|RATPOINTS_USE_SQUARES1|
-(\csource{find_points.c}{4910}{4943}) before both exits and before the points at infinity, so that
-they are written back on every path that does not refuse the input; the return of the Sturm step at
-line 4889 (stage~H, Definition~\ref{def:sturmRegion}) comes for even degree only, where both are
-clear. The program reads them after the search, with \verb|RATPOINTS_NO_JACOBI| and
-\verb|RATPOINTS_NO_CHECK|, which it set itself (message 7). The numbers of the moduli used,
-\verb|sp1_used|, \verb|sp2_used| and \verb|sp3_used| (\csource{ratpoints.h}{378}{378}), which
-message 4 reads, are zeroed by \verb|find_points_work| on entry and set after the sieve, from the
-first stage of the choice of the moduli and the second and third stages of the last block of the run
-(stage~I, Definition~\ref{def:chooseAndSearch}), so that they are $0$ when the search returns before
-the sieve. The search intervals, \verb|num_inter| and \verb|domain|, which the search leaves as it
-made them (lines 4831-4841 and the Sturm step) and message 8 reads, belong to the search region
-(stage~H, Chapter~\ref{chap:region}).
-
-\paragraph{The program.} \verb|main.c| keeps the settings of the output in global variables
-(\csource{main.c}{57}{64}), with the defaults of a command line without options
-(\csource{main.c}{383}{390}), and tells an option by the character after its \verb|-|, and \verb|-f|
-by the one after that: \verb|-x| and \verb|-X| set and clear \verb|RATPOINTS_NO_CHECK|, \verb|-y|
-and \verb|-Y| \verb|RATPOINTS_NO_Y|, \verb|-z| and \verb|-Z| whether no point is printed, \verb|-1|
-that one point is enough, and \verb|-i| and \verb|-I| whether the points at infinity are passed over
-(\csource{main.c}{602}{637}); \verb|-f|, \verb|-fs|, \verb|-fm| and \verb|-fe| take the next word,
-whatever it is, as the format of a point and the strings before, between and after the points
-(\csource{main.c}{533}{577}), a missing word and \verb|-f| followed by another character being error
-6; the last setting wins. Without \verb|-f| the format is \verb|(%x : %z)\n| under
-\verb|RATPOINTS_NO_CHECK| or \verb|RATPOINTS_NO_Y| and \verb|(%x : %y : %z)\n| otherwise
-(\csource{main.c}{681}{685}), and \verb|-q| clears \verb|RATPOINTS_VERBOSE|
-(\csource{main.c}{688}{688}). The data that \verb|main.c| gives \verb|process|
-(\csource{main.c}{110}{113}, filled at \csource{main.c}{235}{242}) holds whether a point was
-printed, the settings it reads, and \verb|no_y|, set under either option of the output.
-\verb|process| (\csource{main.c}{139}{189}) passes a point at infinity over under \verb|-i| with the
-weight $0$, leaving \verb|quit| clear; it passes a point outside the search region over in the same
-way (lines 150-152, stage~H, Definition~\ref{def:cliProcess}); otherwise it sets \verb|*quit| to the
-setting of \verb|-1|, returns $1$ under \verb|-z|, and else prints the string before the points if
-it printed no point yet and the string between them otherwise, then the format character by
-character, \verb|%x|, \verb|%y| and \verb|%z| as the coordinates (\verb|%y| as it stands under
-\verb|no_y|), a backslash with \verb|t|, \verb|n|, a backslash or \verb|%| as a tab, a line feed, a
-backslash or a percent sign, a trailing \verb|%| or backslash as itself, every other pair of
-characters as it is, and returns $1$. After the search \verb|main.c| prints the string before the
-points if \verb|process| printed none, then the string after them (\csource{main.c}{265}{265},
-\csource{main.c}{267}{267}); unless \verb|-q| it prints the report: before the search the banner,
-the curve (\verb|print_poly|, \csource{main.c}{913}{949}) and, unless \verb|-v|, the height bound
-and a blank line (\csource{main.c}{215}{220}), with the search region of the command line (line 224,
-stage~H, Definition~\ref{def:cliReport}); after it, unless \verb|-v|, two line feeds and the
-messages 4 on the moduli used, 7 on what the search did and 8 on the search intervals, then message
-2 with the count, ``rational points found'' or, under either option of the output, ``rational point
-pairs found'' (\csource{main.c}{268}{276}, the messages \csource{main.c}{972}{1033}).
-
-\paragraph{The order.} The calls of a search that no call stops come in this order, for the
-polynomial that the reversal check hands on: the points at infinity, then, for the denominators in
-the order of the loop of the shape, the numerators in increasing order, $+y$ before $-y$, each point
-mapped back after a reversal. The denominators ascend, except for odd $d$ with $|c_d| \ne 1$ when
-\verb|setup_us1| succeeds: when its factorization of $|c_d|$ by trial division, with $2$ and the odd
-primes of the table up to $1021$ and a cofactor below $p^2$ taken as a prime, is complete
-(\csource{find_points.c}{777}{860}, the test at \csource{find_points.c}{863}{863}), and the
-squarefree divisors up to $b_{\mathrm{high}}$, made by appending $x p$ for each prime $p$ in turn to
-every divisor $x \le \lfloor b_{\mathrm{high}}/p \rfloor$ made so far, are fewer than
-\verb|MAX_DIVISORS| (\csource{find_points.c}{864}{880}, the test at
-\csource{find_points.c}{881}{881}, which sets the flag \verb|RATPOINTS_USE_SQUARES1| at
-\csource{find_points.c}{885}{885}). Then the denominators are
-$b_{\mathrm{low}} \le e k^2 \le b_{\mathrm{high}}$, divisor $e$ by divisor in the order of binary
-counting over the primes of $c_d$, ascending, and $k$ ascending for each
-(\csource{find_points.c}{3937}{3940}). Stage~E proved this order through the definitions of the
-model (Theorem~\ref{thm:findPoints_order}); Theorem~\ref{thm:order} states it in terms of the
-polynomial.
-
-\paragraph{Why the list does not change.} With a callback that appends each point to an array, with
-the weight $1$, and never sets \verb|quit|, the delivery of a list is that list and the count its
-length; so \verb|findPoints|, the search with that callback, returns the list of the earlier stages
-when neither option of the output is set. For any callback the search delivers the list of
-\verb|findPoints| for the same options, up to and including the first call that stops it: the stops
-only cut that list. The options of the output act on the list itself, for \verb|findPoints| as well,
-by the filter of \verb|RATPOINTS_NO_Y| and, under \verb|RATPOINTS_NO_CHECK|, by the survivors in
-place of the points. So the theorems on the points are stated for \verb|findPoints|, and the
-protocol theorem (Theorem~\ref{thm:protocol}) carries them over to the search with any callback.
-
-\section{The delivery}\label{sec:delivery}
-
-\begin{definition}[The callback and the delivery]\label{def:delivery}
-  \lean{Ratpoints.Answer, Ratpoints.Delivery, Ratpoints.Delivery.call, Ratpoints.Delivery.print, Ratpoints.CheckFlags, Ratpoints.Delivery.callMapped, Ratpoints.appendPoint}
-  \leanok
-  What one call of the callback gives: the weight that it returns, an integer with no bound, whether
-  it set \verb|*quit|, and the data after the call (\csource{ratpoints.h}{436}{437},
-  \csource{ratpoints.h}{441}{442}, the prototypes of the callback, which
-  Definition~\ref{def:findPointsWith} shares); the callback is a function of $x$, $z$, $y$ and the
-  data, in the order of the C code, that returns what the call gives, with no argument for
-  \verb|quit|, which is clear at every call. The delivery of a search: the data of the callback, the
-  count, the sum of the weights so far, and the flag of the stop; one call
-  \verb|total += process(x, z, y, info, &quit)| on a delivery adds the weight to the count and takes
-  the flag and the data that the call leaves. A text printed through the print channel of a search,
-  a function that prints into the data of the callback, which holds the standard output of the
-  caller, so that the report of the library under \verb|RATPOINTS_VERBOSE|
-  (Definition~\ref{def:report}) comes between the points: the data as the channel leaves it, the
-  count and the flag as they are; it models no C code of its own. The bits of the flags that the
-  exact check and the points at infinity read, \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_NO_CHECK|
-  and \verb|RATPOINTS_NO_Y|, as three Booleans, all clear by default
-  (\csource{ratpoints.h}{414}{414}, which Definition~\ref{def:Outcome} shares). One call with the
-  point $(a : y : b)$ of the polynomial searched, mapped back to the caller's curve when the flag of
-  the reversal is set: with $(b : y : a)$ for $a \ge 0$ and $(-b : y : -a)$ for $a < 0$, as
-  $\mathrm{swapPoint}$ maps the point (Definition~\ref{def:swapPoint}), the three branches that the
-  exact check writes at each of its calls (lines 5312-5316, 5321-5325 and 5331-5335) as one
-  definition. And the callback of the model that appends each point $(x, y, z)$ to an array, with
-  the weight $1$, and never stops the search. The delivery, the call and the mapped call have no C
-  ranges of their own: the lines they stand for (lines 4570-4571 and 3129 for the count and the two
-  flags of the stop, \verb|quit| and \verb|wk->quit|, and the branches of the map) belong to their
-  callers; the appending callback models no C code.
-\end{definition}
-
-\begin{definition}[The reference of the delivery]\label{def:deliver}
-  \uses{def:delivery}
-  \lean{Ratpoints.Delivery.deliver}
-  \leanok
-  The delivery of the points of a list $L$, in their order, to the callback on a delivery $r$: for
-  each point $(x, y, z)$ of $L$, while the flag of $r$ is clear, the call with $(x : y : z)$; the
-  points after a call that sets the flag, and all of them when it is set at the start, are passed
-  over. It is a reference of the model, as the brute-force reference is, and models no C code: the
-  search delivers each point where it finds it and tests the flag where the C code tests
-  \verb|quit|, and this fold over the list of the points of \verb|findPoints| is what that delivery
-  is compared with (Theorem~\ref{thm:protocol}).
-\end{definition}
-
-\begin{lemma}[The delivery of a list]\label{lem:deliver}
+\begin{definition}[The flags of the check and the calls of a search]\label{def:callback}
   \uses{def:deliver}
-  \lean{Ratpoints.Delivery.deliver_nil, Ratpoints.Delivery.deliver_cons, Ratpoints.Delivery.deliver_append, Ratpoints.Delivery.deliver_cons_of_quit_eq_false, Ratpoints.Delivery.deliver_singleton_of_quit_eq_false, Ratpoints.Delivery.deliver_of_quit, Ratpoints.Delivery.deliver_append_of_quit, Ratpoints.Delivery.deliver_eq_of_prefix, Ratpoints.Delivery.deliver_flatMap_eq_of_prefix, Ratpoints.Delivery.ite_quit_eq_deliver_append, Ratpoints.Delivery.deliver_appendPoint, Ratpoints.Delivery.exists_prefix_deliver_eq}
+  \lean{Ratpoints.CheckFlags, Ratpoints.Delivery.callMapped, Ratpoints.appendPoint, Ratpoints.Delivery.print}
   \leanok
-  The delivery of the empty list leaves a delivery as it is, and that of $p :: L$ delivers $L$ after
-  the call with $p$, when the flag is clear; the delivery of $L_1 \mathbin{+\!\!+} L_2$ delivers
-  $L_2$ after $L_1$, and that of a \verb|flatMap| is the fold of the deliveries of its parts. A
-  delivery whose flag is set stays as it is, so that nothing changes after a list whose delivery
-  sets the flag: for a prefix $M$ of $L$ whose delivery sets it, the delivery of $L$ is that of $M$,
-  also for the prefix of the index list of a \verb|flatMap|; and a test of the flag after the
-  delivery of $L_1$, followed by the delivery of $L_2$ when it is clear, is the delivery of
-  $L_1 \mathbin{+\!\!+} L_2$. With the appending callback, from a delivery whose flag is clear, the
-  array grows by $L$ and the count by its length. For every list $L$ there is a prefix $M$ of $L$
-  whose delivery is that of $L$, such that the flag is clear before each point of $M$, so that each
-  of them is called, and $M = L$ unless the delivery of $M$ sets the flag; the count grows by the
-  sum of the weights of these calls, each taken on the data that the calls before it left.
+  The flags of the check, which decide what the exact check and the points at infinity deliver:
+  the bits \verb|RATPOINTS_REVERSED| (\csource{ratpoints.h}{414}{414}), \verb|RATPOINTS_NO_CHECK|
+  and \verb|RATPOINTS_NO_Y| of the word of flags, as three Booleans, clear by default. One call
+  (Definition~\ref{def:deliver}) with a point $(a : y : b)$ of the polynomial searched, mapped back
+  to the caller's curve when the flag of the reversal is set: with $(b : y : a)$ for $a \ge 0$ and
+  $(-b : y : -a)$ for $a < 0$, and with $(a : y : b)$ otherwise, the three branches that the exact
+  check of the C code writes at each of its calls. The callback of the model that appends each
+  point $(x, y, z)$ to an array, with the weight~$1$, and never stops the search; with it the data
+  of a search is the list of the points that it delivers, in their order. And a text printed
+  through the print channel of a search: the data as the channel leaves it, the count and the flag
+  as they are (Section~\ref{sec:outputReport}).
+\end{definition}
+
+Apart from the flags of the check, which stand for bits of \verb|args->flags|, these definitions
+model no C code of their own; the appending callback is that of $\mathrm{findPoints}$, of which the
+statements speak (Definition~\ref{def:findPoints}).
+
+\begin{lemma}[The delivery of a list]\label{lem:deliverList}
+  \uses{def:deliver, def:callback}
+  \lean{Ratpoints.Delivery.deliver_append, Ratpoints.Delivery.deliver_of_quit, Ratpoints.Delivery.deliver_eq_of_prefix, Ratpoints.Delivery.ite_quit_eq_deliver_append, Ratpoints.Delivery.deliver_appendPoint, Ratpoints.Delivery.exists_prefix_deliver_eq}
+  \leanok
+  The delivery of $L_1 \mathbin{+\!\!+} L_2$ is the delivery of~$L_2$ after that of~$L_1$. A
+  delivery whose flag is set stays as it is, whatever the list; so if the delivery of a
+  prefix~$M$ of~$L$ sets the flag, the delivery of~$L$ is that of~$M$, and a test of the flag after
+  the delivery of~$L_1$, followed by the delivery of~$L_2$ when the flag is clear, is the delivery
+  of $L_1 \mathbin{+\!\!+} L_2$. With the appending callback, from a delivery whose flag is clear,
+  the array grows by~$L$ and the count by the length of~$L$. For every list~$L$ there is a
+  prefix~$M$ of~$L$ whose delivery is that of~$L$, such that the flag is clear before each point
+  of~$M$, so that each of them gets its call, and the delivery of~$M$ sets the flag unless $M = L$.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  By induction on the list, from the fold. The count as a sum over the indices of $M$ needs
-  Mathlib's sums over \verb|Fin|, in a file of its own, and the rest is core.
+  By induction on the list, from the fold, in Lean core only, so that the contracts of the sieve,
+  which are proved without Mathlib, can state what they deliver.
 \end{proof}
 
-\section{The exact check and the points at infinity}\label{sec:checkDelivery}
+\section{The stops}\label{sec:outputStops}
 
-The exact check (Definition~\ref{def:accepted}) takes the callback, the flags and a delivery: unless
-$\mathrm{noCheck}$, for $v$ the value of Horner's rule in $a$ on the products, times $b$ for odd
-$d$, and $y = \lfloor \sqrt{v} \rfloor$, when $v \ge 0$ and $v = y^2$, the mapped call with $(a : y
-: b)$, and then, unless that call stopped the search, $y = 0$ or $\mathrm{noY}$, the mapped call
-with $(a : -y : b)$; with $\mathrm{noCheck}$ one mapped call with $(a : 0 : b)$, whether or not it
-gives a point. The points at infinity (Definition~\ref{def:pointsAtInfinity}) take them too: when
-there are points at infinity, for odd $d$ or $c_d$ a square, with the candidate $(1, 0)$, or $(0,
-1)$ when the flag of the reversal is set, one call with $y = 0$ under $\mathrm{noCheck}$ or for odd
-$d$, and for even $d$ the call with $s = \lfloor \sqrt{c_d} \rfloor$ and then, unless that call
-stopped the search or $\mathrm{noY}$, the call with $-s$, with no test $s \ne 0$, as the C code has
-none: the case $c_d = 0$ for even $d$, which would deliver $(1, 0, 0)$ twice, or once under
-$\mathrm{noY}$, cannot arise after the refusals, in the C code as in the model, since the leading
-coefficient of the polynomial searched is not zero. The return after a stop at infinity is made by
-the search. The contracts of the two say what they deliver to a callback that never stops the
-search, a list that depends on the flags; the sieve passes these lists on, and they take the place
-of the check of a numerator with the flag of the reversal (Definition~\ref{def:checkNum}) in its
-contracts.
+In the C code on one thread only a call of the callback sets the flag (with threads a worker also
+sets it when the search has been stopped, \csource{find_points.c}{3610}{3610}), and each function
+tests it after each step that may have made calls, returning its count at once when it is set:
+\verb|_ratpoints_sift0| after the check of a numerator (\csource{sift.c}{1250}{1251},
+\csource{sift.c}{1287}{1288}, and \csource{sift.c}{1168}{1169} in the arm of
+\verb|USE_LONG_IN_PHASE_2|); \verb|sift| after each call of \verb|_ratpoints_sift0|
+(\csource{find_points.c}{3611}{3611}); \verb|run_block| after each denominator, in each shape of the
+loop (\csource{find_points.c}{3928}{3928}, \csource{find_points.c}{3957}{3957},
+\csource{find_points.c}{4044}{4044}, \csource{find_points.c}{4068}{4068}); the loop over the blocks
+after each block (\csource{find_points.c}{5158}{5158}); and \verb|find_points_work_1| after the
+points at infinity, before it sieves (\csource{find_points.c}{5100}{5103}). So the calls made are
+those of the search that no call stops, up to and including the first call that sets the flag, and
+the count is the sum of their weights. With threads the calling thread of the C code delivers the
+points of the blocks in their order; that blocks sifted apart and delivered in this way make the
+calls of the run on one thread is the thread lemma (Theorem~\ref{thm:threads}), and that the pool
+of ratpoints meets its hypotheses is read off the C code, not proved.
+
+The model tests the flag at the same places, with one difference of form: where the C code returns
+from \verb|_ratpoints_sift0| from within the walk through the set bits of a word, the walk of the
+model returns, and its callers test the flag after each walk, and the scan of a piece after each
+bit array, and return in turn; this makes no call that the C code does not make and skips none.
+Every component of the sieve from the walk up to the run over the blocks takes the callback, the
+flags and a delivery and hands them on (Chapter~\ref{chap:sieve}); its contract has the
+precondition that the flag is clear and concludes that the delivery after it is the delivery
+(Definition~\ref{def:deliver}) of a list, the points of the component in their order. Each loop
+that may return early keeps an invariant with a case for the return at a stop, closed by
+Lemma~\ref{lem:deliverList} (the invariants \lname{Ratpoints.Sieve.WalkDeliveryInvariant} of the
+walk and \lname{Ratpoints.Sieve.SieveRunLoopInvariant} of the run over the blocks). So the search
+with any callback delivers the list of the search with the appending callback, up to and including
+the first call that stops it: the protocol of the delivery (Theorem~\ref{thm:protocol}).
+
+\section{The options of the output}\label{sec:outputFlags}
+
+Two bits of the flags of the caller change which points the library delivers
+(\csource{ratpoints.h}{403}{404}): under \verb|RATPOINTS_NO_Y| only the point with $y \ge 0$ of a
+pair $(x : \pm y : z)$ goes to the callback, and under \verb|RATPOINTS_NO_CHECK| every numerator
+that passes the sieve goes to it with $y = 0$, without the exact check, whether or not it gives a
+point. The C code reads them only in the exact check (\csource{find_points.c}{5250}{5338}), at the
+points at infinity (\csource{find_points.c}{5068}{5099}), and \verb|RATPOINTS_NO_CHECK| also in a
+line of the report; the reversal, the Sturm step, the exits, the tests on the denominators and the
+sieve run as without them. Conversely, what \verb|RATPOINTS_NO_CHECK| delivers depends on everything
+that decides which numerators pass the sieve: the moduli, the Jacobi test, the reversal and the
+region of the Sturm step.
+
+In the model the two options are the fields $\mathrm{noCheck}$ and~$\mathrm{noY}$ of the options of
+a search, false by default (Definition~\ref{def:Options}), which the search copies, with the flag of
+the reversal, into the flags of the check (Definition~\ref{def:callback}). What the points at
+infinity deliver with these flags is the list of Definition~\ref{def:pointsAtInfinity}; what the
+exact check (Chapter~\ref{chap:sieve}) delivers for one numerator to a callback that does not stop
+the search is the following list, a definition of the proofs that holds no C code.
 
 \begin{definition}[The points of a numerator with the flags]\label{def:checkNumWith}
-  \uses{def:delivery, def:bruteForce, def:swapPoint, def:reversal}
-  \lean{Ratpoints.Sieve.checkPointList, Ratpoints.Sieve.checkNumWith, Ratpoints.Sieve.pointsAtInfinityList}
+  \uses{def:callback, def:reversal}
+  \lean{Ratpoints.Sieve.checkPointList, Ratpoints.Sieve.checkNumWith}
   \leanok
-  The points of the exact check of the numerator $a$ over the denominator $b$, for the products $w$,
-  the factor $f$ and the flags: under $\mathrm{noCheck}$ the survivor $(a, 0, b)$; otherwise
-  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ when the value of Horner's rule in $a$ on $w$, times
-  $f$, is $y^2$ with $y \ge 0$, the point with $y < 0$ left out under $\mathrm{noY}$; each mapped by
-  $\mathrm{swapPoint}$ when the flag of the reversal is set. The check of a numerator with the
-  flags: these points when $\gcd(a, b) = 1$, and none otherwise, the reference of the test of a
-  candidate and the exact check with the flags. The points at infinity with the flags, for the
-  coefficient list $c$ of degree $d$: when $d$ is odd or $c_d$ is a square, $(1, 0, 0)$ under
-  $\mathrm{noCheck}$ or for odd $d$, and otherwise $(1, s, 0)$ for $s = \lfloor \sqrt{c_d} \rfloor$
-  followed, unless $\mathrm{noY}$, by $(1, -s, 0)$, each mapped by $\mathrm{swapPoint}$ when the
-  flag of the reversal is set, which gives $(0, y, 1)$; none when $d$ is even and $c_d$ is not a
-  square, the square test that of the reversal check (Definition~\ref{def:reversal}).
+  The points that the exact check of the numerator~$a$ over the denominator~$b$ delivers, for the
+  products~$w$ of the coefficients with the powers of~$b$, the factor~$e$ ($b$ for odd degree, $1$
+  for even degree) and the flags: under $\mathrm{noCheck}$ the survivor $(a, 0, b)$; otherwise,
+  when the value of Horner's rule in~$a$ on~$w$, times~$e$, is~$y^2$ with $y \ge 0$, the point
+  $(a, y, b)$ and, for $y \ne 0$, the point $(a, -y, b)$, which is left out under~$\mathrm{noY}$,
+  and none when that value is no square; each mapped to the caller's curve when the flag of the
+  reversal is set, $(a, y, b)$ to $(b, y, a)$ for $a \ge 0$ and to $(-b, y, -a)$ for $a < 0$. The
+  points of a numerator with the flags: these when $\gcd(a, b) = 1$, and none otherwise.
 \end{definition}
 
-\begin{lemma}[The flags of the check]\label{lem:checkNumWith}
-  \uses{def:checkNumWith, def:checkNum}
-  \lean{Ratpoints.Sieve.checkNumWith_of_noCheck_eq_false, Ratpoints.Sieve.checkNumWith_of_noCheck_eq_true, Ratpoints.Sieve.checkNumWith_eq_map, Ratpoints.Sieve.mem_checkNumWith_of_noCheck, Ratpoints.Sieve.map_checkNumWith_sublist, Ratpoints.Sieve.flatMap_checkNumWith_of_noCheck_eq_false, Ratpoints.Sieve.pointsAtInfinityList_of_noCheck_eq_false, Ratpoints.Sieve.pointsAtInfinityList_of_noCheck_eq_true, Ratpoints.Sieve.pointsAtInfinityList_eq_map, Ratpoints.Sieve.eq_of_mem_pointsAtInfinityList_of_noCheck, Ratpoints.Sieve.map_pointsAtInfinityList, Ratpoints.Sieve.fst_snd_swapPoint, Ratpoints.Sieve.filter_map_swapPoint, Ratpoints.Sieve.swapPoint_fst_zero_snd}
+\begin{lemma}[The check and the points at infinity with the flags]\label{lem:checkNumWith}
+  \uses{def:checkNumWith, def:pointsAtInfinity, def:candidate, def:callback, def:deliver, def:bruteForce}
+  \lean{Ratpoints.Sieve.checkPoint_eq_deliver, Ratpoints.Sieve.checkNumWith_of_noCheck_eq_false, Ratpoints.Sieve.checkNumWith_of_noCheck_eq_true, Ratpoints.Sieve.map_checkNumWith_sublist, Ratpoints.Sieve.map_pointsAtInfinityList}
   \leanok
-  Without $\mathrm{noCheck}$ the check of a numerator with the flags is the check of the reference
-  with the flag of the reversal, without the points with $y < 0$ under $\mathrm{noY}$; so over a
-  list of numerators it gives the points that the brute-force reference finds over $b$, mapped after
-  a reversal and filtered, the map keeping $y$, so that it commutes with the filter. Under
-  $\mathrm{noCheck}$ it is the mapped survivor $(a, 0, b)$ when $\gcd(a, b) = 1$ and nothing
-  otherwise, and a triple lies in it exactly then. With the flag of the reversal set it gives the
-  points with it clear, mapped. The points with the exact check on and $\mathrm{noY}$ set, with $y$
-  replaced by $0$, are a sublist of those under $\mathrm{noCheck}$ with the same flag of the
-  reversal, for either setting of $\mathrm{noY}$ there. The points at infinity with the flags:
-  without $\mathrm{noCheck}$, for odd $d$ or $c_d \ne 0$, the points of the candidate $(1, 0)$ of
-  the reference, mapped and filtered; under $\mathrm{noCheck}$ the one mapped point $(1, 0, 0)$ when
-  there are points at infinity, every member being that point; with the flag of the reversal set,
-  those with it clear, mapped; and those with the exact check on and $\mathrm{noY}$ set, with $y$
-  replaced by $0$, are those under $\mathrm{noCheck}$.
+  On a delivery whose flag is clear, the exact check of a numerator delivers its list of
+  Definition~\ref{def:checkNumWith}, as the points at infinity deliver theirs
+  (Definition~\ref{def:pointsAtInfinity}): the second call of a pair, left out after a first call
+  that stops the search, is the part of the delivery that a set flag passes over. Without
+  $\mathrm{noCheck}$, the points of a numerator with the flags are those of the check of the
+  reference (\lname{Ratpoints.Sieve.checkNum}), which tests $\gcd(a, b) = 1$ and the square as the
+  brute-force reference does, mapped after a reversal, without those with $y < 0$
+  under~$\mathrm{noY}$; under $\mathrm{noCheck}$ they are the survivor $(a, 0, b)$, mapped after a
+  reversal, when $\gcd(a, b) = 1$, and nothing otherwise. With the exact check on
+  and~$\mathrm{noY}$ set, the points of a numerator with~$y$ replaced by~$0$ form a sublist of its
+  points under $\mathrm{noCheck}$, with the same flag of the reversal and either setting
+  of~$\mathrm{noY}$, and the points at infinity with~$y$ replaced by~$0$ are those under
+  $\mathrm{noCheck}$.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:deliverList}
   \leanok
-  By the cases of the flags. The points of the reference over one numerator are $(a, y, b)$ and $(a,
-  -y, b)$, or $(a, 0, b)$, or none, so that the point with $y \ge 0$, with $y$ replaced by $0$, is
-  the survivor; the map of the reversal keeps $y$ and maps $(a, 0, b)$ to the image of the survivor.
+  Each call is the delivery of a list of one point, and the test of the flag between the two calls
+  of a pair is the delivery of their concatenation (Lemma~\ref{lem:deliverList}). The rest by the
+  cases of the flags: over one numerator the reference finds $(a, y, b)$ and $(a, -y, b)$, or
+  $(a, 0, b)$, or nothing, so that the point with $y \ge 0$, with~$y$ replaced by~$0$, is the
+  survivor, and the map of the reversal keeps~$y$.
 \end{proof}
 
-\begin{lemma}[The check and the points at infinity deliver their lists]\label{lem:checkDelivery}
-  \uses{def:checkNumWith, lem:deliver, def:accepted, def:pointsAtInfinity, def:counters}
-  \lean{Ratpoints.Delivery.callMapped_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver_acceptedPoints, Ratpoints.Sieve.deliver_acceptedPoints_of_not_accepted, Ratpoints.Sieve.pointsAtInfinity_eq_deliver}
+The contracts of the sieve carry these lists upwards: the search delivers the points at infinity
+with the flags followed by the points with the flags of the numerators that pass the test of the
+sieve, a test that depends neither on the callback nor on the flags. So the output under
+\verb|RATPOINTS_NO_CHECK| holds, as a sublist and so in the same order, the survivors $(x, 0, z)$
+of the points $(x, y, z)$ that the same search delivers with the exact check on and
+\verb|RATPOINTS_NO_Y| set, and each of its elements has $y = 0$ and a normalized pair $(x, z)$ of
+height at most~$H$ in the search region (Theorem~\ref{thm:noCheck}).
+
+\section{What a search gives back}\label{sec:outputBack}
+
+Besides the count, \verb|find_points| writes back what the program reads after the search: three
+bits of \verb|args->flags| (\csource{ratpoints.h}{414}{417}), \verb|RATPOINTS_REVERSED|, set by the
+reversal check, and \verb|RATPOINTS_USE_SQUARES| and \verb|RATPOINTS_USE_SQUARES1|, set for odd
+degree when the leading coefficient is~$\pm 1$ and, otherwise, when the set-up of its divisors
+succeeds (\csource{find_points.c}{4910}{4943}), for message~7; the search intervals as the Sturm
+step leaves them, for message~8; and the numbers of the moduli used in the stages
+(\csource{ratpoints.h}{378}{378}), for message~4. The outcome of a search in the model holds exactly
+these, with the data of the callback and the count (Definition~\ref{def:Options}). The search sets
+the bits before its exits and before the points at infinity, and it returns after the Sturm step
+only for even degree, where the two bits of the squares are clear; so the bits and the intervals are
+written back on every path that does not refuse the input, whatever the callback does. The numbers
+of the moduli are zeroed on entry and set after the sieve from the moduli of the last block sifted,
+so that they depend on where the callback stops the search (Chapter~\ref{chap:theorems}). Nothing
+else is written back: the reversed coefficients and the private fields that the choice of the moduli
+writes are not, and the bits of the input come back as the caller set them
+(\csource{find_points.c}{4606}{4606}).
+
+\section{The report of the library}\label{sec:outputReport}
+
+Under the bit \verb|RATPOINTS_VERBOSE| of the flags (\csource{ratpoints.h}{407}{407}), which the
+option \verb|-v| of the program sets, the library prints a report of the search on the standard
+output, between the points that the callback of the program prints there. The model has no standard
+output: the search takes a \emph{print channel}, a function that prints a text into the data of the
+callback, which holds the standard output of the caller (Definition~\ref{def:callback}). The search
+with a print channel is $\mathrm{findPointsVerbose}$, and $\mathrm{findPointsWith}$ takes by default
+the channel that prints nothing (Definition~\ref{def:findPoints}).
+
+\begin{definition}[The report of the library]\label{def:libraryReport}
+  \uses{def:Options, def:choiceOfModuli, def:packing, def:setupUs1, def:reversal, def:sieveEntry}
+  \lean{Ratpoints.Report.arguments, Ratpoints.Report.reversal, Ratpoints.Report.sturmStep, Ratpoints.Report.setup, Ratpoints.Report.packing, Ratpoints.Report.choice, Ratpoints.Report.moduli, Ratpoints.Report.excluded, Ratpoints.Report.sieving}
   \leanok
-  On a delivery whose flag is clear: the mapped call is the delivery of the one mapped point; the
-  exact check delivers its points (\verb|checkPointList|), the call with $-y$ after a call that
-  stops the search being the delivery that passes over the rest; a numerator that passes the test of
-  a candidate, with any counters, delivers the points of the extraction, one that does not delivers
-  nothing; and the points at infinity deliver their list with the flags.
-\end{lemma}
-
-\begin{proof}
-  \uses{lem:accepted}
-  \leanok
-  Each call is the delivery of a singleton (Lemma~\ref{lem:deliver}), and the test of the flag
-  between the two calls of a pair is the delivery of the concatenation.
-\end{proof}
-
-\section{The sieve on the delivery}\label{sec:sieveDelivery}
-
-Every component of the sieve from the walk through the set bits of a word up to the run over the
-denominators takes the callback, the flags and a delivery, hands them on to the components it calls,
-and returns after a call that stops the search, as the C code returns at its tests of \verb|quit|.
-The walk (Definition~\ref{def:walkWord}) returns after a check at which the callback set the flag,
-as \verb|_ratpoints_sift0| does at its three tests, lines that the walk owns; the two arms of a bit
-array through the second stage and the extraction (Definition~\ref{def:siftBitArray}) test the flag
-after each walk and the scan (Definition~\ref{def:scanPiece}) after each bit array, where the C code
-returns from \verb|_ratpoints_sift0| from within the walk, which makes no call that the C code does
-not make and skips none; one piece (Definition~\ref{def:siftPiece}) returns what the scan returns;
-the bits of one denominator (Definition~\ref{def:siftBits}) test it after each piece, as \verb|sift|
-does (line 3611), one denominator (Definition~\ref{def:sift}) returns the delivery with the store of
-the tables of rows, and the run (Definition~\ref{def:sieveRun}) tests it after each denominator, for
-the returns of \verb|run_block| in each shape and the end of the loop over the blocks, lines that
-the run owns. The two arms of a bit array through the second stage and the extraction are functions
-of their own, since with the test of the flag after each walk one function would pass the bound of
-$20$ lines on a definition: \verb|Ratpoints.Sieve.siftBitArrayByWords| for the arm of the builds
-with \verb|USE_LONG_IN_PHASE_2| (\csource{sift.c}{1126}{1134}, \csource{sift.c}{1137}{1139},
-\csource{sift.c}{1154}{1159}, \csource{sift.c}{1172}{1173}) and
-\verb|Ratpoints.Sieve.siftBitArrayWhole| for that of the default build
-(\csource{sift.c}{1204}{1210}, \csource{sift.c}{1213}{1226}, \csource{sift.c}{1257}{1264},
-\csource{sift.c}{1293}{1296}, with the lines of \verb|EXT0| and \verb|EXT| of \verb|rp-private.h|),
-each computing the first numerator of the bit array and the step from one word to the next where the
-C code computes them; \verb|siftBitArray|, which holds \csource{sift.c}{1094}{1111}, chooses between
-them by its argument.
-
-The contracts have the hypotheses of the earlier stages and the precondition that the flag of the
-delivery is clear, and they conclude that the delivery after the component is the delivery of a list
-(Definition~\ref{def:deliver}) from the delivery before it: the list of the points of the earlier
-contracts, with the points of the extraction with the flags (\verb|acceptedPoints|,
-Definition~\ref{def:accepted}, the points of the check with the flags of
-Definition~\ref{def:checkNumWith} for a numerator that passes the test of a candidate) in place of
-those with the flag of the reversal, from the walk (\verb|Ratpoints.Sieve.walkWord_spec|), the arms
-(\verb|Ratpoints.Sieve.siftBitArrayByWords_spec|, \verb|Ratpoints.Sieve.siftBitArrayWhole_spec|,
-\verb|Ratpoints.Sieve.siftBitArray_spec|), the scan (\verb|Ratpoints.Sieve.scanPiece_spec|) and one
-piece (\verb|Ratpoints.Sieve.siftPiece_spec|) up to the bits of one denominator
-(\verb|Ratpoints.Sieve.siftBits_spec|). For one denominator (\verb|Ratpoints.Sieve.sift_spec|) the
-list is that of the numerators of $[-H, H]$ in the ranges that the bounds of the search intervals
-give at the denominator (Definition~\ref{def:numeratorRanges}) that pass the class bit of the word
-$w$ that the class packs and survive the entries of all three stages, each with the points of its
-check with the flags, which the bits of one search interval give
-(\verb|Ratpoints.Sieve.flatMap_acceptedPoints_eq_flatMap_checkNumWith|), and the store after the
-denominator fits the entries again; for the run over the blocks
-(\verb|Ratpoints.Sieve.sieveRun_spec| and its plain form \verb|Ratpoints.Sieve.fst_run_sieveRun|,
-the points of the blocks in order, and \verb|Ratpoints.Sieve.exists_run_sieveRun_eq_deliver| per
-denominator, Theorem~\ref{thm:blocks}) it is the concatenation of these lists over the denominators
-of the shape that pass its test, each with the entries of the decision of its block. Without
-$\mathrm{noCheck}$ the words still compute the Booleans (Lemma~\ref{lem:sift_eq_checkDen},
-\verb|Ratpoints.Sieve.run_sift_eq_deliver_checkDen|): one denominator delivers the points of the
-check of stage~C1 on the sieve of stage~C1 whose numerators pass the class bit, mapped after a
-reversal and filtered by $\mathrm{noY}$.
-
-The loops that may return early carry invariants of their own, each in the node of the contract that
-uses it. Each loop of the sieve that delivers points, over the set bits of a word, the words of a
-bit array, the bit arrays of a piece, the pieces of an interval, the denominators of a block and the
-blocks of a run, keeps an invariant with two cases: the flag is clear and the delivery is that of
-the points of the steps done so far, or the loop has returned at a stop, with the flag set, and the
-delivery is that of the points of the steps up to the one that stopped it, which is that of the
-points of all the steps (Lemma~\ref{lem:deliver} on a prefix). These are, for the walk,
-\verb|Ratpoints.Sieve.WalkDeliveryInvariant| and \verb|Ratpoints.Sieve.WalkDeliveryWhileInvariant|
-(Definition~\ref{def:walkWord}); for the words of a bit array,
-\verb|Ratpoints.Sieve.SiftBitArrayLoopInvariant| and
-\verb|Ratpoints.Sieve.SiftBitArrayWalkLoopInvariant|, with
-\verb|Ratpoints.Sieve.SiftBitArrayInvariant.eq_deliver_of_quit|,
-\verb|Ratpoints.Sieve.SiftBitArrayWalkInvariant.eq_deliver_of_quit| and
-\verb|Ratpoints.Sieve.eq_deliver_of_quit_of_forall_eq| for the stop (Lemma~\ref{lem:siftBitArray});
-for the bit arrays of a piece, \verb|Ratpoints.Sieve.ScanPieceInvariant.eq_deliver_of_quit|
-(Definition~\ref{def:scanPiece}); for the masked bits of one piece,
-\verb|Ratpoints.Sieve.IsMasked.eq_deliver| (Definition~\ref{def:siftPiece}); for the pieces of an
-interval, \verb|Ratpoints.Sieve.SiftBitsInvariant.eq_deliver_of_quit| (Lemma~\ref{lem:siftBits}); and
-for the denominators of a block, \verb|Ratpoints.Sieve.MapBlockInvariant|,
-\verb|Ratpoints.Sieve.AllBlockInvariant|, \verb|Ratpoints.Sieve.WalkDensWhileInvariant| and
-\verb|Ratpoints.Sieve.WordsBlockInvariant| (Lemma~\ref{lem:blockLoops}), and for the blocks of a run
-\verb|Ratpoints.Sieve.SieveRunLoopInvariant| (Theorem~\ref{thm:blocks}). What they share is the
-following lemma.
-
-\begin{lemma}[The steps done come first]\label{lem:sieveStops}
-  \uses{lem:numClasses, def:andRows, def:rbaPack}
-  \lean{Ratpoints.Sieve.bitNumbers_prefix, Ratpoints.Sieve.flatMap_filter_range_prefix, List.range_prefix_range}
-  \leanok
-  The points of the first steps of a loop of the sieve are a prefix of the points of all its steps,
-  and so are the lists of any other kind that the steps make, such as the numerators that the
-  counters count: the points of the numerators of the set bits of the first $k \le m$ words of a bit
-  array among those of the first $m$, those of the bits of the first $\mathrm{pos} \le n$ bit arrays
-  of a piece among those of the first $n$, those of the bits up to the word number $w_0$ among those
-  up to the word number $w_0' \ge w_0$, and the numbers below $k \le m$ among those below $m$. So in
-  both cases of an invariant the delivery at the end is that of the points of all the steps, and
-  each contract concludes with the delivery of its whole list.
-\end{lemma}
-
-\begin{proof}
-  \leanok
-  The lists of the first steps are the first parts of a \verb|flatMap| over a range, and a range
-  below $k \le m$ is the first part of the range below $m$. The invariants are built, with the
-  program logic of Lean core, with the case of the early return that core provides for the
-  \verb|for| loops, and with a case for the exit for the \verb|while| and \verb|repeat| loops; their
-  verification conditions are closed by lemmas stated in their shape, with the invariants
-  irreducible after their lemmas, and the case of a stop by Lemma~\ref{lem:deliver} on the prefix.
-\end{proof}
-
-\section{The search on the delivery}\label{sec:searchDelivery}
-
-The search of the polynomial handed on (Definition~\ref{def:searchPoints}) takes the callback, the
-flags and a delivery and runs in the order of \verb|find_points_work_1|: the flags of the tests on
-the denominators and the divisors of the leading coefficient, the 2-adic information with its exit,
-what \verb|sieving_info| computes with its exit, the switch of the checked loop, then the points at
-infinity, the return when the callback has stopped the search or the Sturm step has left nothing to
-search, the flag \verb|sturm_empty| that the search takes (\csource{find_points.c}{5100}{5106},
-which the search holds), and the sieving, a function of its own. Both exits return the delivery as
-it came. The search returns what a search gives back: the data and the count of the delivery with
-the bits of the flags and the search intervals written back, and since stage~I the numbers of the
-moduli used, $0$ after the exits.
-
-\begin{definition}[The sieving]\label{def:sieving}
-  \uses{def:sieveRun, def:classOffsets, def:Shape, def:delivery, def:arraySize}
-  \lean{Ratpoints.sieving}
-  \leanok
-  The block that the C code introduces as ``now do the sieving'': an array of rows of offsets, one
-  for each packing, of one offset for each sieve entry, and the row offsets of the classes in it,
-  with the inverses of the strides in the entries (Definition~\ref{def:classOffsets}); the shape
-  that \verb|run_setup| chooses for the largest denominator $b_{\mathrm{high}}$ and the bounds that
-  it makes of the search intervals of the search (Definition~\ref{def:Shape}); and the run over the
-  blocks of the denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ of the shape in these
-  intervals (Definition~\ref{def:sieveRun}), with the options of the sieve and the result of the
-  choice of the moduli, its cut points the first decision, its sieve entries with the reserve, its
-  reciprocals and its store of the tables of rows, pieces of at most $\mathrm{arraySizeAt}(H)$ bit
-  arrays, the flags and the delivery (Definition~\ref{def:delivery}), which returns when the
-  callback stops the search, with the ends $s_2$ and $s_3$ of the second and the third stage of the
-  last block (\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{5116}{5116},
-  \csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
-  \csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}).
+  The texts of the report, each as \verb|printf| prints it from the data that the C code prints,
+  with \verb|%ld|, \verb|%3ld|, and \verb|%.pf| for the doubles and the values of \verb|Float| as
+  glibc prints them, the exact value rounded to~$p$ places with ties to even: the arguments of the
+  search as it normalizes them (\csource{find_points.c}{4691}{4725}); the outcome of the reversal
+  check (\csource{find_points.c}{4740}{4743}, \csource{find_points.c}{4757}{4758},
+  \csource{find_points.c}{4771}{4774}, \csource{find_points.c}{4791}{4801},
+  \csource{find_points.c}{4804}{4807}); the Sturm step (\csource{find_points.c}{4864}{4878}); the
+  points at infinity and the tests on the denominators (\csource{find_points.c}{4897}{4898},
+  \csource{find_points.c}{4915}{4918}, \csource{find_points.c}{4921}{4926},
+  \csource{find_points.c}{4928}{4941}, \csource{find_points.c}{4946}{4947}); the packing of the
+  classes of the numerators (\csource{find_points.c}{4969}{4985}); the choice of the moduli
+  (\csource{find_points.c}{3089}{3095}), the moduli of the three stages with the cost of an exact
+  check (\csource{find_points.c}{5027}{5042}) and the forbidden divisors
+  (\csource{find_points.c}{5043}{5048}); and the lines before the sieve
+  (\csource{find_points.c}{5111}{5113}).
 \end{definition}
 
-\begin{definition}[What a search gives back]\label{def:Outcome}
+Four texts complete the report: the two exits on the way (\lname{Ratpoints.Report.noClasses},
+\lname{Ratpoints.Report.noPoints}), the line before the points at infinity
+(\lname{Ratpoints.Report.atInfinity}) and the forbidden valuations
+(\lname{Ratpoints.Report.excludedValuations}). Each text is printed where the C code prints it, or
+once from the result of a check where the C code prints in its course. The report is compared byte
+for byte with that of the C program (Chapter~\ref{chap:ccode}) and not proved: with the print
+channel that prints nothing every text vanishes (\lname{Ratpoints.findPointsWith\_eq}), and the
+theorems speak about that channel.
+
+\section{The program}\label{sec:outputProgram}
+
+The executable \verb|ratpoints-lean| has the command line of ratpoints: the coefficients
+$c_0, \dots, c_n$ of $y^2 = c_n x^n + \dots + c_0$ as one argument, the height bound and the
+options. It reads them as \verb|main.c| does, with its checks, messages and exit statuses in its
+order, runs the search with the callback of \verb|main.c|, and prints what ratpoints prints, but for
+the banner and the usage, which name \verb|ratpoints-lean|, so that the test scripts of the C
+repository can run it in place of ratpoints. Its root \verb|Main.lean| imports only the model, so
+that the program depends neither on Mathlib nor on the proofs. It acts on every option of ratpoints
+but \verb|-t|, the number of threads, which it checks and ignores: the model sifts the blocks of
+the run in turn, and the thread lemma (Theorem~\ref{thm:threads}) shows that blocks sifted apart
+under hypotheses that the pool of ratpoints meets by its code, and delivered in their order, give
+the same output.
+
+\begin{definition}[The command line]\label{def:cliInput}
+  \uses{def:cliNumbers, def:Options, def:maxDegree}
+  \lean{Ratpoints.Cli.input, Ratpoints.Cli.checkOptions, Ratpoints.Cli.Output, Ratpoints.Cli.Failure, Ratpoints.Cli.Failure.message}
+  \leanok
+  The coefficient list, the height bound, the options of the sieve, the options of the search and
+  the settings of the output that a command line gives, or its first failure, in the order of
+  \verb|main.c|. Fewer than two arguments fail with error~2 (\csource{main.c}{210}{214}). The first
+  argument gives the coefficients, constant term first, integers separated by white space: a word
+  that is not an integer fails with error~11 wherever it stands, then more than
+  $\mathrm{maxDegree} + 1$ integers fail with error~3 and fewer than two with error~5. The second
+  gives the height bound, a C \verb|long| of at least~$1$, or error~4. The options are read from
+  left to right, the last setting of each kind winning. An unknown option, an argument among the
+  options that does not begin with \verb|-|, a missing or malformed argument of an option (but for
+  \verb|-l| and \verb|-u|) and \verb|-f| or \verb|-d| followed by another character fail with
+  error~6 (\csource{main.c}{393}{400}, \csource{main.c}{437}{532}, \csource{main.c}{533}{577},
+  \csource{main.c}{638}{649}, \csource{main.c}{650}{668}); \verb|-l| and \verb|-u| read the ends of
+  the search intervals (Definition~\ref{def:cliNumbers}), with error~7 for ends that are missing, no
+  numbers, not alternating, too many or not ordered. Then a pending interval is completed, the
+  format is \verb|(%x : %z)\n| under \verb|-x| or \verb|-y| and \verb|(%x : %y : %z)\n| otherwise,
+  unless \verb|-f| gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{688}{688}). A failure
+  prints the message of the function \verb|error| of \verb|main.c|, for errors~2 and~6 with the
+  banner and the usage (\csource{main.c}{1036}{1048}).
+\end{definition}
+
+\begin{definition}[The numbers and the search region of the command line]\label{def:cliNumbers}
   \uses{def:Double}
-  \lean{Ratpoints.Outcome}
+  \lean{Ratpoints.Cli.longOfString?, Ratpoints.Cli.strtod, Ratpoints.Cli.scanDouble?, Ratpoints.Cli.scanEnd, Ratpoints.Cli.Intervals, Ratpoints.Cli.inRegion, Ratpoints.Cli.joinIntervals}
   \leanok
-  The data of the callback after the search, the count, which \verb|find_points| returns, the three
-  bits of \verb|args->flags| that the search writes back and the program reads after it:
-  \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_USE_SQUARES|, set for odd degree and $|c_d| = 1$, and
-  \verb|RATPOINTS_USE_SQUARES1|, set for odd degree otherwise when the divisor set-up succeeds
-  (\csource{ratpoints.h}{377}{383}, \csource{ratpoints.h}{414}{414},
-  \csource{ratpoints.h}{416}{417}), the search intervals as the search leaves them, a list of pairs
-  of doubles (Definition~\ref{def:Double}) for \verb|args->domain| and \verb|args->num_inter|,
-  which message~8 of the program reads after the search: $[-h, h]$ when the caller gives none,
-  narrowed by the Sturm step, in the coordinates of the polynomial searched, and none when the step
-  leaves none, and the numbers of the moduli used in the first stage, in the first two and in all
-  three stages, as natural numbers for the \verb|long|s \verb|sp1_used|, \verb|sp2_used| and
-  \verb|sp3_used|, which message~4 reads: as the last block of the run was sifted with them, and $0$
-  for each when the search returns before the sieve. The search sets the last two bits before its exits after the Sturm step and before
-  the points at infinity, and the return after the Sturm step (line 4889) comes only for an even
-  degree, where neither is set, so that they are written back on every path that does not refuse the
-  input. Nothing else is written back: not the reversed coefficients and the degree, which nothing
-  reads after the search; not the other internal bits of the flags, \verb|RATPOINTS_CHECK_DENOM|,
-  \verb|RATPOINTS_USE_JACOBI| and \verb|RATPOINTS_NO_REVERSE_AUTO|, which the program does not read
-  either, the bits of the input coming back as the caller set them (line 4606), which the program
-  takes from its own options and settings; not \verb|args->sp3|, which \verb|find_points_work|
-  zeroes on entry and the last block sets (lines 4551 and 5163); and not the private fields that the
-  choice of the moduli and the correction write.
+  The readers of the numbers, on the words of an argument, its maximal runs of characters other
+  than C white space: an integer of the coefficient list as \verb|scan_mpz| reads it, with an
+  optional sign and of any size; a C \verb|long| as \verb|scan_long| reads it, from~$-2^{63}$
+  to~$2^{63} - 1$, with only white space around it (\csource{main.c}{733}{740}); and a real number
+  as \verb|scan_double| reads it, the double that \verb|strtod| of glibc reads in the C locale, none
+  for a NaN (\csource{main.c}{746}{752}): $\pm\infty$ for an infinity, and otherwise the double
+  nearest to the exact value $\pm m\,10^{e - k}$ of the word, or $\pm m\,2^{e - 4k}$ for a
+  hexadecimal word, with ties to even. An end of a search interval as \verb|scan_end| reads it: the
+  number that the argument denotes, or an infinity, also for a number beyond the range of the
+  doubles, and $\pm 2^{-1075}$ for a nonzero number that \verb|strtod| reads as~$0$, which lies
+  between~$0$ and every other~$x$ of the search as the number does; with the double that the
+  library is given for it, the double of \verb|strtod| moved outward to the largest double at most
+  a lower end, or the smallest double at least an upper end (\csource{main.c}{798}{806}). The
+  reading of the intervals of \verb|-l| and \verb|-u| into the doubles and the exact ends of at most
+  $\mathrm{maxDegree}$ intervals (\csource{main.c}{66}{66}, \csource{main.c}{73}{73}), a missing
+  first lower end or last upper end standing for~$\mp\infty$ with the double~$\mp h$ of the height
+  bound, or~$\mp\infty$ when that double would turn the interval round. The test whether~$a/b$ lies
+  in one of these intervals, by the binary search of \verb|in_region| over their exact ends
+  (\csource{main.c}{126}{137}). And the intervals that the library is given, those of the command
+  line joined where their doubles meet or overlap (\csource{main.c}{891}{905}).
 \end{definition}
 
-\begin{definition}[The search with a callback]\label{def:findPointsWith}
-  \uses{def:Outcome, def:delivery, def:findPointsVerbose, def:Options, def:sieveOptions}
-  \lean{Ratpoints.findPointsWith}
+\begin{lemma}[The numbers of the command line]\label{lem:cliNumbers}
+  \uses{def:cliNumbers, def:regionSpec, def:Double}
+  \lean{Ratpoints.Cli.isNaN_strtod, Ratpoints.Cli.lt_nextUp_strtod, Ratpoints.Cli.outward_spec, Ratpoints.Cli.run_scanEnd_isMaxBelow, Ratpoints.Cli.inRegion_spec, Ratpoints.Cli.joinIntervals_spec}
   \leanok
-  The library function \verb|find_points| with the options of the sieve
-  (Definition~\ref{def:sieveOptions}), the callback and its data, and a print channel, by default
-  the channel that prints nothing, as without \verb|RATPOINTS_VERBOSE|: the search with a callback
-  and a print channel of Definition~\ref{def:findPointsVerbose}, a refusal without the data of the
-  callback, as \verb|find_points|, \verb|find_points_work| and \verb|find_points_work_1| do it: the
-  refusals of the search for the points in the order of the program, more than
-  $\mathrm{maxDegree} + 1$ coefficients, fewer than two, $H = 0$ or $H \ge 2^{63}$, and a form whose
-  leading zeros lower $\lceil n/2 \rceil$; the normalization of the options
-  (Definition~\ref{def:normalize}); the reversal check with the normalized switch
-  (Definition~\ref{def:reversal}), which may refuse the form or reverse the polynomial; the search
-  intervals of the options, the default interval $[-h, h]$ for none, with the refusal
-  $\mathrm{badArgs}$ (error~9) of intervals that are not well formed
-  (Definition~\ref{def:searchIntervals}); the Sturm step of the search
-  (Definition~\ref{def:sturmRegion}), which with the step on refuses the form when the remainder
-  chain of the polynomial searched is $\mathrm{none}$, returns at once, with the data of the caller,
-  the count $0$, the flag of the reversal and no search interval, when that polynomial is negative
-  on the search intervals and has no point at infinity (the return of line 4889, the flag of the
-  reversal being in fact clear there), and otherwise narrows the search intervals; and then the
-  search of the polynomial handed on with the normalized options of the sieve and whether the caller
-  left the number of primes to the library, over the normalized range of the denominators and the
-  search intervals that the Sturm step leaves, with its flag \verb|sturm_empty|, with the flag of
-  the reversal and the options of the output of the options as its flags, from the data of the
-  caller, the count $0$ and the flag of the stop clear, which returns what the search gives back. It
-  models no C code of its own: its C ranges, the lines of \verb|find_points| and
-  \verb|find_points_work|, the head, the locals and the end of \verb|find_points_work_1|, the height
-  of the arguments, the codes of the refusals, the prototypes and the mask of the bits of the input
-  that line 4606 keeps, are those of Definition~\ref{def:findPointsVerbose}. The search for the
-  points (Definition~\ref{def:findPoints}) is its instance with the appending callback from the
-  empty array, the list of the array that it returns, or its refusal; it models no C code and holds
-  no C range.
-\end{definition}
-
-The theorems of the search speak about the list of the points that it delivers for a test of the
-sieve: the sieve of the search lets a numerator through by its class word, the moduli of three
-stages and the test for common factors, for a given polynomial and parameters, and what a contract
-can say of the test is that it lets the numerator of every point through. One test serves every
-callback and every setting of the flags, since the components that decide it, the classes, the word
-\verb|den_bits|, the exits and what \verb|sieving_info| returns, depend on neither; this is what
-relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
-
-\begin{definition}[The points that the search delivers]\label{def:searchList}
-  \uses{def:checkNumWith, def:searchDens, def:bruteForce, def:inIntervals}
-  \lean{Ratpoints.searchList, Ratpoints.IsSoundTest}
-  \leanok
-  For the coefficient list $c$ of its degree $d$, the height $H$, the range of the denominators
-  from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, intervals $D$ of values (the values of the ends of
-  search intervals, Definition~\ref{def:inIntervals}), a test $S(b, a)$ of the numerators $a$ over
-  the denominators $b$ and the flags: the points at infinity with the flags, then, over the
-  denominators $b$ of the search in the range, in the order of its loop
-  (Definition~\ref{def:searchDens}), the points of the check with the flags of the numerators $a$ of
-  $-H, \dots, H$ with $a/b$ in one of the intervals of $D$ that pass $S(b, \cdot)$, with the
-  products of $c$, $d$ and $b$ and the factor $b$ for odd $d$ and $1$ for even $d$. A test is
-  \emph{sound} when, over each denominator $b$ of the search in the range, it lets through every
-  numerator $a$ of $-H, \dots, H$ for which the brute-force reference finds a point $(a, y, b)$.
-\end{definition}
-
-\begin{lemma}[The search delivers the points of a sound test]\label{lem:searchList}
-  \uses{def:searchList, def:sieving, def:searchPoints, def:Outcome, lem:sieveStops,
-    lem:flatMapFilter, lem:soundRun, lem:checkDelivery, lem:checkNumWith, lem:shape_dens,
-    lem:twoAdic_exit, lem:choice, lem:sift_eq_checkDen,
-    lem:exactBounds, lem:numeratorRanges, def:regionSpec, def:inIntervals, lem:searchDensRange,
-    lem:searchListRegion, def:sieveOptions}
-  \lean{Ratpoints.exists_isSoundTest_run_searchPoints, Ratpoints.exists_isSoundTest_run_searchPoints_appendPoint, Ratpoints.exists_isSoundTest_run_sieveRun, Ratpoints.run_searchPoints_eq_deliver, Ratpoints.searchList_of_noCheck_eq_false, Ratpoints.searchList_false, Ratpoints.isSoundTest_false_of_forall_not_isPoint, Ratpoints.pointsAtInfinityList_eq_nil_of_forall_not_isPoint, Ratpoints.Sieve.pointsAtInfinityList_eq_filter_map_pointsOfDen, Ratpoints.Sieve.pointsAtInfinityList_eq_nil_of_pointsOfDen_eq_nil, Ratpoints.BruteForce.pointsOfDen_zero_singleton_one, Ratpoints.BruteForce.pointsOfDen_ne_nil_of_mem}
-  \leanok
-  For normalized options of the sieve, $1 \le H < 2^{63}$, the range of the denominators from
-  $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} \le H$ and well-formed search intervals
-  (Definition~\ref{def:regionSpec}) there is a sound test $S$ such that the search of $c$ of its
-  degree over the range and the intervals, with either value of the flag \verb|sturm_empty|, any
-  callback, any flags, a delivery whose flag is clear and the print channel that prints nothing,
-  gives the data and the count of the delivery of the list of the points of
-  Definition~\ref{def:searchList} for the range, the values of the intervals, or no interval when
-  \verb|sturm_empty| is set, so that only the points at infinity are delivered
-  (Lemma~\ref{lem:searchListRegion}), $S$ and these flags; so it gives those of the delivery of the
-  list that the search with the appending callback gives, from the empty array, for the same flags,
-  and for such a test the search with the appending callback from the empty array gives the list of
-  Definition~\ref{def:searchList}, for every choice of the flags. The run of the shape with the
-  bounds of well-formed search intervals delivers the part over the denominators of the range for
-  their values and a sound test, the sieve with the moduli of the block of each denominator,
-  whatever the callback and the flags; the test depends on the search intervals, which the estimate
-  of the run reads, and with it the choice of the moduli and the decisions of the correction. The
-  bits of the flags that the search writes back are the flag of the reversal as it came, the squares
-  for odd degree and $|c_d| = 1$, and the success of the divisor set-up up to $b_{\mathrm{high}}$
-  for odd degree and $|c_d| \ne 1$, and the search intervals that it writes back are those that it
-  is given, whatever the callback. Without $\mathrm{noCheck}$, for a sound test, any intervals of
-  values and $c$ of positive degree, the points delivered are those that the brute-force reference
-  finds over the candidate $(1, 0)$ and over the denominators of the search and the numerators in
-  the intervals, in this order, mapped by $\mathrm{swapPoint}$ after a reversal, without those with
-  $y < 0$ under $\mathrm{noY}$. When the curve has no points, the test that lets nothing through is
-  sound for every range within $1, \dots, H$ and there are no points at infinity.
+  \verb|strtod| never gives a NaN, and when it gives a finite double other than zero for a word that
+  is not an infinity, the exact value of the word lies below the next double above it: half of a
+  faithful rounding, the half that the lower ends need. \verb|outward| moves a double to the side
+  of the end that its direction asks, and onto the largest double at most a lower end when it starts
+  from a double whose next double lies above the end; so for an argument of fewer than~$2^{56}$
+  characters the double that \verb|scan_end| gives for a lower end is the largest double at most the
+  end (for an upper end the proofs show only that it is at least the end). The binary search of
+  \verb|in_region| decides whether~$a/b$ lies in increasing and disjoint exact intervals. For
+  intervals without a NaN, \verb|join_intervals| gives no interval exactly when it is given none,
+  and intervals without a NaN that hold every number that the given ones hold; when moreover each
+  lower end is at most its upper end and the lower ends increase from the second on, its intervals
+  are increasing and strictly apart, search intervals in the sense of the specification
+  (Definition~\ref{def:regionSpec}).
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:flatMap_sound, lem:survives, thm:bruteForce, thm:blocks, lem:noCheckList}
+  \uses{lem:doubleValues}
   \leanok
-  A lemma over the paths of the search gives its data and its count along each path, for the result
-  of the choice of the moduli, which has what the run needs (Lemma~\ref{lem:choice}). At the 2-adic
-  exit and the exit of the choice the curve has no points (Lemmas~\ref{lem:twoAdic_exit}
-  and~\ref{lem:choice}), so that the test that lets nothing through is sound, the denominators of
-  the search lying in $1, \dots, H$ (Lemma~\ref{lem:searchDensRange}), and nothing is delivered;
-  otherwise the points at infinity come first (Lemma~\ref{lem:checkDelivery}), the search returns
-  after them at a stop, and the run delivers the points of the check with the flags of the
-  numerators in the ranges that the bounds of the well-formed search intervals give
-  (Lemma~\ref{lem:exactBounds}), those with $a/b$ in the intervals
-  (Lemma~\ref{lem:numeratorRanges}), that pass the test of the shape, the class words and the
-  entries of the decision of the block of the denominator (the block lemma,
-  Theorem~\ref{thm:blocks}, for the denominators of the search, which have no duplicates,
-  Lemma~\ref{lem:noCheckList}, and Lemma~\ref{lem:flatMapFilter}), which let every point through,
-  by what the search hands to the run (Lemma~\ref{lem:soundRun}) and by Lemma~\ref{lem:shape_dens}.
-  The case analysis is on the values of the components that decide the test, which depend neither on
-  the callback nor on the flags, so that one test serves them all.
+  The parts of a word give its exact value, and the exponent that \verb|scan_end| accumulates, which
+  stops at \verb|LONG_MAX / 20|, is the exact one for arguments of fewer than~$2^{56}$ characters
+  whose double is finite and not zero; the rounding of \verb|strtod| is that of the doubles
+  (Chapter~\ref{chap:region}). The loops of \verb|outward|, \verb|in_region| and
+  \verb|join_intervals| are proved by named invariants with the program logic of Lean core.
 \end{proof}
-
-\begin{theorem}[The protocol of the delivery]\label{thm:protocol}
-  \uses{def:findPointsWith, def:findPoints, lem:searchList, lem:deliver, lem:reversal_swap}
-  \lean{Ratpoints.map_findPointsWith_eq_map_findPoints, Ratpoints.findPointsWith_eq_ok_iff, Ratpoints.findPointsWith_eq_error_iff, Ratpoints.exists_findPoints_eq_error_iff, Ratpoints.info_total_eq_of_findPointsWith_eq_ok, Ratpoints.exists_findPointsWith_eq_ok_of_findPoints_eq_ok}
-  \leanok
-  For every value of the options of the sieve, every option and every callback with its data,
-  $\mathrm{findPointsWith}$ refuses exactly the inputs that $\mathrm{findPoints}$ refuses, with the
-  same errors, and otherwise gives the data and the count of the delivery
-  (Definition~\ref{def:deliver}) of the list of $\mathrm{findPoints}(c, H, s, o)$ to the callback,
-  from its data, the count $0$ and the flag of the stop clear: the calls of the callback are those
-  of the points of that list, in its order, up to and including the first that stops the search, and
-  the count is the sum of their weights (Lemma~\ref{lem:deliver}). For all options, what
-  $\mathrm{findPointsWith}$ returns is the outcome of the search of the polynomial that the reversal
-  check hands on, with the search intervals that the Sturm step leaves, once none of the refusals
-  applies, or the data of the caller with the count $0$ when the Sturm step returns at once; its
-  refusals, those of $\mathrm{findPoints}$, and the bits of the flags and the search intervals that
-  it writes back do not depend on the callback or its data, so that it succeeds whenever
-  $\mathrm{findPoints}$ does.
-\end{theorem}
-
-\begin{proof}
-  \uses{lem:choiceSearch, lem:normalize, lem:searchIntervals, lem:sturmRegion}
-  \leanok
-  With its print channel at its default, the search with a callback is the refusals followed by the
-  reversal check, the search intervals, the Sturm step and the search
-  (Lemma~\ref{lem:choiceSearch}). The refusals are the same tests on both sides; after them both
-  searches run on the polynomial handed on, with its degree, which the refusals leave positive, over
-  the normalized range of the denominators and the search intervals that the Sturm step leaves,
-  which are well formed (Lemmas~\ref{lem:normalize}, \ref{lem:searchIntervals}
-  and~\ref{lem:sturmRegion}), or both return at once after the Sturm step, and
-  Lemma~\ref{lem:searchList} gives the data and the count. The data and the count need what the run
-  needs of the result of the choice of the moduli, which it has (Lemma~\ref{lem:choice}), since
-  their equality comes from the contracts of the search, which need it, and not from an argument
-  that the control flow depends on the callback only through the flag.
-\end{proof}
-
-\begin{lemma}[The list of the search]\label{lem:findPoints_searchList}
-  \uses{lem:searchList, thm:protocol, def:Options, lem:reversal_swap, def:searchRegion}
-  \lean{Ratpoints.exists_searchList_of_findPoints_eq_ok}
-  \leanok
-  For the options $s$ of the sieve, if $\mathrm{findPoints}(c, H, s, o)$ returns the list $L$, then
-  the reversal check with the normalized switch hands on a polynomial $c'$ of positive degree with
-  the flag $\mathrm{rev}$ of the reversal, $1 \le H < 2^{63}$, the search intervals of $o$ are well
-  formed, the chain of $c'$ is not $\mathrm{none}$ when the Sturm step is on, and there is a sound
-  test $S$ over the normalized range of the denominators such that $L$ is the list of the points
-  that the search of $c'$ delivers for the normalized range, the region that the search uses
-  (Definition~\ref{def:searchRegion}) and $S$ (Definition~\ref{def:searchList}) with the flags
-  $\mathrm{rev}$, $\mathrm{noCheck}$ and $\mathrm{noY}$ of $o$, the empty list when that region is
-  none, and such that, for every choice of the options of the output with the other options
-  unchanged, $\mathrm{findPoints}$ returns the list for that region and $S$ with those flags.
-\end{lemma}
-
-\begin{proof}
-  \uses{lem:normalize, lem:searchIntervals, lem:searchRegion, lem:sturmRegion}
-  \leanok
-  Lemma~\ref{lem:searchList} for the polynomial handed on, the normalized range
-  (Lemma~\ref{lem:normalize}) and the search intervals that the Sturm step leaves, which are well
-  formed (Lemmas~\ref{lem:searchIntervals} and~\ref{lem:sturmRegion}), with the appending callback;
-  the test does not depend on the flags, and the region that the search uses is that of the result
-  of the Sturm step (Lemma~\ref{lem:searchRegion}).
-\end{proof}
-
-\section{The options of the output}\label{sec:outputOptions}
-
-The options of the search (Definition~\ref{def:Options}) have the fields $\mathrm{noCheck}$ and
-$\mathrm{noY}$, false by default, for the bits \verb|RATPOINTS_NO_CHECK| and \verb|RATPOINTS_NO_Y|
-of the flags (\csource{ratpoints.h}{403}{405}, with \verb|RATPOINTS_NO_REVERSE|, for which the
-switch of the reversal stands), which the search with a callback copies into the flags of the check.
-With them the list of $\mathrm{findPoints}$ is, without $\mathrm{noCheck}$, the list of the points
-with those of $y < 0$ left out under $\mathrm{noY}$, and under $\mathrm{noCheck}$ the list of the
-survivors with $y = 0$, which depends on the parameters. The main theorems
-(Theorem~\ref{thm:findPoints}) take them into account: assuming Sturm's theorem when the Sturm step
-is on (Definition~\ref{def:sturmTheorem}), for $\mathrm{noCheck}$ false, a triple lies in the list
-exactly when it is a normalized point of height at most $H$, with $y \ge 0$ under $\mathrm{noY}$, in
-the search region (\verb|Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok|), and its set of elements is
-$\mathrm{points}(c, H)$ filtered by the search region when both options of the output are off
-(\verb|Ratpoints.toFinset_eq_filter_points_of_findPoints_eq_ok|); and the list has no duplicates for
-every option, without that assumption (\verb|Ratpoints.nodup_of_findPoints_eq_ok|). The theorem of
-the output of the search (Theorem~\ref{thm:findPoints_order},
-\verb|Ratpoints.exists_eq_of_findPoints_eq_ok|) gives, for $\mathrm{noCheck}$ false and without that
-assumption, the reference of the polynomial searched over the region that the search uses
-(Definition~\ref{def:searchRegion}), filtered by $\mathrm{noY}$; the permutation of the reference
-(Theorem~\ref{thm:findPoints_perm}, \verb|Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok|)
-holds, assuming Sturm's theorem when the Sturm step is on, for either setting of $\mathrm{noY}$,
-filtered by $\mathrm{noY}$ and the search region, and only the reference itself takes $\mathrm{noY}$
-off. The refusal theorems (Theorem~\ref{thm:refusals}) add the search intervals that are not well
-formed and refuse $c_0 = c_1 = 0$ without the Sturm step only for the whole box. Under
-$\mathrm{noCheck}$ the following lemma and theorem say what the list holds.
-
-\begin{lemma}[The survivors under NO\_CHECK]\label{lem:noCheckList}
-  \uses{def:searchList, lem:checkNumWith, lem:swapPoint_bijection, def:searchDens, lem:shape_dens,
-    def:inIntervals}
-  \lean{Ratpoints.exists_eq_of_mem_searchList_of_noCheck, Ratpoints.nodup_searchList_of_noCheck, Ratpoints.map_searchList_sublist, Ratpoints.searchList_eq_map, Ratpoints.nodup_searchDens, List.Nodup.flatMap}
-  \leanok
-  Under $\mathrm{noCheck}$, for $1 \le H$ and the range of the denominators from
-  $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} \le H$, every member of the list that the search
-  of $c$ delivers for any intervals of values and any test is $(x, 0, z)$ for a pair $(x, z)$
-  normalized of height at most $H$ (Lemma~\ref{lem:swapPoint_bijection}), and for
-  $1 \le b_{\mathrm{high}}$ the list has no duplicates. For any range, any intervals and any test,
-  with the flag of the reversal set, the list is that with it clear, mapped; and the list with the
-  exact check on and $\mathrm{noY}$ set, with $y$ replaced by $0$, is a sublist of the list under
-  $\mathrm{noCheck}$ with the same flag of the reversal. The denominators of the search have no
-  duplicates for $1 \le b_{\mathrm{high}}$.
-\end{lemma}
-
-\begin{proof}
-  \uses{lem:searchDensRange}
-  \leanok
-  The denominators of the search lie in $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$
-  (Lemma~\ref{lem:searchDensRange}), which the proofs of the search use too. The survivors of
-  distinct denominators, or of distinct numerators of one denominator, are distinct pairs; a list of
-  lists without duplicates whose members carry the index of their part has no duplicates
-  (\verb|List.Nodup.flatMap|, a candidate for Mathlib); and the map of the reversal is injective on
-  normalized pairs (Lemma~\ref{lem:swapPoint_bijection}). The sublist holds per numerator and at
-  infinity (Lemma~\ref{lem:checkNumWith}), and both lists run over the same denominators and
-  numerators.
-\end{proof}
-
-\begin{theorem}[The output under NO\_CHECK]\label{thm:noCheck}
-  \uses{lem:findPoints_searchList, lem:noCheckList, thm:findPoints, def:IsPoint, def:regionSpec,
-    lem:searchListRegion, def:sturmTheorem}
-  \lean{Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck, Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck, Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck}
-  \leanok
-  For the options $s$ of the sieve and options $o$ with $\mathrm{noCheck}$, if
-  $\mathrm{findPoints}(c, H, s, o)$ returns the list $L$: every member of $L$ is $(x, 0, z)$ with
-  $\gcd(x, z) = 1$, $z > 0$ or ($z = 0$ and $x = 1$), $|x| \le H$ and $z \le H$, in the search
-  region of $o$ (Definition~\ref{def:regionSpec}); assuming Sturm's theorem when the Sturm step is
-  on (Definition~\ref{def:sturmTheorem}), for every normalized point $(x, y, z)$ of height at most
-  $H$ in the search region, $(x, 0, z)$ lies in $L$; and if the search with $\mathrm{noCheck}$
-  cleared and $\mathrm{noY}$ set returns $L'$, then $L'$ with $y$ replaced by $0$ is a sublist of
-  $L$, so that the points come in the order of the search among the survivors.
-\end{theorem}
-
-\begin{proof}
-  \uses{lem:searchRegion}
-  \leanok
-  Lemma~\ref{lem:findPoints_searchList} gives $L$ and $L'$ as the lists that the search delivers for
-  one sound test over the region that the search uses, and Lemma~\ref{lem:noCheckList} the first and
-  the third statement, the members lying in the search region by Lemma~\ref{lem:searchListRegion},
-  the region that the search uses lying in the caller's intervals (Lemma~\ref{lem:searchRegion}),
-  and after a reversal, which comes only for the whole box, by their bounds. For the second, the
-  point $(x, |y|, z)$ lies in $L'$ by Theorem~\ref{thm:findPoints}, under Sturm's theorem, and the
-  sublist puts $(x, 0, z)$ into $L$.
-\end{proof}
-
-No duplicates is the general statement of Theorem~\ref{thm:findPoints}, which holds for every
-option, whatever region the search uses: without $\mathrm{noCheck}$ the list is a sublist of a
-permutation of the reference, and under $\mathrm{noCheck}$ Lemma~\ref{lem:noCheckList} applies.
-These statements say nothing of the survivors of a given set of moduli beyond their being normalized
-pairs: which pairs pass the sieve is what the moduli decide, and the differential tests compare them
-with the C program where both sieve with the same primes over the same range
-(Section~\ref{sec:outputTests}).
-
-\section{The order}\label{sec:order}
-
-The specification has a file with the order of the points, \verb|Ratpoints/Spec/Order.lean|, which
-uses Mathlib and nothing of the model and which the challenge restates verbatim. It imports
-\verb|Mathlib.Data.Nat.Factors| for the prime factors of a number, in increasing order with
-multiplicity.
-
-\begin{definition}[The polynomial searched]\label{def:searchedPoly}
-  \uses{def:binaryForm}
-  \lean{Ratpoints.searchedPoly}
-  \leanok
-  For the switch $r$ of the reversal and the coefficient list $c$ of degree $d$, the polynomial that
-  ratpoints searches and whether it is the reversed one:
-  \[
-    \mathrm{searchedPoly}(r, c) =
-    \begin{cases}
-      ((c_d, c_{d-1}, \dots, c_0), \mathrm{true}) & \text{if } r,\ d \text{ even and } (c_0 = 0
-        \text{ or } (c_d \text{ a square},\ c_0 \text{ not})), \\
-      ((0, c_d, c_{d-1}, \dots, c_1), \mathrm{true}) & \text{if } r,\ d \text{ odd},\
-        |c_d| \ne 1,\ c_0 = 0,\ |c_1| = 1, \\
-      (c, \mathrm{false}) & \text{otherwise},
-    \end{cases}
-  \]
-  the three cases of the reversal check (Definition~\ref{def:reversal}) on the coefficient list. The
-  binary form of a reversed list is that of $c$ with $x$ and $z$ exchanged, except for even $d$ with
-  $c_0 = c_1 = 0$, which ratpoints refuses.
-\end{definition}
-
-\begin{definition}[The divisors and the denominators of the search]\label{def:binaryDivisors}
-  \uses{def:binaryForm}
-  \lean{Ratpoints.FactorsByTrialDivision, Ratpoints.binaryDivisors, Ratpoints.searchDenominators}
-  \leanok
-  A natural number $n$ is \emph{factored by trial division} when the product of its prime factors
-  from $1021$ on, with multiplicity, is below $1021^2$, or none of its prime factors exceeds $1021$:
-  ratpoints divides off $2$ and the odd primes up to $1021$ in turn and takes a cofactor below
-  $p^2$, for the next prime $p$, as a prime, which it is, so that it fails exactly when the part of
-  $n$ at the primes from $1021$ on is at least $1021^2$ and not a power of $1021$ (decidable, by an
-  instance). The squarefree divisors of $n$ at most $H$ in the order of binary counting: for the
-  distinct prime factors $p_1 < p_2 < \cdots$ of $n$, the products of the sublists of
-  $(p_1, p_2, \dots)$ in the order of \verb|List.sublists|,
-  $1, p_1, p_2, p_1 p_2, p_3, p_1 p_3, \dots$, with $p_1$ the lowest bit, those at most $H$. The
-  denominators of the search of $c$, of degree $d$, for the height $H$ and the bound $m$ of the
-  number of divisors: when $d$ is odd, $n = |c_d| \ne 1$, $n$ is factored by trial division and it
-  has fewer than $m$ squarefree divisors at most $H$, the numbers $e k^2 \le H$, divisor $e$ by
-  divisor in that order and $k = 1, 2, \dots$ for each; otherwise $1, \dots, H$. This is the order
-  of the loop of the search, which visits those of them that its tests let through; the others carry
-  no point.
-\end{definition}
-
-\begin{definition}[The points in the order of ratpoints]\label{def:orderedPoints}
-  \uses{def:searchedPoly, def:binaryDivisors, def:IsPoint}
-  \lean{Ratpoints.pointsWithDen, Ratpoints.orderedPoints}
-  \leanok
-  The points of height at most $H$ with the denominator $z$: for $x = -H, \dots, H$ in turn, with
-  $y = \lfloor \sqrt{F_c(x, z)} \rfloor$, which is $0$ when $F_c(x, z) < 0$, those among $(x, y, z)$
-  and $(x, -y, z)$ that are normalized points of height at most $H$, in this order, one triple when
-  $y = 0$; the denominator $0$ gives the points at infinity, whose numerator is $1$. The points in
-  the order of ratpoints, for the bound $m$ of the number of divisors, the switch $r$ of the
-  reversal, $c$, $H$ and the largest denominator $B$ of the search: for
-  $(c', \mathrm{rev}) = \mathrm{searchedPoly}(r, c)$, the concatenation of the points of $c'$ of
-  height at most $H$ with the denominators $0$ and then those of the search of $c'$ up to $B$ in
-  their order, each $(a, y, b)$ mapped to $(b, y, a)$ for $a \ge 0$ and to $(-b, y, -a)$ for $a < 0$
-  when $\mathrm{rev}$ is set, a point of the caller's curve.
-\end{definition}
-
-The file checks its definitions on outputs of the C program by \verb|decide +kernel|, which the
-kernel decides and which, unlike \verb|native_decide|, adds no axiom:
-\verb|ratpoints '-1 0 9' 10 -q|, which reverses the polynomial to \verb|9 0 -1|,
-\verb|ratpoints '0 1 0 2' 10 -q|, which reverses it to \verb|0 2 0 1|,
-\verb|ratpoints '-6 5 -3 30' 12 -q|, which visits the denominator $6$ before $5$, in the order $1,
-2, 3, 6, 5, 10, 15, 30$ of the divisors of $30$, and \verb|ratpoints '0 1031 -11341 30930' 6 -q|,
-whose leading coefficient $2 \cdot 3 \cdot 5 \cdot 1031$ is factored completely, so that $6$ comes
-before $5$, while $30 \cdot 1042451$ of \verb|0 1042451 -11466961 31273530| is not and its
-denominators ascend; $3 \cdot 1031$ is factored by trial division, its cofactor $1031 < 37^2$ taken
-as a prime at $37$, and $3 \cdot 1042451$ and $1021 \cdot 1031$ are not. The bound of the number of
-divisors is an argument of the specification, which the order theorem instantiates with the constant
-$\mathrm{maxDivisors} = 512$ of the model (\verb|MAX_DIVISORS|), so that the build with other values
-of the constants varies it ($2$ and $100000$).
-
-\begin{lemma}[The rough part]\label{lem:roughPart}
-  \uses{def:binaryDivisors}
-  \lean{Nat.IsRoughPart, Nat.IsRoughPart.ne_zero, Nat.IsRoughPart.eq_prod_filter, Nat.IsRoughPart.succ, Nat.IsRoughPart.of_le_of_forall, Ratpoints.factorsByTrialDivision_of_isRoughPart_one, Ratpoints.factorsByTrialDivision_of_isRoughPart_of_lt, Ratpoints.eq_one_iff_factorsByTrialDivision_of_isRoughPart}
-  \leanok
-  The part $w$ of $n$ at the primes from $q$ on, the \emph{rough part}: $n = k w$ with every prime
-  factor of $k$ below $q$ (Mathlib's \verb|Nat.smoothNumbers|) and every prime factor of $w$ at
-  least $q$, a candidate for Mathlib. For $n \ne 0$ it is not $0$ and it is the product of the prime
-  factors of $n$ from $q$ on, with multiplicity; dividing the rough part $p^v m$ at a prime $p$,
-  with $p \nmid m$, by $p^v$ leaves the rough part at $p + 1$; and the rough part at $q$ is that at
-  $q' \ge q$ when no prime lies between them. A number whose rough part at some $q \le 1022$ is $1$,
-  or a number $n \ne 0$ whose rough part at some $q \le 1021$ is below $q^2$, is factored by trial
-  division; and when the rough part of $n \ne 0$ at $1021$ is at least $1021^2$, $n$ is factored by
-  trial division exactly when its rough part at $1022$ is $1$.
-\end{lemma}
-
-\begin{proof}
-  \leanok
-  From the definitions, with Mathlib's smooth numbers and the prime factors with multiplicity.
-\end{proof}
-
-\begin{lemma}[The divisors of the leading coefficient in binary counting]\label{lem:binaryDivisors}
-  \uses{def:setupUs1, def:binaryDivisors}
-  \lean{Ratpoints.Setup.foldl_extendDivisors_eq_filter, Ratpoints.Setup.IsFactorization.map_fst_eq_dedup, Ratpoints.Setup.foldl_extendDivisors_eq_binaryDivisors, Ratpoints.Setup.map_snd_run_setupUs1}
-  \leanok
-  For a list of positive numbers $p$, the fold of the step that appends $x p$ for the divisors
-  $x \le \lfloor b_{\mathrm{high}}/p \rfloor$, from $(1)$, is the list of the products of the
-  sublists of the list that are at most $b_{\mathrm{high}} \ge 1$, in the order of
-  \verb|List.sublists|; the primes of a factorization of $n \ne 0$, in increasing order, are the
-  distinct prime factors of $n$; so for the primes of a factorization of $|c_d|$ with the cofactor
-  $1$ the fold is the list of the squarefree divisors of $|c_d|$ up to $b_{\mathrm{high}}$ in binary
-  counting. So, for $c_d \ne 0$ and $1 \le b_{\mathrm{high}}$, the divisor set-up succeeds exactly
-  when $|c_d|$ is factored by trial division and has fewer than $\mathrm{maxDivisors}$ squarefree
-  divisors at most $b_{\mathrm{high}}$, and its divisors are then those of binary counting.
-\end{lemma}
-
-\begin{proof}
-  \leanok
-  By induction on the primes, the doubling step adding the products with the new prime after the old
-  ones, as \verb|List.sublists| does; the rest from the contracts of the factorization and of the
-  divisor set-up (Definition~\ref{def:setupUs1}).
-\end{proof}
-
-With the rough part, the factorization and the divisor set-up (Definition~\ref{def:setupUs1}) each
-have one contract for both outcomes, \verb|Ratpoints.Setup.factorLcf_spec| and
-\verb|Ratpoints.Setup.setupUs1_spec|, and that of the doubling loop,
-\verb|Ratpoints.Setup.squarefreeDivisors_spec|, covers the loop that stops: the factorization ends
-with the cofactor $1$ exactly when the number is factored by trial division, and then with a
-factorization in increasing order; the doubling loop gives the fold of its step or, when it stops at
-$\mathrm{maxDivisors}$ entries, a prefix of it with at least $\mathrm{maxDivisors}$ entries; the
-set-up returns its records and its divisors exactly when the factorization ends with the cofactor
-$1$ and there are fewer than $\mathrm{maxDivisors}$ divisors, and nothing otherwise. They are proved
-with one invariant of the loop of the factorization, a structure with named fields, which the node
-of Definition~\ref{def:setupUs1} names with its lemmas: the product of the prime powers found and
-the cofactor is $|c_d|$, the primes found ascend, each with its valuation in $|c_d|$, and while
-primes of the table remain, the cofactor is the rough part of $|c_d|$ at the next prime of the
-table, which needs that the table starts at $3$, ends at $1021$ and has no prime between two
-neighbours; after the last prime, or when the cofactor is below the square of the next prime, it is
-$1$ exactly when the factorization is complete. The invariants of the divisors keep, once the loop
-has stopped at $\mathrm{maxDivisors}$ entries, that the list is a prefix of the full fold.
-
-\begin{lemma}[The denominators and the points of the search]\label{lem:searchDenominators}
-  \uses{lem:binaryDivisors, def:searchDens, def:binaryDivisors, def:searchedPoly, def:orderedPoints,
-    def:reversal, lem:shape_dens, def:bruteForce}
-  \lean{Ratpoints.searchedPoly_eq_of_reversal_eq_ok, Ratpoints.pointsOfDen_eq_pointsWithDen, Ratpoints.pointsOfDen_zero_eq_pointsWithDen, Ratpoints.pos_of_mem_binaryDivisors, Ratpoints.le_and_le_of_mem_searchDenominators, Ratpoints.Sieve.squares1Dens_one_eq_filter, Ratpoints.Sieve.squares1Dens_eq_filter, List.range'_eq_filter_range', Ratpoints.Setup.isSquare_eq_true_iff, Ratpoints.Setup.isSquare_eq_false_iff, Ratpoints.BruteForce.pointsAbove_eq_ite, Ratpoints.isPoint_iff_of_le, Ratpoints.ite_pointsAbove_eq_filter, List.filter_eq_ite_of_forall}
-  \leanok
-  For $1 \le b_{\mathrm{low}}$ and $1 \le b_{\mathrm{high}}$, the denominators of the search of $c$
-  of its degree from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ (Definition~\ref{def:searchDens}) are
-  the denominators of the search of the specification with the bound $\mathrm{maxDivisors}$ up to
-  $b_{\mathrm{high}}$, all of them in $1, \dots, b_{\mathrm{high}}$, that are at least
-  $b_{\mathrm{low}}$, the divisors times squares and the numbers from $b_{\mathrm{low}}$ on being
-  those from $1$ without the denominators below $b_{\mathrm{low}}$; a reversal check that does not
-  refuse $c$ hands on the polynomial searched of the specification with its flag; and what the
-  brute-force reference finds over a denominator $1 \le z \le H$ and the numerators $-H, \dots, H$
-  are the points with the denominator $z$, and over the candidate $(1, 0)$ those with the
-  denominator $0$.
-\end{lemma}
-
-\begin{proof}
-  \uses{lem:flatMap_sound}
-  \leanok
-  Lemma~\ref{lem:binaryDivisors} for the divisor set-up, and the divisors times squares of the shape
-  as a filter of the products $e k^2$; the reference checks a candidate by its square root and its
-  test for common factors, which on the box are the conditions of a point.
-\end{proof}
-
-\begin{theorem}[The order of the points]\label{thm:order}
-  \uses{thm:findPoints_order, lem:searchDenominators, def:orderedPoints, def:findPoints,
-    lem:regionFilter, def:regionSpec, lem:elimSearchRegion, def:sturmTheorem}
-  \lean{Ratpoints.eq_orderedPoints_of_findPoints_eq_ok}
-  \leanok
-  Assuming Sturm's theorem when the Sturm step is on (Definition~\ref{def:sturmTheorem}), for the
-  options $s$ of the sieve and options $o$ with $\mathrm{noCheck}$ false, if
-  $\mathrm{findPoints}(c, H, s, o)$ returns the list $L$, then $L$ is the list of the points in the
-  order of ratpoints for the bound $\mathrm{maxDivisors}$, the switch of the reversal of $o$ and the
-  whole box, $c$, $H$ and the largest denominator of the search (Definition~\ref{def:regionSpec}),
-  without the points with $y < 0$ when $\mathrm{noY}$ is set, filtered by the search region of $o$.
-\end{theorem}
-
-\begin{proof}
-  \uses{lem:blockDens}
-  \leanok
-  Theorem~\ref{thm:findPoints_order}, through the block-listing lemma (Lemma~\ref{lem:blockDens}),
-  gives $L$ as what the reference of the polynomial searched finds over the candidate $(1, 0)$ and
-  the denominators of its search in the normalized range with
-  the numerators in the region that the search uses, which under Sturm's theorem holds exactly those
-  of the points with $x/z$ in the caller's intervals (Lemma~\ref{lem:elimSearchRegion}), mapped back
-  after a reversal and filtered by $\mathrm{noY}$; this is what it finds over the candidate and the
-  denominators of its search up to the largest, mapped back and filtered by $\mathrm{noY}$ and the
-  search region (Lemma~\ref{lem:regionFilter}), and Lemma~\ref{lem:searchDenominators} turns each
-  part into its form in the specification.
-\end{proof}
-
-\section{What comparator certifies}\label{sec:certifiedG}
-
-\verb|comparator/Challenge.lean| restates, besides $\mathrm{degree}$, $\mathrm{binaryForm}$,
-$\mathrm{binaryFormPoly}$ and $\mathrm{IsPoint}$, the decidability instance of $\mathrm{IsPoint}$,
-which the points with a denominator filter by, and the definitions of
-\verb|Ratpoints/Spec/Order.lean| with their instance, verbatim, and imports exactly the Mathlib
-modules among the public imports of the specification files it restates,
-\verb|Mathlib.Data.Nat.Factors| joining those of \verb|Ratpoints/Spec/Basic.lean| with the file of
-the order; from the model it takes \verb|bruteForce|, \verb|findPoints|, \verb|findPointsWith|,
-\verb|Outcome|, \verb|Answer|, \verb|Delivery|, \verb|Delivery.deliver|, \verb|Options|,
-\verb|Params|, \verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams|, \verb|maxDegree| and
-\verb|maxDivisors| (since stage~I no longer \verb|Params|, \verb|Params.WF| and \verb|sieveParams|).
-The five statements of stage~G came in with their theorems, each checked by comparator then, and all
-of them, like membership and no duplicates, are for well-formed parameters;
-\verb|lake comparator --paranoid|, with Lean's kernel and the five external checkers bundled with
-Lean, accepted the twelve statements on 2026-10-17; stage~H changes six of them, by the search
-region of the options (Section~\ref{sec:certifiedH}), and stage~I takes the options of the sieve
-with no hypothesis on them in place of $P$ and its well-formedness and drops statement~7, leaving
-eleven (Section~\ref{sec:certifiedI}). They were, for all $c$, $H$, parameters $P$ and options $o$:
-\begin{enumerate}
-  \item a triple lies in $\mathrm{bruteForce}(c, H)$ exactly when it is a normalized point of height
-    at most $H$ (\verb|challenge_mem_bruteForce_iff|, since stage~B);
-  \item $\mathrm{bruteForce}(c, H)$ has no duplicates (\verb|challenge_nodup_bruteForce|, since
-    stage~B);
-  \item for $P$ well formed, $\mathrm{noCheck}$ false and $\mathrm{findPoints}(c, H, P, o) = L$: $p
-    \in L$ exactly when $p$ is a normalized point of height at most $H$ with $y \ge 0$ if
-    $\mathrm{noY}$ is set (\verb|challenge_mem_iff_isPoint_of_findPoints_eq_ok|, with the options of
-    the output since stage~G);
-  \item for $P$ well formed and $\mathrm{findPoints}(c, H, P, o) = L$, $L$ has no duplicates
-    (\verb|challenge_nodup_of_findPoints_eq_ok|, its text unchanged since stage~D, over the options
-    of the output too);
-  \item with the Sturm step on, $\mathrm{findPoints}$ refuses exactly when $c$ has fewer than two or
-    more than $\mathrm{maxDegree} + 1$ entries, $H = 0$, $H \ge 2^{63}$ or $\Phi_c$ is not
-    squarefree (\verb|challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg|);
-  \item with the Sturm step off, exactly when $c$ has fewer than two or more than
-    $\mathrm{maxDegree} + 1$ entries, $H = 0$, $H \ge 2^{63}$, $d + 2 \le N$, or the reversal is
-    allowed, $d$ is even and $c_0 = c_1 = 0$
-    (\verb|challenge_exists_findPoints_eq_error_iff_of_sturm_neg|);
-  \item the parameters of every set of options of the program are well formed
-    (\verb|challenge_wf_sieveParams|);
-  \item for $P$ well formed, $\mathrm{noCheck}$ false and $\mathrm{findPoints}(c, H, P, o) = L$: $L$
-    is the list of the points in the order of ratpoints for $\mathrm{maxDivisors}$, the switch of
-    the reversal of $o$, $c$ and $H$, filtered by $\neg\mathrm{noY} \lor y \ge 0$
-    (\verb|challenge_eq_orderedPoints_of_findPoints_eq_ok|, new in stage~G);
-  \item[9--11.] for $P$ well formed, $\mathrm{noCheck}$ set and $\mathrm{findPoints}(c, H, P, o) =
-    L$: every member of $L$ is $(x, 0, z)$ with $\gcd(x, z) = 1$, $z > 0$ or ($z = 0$ and $x = 1$),
-    $|x| \le H$ and $z \le H$; for every normalized point $(x, y, z)$ of height at most $H$, $(x, 0,
-    z) \in L$; and if the search with $\mathrm{noCheck}$ cleared and $\mathrm{noY}$ set returns
-    $L'$, the list $L'$ with $y$ replaced by $0$ is a sublist of $L$
-    (\verb|challenge_isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck|,
-    \verb|challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck|,
-    \verb|challenge_map_sublist_of_findPoints_eq_ok_of_noCheck|, new in stage~G);
-  \item[12.] for $P$ well formed and every callback with its data, $\mathrm{findPointsWith}$ with
-    them gives, mapped to its data and count, what the delivery of the list of
-    $\mathrm{findPoints}(c, H, P, o)$ to the callback from its data, the count $0$ and the flag
-    clear gives, and the same refusal, with the same error, exactly where $\mathrm{findPoints}$
-    refuses (\verb|challenge_map_findPointsWith_eq_map_findPoints|, new in stage~G).
-\end{enumerate}
-The protocol speaks about the reference of the delivery of the model, a fold of a few lines, which
-one reads with the challenge as one reads the specification; \verb|findPointsWith| is the code that
-the executable runs, with the callback of \verb|main.c|; \verb|findPoints|, of which statements 3 to
-6 and 8 to 11 speak, is its instance with the appending callback (Definition~\ref{def:findPoints}),
-and statement 12 links the two. The theorems of the library behind the twelve statements had guards
-on their axioms, which were the standard ones, as those behind the eleven statements of stage~I have
-(Section~\ref{sec:certifiedI}).
-
-\section{The program}\label{sec:outputCli}
-
-The program reads the options of the output and runs the search with the callback of \verb|main.c|,
-which prints the points as the search delivers them.
-
-\begin{definition}[The settings of the output]\label{def:cliOutput}
-  \uses{def:Options, def:cliEnds}
-  \lean{Ratpoints.Cli.Output, Ratpoints.Cli.Output.store, Ratpoints.Cli.OptionArg.word, Ratpoints.Cli.defaultFormat}
-  \leanok
-  The global variables of \verb|main.c| with their defaults, those of a command line without
-  options: whether the report is left out (\verb|-q|), whether it is that of \verb|-v| (the bit
-  \verb|RATPOINTS_VERBOSE| of the flags, \csource{ratpoints.h}{407}{407}), whether one point is
-  enough (\verb|-1|), whether the points at infinity are kept (\verb|-I|, and not \verb|-i|),
-  whether no point is printed (\verb|-z|, and not \verb|-Z|), the format of a point (\verb|-f|),
-  none for the default, the strings before, between and after the points (\verb|-fs|, \verb|-fm|,
-  \verb|-fe|), none for none (\csource{main.c}{57}{64}, \csource{main.c}{383}{390}), and the exact
-  ends of the search intervals of the command line, which the callback reads
-  (Definition~\ref{def:cliEnds}); the setting that an option changes; the kind of argument of
-  \verb|-f|, \verb|-fs|, \verb|-fm| and \verb|-fe|, the next word, whatever it is, also one that
-  starts with \verb|-|; and the format that \verb|main.c| takes when the command line gives none,
-  \verb|(%x : %z)\n| when the points are not checked exactly or only one point of each pair is
-  delivered, and \verb|(%x : %y : %z)\n| otherwise (\csource{main.c}{681}{685}).
-\end{definition}
-
-The reading of the options (Definition~\ref{def:cliInput}) reads \verb|-x -X -y -Y| into
-$\mathrm{noCheck}$ and $\mathrm{noY}$ of the options of the search and
-\verb|-q -v -z -Z -1 -i -I -f -fs -fm -fe| into the settings of the output, of each the last one
-winning; \verb|-f| followed by a character other than \verb|s|, \verb|m| and \verb|e|, and a missing
-word, are error~6; after the options the format is the default unless \verb|-f| gave one, and
-\verb|-q| cancels \verb|-v|. The cases of these options (\csource{main.c}{533}{577},
-\csource{main.c}{602}{637}) are those of \verb|Ratpoints.Cli.checkOptions|; the line of \verb|-q|
-after the options (\csource{main.c}{688}{688}) and the head and the end of \verb|read_input|
-(\csource{main.c}{315}{316}, \csource{main.c}{691}{692}) belong to \verb|Ratpoints.Cli.input|, and
-the array of the coefficients (\csource{main.c}{54}{54}) to \verb|Ratpoints.Cli.coefficients|.
-
-\begin{definition}[The formats and the strings]\label{def:formatPoint}
-  \lean{Ratpoints.Cli.escape, Ratpoints.Cli.printString, Ratpoints.Cli.formatPoint}
-  \leanok
-  What \verb|main.c| prints for a backslash followed by a character in a format or a string: a tab
-  for \verb|t|, a line feed for \verb|n|, a backslash for a backslash, a percent sign for \verb|%|,
-  and the backslash and the character as they are otherwise (\csource{main.c}{178}{182},
-  \csource{main.c}{961}{965}, the two switches of \verb|process| and \verb|print_string| as one
-  function). What \verb|print_string| prints for a string: nothing for none, otherwise its
-  characters, a backslash with the character after it as above and a backslash at the end as itself,
-  the percent sign not special (\csource{main.c}{952}{960}, \csource{main.c}{966}{968}). What
-  \verb|process| prints for the point $(x : y : z)$ in a format, character by character: \verb|%x|,
-  \verb|%y| and \verb|%z| the coordinates in decimal, but \verb|%y| itself when the points are not
-  checked exactly or only one point of each pair is delivered, a percent sign before another
-  character both, a percent sign or a backslash at the end itself, a backslash and the character
-  after it as above, and every other character itself (\csource{main.c}{157}{177},
-  \csource{main.c}{183}{186}).
-\end{definition}
 
 \begin{definition}[The callback of the program]\label{def:cliProcess}
-  \uses{def:delivery, def:formatPoint, def:cliOutput, def:cliRegionTest}
-  \lean{Ratpoints.Cli.Data, Ratpoints.Cli.Data.ofOutput, Ratpoints.Cli.process, Ratpoints.Cli.Data.keeps}
+  \uses{def:deliver, def:cliNumbers}
+  \lean{Ratpoints.Cli.Data, Ratpoints.Cli.process, Ratpoints.Cli.formatPoint, Ratpoints.Cli.escape, Ratpoints.Cli.printString, Ratpoints.Cli.Data.keeps}
   \leanok
-  The data that \verb|main.c| passes to \verb|process| through \verb|info|: whether a point was
-  printed, whether no point is printed, whether one point is enough, whether the points at infinity
-  are kept, whether \verb|%y| prints itself, the format, the strings before and between the points,
-  the number of the search intervals of the command line and their exact ends, and the text printed
-  so far (\csource{main.c}{110}{113}); its value for the settings of the output and the options of
-  the search, no point printed yet, \verb|%y| printing itself under either option of the output, the
-  intervals those of the command line before they are joined (\csource{main.c}{235}{242},
-  \csource{main.c}{246}{247}). The callback on $(x, z, y)$: a point at infinity is passed over when
-  the points at infinity are not kept, and an affine point when the command line gives search
-  intervals and $x/z$ lies in none of them, by \verb|in_region|
-  (Definition~\ref{def:cliRegionTest}), each with the weight $0$ and the flag clear; every other
-  point has the weight $1$ and stops the search when one point is enough; it is printed unless no
-  point is printed, after the string before the points if it is the first point printed and after
-  the string between them otherwise, in the format (\csource{main.c}{139}{142},
-  \csource{main.c}{150}{156}, \csource{main.c}{187}{189}). The points that the callback keeps: the
-  points at infinity unless \verb|-i|, and an affine point when the command line gives no search
-  intervals or its $x/z$ lies in one of them, by \verb|in_region|.
+  The data that \verb|main.c| passes to its callback \verb|process| (\csource{main.c}{110}{113}):
+  whether a point was printed, the settings of the output that \verb|process| reads, the search
+  intervals of the command line, before they are joined, with their exact ends, and the text printed
+  so far. The callback on $(x, z, y)$ (\csource{main.c}{139}{142}, \csource{main.c}{150}{156})
+  passes over, with the weight~$0$ and the flag clear, a point at infinity under \verb|-i| and an
+  affine point whose~$x/z$ lies in none of the search intervals of the command line, when it gives
+  some (the library searches them with the doubles outward of the exact ends); every other point is
+  one that it keeps. It gives such a point the weight~$1$, stops the search at it under \verb|-1|,
+  and prints it in the format unless \verb|-z|, after the string before the points if it is the
+  first point printed and after the string between them otherwise. The format prints \verb|%x|,
+  \verb|%y| and \verb|%z| as the coordinates in decimal (\verb|%y| as itself under \verb|-x| or
+  \verb|-y|), \verb|\t|, \verb|\n|, \verb|\\| and \verb|\%| as a tab, a line feed, a backslash and a
+  percent sign, and every other character as itself (\csource{main.c}{157}{177},
+  \csource{main.c}{178}{182}, \csource{main.c}{183}{186}); a string prints in the same way, its
+  percent signs not special (\csource{main.c}{952}{960}).
 \end{definition}
 
-\begin{definition}[The report]\label{def:cliReport}
-  \uses{def:cliOutput, def:Outcome, def:cliFailure, def:sieveOptions, def:Double, def:cliRegionTest}
-  \lean{Ratpoints.Cli.printPoly, Ratpoints.Cli.Message, Ratpoints.Cli.Message.text, Ratpoints.Cli.preamble, Ratpoints.Cli.report, Ratpoints.Cli.showIntervals}
+The delivery of a list to this callback prints, unless \verb|-z|, the points of the list that it
+keeps, under \verb|-1| only the first of them, and its count is their number
+(\lname{Ratpoints.Cli.deliver\_process}); the theorem on what the program prints
+(Theorem~\ref{thm:cliRun}) rests on this and on the protocol of the delivery.
+
+\begin{definition}[The program and its report]\label{def:cliRun}
+  \uses{def:cliInput, def:cliProcess, def:cliNumbers, def:findPoints, def:Options, def:libraryReport}
+  \lean{Ratpoints.Cli.run, Ratpoints.Cli.main, Ratpoints.Cli.preamble, Ratpoints.Cli.report, Ratpoints.Cli.Message.text}
   \leanok
-  The polynomial as \verb|print_poly| prints it: its terms from the highest degree down, the zero
-  ones left out, the first after \verb|- | if it is negative and the others after \verb| + | or
-  \verb| - |, each the absolute value of its coefficient, followed for the degree $1$ by a space and
-  \verb|x| and for a degree $i \ge 2$ by a space and \verb|x^i| (the constant term is the number
-  alone), the coefficient and the space left out when it is $1$ there, and a line feed
-  (\csource{main.c}{913}{949}). The messages of the report that the program prints, with their data
-  and their texts: message 0, the banner of \verb|ratpoints-lean|; message 2, the count of the
-  points found, of the pairs under either option of the output; message 3, the search region of the
-  command line, its intervals before the join as their doubles, each printed as \verb|[%f, %f]| by
-  \verb|printF| (Definition~\ref{def:cliRegionTest}) and the intervals joined by \verb| U |; message
-  4, the numbers of the moduli used in the first stage and in the first two, and the number of the
-  further primes of the third stage, the difference of the last two, an integer for the
-  \verb|long|; message 5, the curve; message 6, the height bound; message 7, what the search did, from the flags written
-  back, the Jacobi switch and $\mathrm{noCheck}$; and message 8, the search intervals as the search
-  leaves them, written back in what it gives back (Definition~\ref{def:Outcome}), printed as
-  message~3 prints its intervals, \verb|%lf| being \verb|%f| (\csource{main.c}{972}{976},
-  \csource{main.c}{979}{1033}). What \verb|main.c| prints before the
-  search: nothing under \verb|-q|, otherwise the banner, the curve and, unless \verb|-v|, the height
-  bound and a blank line (\csource{main.c}{215}{220}), and then message 3 when the command line
-  gives intervals, also under \verb|-v| (\csource{main.c}{224}{224}); and after it: nothing under
-  \verb|-q|, otherwise, unless \verb|-v|, two line feeds, messages 4, 7 and 8, then message 2 with
-  the count of the search (\csource{main.c}{268}{276}).
+  The messages of the report of \verb|main.c| (\csource{main.c}{979}{1033}), among them the search
+  region of the command line (message~3), the numbers of the moduli used (message~4), what the
+  search did, from the bits written back (message~7), the search intervals as the search leaves
+  them (message~8), and the count of the points, or of the point pairs under \verb|-x| or \verb|-y|
+  (message~2). The program on a command line (\csource{main.c}{195}{198}): on a failure of the
+  command line, the message and the status of the failure. Otherwise, unless \verb|-q|, the head of
+  the report: the banner, the curve, the height bound unless \verb|-v|
+  (\csource{main.c}{215}{220}), and message~3 when the command line gives intervals
+  (\csource{main.c}{224}{224}); then the search with a print channel
+  (Definition~\ref{def:findPoints}), with the options of the sieve of the command line and the array
+  size that \verb|main.c| sets (\csource{main.c}{221}{222}), the options of the search on the joined
+  intervals (\csource{main.c}{248}{248}), the callback of the program on its data and, under
+  \verb|-v|, the print channel that appends to the text of the data (\csource{main.c}{251}{252}). On
+  a refusal it prints what the library printed and the message of the error that \verb|main.c| gives
+  for it (\lname{Ratpoints.Cli.Failure.ofRefusal}: error~8 for a binary form that is not
+  squarefree), and exits with that status. Otherwise it prints what the callback and the library
+  printed, the string before the points if no point was printed (\csource{main.c}{265}{265}), the
+  string after them (\csource{main.c}{267}{267}) and, unless \verb|-q|, the end of the report: two
+  line feeds and messages~4, 7 and~8 unless \verb|-v|, then message~2 (\csource{main.c}{268}{276});
+  its status is~$0$ (\csource{main.c}{284}{285}).
 \end{definition}
 
-The program (Definition~\ref{def:cliRun}, \verb|Ratpoints.Cli.run|) reads its command line, prints
-the head of the report, and runs $\mathrm{findPointsVerbose}$ with the options $s$ of the sieve with
-the array size that it sets, $\mathrm{defaultArraySize}$ (\csource{main.c}{221}{222}), the options
-of the search with the search intervals joined where their doubles meet, the callback of the program
-on its data, which holds the intervals of the command line before the join
-(\csource{main.c}{248}{248}), and, under \verb|-v|, the print channel of the program
-(Definition~\ref{def:cliTuning}), through which the library prints its report between the points,
-and otherwise the print channel that prints nothing; on a refusal it prints what the library printed
-and the message of the failure after the head of the report and exits with its status, and otherwise
-it prints what the callback and the library printed, the string before the points if it printed no
-point, the string after them and the end of the report, and exits with status~$0$
-(\csource{main.c}{195}{198}, \csource{main.c}{251}{252}, \csource{main.c}{265}{265},
-\csource{main.c}{267}{267}, \csource{main.c}{284}{285}, the head and the end of \verb|main| among
-them). The text is written once, at the end.
+The exit statuses are thus those of \verb|main.c|: $0$ after a search, $2$ to~$7$ and~$11$ for the
+command line, $8$ for a binary form that is not squarefree, and~$9$ for search intervals that the
+library refuses (\verb|main.c| gives~$9$ for every code of the library but those of errors~8
+and~10); by Theorem~\ref{thm:cliRun} no command line whose arguments are shorter than~$2^{56}$
+characters leads to error~$9$. Error~$10$, for lack of memory, has no counterpart. When the reader
+of its output is gone, \verb|SIGPIPE| ends ratpoints and the shell reports the status
+$141 = 128 + 13$; the Lean runtime ignores that signal, and \verb|ratpoints-lean| exits quietly with
+the status~$141$ when its write fails.
 
-\begin{theorem}[What the program prints]\label{thm:cliRun}
-  \uses{def:cliProcess, def:cliReport, thm:protocol, def:cliRun, def:cliInput}
-  \lean{Ratpoints.Cli.Data.keeps_printPoint, Ratpoints.Cli.countedPoints, Ratpoints.Cli.Data.printPoint, Ratpoints.Cli.call_process_of_keep, Ratpoints.Cli.call_process_of_not_keep, Ratpoints.Cli.deliver_process, Ratpoints.Cli.total_deliver_process, Ratpoints.Cli.out_append_deliver_process_ofOutput, Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.run_eq_of_findPoints_eq_ok, Ratpoints.Cli.run_eq_of_onePoint, Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.preamble_eq_empty_of_quiet, Ratpoints.Cli.report_eq_empty_of_quiet, String.intercalate_cons_eq_append_join}
-  \leanok
-  The points of a list that the callback counts: those that it keeps
-  (Definition~\ref{def:cliProcess}), and of them only the first under \verb|-1|. If the command line
-  reads as the coefficients $c$, the height $H$, the options $s$ of the sieve, the options $o$ of
-  the search and the settings $u$ of the output with the setting of \verb|-v| clear, and
-  $\mathrm{findPoints}(c, H, s', o')$ returns $L$ for the options $s'$ of $s$ with the array size
-  $\mathrm{defaultArraySize}$ and $o'$ of $o$ with the search intervals joined, the program exits
-  with status~$0$ and prints the head of the report, the string before the points, the formats of
-  the counted points of $L$ joined by the string between them (none under \verb|-z|), the string
-  after them, and the end of the report, whose count is the number of the counted points; under
-  \verb|-q|, which clears the setting of \verb|-v| (Lemma~\ref{lem:cliVerbose}), only the strings
-  and the points; and under \verb|-q| and \verb|-1| without \verb|-z|, when $p$ is the first point
-  of $L$ that the callback keeps, the string before the points, the format of $p$ and the string
-  after them: \verb|-1| prints the first point of the list that the callback keeps.
-\end{theorem}
-
-\begin{proof}
-  \uses{lem:cliVerbose}
-  \leanok
-  The delivery of any list to the callback of the program prints the counted points of the list in
-  turn, counts them, and sets the flag exactly under \verb|-1| when a point is kept; by the protocol
-  of the delivery (Theorem~\ref{thm:protocol}), for every value of the options of the sieve, the
-  search with the callback gives the data and the count of the delivery of the list of
-  $\mathrm{findPoints}$; without \verb|-v| the program runs the search with the print channel that
-  prints nothing, whose outcome is that of the search with a callback (Lemma~\ref{lem:cliVerbose}).
-\end{proof}
-
-\section{The differential tests}\label{sec:outputTests}
-
-The harness compares what \verb|ratpoints-lean| prints with the C program at the pin and with its
-recorded outputs, with the options of the output and the report (Section~\ref{sec:regionTests} says
-what stage~H adds):
-\begin{itemize}
-  \item an output of points in the default format with \verb|-q| is compared as a list of points
-    with a recorded output (\verb|test4|, \verb|rptest|), and exactly, byte for byte, with an output
-    of the C program, as is an output with the options of the output (\verb|-x -y -f -fs -fm -fe|),
-    also one that does not end with a line feed;
-  \item a report, a command line without \verb|-q|, is compared exactly, with the banner exchanged
-    for that of the C program; until stage~I the message on the moduli used (message 4), which
-    \verb|ratpoints-lean| did not print, was dropped from the report of the C program, as the filter
-    \verb|m()| of \verb|test4.sh| drops it, and since stage~I it is compared, a report of
-    \verb|test4.sh| with the C program on its command line (Section~\ref{sec:moduliTests}); the
-    messages on the search region (message 3) and on the search intervals that the search gives back
-    (message 8) are compared since stage~H;
-  \item under \verb|-v|, where the C program prints the report of its library too, until stage~I
-    \verb|ratpoints-lean| was compared with the report of the C program on the same command line
-    without \verb|-v|, its height and its messages 4, 7 and 8 dropped, as \verb|main.c| does under
-    \verb|-v|, and the lines of that text had to be among those of the output of the C program with
-    \verb|-v|, in their order, with the same lines of points and pairs (with a format or a string,
-    whose points need not end their lines, by characters); since stage~I, which prints the report of
-    the library, the output under \verb|-v| is compared byte for byte with that of the C program on
-    the same command line (Section~\ref{sec:moduliTests});
-  \item the outputs that \verb|test4.sh| filters through \verb|grep found|,
-    \verb|grep 'Curve equation'| and \verb|grep -c .| are compared after the same filter, the banner
-    exchanged first, with the exit status~$0$ (since stage~I also the two filters that look at the
-    report of the library, and each filtered output also as a whole with the C program);
-  \item under \verb|-x|, whose lines are the survivors of the sieve, which depend on the moduli and
-    on the search region: until stage~I, when pinning the moduli (\verb|-p 30 -N 30| appended) did
-    not change the output of \verb|ratpoints-lean| and the C program on that command line sieved
-    with the first $30$ odd primes in its first two stages and no third stage, exactly against the C
-    program on that command line; since stage~I, which chooses the moduli from the curve and
-    corrects them as ratpoints does, exactly against the C program on the same command line
-    (Section~\ref{sec:moduliTests}); and, without a format or a string, also by a weaker check
-    against the C program on the command line itself: every line $(x : z)$ a normalized coprime pair
-    in the range of the height and, since stage~H, but for $(1 : 0)$ with $z$ in the range of the
-    denominators and $x/z$ in the exact search region of the command line, none repeated, the pairs
-    that are points the same and in the same order in both outputs, the pairs common to both in the
-    same order, the pairs of each output in one block at the same place among the other lines, under
-    \verb|-1| one line in each output when one of them is a point (the same if both are) and else at
-    most one, the other lines equal, and a count line equal but for its number, which must be that
-    of the pairs printed (unless \verb|-z|);
-  \item exit codes are compared exactly, and \verb|ratpoints-lean| must write nothing to its
-    standard error: it runs with \verb|LEAN_ABORT_ON_PANIC=1|, so that a panic of the Lean runtime
-    ends it;
-  \item two searches at the height $10^{12}$ that both programs stop at a point at infinity before
-    the sieve, \verb|'1 0 1'| and \verb|'3 2 -1 12'| with \verb|-q -1|, are run with a timeout of
-    $30$ seconds and a cap of $4$~GB on the memory;
-  \item a default suite \verb|outputs| runs $300$ random polynomials at small heights with random
-    options of the output, \verb|-q| or \verb|-v|, formats and strings, at times with
-    \verb|-p 30 -N 30|, against the C program; the errors suite has the cases of the options of the
-    output; the four runs of \verb|test4.sh| whose \verb|-f|, \verb|-fs|, \verb|-fm| or \verb|-fe|
-    lacks its word fail with error~6, as in the C program; and the fuzz draws the options of the
-    output and format words, kept in UTF-8, on an eighth line of each round.
-\end{itemize}
-Until stage~I, skipped were the outputs that \verb|test4.sh| (four runs) and \verb|test3.sh| (three
-runs) filter to look at the report of the library under \verb|-v|, which stage~I compares
-(Section~\ref{sec:moduliTests}); until stage~I, the two runs of \verb|test3.sh| whose filter
-\verb|sed -n '/moduli used/,$p'| keeps the report from message 4 on, which needs message 4 (since
-stage~I they are compared on the whole output of the command before the filter); until stage~I,
-searches under \verb|-x| with a format or a string that are not compared exactly; and searches above
-the largest height of the tests, $30000$, which \verb|test4high| compares (since stage~H, those
-without a narrow search region). At the end of the stage the default suites compared $3784$ times
-with none failed: \verb|test4| $565$ (four outputs filtered, $13$ runs left to \verb|test4high| for
-their height), \verb|test3| $16$ (five outputs filtered), \verb|rptest| $1206$, \verb|random| $300$,
-\verb|outputs| $300$, the errors suite $313$ (the searches stopped at $10^{12}$ among them), the
-fuzz $800$, the parameters $272$ and the high suite $12$, with $67$ runs under \verb|-x| compared
-exactly, none by the weaker check alone; and \verb|test4high| compared $13$, none failed. Every
-point list is compared in its order. Section~\ref{sec:regionTests} gives the counts after stage~H.
-
-The \verb|#guard| examples of the model check the delivery against outputs of the C program and
-against the reference: a callback that stops at its $k$-th call, with the weight $2$, for every $k$
-up to beyond the length of a list; the stop and the flags in the exact check and at infinity; a stop
-at the $k$-th call through one denominator, and $\mathrm{noY}$ and $\mathrm{noCheck}$ through it;
-the prefix and the weights of a stop through the search with a callback; a stop at infinity at the
-heights $10^{12}$ and $2^{63} - 1$; the flags written back against message 7 of the C program for
-six curves, reversed, of odd degree with $|c_d| = 1$ and with divisors among them; and
-$\mathrm{noY}$ and $\mathrm{noCheck}$ against the C program on curves of \verb|test4.sh|. Those of
-the program check \verb|-1|, \verb|-1 -i|, \verb|-y| and \verb|-z -1|, the formats and the strings
-with their escapes, a trailing \verb|%| and \verb|%y| under \verb|-y|, \verb|-i| after a reversal,
-whole reports under \verb|-z|, under \verb|-v -1 -y| and with error 8, the curves of
-\verb|print_poly|, the lines of message 7, and the reading of the options, the last setting winning,
-\verb|-f -x| taking \verb|-x| as the format and a missing word as error 6, each against the C
-program at the pin up to the banner and the messages that the program leaves out.
-
-\section{Deviations}\label{sec:outputDeviations}
-
-Each component of this chapter differs from the C code in a stated way, recorded in its
-\verb|Deviation:| paragraph:
-\begin{itemize}
-  \item the callback a function of $x$, $z$, $y$ and the data that returns what the call gives, the
-    weight, the flag and the data, for the \verb|int| that \verb|process| returns, the \verb|int|
-    that it writes through \verb|quit| and the data behind \verb|info|, with no argument for
-    \verb|quit|, which the library clears before the search and tests after each call, so that it is
-    clear at every call; one value for the delivery, the data, one running count and one flag,
-    passed and returned, for the pointers \verb|info| and \verb|quit| (the local flag of
-    \verb|find_points_work_1| and the field \verb|quit| of the sieving thread, which
-    \verb|worker_init| clears) and the counts \verb|total| that each function of the search keeps
-    from zero and returns, which its caller adds to its own; the three branches of the map of the
-    reversal at each call of the exact check one definition;
-  \item the count an integer with no range obligation, since the weights that a callback returns are
-    arbitrary \verb|int|s (the library sums them in a \verb|long|, which a caller whose weights sum
-    to a negative value cannot tell from the codes of an error); for the callback of the program, of
-    the weights $0$ and $1$, the count is at most the number of calls;
-  \item the bits of the flags that the exact check and the points at infinity read as a structure of
-    three Booleans, copied from the options of the search and the reversal check, for the bits of
-    \verb|args->flags|, which \verb|_ratpoints_check_point| reads through its worker and
-    \verb|find_points_work_1| directly; the options of the output as fields of the options of the
-    search, as the switch of the reversal is, each a Boolean whose default is that of the cleared
-    flags; of the other bits of the input, \verb|RATPOINTS_NO_JACOBI| the Jacobi switch of the
-    parameters, a Boolean, and \verb|RATPOINTS_VERBOSE| a field of the settings of the output of the
-    program, from which the program makes the print channel of the search, through which the
-    library prints its report (Definition~\ref{def:report}); and the field
-    \verb|array_size| of the arguments a natural number of the parameters, $0$ for the default,
-    which the library takes for every value $\le 0$;
-  \item the walk returns after a call that stops the search, and its callers test the flag after it
-    and return, the arms of the second stage after each walk, the arm on the whole bit array leaving
-    the rest of it, and the scan after each bit array, where the C code returns from
-    \verb|_ratpoints_sift0| from within the walk (lines 1169, 1241, 1251, 1280 and 1288); one piece
-    returns what the scan returns; the bits of one denominator test the flag after each piece,
-    without the test of the flag \verb|stop| of a thread of the pool (line 3610, excluded with the
-    threads); and the loops of the shapes over a block test the flag after each denominator, and the
-    run after each block, as the C code does (lines 3928, 3957, 4044, 4068 and 5158);
-  \item the two arms of the second stage functions of their own, \verb|siftBitArray| choosing
-    between them by its argument;
-  \item at infinity, the return after a stop (lines 5100-5103) made by the search, which also prints
-    the line before the points under \verb|-v|; the square test
-    of $c_d$ and the decision whether there are points at infinity made on the list after the
-    reversal check, when the points are delivered, where the C code computes \verb|lcfsq| before the
-    check, which clears it in case 2, the only reversal after which the degree is even; the square
-    roots by \verb|Nat.sqrt|, for \verb|mpz_sqrt| at infinity and for \verb|mpz_sqrtrem| with the
-    test of the remainder in the exact check;
-  \item the sieving a function of its own for the block ``now do the sieving'' of
-    \verb|find_points_work_1|, which takes over the deviations of the search on its lines (the range
-    of the denominators as arguments, the row offsets made with zeros), with no sieving thread made
-    and no pool of threads (excluded with the threads); the exits of the search return the delivery
-    as it came;
-  \item the result with the data, the count, three bits of the flags, the search intervals as a
-    list and, since stage~I, the numbers of the moduli used as natural numbers, the refusals returned
-    apart, for the \verb|long| that \verb|find_points| returns, which carries the codes of the
-    errors too, the bits that it writes into \verb|args->flags|, the intervals that it leaves in
-    \verb|args->domain| with their number \verb|args->num_inter|, which message~8 reads, and the
-    \verb|long|s \verb|sp1_used|, \verb|sp2_used| and \verb|sp3_used|, which message~4 reads;
-    nothing else written back: neither the reversed coefficients and the degree,
-    which nothing reads after the search, nor the bits \verb|RATPOINTS_CHECK_DENOM|,
-    \verb|RATPOINTS_USE_JACOBI| and \verb|RATPOINTS_NO_REVERSE_AUTO|, which the program does not
-    read, the bits of the input coming back as the caller set them, which the program takes from its
-    own options and settings, nor \verb|args->sp3| and the private fields that the choice of the
-    moduli and the correction write;
-  \item no failure for lack of memory, which the model cannot meet: neither a failed allocation of
-    the sieving and the search (\verb|RATPOINTS_NO_MEMORY|) nor error 10 of the copies of the
-    strings of the output that \verb|main.c| allocates;
-  \item in the program, the data of \verb|main.c| a value, the callback's state, with the text
-    printed so far, for the pointer \verb|info| and the standard output, an array for the pointer to
-    the exact ends of the intervals of the command line and a natural number for their number, and
-    the output written once at the end, where \verb|main.c| prints and flushes after each point; the
-    loops over the intervals of messages 3 and 8 one function, \verb|%lf| being \verb|%f|, and the
-    difference of the numbers of the moduli of message 4 an integer, for the \verb|long|; the report
-    of the library under \verb|-v| printed through the print channel of the program into the text
-    printed so far (Definition~\ref{def:cliTuning}); the strings of \verb|-f|,
-    \verb|-fs|, \verb|-fm| and \verb|-fe| kept as values, for the copies that \verb|main.c|
-    allocates;
-  \item in the output, one function for the two switches of the escapes of \verb|process| and
-    \verb|print_string|; recursions over the characters, with an integer for the GMP integer $y$,
-    and a fold over the coefficients, for the loops over C strings and over the coefficients of
-    \verb|print_poly|; an optional string, none for the null pointer, for a string of the output;
-    and the bit \verb|RATPOINTS_VERBOSE| a field of the settings of the output;
-  \item the formats and the strings read as Lean strings, which the runtime decodes from the command
-    line as UTF-8, a byte sequence that is not UTF-8 read as U+FFFD, where \verb|main.c| copies the
-    bytes; every escape of \verb|main.c| is ASCII and no byte of a multibyte character of UTF-8 is,
-    so that the bytes printed agree on every format word in UTF-8;
-  \item the argument of \verb|-t|, the number of threads, checked and then ignored, since the model
-    sieves the blocks of the run in turn on one thread, which gives the output of every number of
-    threads (Theorem~\ref{thm:threads}); since stage~I the other tuning options set the options of
-    the sieve (Definition~\ref{def:cliTuning}).
-\end{itemize}
-The points at infinity follow the C code without a test $s \ne 0$, and the search writes back the
-three bits of the flags that the program reads, on every path, so neither is a deviation. The lines
-of this part of the C code that are neither modelled nor left to a later stage are excluded in
-\verb|correspondence/ratpoints.toml|: the prototypes of \verb|find_points_init|
-(\csource{ratpoints.h}{439}{439}), interface, and of \verb|find_points_clear|
-(\csource{ratpoints.h}{444}{444}), memory, as their definitions are; in \verb|main.c| the includes
-(\csource{main.c}{29}{37}) and the prototypes of its functions (\csource{main.c}{94}{103}), other,
-since the model has neither headers nor forward declarations; the GMP integers \verb|tmp| and
-\verb|tmp2| (\csource{main.c}{55}{55}) and their initialization and release in \verb|main| with
-those of the coefficients and of the ends of the intervals (\csource{main.c}{201}{207},
-\csource{main.c}{279}{283}), memory; the declaration of the arguments of the library
-(\csource{main.c}{199}{199}) and the initialization of the fields of the arguments that the model
-has no counterpart for (\csource{main.c}{330}{332}: the pointer to the array of the coefficients,
-whose entries \verb|read_input| fills later, and the degree and the height, which it sets later and
-the model passes as values), interface; and the text of message 1 (\csource{main.c}{977}{978}),
-other, which \verb|main| prints only when \verb|read_input| returns a value other than $0$, which it
-never does: its only return is at line 691, and every other failure exits through \verb|error|. The
-lines that stage~G left free for stage~H are recorded since stage~H (Chapter~\ref{chap:region}): the
-lines of the search region of \verb|main.c|, among them the test of \verb|process| (lines 150-152),
-the messages 3 and 8 and the fields of \verb|args| that \verb|read_input| sets for it, and in
-\verb|ratpoints.h| the flag \verb|RATPOINTS_NO_REVERSE_AUTO| (line 421), which only line 4687 of the
-search region sets, and the fields of \verb|ratpoints_args| for the search region and the range of
-the denominators (lines 363 and 364) with the type of the intervals (line 359) and the depth of the
-Sturm step (line 369), the lines 364 and 369, which mix these fields with those of the parameters,
-with the deviation of the options that names the others. The lines that this stage left free for
-stage~I are recorded since stage~I: message 4 (lines 992-998) with the report
-(Definition~\ref{def:cliReport}), and the numbers of the moduli used, their fields (line 378) with
-what a search gives back (Definition~\ref{def:Outcome}), zeroed on entry with \verb|sp3|
-(\csource{find_points.c}{4551}{4552}) by the search with a callback and a print channel
-(Definition~\ref{def:findPointsVerbose}) and set after the sieve from the moduli of the last block
-(\csource{find_points.c}{5212}{5213}, which copies \verb|sp1|, \verb|sp2| and \verb|sp3|) by the
-search with the choice (Definition~\ref{def:chooseAndSearch}); line 5163, which sets \verb|sp2| and
-\verb|sp3| from the last block, is recorded since stage~I with the run
-(Definition~\ref{def:sieveRun}), and the number of threads of \verb|ratpoints_args| (lines 370-376)
-and of its private data the pool of threads (line 398) are excluded with the threads; the end of the
-type (lines 399-400) being recorded since stage~I with the search with a callback and a print
-channel (Definition~\ref{def:findPointsVerbose}). The tuning fields of \verb|ratpoints_args| (lines
-365-367) and the defaults of the tuning options \verb|-r -R -U -C -A -Q -W| in \verb|main.c| (lines
-339-343 and 345-346), which the choice of the moduli by the curve and its correction read, are
-recorded since stage~I with the options of the sieve (Definition~\ref{def:sieveOptions}), and the
-other private fields of the library with what holds their data or as memory that the model does not
-allocate (Chapter~\ref{chap:moduli}).
-
-\section{Files and names}\label{sec:outputFiles}
-
-The callback, the delivery, the flags of the check, the mapped call, the appending callback and the
-reference of the delivery are in \verb|Ratpoints/Model/Delivery.lean|, new, a file without imports
-($194$ lines with its guards), which \verb|Ratpoints/Model/Candidate.lean|,
-\verb|Ratpoints/Model/Sieve.lean| and \verb|Ratpoints/Model/FindPoints.lean| import. The exact check
-and the points at infinity on the delivery are in \verb|Ratpoints/Model/Candidate.lean|; the walk,
-the two arms of the second stage and their choice, the scan, one piece, the bits of one denominator
-and one denominator in \verb|Ratpoints/Model/Sieve.lean|; the run in
-\verb|Ratpoints/Model/Blocks.lean| since stage~I (the listing of the denominators of a shape and the
-run were in \verb|Ratpoints/Model/Denominators.lean| before, the listing a definition of the proofs
-in \verb|Ratpoints/Proof/Shapes.lean| since then); the options of the search, what a search
-gives back, the sieving, the search, the search with a callback and the search for the points in
-\verb|Ratpoints/Model/FindPoints.lean|; and the settings of the output, the reading of the options
-of the output, the formats and the strings, the callback of the program, the report and the program
-in \verb|Ratpoints/Model/Cli.lean| ($948$ lines). The order of the points is
-\verb|Ratpoints/Spec/Order.lean|, new, above \verb|Ratpoints/Spec/Basic.lean|, with Mathlib and
-nothing of the model ($157$ lines).
-
-The proofs of the delivery and of the sieve on it up to one denominator use Lean core and \verb|Std|
-only, as the contracts of the sieve of the earlier stages do. \verb|Ratpoints/Proof/Delivery.lean|,
-new, has the lemmas of the reference of the delivery and imports only the file of the delivery of
-the model; \verb|Ratpoints/Proof/Stages.lean| has the points of a numerator and at infinity with the
-flags and the lemmas of the exact check and of the points at infinity on the delivery;
-\verb|Ratpoints/Proof/Scan.lean|, new, split off \verb|Ratpoints/Proof/Sift.lean| and above
-\verb|Ratpoints/Proof/Stages.lean| and \verb|Ratpoints/Proof/Packing.lean|, has the contracts of the
-walk, of the arms of the second stage and of the scan with their invariants ($974$ lines); and
-\verb|Ratpoints/Proof/Sift.lean|, which imports it for its proofs only, those of one piece, of the
-bits of one denominator and of one denominator ($820$ lines, $1100$ before the split; since stage~I
-those of one piece and of the bits of one denominator are in \verb|Ratpoints/Proof/SiftBits.lean|,
-split off it). The count of a delivery as the sum of the weights needs Mathlib's sums over
-\verb|Fin| and is in \verb|Ratpoints/Proof/DeliveryCount.lean|, new, above
-\verb|Ratpoints/Proof/Delivery.lean|; no proof file imports it.
-
-The other proofs of the stage are in files with Mathlib: the run on the delivery in
-\verb|Ratpoints/Proof/Denominators.lean| (in \verb|Ratpoints/Proof/Correction.lean| since stage~I);
-the factorization of the leading coefficient in increasing
-order, with its invariant, and the outcomes of the divisor set-up in
-\verb|Ratpoints/Proof/Divisors.lean|, which imports the specification of the order; normalized pairs
-and the map of the reversal on them in \verb|Ratpoints/Proof/Setup.lean|, and the facts of the
-reference, the shapes and the square test that the order needs in
-\verb|Ratpoints/Proof/BruteForce.lean|, \verb|Ratpoints/Proof/Shapes.lean| and
-\verb|Ratpoints/Proof/Setup.lean|; the polynomial searched, the denominators and the points of the
-specification of the order in the terms of the model in \verb|Ratpoints/Proof/Order.lean|, new
-($107$ lines); the points that the search delivers, the sound tests and the survivors under
-\verb|RATPOINTS_NO_CHECK| in \verb|Ratpoints/Proof/FindPoints.lean| ($1347$ lines, the largest file
-that the stage changed), and the denominators of the search as those of the specification there too,
-which stage~H moves, with the range of the denominators, to \verb|Ratpoints/Proof/SearchDens.lean|,
-above \verb|Ratpoints/Proof/Order.lean| (Chapter~\ref{chap:region}); the search with a callback, the
-protocol, the list of the search, the order theorem, the statements under \verb|RATPOINTS_NO_CHECK|,
-the main theorems, the theorems of the output of stage~E and the refusal theorems, with the guards
-on their axioms, in \verb|Ratpoints/Proof/Output.lean|, new, above
-\verb|Ratpoints/Proof/FindPoints.lean| ($552$ lines); and the theorem on the program in
-\verb|Ratpoints/Proof/Cli.lean|, new, above \verb|Ratpoints/Proof/Output.lean| and
-\verb|Ratpoints/Model/Cli.lean| ($298$ lines). Every Lean file stays below $1500$ lines. These are
-the sizes at the end of stage~G; stage~H, which adds to several of these files, gives the sizes of
-its files in Section~\ref{sec:regionFiles}.
-
-The general facts of the stage are under their names in the namespaces of Lean core, in
-\verb|Ratpoints/Proof/Containers.lean|: \verb|List.range_prefix_range|,
-\verb|List.flatMap_filter_flatMap_filter|, \verb|Array.pairwise_map_toList_push| and
-\verb|String.intercalate_cons_eq_append_join|; and the candidates for Mathlib are in the mirrors:
-the rough part of a number (\verb|Nat.IsRoughPart|, on Mathlib's smooth numbers) in
-\verb|Ratpoints/Mathlib/NumberTheory/SmoothNumbers.lean|, new, \verb|List.Nodup.flatMap| in
-\verb|Ratpoints/Mathlib/Data/List/Nodup.lean| and \verb|List.filter_eq_ite_of_forall| in
-\verb|Ratpoints/Mathlib/Data/List/Basic.lean|. The new modules are in their part roots and in the
-listing \verb|Ratpoints.lean|; \verb|comparator/Challenge.lean| restates
-\verb|Ratpoints/Spec/Order.lean| verbatim (Section~\ref{sec:certifiedG}).
-
-\section{The evidence}\label{sec:output-evidence}
-
-Besides the proofs:
-\begin{itemize}
-  \item a reading of the C code of the callback, the stops, the options of the output and the flags
-    written back, and of \verb|process|, the options, the formats, the strings and the report of
-    \verb|main.c|, at the pin, with a second reader who checked it, on a build of the C program
-    whose \verb|test4.sh| output is that of \verb|testbase4|: \verb|-1| stops at the first point
-    that \verb|process| counts, also after a reversal, where the caller's points at infinity come
-    from the sieve; message 4 after a stop at infinity counts no moduli; under \verb|-x| and
-    \verb|-y| one point at infinity; the toggles, the escapes, a trailing \verb|%| and backslash,
-    \verb|-f -x| taking \verb|-x| as the format, \verb|-ffoo| and a missing word as error 6, the
-    strings around no points; \verb|-1|, \verb|-1 -i|, \verb|-x -1 -i| and \verb|-y -1 -i| give the
-    same output with four threads; and no defect of the C code. The reading leaves notes on the C
-    code, none a defect: the comment at \verb|main.c:951| lists \verb|\0|, which prints as it
-    stands; \verb|%%| is no escape; a trailing \verb|%| or backslash skips the flush; and a sum of
-    weights may collide with the codes of the errors;
-  \item before the stage, a sketch of the model in Lean in two parts, the library and the program,
-    merged and checked against the C program: the default suites with every point list in its order
-    and the reports compared whole, message 7 among them, but for the messages 3, 4 and 8, the $60$
-    runs of \verb|test4.sh| with options of the output and no option of the search region, every one
-    compared; $6536$ comparisons under \verb|-x| on $139$ curves of \verb|test4.sh| and $200$ random
-    ones, exact with the moduli pinned and by the weaker check otherwise, which showed that the C
-    program narrows the region of its Sturm step on a curve where the model does not, the reason for
-    the comparison with \verb|-s|; the fuzz and the random curves with options of the output on two
-    seeds; a callback that stops at its $k$-th call, with weights of either sign, on $416$ curves,
-    which gets exactly the first $k$ points and their sum of weights; and the stop:
-    \verb|'1 0 1' 1000000000000 -q -1| takes $7$~ms against $1$~ms for the C program, also at
-    $2^{63} - 1$, and on the $41$ curves of \verb|test4.sh| whose first point lies in the sieve,
-    \verb|-1| at the height $30000$ takes $5$ to $18$~ms against $20$ to $1591$~ms for the whole
-    search, printing the first line of the whole output and of the C program; the cost of the
-    listing of the denominators shows at large heights, $3.6$~seconds and $544$~MB for a stop in the
-    sieve at $10^8$. The definitions of the order were checked against the C program line by line on
-    six curves (\verb|-1 0 9| at the height $10$, \verb|0 1 0 2| at $10$, \verb|-6 5 -3 30| at $12$,
-    \verb|1 0 0 30| at $20$, \verb|-2 0 0 1| at $130$, \verb|1 0 0 3| at $30$), three of them among
-    the examples of the file. Four reviews of the sketch, of the library against the C code, of the
-    program, of the harness and of the order, each finding checked by a second reader, made runs of
-    their own against the C program, none failing: for the library $4140$ comparisons on $138$
-    curves at the heights $7$, $60$ and $400$ under ten option sets with the stops, \verb|-y| and
-    \verb|-x -s| with the moduli pinned, and message 7 the same on $114$ runs; for the program
-    $16000$ runs compared byte for byte but for the messages 3, 4 and 8, so with message 7, on
-    random option sets and curves; for the harness $2096$ runs under \verb|-x| compared exactly
-    against the C program with \verb|-p 30 -N 30 -s|; and for the order $1535$ whole lists, $695$
-    more with \verb|-s| and $487$ runs with \verb|-y|. Of their $44$ findings $31$ were confirmed,
-    $10$ in part and $3$ refuted; they made the points at infinity follow the C code without the
-    test $s \ne 0$, split the arms of the extraction, named the block of the sieving, stated the
-    consequences of the deferred search region under \verb|RATPOINTS_NO_CHECK|, gave the harness the
-    comparison of \verb|-x| against \verb|-p 30 -N 30 -s|, the empty standard error, the runtime
-    that aborts on a panic and the stop cases, and made the factorization and the divisor set-up one
-    contract each, with the rough part on Mathlib's smooth numbers. Then a prototype of all the
-    proofs on the sketch, in which the whole library, the program, the challenge and the solution
-    build, every proof takes at most $20$ lines and the axioms are the standard ones, comparator
-    with \verb|--paranoid| accepts the twelve statements, the build with nine other sets of values
-    of the constants passes, and the differential tests compare $3784$ times and $13$ times in
-    \verb|test4high| with none failed; it changed the model of the sketch, as the reviews left it,
-    in its docstrings only. And a review of the plan of this chapter by four readers (49 findings,
-    41 confirmed, 7 in part and 1 refuted), each finding checked by a second reader;
-  \item the fourteen items of the stage drafted one after the other in a copy of the repository,
-    each passing the project's checks, the build with nine other sets of values of the constants and
-    the differential tests, comparator run after each item that put the sieve or the search on the
-    delivery or brought in a certified statement, and with \verb|--paranoid| on the twelve
-    statements after the last, and taken over one commit each;
-  \item after the stage, independent reviews, each finding checked by a second reader: two of the C
-    ranges, the deviations and the exclusions against the C code (6 findings, all confirmed), and
-    three of the code, the blueprint, the descriptions and the harness against the conventions of
-    the project (53 findings, 48 confirmed), 59 findings and 54 confirmed in all, applied in seven
-    rounds, among them the deviation of what a search gives back listing what the C code writes back
-    and the model does not, the search intervals among them, and saying that the bits of the input
-    come back as the caller set them, the callers of the walk that test the flag named, the field
-    \verb|array_size| linked to the parameters, the exclusions of the defaults of the tuning options
-    in \verb|main.c| deleted, so that these lines are free for stage~I, and the cost of the listing
-    of the denominators after a stop stated; the public imports narrowed to the material of the
-    statements; the fields and lemmas that say that the callback has not stopped the search named
-    \verb|quit_eq_false|, the lemma of the mapped call
-    \verb|Ratpoints.Delivery.callMapped_eq_deliver| in the namespace of the call, a negated order
-    hypothesis stated as an inequality and a statement oriented as its name reads; the two
-    corollaries of the protocol that mention nothing of the program moved to
-    \verb|Ratpoints/Proof/Output.lean|, the one on success without the hypothesis of well-formed
-    parameters, and the invariant of the factorization a structure with named fields; the idioms,
-    among them the hypothesis $1 \le z$ of \verb|Ratpoints.pointsOfDen_eq_pointsWithDen| and
-    \verb|List.Nodup.flatMap| protected; the docstrings and the descriptions, among them
-    \verb|Ratpoints.Outcome| in the lists of what the challenge takes from the model and the
-    statements of stage~G for well-formed parameters; and the reflow of the signatures; the uses
-    recorded in the nodes were checked against the dependencies of the Lean code;
-  \item the \verb|#guard| examples of Section~\ref{sec:outputTests}, against outputs of the C
-    program and against the reference;
-  \item the differential tests of Section~\ref{sec:outputTests}: on the final state $3784$
-    comparisons in the default suites, $67$ of them under \verb|-x| compared exactly, and $13$ in
-    \verb|test4high|, none failed, every point list compared in its order;
-  \item \verb|lake comparator --paranoid| accepted the twelve statements on 2026-10-17, after the
-    items and again on the final state after the audit, with Lean's kernel and the five external
-    checkers bundled with Lean;
-  \item the project builds, with all its proofs, for nine other sets of values of the constants of
-    the build, among them the two that change all the constants, with the bound
-    $\mathrm{maxDivisors}$ of the number of divisors $2$ and $100000$; so no proof depends on their
-    values;
-  \item every proof and every definition of the stage takes at most 20 lines; the only longer one in
-    the project is the set-up of the Jacobi test by tables (\verb|jacobiSetup|,
-    Definition~\ref{def:jacobiTables}), which follows the loop of \verb|jacobi_setup| since
-    sub-stage~F2.
-\end{itemize}
+\begin{remark}[Deviations]\label{rem:outputDeviations}
+  Besides the deviations stated above, the program keeps the data of \verb|main.c| as a value with
+  the text printed so far, for the pointer \verb|info| and the standard output, and writes its
+  output once, at the end, where \verb|main.c| prints and flushes after each point. It reads the
+  formats and the strings as Lean strings, decoded from the command line as UTF-8, where
+  \verb|main.c| copies the bytes; since every escape of \verb|main.c| is ASCII and no byte of a
+  multibyte character of UTF-8 is, both print the same bytes for every format and string in UTF-8.
+  The lines of \verb|main.c| without a counterpart, such as the includes and the initialization of
+  the GMP integers, are excluded in the record (Chapter~\ref{chap:ccode}).
+\end{remark}

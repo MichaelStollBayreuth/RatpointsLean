@@ -1,0 +1,427 @@
+\chapter{The search region and the Sturm step}\label{chap:region}
+
+The caller of \verb|find_points| may restrict the search to \emph{search intervals} for~$x/z$,
+closed intervals whose ends are C \verb|double|s, and to a range of the denominators,
+from~$b_{\mathrm{low}}$ to~$b_{\mathrm{high}}$. Chapter~\ref{chap:spec} specifies this search region
+(Definition~\ref{def:regionSpec}); this chapter models what the C code does with it: the doubles,
+the default interval and the refusal of bad intervals, the exact bounds of the numerators of each
+denominator, and the Sturm step of \verb|sturm.c|, which narrows the search intervals to those on
+which~$f$ may take a value $\ge 0$; and it proves, assuming Sturm's theorem
+(Definition~\ref{def:sturmTheorem}), that the Sturm step keeps every point and that its intervals
+fit the arrays that the C code gives it. The remainder chain of~$f$ and~$f'$, with which the Sturm
+step begins, is Chapter~\ref{chap:setup}'s; the main theorems (Chapter~\ref{chap:theorems}) use
+this chapter through the region that the search uses (Section~\ref{sec:searchRegion}).
+
+Ratpoints does no floating-point arithmetic on the ends of its intervals (Chapter~\ref{chap:spec}).
+So the model holds a double as its bits, with a function for each operation that the C code applies
+to it, and computes everything else exactly; only the value of a double and well-formedness, the
+test of \verb|RATPOINTS_BAD_ARGS|, read the bits.
+
+\section{The doubles}\label{sec:doubles}
+
+\begin{definition}[The doubles of the C code]\label{def:Double}
+  \lean{Ratpoints.Double, Ratpoints.Double.lt, Ratpoints.Double.toRat, Ratpoints.Double.ofRatio, Ratpoints.Double.ldexp, Ratpoints.Double.nextUp}
+  \leanok
+  A C \verb|double| by its~$64$~bits of IEEE~754 binary64, in a structure with no equality of its
+  own (equality of the bits is not \verb|==|); and the operations that ratpoints applies to
+  doubles, as gcc and glibc compute them with rounding to nearest, ties to even: the comparisons,
+  false when either side is a NaN and otherwise the order of a key (the bits without the sign bit,
+  negated when it is set); negation and \verb|fabs|; the exact value of a finite double; the double
+  nearest to $\pm m\,2^k$ and to~$\pm n/d$; the conversions from and to \verb|long|, and to
+  \verb|unsigned long|; and \verb|frexp|, \verb|ldexp| and \verb|nextafter| towards
+  $\pm$\verb|HUGE_VAL|, which pass a signalling NaN on as it is, where glibc quiets it (ratpoints
+  passes them no NaN). These functions model the platform and hold no C range.
+\end{definition}
+
+Each operation is checked when the model is compiled, on the cases at the edges (zeros,
+subnormals, the largest finite doubles, infinities, a NaN, ties, $2^{53}$ and~$2^{63}$ with their
+neighbours), against the bits that a C program built with gcc and glibc prints; for the roundings
+the proofs show what the theorems need, a faithful rounding.
+
+\begin{lemma}[The values of the doubles]\label{lem:doubleValues}
+  \uses{def:Double, def:regionSpec}
+  \lean{Ratpoints.Double.lt_eq_true_iff, Ratpoints.Double.doubleValue_eq_toRat, Ratpoints.Double.ofDyadic_exact, Ratpoints.Double.ofInt64_exact, Ratpoints.Double.toRat_frexp_mul_zpow_eq_and_bounds, Ratpoints.Double.ldexp_exact, Ratpoints.Double.toInt_toInt64, Ratpoints.Double.toNat_toUInt64, Ratpoints.Double.nextUp_le_of_lt, Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio, Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp}
+  \leanok
+  Write~$v(x)$ for the value of the bits of a double~$x$ (Definition~\ref{def:regionSpec}).
+  \begin{enumerate}
+    \item On doubles that are not NaNs, \verb|<|, \verb|<=| and \verb|==| are the order and the
+      equality of the values; the value of a finite double is its exact value.
+    \item The double nearest to $\pm m\,2^k$ is exact for $0 < m < 2^{53}$, $k \ge -1074$ and
+      $m\,2^k < 2^{1024}$, and \verb|(double)n| for $|n| \le 2^{53}$; for a finite $x \ne 0$,
+      \verb|frexp| writes~$x$ as $g\,2^e$ with $1/2 \le |g| < 1$, and \verb|ldexp(x, n)| is
+      $x\,2^n$ when $2^{-1022} \le |x|\,2^n < 2^{1023}$; and a double $0 \le x < 2^{63}$ converts
+      to the \verb|long| $\lfloor x \rfloor$, one $0 \le x < 2^{64}$ to the \verb|unsigned long|
+      $\lfloor x \rfloor$.
+    \item The next double above~$x$, not a NaN or~$+\infty$, is at most every double above~$x$;
+      dually below.
+    \item The roundings of~$\pm n/d$ and of $\pm m\,2^k$ are never a NaN, and for $n, m \ne 0$ a
+      finite result is a faithful rounding: the value lies strictly between the values of its two
+      neighbours.
+    \item For $1 \le H < 2^{63}$, the double~$h$ of~$H$, moved up to the next double when
+      $h < 2^{63}$ and the \verb|long| of~$h$ is below~$H$, is finite and $H \le v(h)$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  The value is strictly increasing in the key; the comparisons and the neighbours follow. A
+  significand $M < 2^{53}$ with the exponent~$q$ of its last place has the value $\pm M\,2^q$:
+  item~(2). For item~(4) the rounded significand lies within half a unit of the exact quotient, the
+  neighbours one unit away, also across a change of the exponent; item~(5) follows.
+\end{proof}
+
+\section{The search intervals}\label{sec:searchIntervals}
+
+The library normalizes the range of the denominators and the depth \verb|sturm| of the Sturm step
+in place and restores those of the caller afterwards (\csource{find_points.c}{4542}{4545},
+\csource{find_points.c}{4560}{4563}); the model returns the normalized options instead. The search
+intervals and the Sturm step come after the reversal check (Chapter~\ref{chap:setup}).
+
+\begin{definition}[The normalized options and the search intervals]\label{def:searchIntervals}
+  \uses{def:Options, def:Double}
+  \lean{Ratpoints.Options.normalize, Ratpoints.searchIntervals}
+  \leanok
+  For the options of a search (Definition~\ref{def:Options}) and the height bound $H \ge 1$, the
+  \emph{normalized} options: the least denominator~$1$ for one below~$1$; the largest
+  denominator~$H$ for one below~$1$ or above~$H$; the depth of the Sturm step capped at
+  $\mathrm{DBL\_MANT\_DIG} + 2 = 55$, beyond which the ends of the intervals of the step would not
+  all be doubles; and the switch of the reversal turned off, for the private bit
+  \verb|RATPOINTS_NO_REVERSE_AUTO|, when the caller gives search intervals or the normalized range
+  is not $1, \dots, H$ (\csource{find_points.c}{4659}{4661}, \csource{find_points.c}{4678}{4689}).
+  The \emph{search intervals} of a search: for none given, the default interval $[-h, h]$, where~$h$
+  is the double of~$H$, moved up to the next double when $h < 2^{63}$ and the \verb|long| of~$h$ is
+  below~$H$; otherwise the caller's intervals, or none, for \verb|RATPOINTS_BAD_ARGS|, when an
+  interval has not $l \le u$ or does not begin above the end of the one before it, compared as
+  doubles, so that a NaN end is refused too (\csource{find_points.c}{4831}{4855}).
+\end{definition}
+
+The search turns the answer none into the refusal $\mathrm{badArgs}$; the test of a null pointer
+(\csource{find_points.c}{4830}{4830}) is excluded as part of the interface of the library.
+
+\begin{lemma}[The normalized options and the search intervals]\label{lem:searchIntervals}
+  \uses{def:searchIntervals, def:regionSpec, def:Options}
+  \lean{Ratpoints.Options.reverse_normalize, Ratpoints.Options.toNat_bHigh_normalize, Ratpoints.Options.sturm_normalize_le, Ratpoints.run_searchIntervals_eq_none_iff, Ratpoints.intervalsWF_run_searchIntervals, Ratpoints.exists_run_searchIntervals_nil}
+  \leanok
+  \begin{enumerate}
+    \item The normalized switch of the reversal is the switch and the whole box
+      (Definition~\ref{def:regionSpec}); the normalized largest denominator is
+      $\mathrm{denominatorBound}(b_{\mathrm{high}}, H)$; a denominator $1 \le z \le H$ lies in the
+      normalized range exactly when $b_{\mathrm{low}} \le z$ and ($b_{\mathrm{high}} < 1$ or
+      $z \le b_{\mathrm{high}}$), as in the search region; the normalized depth is at most~$55$ and
+      negative exactly when the depth is.
+    \item The search intervals are none exactly when the caller's intervals are not well formed;
+      they are the caller's intervals when these are well formed and not empty; and for
+      $1 \le H < 2^{63}$ they are well formed and, when the caller gives none, hold~$a/b$ for every
+      $b > 0$ and $|a| \le H$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:doubleValues}
+  \leanok
+  Item~(1) by cases on the clamps. Item~(2): the loop of the validation tests each index, and the
+  chain of the specification, read index by index, is that test in the order of the values
+  (Lemma~\ref{lem:doubleValues}); the default interval by item~(5) of that lemma.
+\end{proof}
+
+\section{The bounds of the numerators}\label{sec:numeratorBounds}
+
+For a denominator~$b$ the numerators of an interval $[l, u]$ are $\lceil b l \rceil, \dots,
+\lfloor b u \rfloor$ within the height bound. The C code computes them exactly from the doubles of
+the ends, on \verb|long|s and in~$128$~bits where those do not suffice, and the model on the same
+words; the bounds are made once for the run (\csource{find_points.c}{3869}{3870}).
+
+\begin{definition}[The exact bounds of the search intervals]\label{def:exactBounds}
+  \uses{def:Double, def:packing, def:bitArrays, def:reciprocal}
+  \lean{Ratpoints.Sieve.exactEnd, Ratpoints.Sieve.exactMantissa, Ratpoints.Sieve.exactScale, Ratpoints.Sieve.endForm, Ratpoints.Sieve.exactBounds, Ratpoints.Sieve.intervalBits, Ratpoints.Sieve.intervalBitsExact, Ratpoints.Sieve.RangesFor}
+  \leanok
+  \begin{enumerate}
+    \item An \emph{end}~$x$ (\csource{find_points.c}{3264}{3271},
+      \csource{find_points.c}{3272}{3291}, \csource{find_points.c}{3292}{3299}): its sign, $x < 0$
+      as in C, so that~$-0.0$ is not negative; for $|x| < 2^{63}$, $|x| = m\,2^{-s}$ with~$m$ odd
+      or $s = 0$, except that~$s$ is capped at~$127$, where $m\,2^{-s} \ne |x|$ but $b\,m\,2^{-s}$
+      and~$b|x|$ both lie strictly between~$0$ and~$1$ for $1 \le b < 2^{63}$; otherwise
+      $m = 2^{63}$ and $s = 0$; and the rounding $r = 2^s - 1$ when the end wants~$b|x|$ rounded up
+      (a lower end with $x \ge 0$, an upper end with $x < 0$), else $r = 0$. Its \emph{scaled} value
+      at~$b$, $\min(2^{64} - 1, \lfloor (b m + r)/2^s \rfloor)$, is computed on two words
+      (\csource{find_points.c}{3231}{3238}).
+    \item The \emph{form} $(M, C, \mathit{sh})$ of an end (\csource{find_points.c}{3304}{3318}),
+      for which $(b M + C) \gg \mathit{sh}$ fits a \verb|long| for every $b \le b_{\mathrm{high}}$:
+      $(0, \mp H, 0)$ for an end at or beyond the height bound on its side ($x \le -H$ at a lower
+      end, $x \ge H$ at an upper end); $(\pm m, C, s)$, with $C = 2^s - 1$ at a lower end and~$0$
+      at an upper end, when $s < 64$ and $m \le \lfloor (2^{63} - 1 - C)/b_{\mathrm{high}}
+      \rfloor$; and none otherwise.
+    \item The \emph{bounds} of the search intervals (\csource{find_points.c}{3323}{3340}): the two
+      ends of each interval, which is taken inline, with the forms of its ends, when
+      $H \le 2^{63} - 65$ and both ends have a form, and otherwise gets the forms of an empty
+      interval.
+    \item The \emph{bits} of an interval at~$b$ for a class of the numerators
+      (\csource{find_points.c}{3410}{3434}): $\mathit{lo} = \lceil b l \rceil$ and
+      $\mathit{hi} = \lfloor b u \rfloor$ from the forms; the code~$2$ for $\mathit{lo} > H$; for
+      $\mathit{hi} < -H$ the code~$1$ if the interval is taken inline, and otherwise what
+      \verb|interval_bits_exact| computes from the scaled ends
+      (\csource{find_points.c}{3381}{3406}); and otherwise the code~$0$ with the bits of the first
+      and the last numerator of the class in $\max(\mathit{lo}, -H), \dots, \min(\mathit{hi}, H)$.
+    \item The bounds of an interval \emph{represent} a range $\mathit{lo}, \dots, \mathit{hi}$
+      at~$b$ when, for every class of a packing (Chapter~\ref{chap:sieve}: stride~$2^k$ with
+      $k < \mathrm{numStrides}$ and $k \le 6$, residue $a_0 < 2^k$), their bits have the code~$2$
+      only for a range above~$H$, the code~$1$ only for one below~$-H$, and otherwise the bits of
+      the numerators of the class in $\max(\mathit{lo}, -H), \dots, \min(\mathit{hi}, H)$. The
+      bounds of a run \emph{give} a list of ranges at~$b$ when there is one for each interval,
+      represented by its bounds, each with $\mathit{lo} \le \mathit{hi} + 1$, increasing and
+      strictly apart.
+  \end{enumerate}
+\end{definition}
+
+This is what the loop of the sieve of one denominator over the intervals needs
+(Chapter~\ref{chap:sieve}, \csource{find_points.c}{3471}{3488}): the code~$2$ ends the denominator,
+the code~$1$ goes on to the next interval and the code~$0$ sieves the bits, so that the numerators
+of a denominator come in increasing order.
+
+\begin{lemma}[The bounds give the ranges of the numerators]\label{lem:numeratorRanges}
+  \uses{def:exactBounds, def:regionSpec, def:Options}
+  \lean{Ratpoints.Sieve.numeratorRanges, Ratpoints.Sieve.inRanges_numeratorRanges, Ratpoints.Sieve.le_add_one_of_mem_numeratorRanges, Ratpoints.Sieve.pairwise_numeratorRanges, Ratpoints.Sieve.lowNumerator_eq_and_highNumerator_eq_run_exactEnd, Ratpoints.Sieve.represents_intervalBoundsOf, Ratpoints.Sieve.rangesFor_run_exactBounds}
+  \leanok
+  The \emph{range of the numerators} of~$b$ in an interval $[l, u]$ over the values runs
+  from~$\lceil b l \rceil$, clamped to $-H, \dots, H + 1$, to~$\lfloor b u \rfloor$, clamped to
+  $-H - 1, \dots, H$, an infinite end going to the end of its clamp.
+  \begin{enumerate}
+    \item For $b > 0$ and $|a| \le H$, $a$ lies in one of the ranges of the intervals of~$D$
+      exactly when~$a/b$ lies in one of the intervals. For intervals with $l \le u$ each range has
+      $\mathit{lo} \le \mathit{hi} + 1$, and for search intervals (Definition~\ref{def:regionSpec})
+      each range ends below the start of the next.
+    \item For a double~$x$ that is not a NaN, $1 \le b < 2^{63}$ and $H < 2^{63}$, the end made
+      of~$x$, at either side, gives the same clamped numerators as~$x$; and for $H < 2^{63}$ and
+      $1 \le b \le b_{\mathrm{high}} \le H$ the bounds of an interval represent the range of the
+      ends made of its doubles, on both paths of \verb|interval_bits|.
+    \item So, for well-formed intervals, $H < 2^{63}$, $b_{\mathrm{high}} \le H$ and
+      $0 < b \le b_{\mathrm{high}}$, the bounds of the run give at~$b$ the ranges of the values of
+      the intervals (Definition~\ref{def:exactBounds}).
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:doubleValues, def:bitArrays, def:packing, def:reciprocal, lem:packing, lem:reciprocal}
+  \leanok
+  Item~(1): the ceiling and the floor of~$b x$ against an integer; the ranges are apart since
+  $\lfloor b u_i \rfloor \le b u_i < b l_{i+1} \le \lceil b l_{i+1} \rceil$. Item~(2): the product
+  on two words with its carry gives the scaled end exactly for $s \le 127$
+  (\lname{Ratpoints.Sieve.toNat\_exactScale}); the mantissa is exact by
+  Lemma~\ref{lem:doubleValues}, and an end capped at $s = 127$ or beyond~$2^{63}$ gives the clamped
+  numerators of the double; a form $(b M + C) \gg s$ is $\lceil b m\,2^{-s} \rceil$ for
+  $C = 2^s - 1$ and the floor for $C = 0$, a \verb|long| by the bound on~$m$. Item~(3): the loop of
+  \verb|exact_bounds| is a map.
+\end{proof}
+
+\section{The Sturm step}\label{sec:sturmStep}
+
+With $\mathrm{sturm} \ge 0$, \verb|_ratpoints_compute_sturm| narrows the search intervals before the
+sieve. From the remainder chain $s_0 = f, s_1 = f', \dots, s_k$ (Chapter~\ref{chap:setup}) it
+counts the sign changes at $\pm\infty$; when~$f$ has no real root and is negative it stops;
+otherwise it bisects $[-\infty, +\infty]$ to the depth of the step, keeping the intervals on
+which~$f$ may be $\ge 0$, and intersects them with the search intervals. The model keeps the
+\verb|long| numerators and exponents of the ends, as \verb|Int64|, and the doubles of the C code.
+
+\begin{definition}[The Sturm step]\label{def:computeSturm}
+  \uses{def:Double, def:Options, def:remainderChain, def:reversal}
+  \lean{Ratpoints.Sturm.computeSturm, Ratpoints.Sturm.iterate, Ratpoints.Sturm.EndsWF, Ratpoints.Sturm.intersect, Ratpoints.Sturm.meet, Ratpoints.sturmRegion}
+  \leanok
+  The \emph{bisection}, the nested function \verb|iterate| of gcc (\csource{sturm.c}{197}{208},
+  \csource{sturm.c}{228}{233}, \csource{sturm.c}{261}{267}), works on intervals whose ends
+  are~$n/2^e$, with \verb|long|s~$n$ and~$e$, or $\mp\infty$, written $\mp\mathrm{LONG\_MAX}$ with
+  the exponent~$0$. It evaluates the rows of the chain at~$n/2^e$ by Horner's rule in integers,
+  which computes~$2^{e \deg s}$ times the value of the row~$s$, and counts their sign changes, zeros
+  skipped. An interval with the counts~$c_l$, $c_r$ at its ends and the signs~$\sigma_l$, $\sigma_r$
+  of~$f$ just inside them is dropped when $c_l = c_r$ and $\sigma_l < 0$; it is kept when
+  $c_l = c_r$ and $\sigma_l > 0$, or at the depth of the step, its ends converted to doubles,
+  $\mathrm{ldexp}((\mathrm{double})\,n, -e)$, and appended to the intervals kept, or joined to the
+  last of them when that ends at its lower end (\verb|==| of doubles); and otherwise it is split at
+  its midpoint~$m$, the left half bisected first, both halves with the count and the sign of~$f$
+  at~$m$, except that at a root~$m$ the left half gets the count plus~$1$ and
+  $-\mathrm{sign}\, f'(m)$, the right half $\mathrm{sign}\, f'(m)$. The midpoint is~$0$ for
+  $[-\infty, +\infty]$; $-1$ or~$2 n_r$ for $[-\infty, n_r]$ and~$1$ or~$2 n_l$ for
+  $[n_l, +\infty]$, as the finite end is~$0$ or not; and otherwise half the sum of the ends over the
+  larger denominator. An interval is \emph{well formed} at the depth~$\delta$ when it has one of the
+  four shapes that the bisection meets (the whole line; an infinite interval whose finite end, of
+  exponent~$0$, is~$0$ or on its side of~$0$; two finite ends, equal exponents being~$0$), its
+  exponents lie between~$0$ and~$\delta$, its finite numerators over the larger exponent are at
+  most~$2^{\delta}/4$ in absolute value from the depth~$1$ on, and its ends increase.
+
+  The \emph{intersection} with the caller's intervals goes by two cursors: of the two current
+  intervals, compared as doubles, the one that begins first is skipped when it ends before the other
+  begins; otherwise their intersection is noted and the cursor of the one that ends first moves on
+  (\csource{sturm.c}{289}{322}). The \emph{Sturm step} on~$f$ of degree $d \ge 1$ with $c_d \ne 0$
+  (\csource{sturm.c}{86}{97}, \csource{sturm.c}{177}{190}, \csource{sturm.c}{269}{273}): none when
+  the remainder chain is none; no interval when the counts at $\mp\infty$ agree, so that~$f$ has no
+  real root, and $c_0 < 0$; otherwise the intervals that the bisection keeps from
+  $[-\infty, +\infty]$, started with the counts and the signs of~$f$ at~$\mp\infty$, intersected
+  with the caller's intervals. The \emph{Sturm step of the search}, on the polynomial that the
+  reversal check hands on, at the normalized depth (\csource{find_points.c}{4879}{4892}): with the
+  step off, the intervals as they are; the refusal $\mathrm{notSquarefree}$ when the chain is none;
+  the intervals left, when there are some; and when there are none, none for an even~$d$ whose
+  leading coefficient is not a square, so that the search returns at once, there being no point at
+  infinity either, and otherwise no intervals with the flag \verb|sturm_empty|, by which the search
+  delivers the points at infinity only.
+\end{definition}
+
+The proofs read~$f$ also as the real polynomial \lname{Ratpoints.Sturm.chainPoly} with the
+coefficients $c_0, \dots, c_d$.
+
+\begin{lemma}[What the Sturm step computes]\label{lem:sturmStep}
+  \uses{def:computeSturm, def:regionSpec, def:Options, def:remainderChain, lem:squarefree_binaryFormPoly}
+  \lean{Polynomial.forall₂_posAssoc_sturmSeq_of_getElem, Ratpoints.Sturm.IsChain.run_signsAt_eq, Ratpoints.Sturm.IsChain.run_countsAtInfinity_eq, Ratpoints.Sturm.iterate_wf, Ratpoints.Sturm.computeSturm_wf, Ratpoints.run_sturmRegion_eq_error_iff, Ratpoints.run_sturmRegion_subset}
+  \leanok
+  \begin{enumerate}
+    \item Over an ordered field, a list of nonzero polynomials whose last entry is a unit and whose
+      entries from the third on are \emph{positive multiples} ($c\,p$ with $c > 0$) of the negated
+      remainders of the two before is, entry by entry, a list of positive multiples of the Sturm
+      sequence of its first two entries; so the rows of a chain that ends with a constant are,
+      over~$\mathbb{R}$, positive multiples of the Sturm sequence of~$f$ and~$f'$.
+    \item Horner's rule gives the sign of the value of a row at~$n/2^e$ when $e \ge 0$ and~$e$
+      times the size of the row is below~$2^{63}$. For a chain that ends with a constant, the
+      counts of the step at $\pm\infty$ are those of the Sturm sequence of~$f$ and~$f'$; if also
+      $d < 2^{57}$ and~$f$ is squarefree, the signs and the count of the step at~$n/2^e$,
+      $0 \le e \le 55$, are the signs of~$f$ and~$f'$ and the count $V_f(n/2^e)$ of Sturm's
+      theorem (Definition~\ref{def:sturmTheorem}).
+    \item The whole line is well formed at the depth~$0$, and the halves of a well-formed interval
+      at a depth below~$55$ are well formed at the next depth, without overflow of the \verb|long|s;
+      the doubles of the ends have the values $n\,2^{-e}$, and~$\pm 2^{63}$ for
+      $\pm\mathrm{LONG\_MAX}$. So the bisection to a depth of at most~$55$ keeps intervals with
+      $l \le u$, increasing and strictly apart.
+    \item The step is none exactly when the chain is none. The intersection of two well-formed
+      lists holds every value that lies in both. At a depth of at most~$55$, for well-formed
+      intervals of the caller, the step and the Sturm step of the search leave well-formed
+      intervals inside the given ones, none when \verb|sturm_empty| is set; the Sturm step of the
+      search refuses exactly when it is on and the chain is none.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:doubleValues, def:reversal, lem:chain_squarefree}
+  \leanok
+  Item~(1): the chain has $A s_{j-2} = Q s_{j-1} - g s_j$ with integers $A, g \ge 1$
+  (Chapter~\ref{chap:setup}); the rest by induction along the Sturm sequence, which commutes with
+  the map from~$\QQ$ to~$\mathbb{R}$. Item~(2): positive multiples have the signs of the values and
+  of the leading coefficients, and a squarefree~$f$ and~$f'$ never vanish together, which the count
+  with the zeros skipped needs. Item~(3): the cases of the midpoint, whose numerators stay at
+  most~$2^{53}$, so that the doubles are exact (Lemma~\ref{lem:doubleValues}). Item~(4): the loop
+  of the intersection as a recursion on the two lists.
+\end{proof}
+
+\section{Sturm's theorem and the coverage}\label{sec:sturmCoverage}
+
+The specification states Sturm's theorem as a proposition (Definition~\ref{def:sturmTheorem}), in
+the form for an interval $(a, b]$ whose ends may be roots, which the bisection needs, as it
+evaluates the chain at midpoints that may be roots of~$f$. The general facts behind the proofs
+(signs near a point and near $\pm\infty$, sign variations of positive multiples, squarefree
+polynomials over a perfect field) are stated at Mathlib's generality under \verb|Ratpoints/Mathlib|.
+
+\begin{lemma}[What Sturm's theorem says about an interval]\label{lem:sturmInterval}
+  \uses{def:sturmTheorem}
+  \lean{Ratpoints.vLeft, Ratpoints.vRight, Ratpoints.sgnLeftEnd, Ratpoints.sgnRightEnd, Ratpoints.vLeft_eq_vRight_iff, Ratpoints.eval_neg_of_vLeft_eq_vRight, Ratpoints.exists_inside_eval_pos, Ratpoints.eval_neg_of_vBot_eq_vTop}
+  \leanok
+  For a real polynomial~$p$ let~$V_p(t)$ be the number of sign changes at~$t$ of the Sturm sequence
+  of~$p$ and~$p'$, $V_p(+\infty)$ that of the leading coefficients of its entries, and
+  $V_p(-\infty)$ that of the leading coefficients each times~$(-1)^{\deg q}$ for the entry~$q$. For
+  an interval with ends $l < r$ in $\mathbb{R} \cup \{\pm\infty\}$, the \emph{count} at~$l$
+  is~$V_p(l)$, and at~$r$ it is~$V_p(r)$, plus~$1$ at a root; the \emph{sign} at a finite~$l$ is
+  that of~$p(l)$, or of~$p'(l)$ when $p(l) = 0$, at a finite~$r$ that of~$p(r)$, or of~$-p'(r)$ when
+  $p(r) = 0$, and at $\pm\infty$ that of the leading coefficient of~$p$, times~$(-1)^{\deg p}$
+  at~$-\infty$; for a squarefree~$p$ these are the signs of~$p$ just inside the ends. Assuming
+  Sturm's theorem, for a squarefree~$p$:
+  \begin{enumerate}
+    \item the counts at the ends agree exactly when~$p$ has no root strictly between them;
+    \item when they agree and~$p$ is negative just inside~$l$, $p$ is negative on $(l, r)$ and just
+      inside~$r$;
+    \item when they differ, or~$p$ is positive just inside~$l$, $p$ is positive somewhere in
+      $(l, r)$;
+    \item when $V_p(-\infty) = V_p(+\infty)$ and $p(0) < 0$, $p$ is negative everywhere.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  Sturm's theorem on $(l, r]$ counts the roots, a root at~$r$ giving the~$1$; at $\pm\infty$ the
+  counts and the signs are those at points far enough out. Without a root, a sign just right of~$l$
+  holds on $(l, r)$ by the intermediate value theorem; a root in $(l, r)$ gives a point of positive
+  value, since~$p$ changes its sign at a simple root.
+\end{proof}
+
+\begin{lemma}[The Sturm step keeps every point]\label{lem:sturmCoverage}
+  \uses{lem:sturmInterval, lem:sturmStep, def:computeSturm, def:sturmTheorem, def:binaryForm, def:Options, def:remainderChain, lem:squarefree_binaryFormPoly}
+  \lean{Ratpoints.Sturm.IterateInvariant, Ratpoints.Sturm.covers_iterate, Ratpoints.Sturm.squarefree_chainPoly, Ratpoints.Sturm.covers_computeSturm, Ratpoints.run_sturmRegion_covers, Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some, Ratpoints.Sturm.size_run_computeSturm_le}
+  \leanok
+  Let~$f$ have degree $1 \le d < 2^{57}$ with $c_d \ne 0$, and the depth be at most~$55$. When the
+  chain does not fail, $f$ is squarefree. Assuming Sturm's theorem:
+  \begin{enumerate}
+    \item The \emph{invariant} of the bisection is a well-formed interval whose counts and signs
+      are those of~$f$ at its ends (Lemma~\ref{lem:sturmInterval}). The bisection of an interval
+      with the invariant keeps what the intervals kept before it hold and every $x \in \QQ$ with
+      $f(x) \ge 0$ between the values of the doubles of its ends, at a finite end only when~$f$ is
+      positive just inside it.
+    \item For well-formed intervals of the caller, the step leaves intervals that hold every
+      $x \in \QQ$ of the caller's intervals with $|x| \le 2^{63}$ and $f(x) \ge 0$. So the Sturm
+      step of the search, for~$d$ the degree of~$c$ and when it does not refuse, puts every~$a/b$
+      of the given intervals with $b > 0$, $|a| \le 2^{63}$ and $F(a, b) \ge 0$ into an interval
+      that it leaves, \verb|sturm_empty| clear; this needs Sturm's theorem only when the step is
+      on.
+    \item The bisection keeps at most $1 + \lfloor d/2 \rfloor$ intervals, the size of the array
+      \verb|ivlocal| of the C code, and the step leaves at most~$\lfloor d/2 \rfloor$ intervals
+      more than the caller gives, within the room for $1 + \lfloor d/2 \rfloor$ more that
+      \verb|sturm.c| asks of the caller's array.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:sturmInterval, lem:sturmStep, def:reversal, lem:chain_squarefree}
+  \leanok
+  Item~(1) by the induction principle of the bisection: a dropped interval holds no~$x$ with
+  $f(x) \ge 0$ (Lemma~\ref{lem:sturmInterval}(2)); at a split the step computes the signs and the
+  count of~$f$ at the midpoint (Lemma~\ref{lem:sturmStep}), so that both halves have the invariant
+  and one of them keeps each~$x$ that the interval keeps. Item~(2): the whole line has the invariant
+  and keeps every $|x| \le 2^{63}$; at the exit $f < 0$ (Lemma~\ref{lem:sturmInterval}(4)); and
+  $F(a, b) = b^{d + (d \bmod 2)} f(a/b)$. Item~(3): each kept interval has a point with $f > 0$
+  (Lemma~\ref{lem:sturmInterval}(3)), $f < 0$ somewhere between two of them, and~$f$ changes its
+  sign at most~$d$ times; an intersection has fewer intervals than its two lists together.
+\end{proof}
+
+\section{The region that the search uses}\label{sec:searchRegion}
+
+The main theorems are stated over the search region of the caller
+(Definition~\ref{def:regionSpec}); their proofs pass through the region that the search uses, the
+intervals that the Sturm step leaves.
+
+\begin{definition}[The region that the search uses]\label{def:searchRegion}
+  \uses{def:searchIntervals, def:computeSturm, def:regionSpec, def:binaryForm, def:sturmTheorem, def:Options, lem:sturmCoverage, lem:searchIntervals, lem:sturmStep, def:remainderChain, def:reversal}
+  \lean{Ratpoints.searchRegion, Ratpoints.searchRegion_eq_of_run_sturmRegion_eq, Ratpoints.searchRegion_subset, Ratpoints.searchRegion_eq_none, Ratpoints.searchRegion_covers}
+  \leanok
+  A definition of the proofs, not of the model: for the polynomial~$c$ of degree~$d$ that the
+  reversal check hands on, $H$ and the options, none when the search intervals are none or the
+  Sturm step of the search refuses or returns at once; no interval when it sets
+  \verb|sturm_empty|; and otherwise the values of the intervals that it leaves. For well-formed
+  intervals of the caller:
+  \begin{enumerate}
+    \item every~$x$ in the region lies in the caller's intervals, or the caller gives none;
+    \item if the chain does not fail when the step is on, the region is none only for an even~$d$
+      whose leading coefficient is not a square;
+    \item assuming Sturm's theorem when the step is on, for $0 < d < 2^{57}$ the degree of~$c$,
+      $1 \le H < 2^{63}$ and a chain that does not fail when the step is on: every~$a/b$ with
+      $b > 0$, $|a| \le H$ and $F(a, b) \ge 0$ in the caller's intervals, or anywhere when there
+      are none, lies in the region, which is not none.
+  \end{enumerate}
+\end{definition}
+
+Items~(1) and~(2) follow from Lemmas~\ref{lem:searchIntervals} and~\ref{lem:sturmStep}, item~(3)
+from Lemma~\ref{lem:sturmCoverage} and the default interval. With the exact check on, and assuming
+Sturm's theorem when the step is on, the depth of the Sturm step does not change the list of points
+that a search returns; Theorem~\ref{thm:order} states this beside the order of the points.
+
+\section{Deviations}\label{sec:regionDeviations}
+
+Two deviations of this part bear on what the proofs cover (Chapter~\ref{chap:ccode} lists all of
+them by kind). The model of \verb|exact_scale| forms the $128$-bit product, sum and shift on
+two~$64$-bit words, for the \verb|unsigned __int128| of the arm that the default build compiles;
+the other arm, for a build without a $128$-bit type (\csource{find_points.c}{3239}{3256}), is
+excluded. And the \verb|long|s are \verb|Int64|s, where a wrap would stand for an overflow of the C
+code, which the bounds on the forms and on the ends of the bisection exclude;
+Lemma~\ref{lem:sturmCoverage}(3) bounds the arrays of the Sturm step.

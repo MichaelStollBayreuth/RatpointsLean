@@ -1,0 +1,415 @@
+% The overview: what ratpoints computes, the four parts of the development, the specification and
+% the main theorems in words, how the proofs go, what one has to trust, what is not verified, and
+% how to read the blueprint.
+\chapter{Overview}\label{chap:overview}
+
+ratpoints is a C program, built around a library function, that finds the rational points of
+bounded height on the curves $y^2 = F(x, z)$, where~$F$ is a binary form of even degree with integer
+coefficients, by sieving. This blueprint describes a Lean~4 development that verifies it: an
+executable model of ratpoints in Lean, which follows the C code component by component; proofs
+that the model meets a short specification; and a link from the model to the C code. This chapter
+states the specification and the main theorems in words, each statement linked to the node where
+it is stated precisely, with its Lean names; it says how the proofs go, what one has to trust and
+what is not verified, and how the rest of the blueprint is organized.
+
+\section{What ratpoints computes}\label{sec:overviewRatpoints}
+
+The input is a list $c = [c_0, c_1, \dots, c_n]$ of integers, the coefficients of the polynomial
+$f = \sum_i c_i x^i$, constant term first, and a height bound~$H$. Let~$d$ be the degree of~$f$,
+the largest index with $c_d \ne 0$, and $D = d + (d \bmod 2)$ the even number at or just above it.
+The curve is $y^2 = F_c(x, z)$ with the binary form
+\[ F_c(x, z) = \sum_{i=0}^{d} c_i\, x^i z^{D - i} \]
+of even degree~$D$. Its points lie in the weighted projective plane with the weights
+$(1, D/2, 1)$, where $(x : y : z)$ and $(-x : (-1)^{D/2} y : -z)$ are the same point. ratpoints
+lists the points $(a : y : b)$ with integer coordinates, normalized so that $\gcd(a, b) = 1$ and
+$b > 0$, or $(a, b) = (1, 0)$ for a point at infinity, whose height $\max(|a|, b)$ is at most~$H$;
+a point with $y \ne 0$ comes with both signs of~$y$. We call~$a$ the numerator and~$b$ the
+denominator of the point, after the rational number~$a/b$. For instance,
+\verb|ratpoints '-2 0 0 1' 130 -q| lists the points of height at most~$130$ on $y^2 = x^3 - 2$,
+among them $(129 : 3830 : 100)$, as $3830^2 = 100\,(129^3 - 2 \cdot 100^3)$.
+
+The search is done by the library function \verb|find_points|. It takes its arguments in a
+structure \verb|ratpoints_args| (\csource{ratpoints.h}{362}{400}): the coefficients and the height
+bound; flags that switch off the exact check of the points, the second point $(a : -y : b)$ of each
+pair, the reversal of the polynomial and the Jacobi test; a restriction of the search to intervals
+for~$x/z$ and to a range of the denominators; the depth of a Sturm step; and parameters that tune
+the sieve. It returns no list of points. It hands each point that it finds to a function of its
+caller, the \emph{callback}, together with the caller's data, adds up the values that the calls
+return, and stops as soon as a call asks it to (\csource{ratpoints.h}{436}{437}). The program
+\verb|ratpoints| reads the coefficients, the height bound and its options from the command line,
+calls the library with a callback that prints the points in a format chosen by the options, and
+prints a report around them.
+
+Between the input and the points the C code does a good deal of work, and the chapters on the model
+follow it. It checks the input and refuses some binary forms that are not squarefree. It may
+replace the polynomial by its reversal, which exchanges~$x$ and~$z$, where it expects the reversed
+curve to be searched faster. A Sturm step, unless it is switched off, refuses the other binary
+forms that are not squarefree and narrows the search intervals to those on which~$f$ may take a
+nonnegative value. It decides which denominators can carry a point: by the 2-adic information, by
+the prime factors of the leading coefficient when~$d$ is odd, and by forbidden divisors and a
+Jacobi symbol when~$d$ is even. It ranks small primes and some of their powers and products by a
+cost model computed in doubles and chooses the moduli of the three stages of its sieve; for each
+modulus and residue, a row of bits says which numerators can give a square value of the form
+modulo the modulus. For each denominator it and-s these rows into bit arrays of numerators, packed
+by a stride that the 2-adic information allows, with vector instructions; it tests the survivors
+for common factors with the denominator and against further primes, and checks the rest exactly.
+The loop over the denominators runs in blocks, between which ratpoints may correct its choice of the
+moduli by what the sieve has counted, and which it may hand to a pool of threads.
+
+The C code is that of ratpoints~3.1.1. Every line number in this blueprint refers to one commit of
+its repository, the one that the record of the correspondence pins (Chapter~\ref{chap:ccode}).
+
+\section{The four parts}\label{sec:overviewParts}
+
+The development has four parts, in separate folders. The specification and the model import
+neither each other nor the proofs, and the proofs import both; \verb|scripts/check_layout.py|
+checks the imports.
+\begin{enumerate}
+  \item The \emph{specification} (\verb|Ratpoints/Spec|) states what ratpoints computes: the
+    binary form, the normalized points of height at most~$H$, the search region that the caller
+    may give, Sturm's theorem as a proposition, and the list of the points in the order in which
+    ratpoints finds them. It consists of four short files that use Mathlib and nothing of the
+    model, so that they can be read on their own (Chapter~\ref{chap:spec}).
+  \item The \emph{model} (\verb|Ratpoints/Model|) is an executable version of ratpoints in Lean.
+    It mirrors the hardware-independent structure of the C code function by function: the same
+    loops, tables, bit arrays of 64-bit words and index arithmetic. It is plain code on Lean core
+    and \verb|Std|, without Mathlib and without contracts (its only proofs are a few decided facts
+    about its constants, the termination of one recursion and the bounds of some array accesses),
+    and forms a library of its own; the program \verb|ratpoints-lean| imports it alone and has the
+    command line of ratpoints (Chapters~\ref{chap:setup} to~\ref{chap:output}).
+  \item The \emph{proofs} (\verb|Ratpoints/Proof|) show that the model meets the specification.
+    Each component of the model has a contract, and the main theorems put the contracts together
+    (Chapter~\ref{chap:theorems}). Statements of general interest that Mathlib lacks, on
+    homogenizations, Sturm sequences, sign changes, valuations and the like, are stated at
+    Mathlib's generality in \verb|Ratpoints/Mathlib|.
+  \item The \emph{link to the C code} (Chapter~\ref{chap:ccode}): a record of which Lean
+    declaration models which lines of C, kept in paragraphs \verb|C:| of the docstrings of the
+    model and, for the pin, the excluded lines and the lock, in the folder \verb|correspondence|,
+    checked against the C code at the pinned commit; and differential tests that run
+    \verb|ratpoints-lean| and the C program on the same inputs and compare what they print.
+\end{enumerate}
+The model does without Mathlib so that the executable and the differential tests depend neither on
+Mathlib nor on the proofs. The specification does without the model so that one can read what the
+theorems claim without reading how ratpoints works.
+
+\section{The specification}\label{sec:overviewSpec}
+
+The specification is the one part whose correctness no proof can check. Wherever there was a
+choice, it therefore copies what the C code computes, and Chapter~\ref{chap:spec} compares each of
+its clauses with ratpoints~3.1.1.
+
+\emph{Points.} The binary form~$F_c$ above is Definition~\ref{def:binaryForm}. A triple
+$(x, y, z)$ of integers is a \emph{normalized point of height at most~$H$} on the curve
+(Definition~\ref{def:IsPoint}) when
+\[ y^2 = F_c(x, z), \qquad \gcd(x, z) = 1, \qquad z > 0 \text{ or } (x, z) = (1, 0), \qquad
+   |x| \le H, \qquad z \le H\,. \]
+The last four conditions say that the pair $(x, z)$ is normalized and of height at most~$H$, which
+is what the statement on the output without the exact check concludes. Remark~\ref{rem:pointsC}
+compares each clause with the C code; for instance, $\gcd(0, z) = z$, so that $x = 0$ occurs only
+with $z = 1$, as in the test of ratpoints for common factors.
+
+\emph{Squarefreeness.} The refusals speak about a second binary form, the polynomial made
+homogeneous of the even degree $N = 2 \lceil n/2 \rceil$ that the length of the coefficient list
+allows,
+\[ \Phi_c = \sum_{i=0}^{n} c_i X^i Z^{N - i} \in \QQ[X, Z] \]
+(Definition~\ref{def:binaryFormPoly}), and about its squarefreeness in the sense of Mathlib. This is
+what ratpoints means by a polynomial that is ``not squarefree as a binary form of even degree'':
+$\Phi_c$ is squarefree exactly when~$f$ is squarefree and the leading zeros of~$c$ do not lower
+$\lceil n/2 \rceil$, the two conditions that the C code tests
+(Lemma~\ref{lem:squarefree_binaryFormPoly}). On every input that ratpoints accepts, $\Phi_c$
+and~$F_c$ take the same values.
+
+\emph{The search region.} The caller may restrict the search to \emph{search intervals} for~$x/z$,
+closed intervals whose ends are C doubles, and to a range of the denominators from
+$b_{\mathrm{low}}$ to $b_{\mathrm{high}}$. The specification reads a double by its~$64$ bits: from
+them it decides whether the double is a NaN and gives its value, a rational number or~$\pm\infty$.
+A list of intervals is well formed when no end is a NaN, the lower end of each interval is at most
+its upper end, and each interval lies strictly below the next; this is the test by which
+\verb|find_points| refuses bad arguments. A point lies in the search region when it lies at
+infinity, or when its denominator lies in the range and~$x/z$ lies in one of the intervals, if
+there are any (Definition~\ref{def:regionSpec}). As the C code does no arithmetic on the ends that
+could decide a point, the specification can speak about their exact values
+(Remark~\ref{rem:regionC}).
+
+\emph{Sturm's theorem.} The Sturm step of ratpoints drops an interval when the numbers of sign
+changes of a remainder chain agree at its ends and~$f$ is negative just inside it. That no point is
+lost rests on Sturm's theorem, which Mathlib does not have, although it has the Sturm sequence and
+the sign changes of a list. The specification states the theorem as a proposition, for every
+squarefree real polynomial and every interval $(a, b]$ (Definition~\ref{def:sturmTheorem}), and the
+statements that need it take it as a hypothesis, and only when the Sturm step is on.
+
+\emph{The order.} The list $\mathrm{orderedPoints}$ (Definition~\ref{def:orderedPoints}) gives the
+points in the order in which ratpoints finds them: for the polynomial that ratpoints searches, the
+reversal of~$c$ in three cases and~$c$ itself otherwise, its points at infinity, then its
+denominators in the order of the loop, the numerators of each in increasing order, $y > 0$ before
+$y < 0$, each point mapped back to the caller's curve after a reversal. The denominators increase
+unless the polynomial searched has odd degree and a leading coefficient~$\ell$ with $|\ell| \ne 1$
+that ratpoints can factor by trial division and that has fewer than $\mathrm{maxDivisors} = 512$
+squarefree divisors up to the largest denominator; then they are the numbers~$e k^2$, divisor~$e$
+by divisor (Definition~\ref{def:maxDegree} and Remark~\ref{rem:orderC}).
+
+\emph{The interface of a search.} Of the arguments in \verb|ratpoints_args|, those that change the
+refusals, the order or what is delivered are the \emph{options} of a search
+(Definition~\ref{def:Options}): the switch of the reversal, the depth of the Sturm step (negative
+for none), the search region, \verb|RATPOINTS_NO_Y|, under which of each pair only the point with
+$y \ge 0$ is delivered, and \verb|RATPOINTS_NO_CHECK|, under which the numerators that survive the
+three stages of the sieve and the test for common factors, and the candidate at infinity when there
+is a point at infinity, are delivered with $y = 0$ without the exact check. The \emph{options of the
+sieve} only steer the choice of the moduli. A search refuses, for one of five reasons that mirror
+the errors 3, 5, 4, 8 and~9 of the program, or returns its \emph{outcome}, what the program reads
+afterwards.
+
+\emph{The two references.} The reference of the delivery (Definition~\ref{def:deliver}) is a fold
+of a few lines that calls the callback on the points of a list in turn, adding up the values that
+the calls return, until a call asks to stop; it models no C code and is the yardstick of the
+protocol theorem. The brute-force reference (Definition~\ref{def:bruteForce}) tests every candidate
+of the box of height~$H$ and lists exactly the normalized points of height at most~$H$, each once
+(Theorem~\ref{thm:bruteForce}); the proofs compare the search with it denominator by denominator.
+What one has to read to know what the main theorems say is listed in Section~\ref{sec:comparator}.
+
+\section{The main theorems}\label{sec:overviewTheorems}
+
+The model has three entry points, each defined from the one before
+(Definition~\ref{def:findPoints}): the search with a callback and a print channel for the report of
+the library, \lname{Ratpoints.findPointsVerbose}, which the program runs; the search with a
+callback, \lname{Ratpoints.findPointsWith}, which is the library function as it appears to a caller
+who does not ask for the report; and $\mathrm{findPoints}(c, H, s, o)$, which returns the list of
+the points or a refusal, the search with the callback that appends each point to a list and never
+stops the search. The theorems hold for every coefficient list~$c$, every height bound~$H$, every
+set~$s$ of options of the sieve and every set~$o$ of options of a search; they assume nothing about
+the options of the sieve, which the search normalizes before it chooses its moduli. Where Sturm's
+theorem is needed, it enters as the hypothesis
+\[ 0 \le o.\mathrm{sturm} \;\to\; \mathrm{SturmTheorem}\,, \]
+which is void when the Sturm step is off.
+
+\emph{Membership} (Theorem~\ref{thm:membership}). Assume Sturm's theorem when the Sturm step is on,
+and let the exact check be on. If $\mathrm{findPoints}(c, H, s, o)$ returns a list~$L$, then a
+triple lies in~$L$ exactly when it is a normalized point of height at most~$H$, with $y \ge 0$
+under \verb|RATPOINTS_NO_Y|, that lies in the search region of~$o$. Indeed~$L$ is a permutation of
+the brute-force reference filtered by these two conditions.
+
+\emph{No duplicates} (Theorem~\ref{thm:nodup}). Every list that $\mathrm{findPoints}$ returns has
+no duplicates. This needs no hypothesis at all, neither Sturm's theorem nor the exact check.
+
+\emph{The order} (Theorem~\ref{thm:order}). Under the hypotheses of membership, $L$ is the list
+$\mathrm{orderedPoints}$ of the specification, with the reversal allowed when~$o$ allows it and the
+search region is the whole box of height~$H$, and with the largest denominator of the search as the
+bound of the denominators, filtered by \verb|RATPOINTS_NO_Y| and the search region. As this list
+does not depend on~$s$, the options of the sieve do not change the output with the exact check on;
+nor does the depth of the Sturm step, which the theorem also states in the form that the search
+with the step switched off returns the same list (this part is proved, not certified).
+
+\emph{The refusals} (Theorem~\ref{thm:refusals}). With the Sturm step on, $\mathrm{findPoints}$
+refuses exactly when~$c$ has fewer than two or more than $\mathrm{maxDegree} + 1 = 101$ entries,
+$H = 0$ or $H \ge 2^{63}$ (not a C \verb|long|), $\Phi_c$ is not squarefree, or the search
+intervals are not well formed. With the Sturm step off, the condition on~$\Phi_c$ is replaced by the
+two tests that ratpoints makes without the remainder chain of the Sturm step, on the leading zeros
+and in the reversal check. A search that refused every input would contradict these statements, so
+that membership and the order are not vacuous.
+
+\emph{The protocol} (Theorem~\ref{thm:protocol}). For every callback and its data, the search with
+the callback refuses exactly when $\mathrm{findPoints}$ refuses, and otherwise gives the data and
+the count of the delivery of the list of $\mathrm{findPoints}$ to the callback by the reference of
+the delivery. So the calls of the callback are those for the points of that list, in their order,
+up to and including the first call that stops the search, and the statements on the list carry over
+to every callback, the callback of the program among them.
+
+\emph{Without the exact check} (Theorem~\ref{thm:noCheck}). Under \verb|RATPOINTS_NO_CHECK| every
+element of the list is a triple $(x, 0, z)$ whose pair $(x, z)$ is normalized, of height at
+most~$H$ and in the search region; assuming Sturm's theorem when the Sturm step is on, every
+normalized point $(x, y, z)$ of height at most~$H$ in the search region gives the element
+$(x, 0, z)$; and the list that the search finds with the exact check on and \verb|RATPOINTS_NO_Y|
+set, with~$0$ in place of each~$y$, is a sublist, so that the points come in the same order. Which
+other pairs pass the sieve depends on the moduli and is not specified.
+
+\emph{What the program prints} (Theorem~\ref{thm:cliRun}). For a command line without \verb|-v|
+that it reads, \verb|ratpoints-lean| prints the head of its report, the points of the list of
+$\mathrm{findPoints}$ that its callback keeps (under \verb|-1| the first), in their order and in the
+format of the command line, between the strings that the command line sets, and the end of the
+report (under \verb|-q| only the points and the strings). Without \verb|-x|, and assuming Sturm's
+theorem when the Sturm step is on, the points kept are exactly the normalized points of height at
+most~$H$ in the search region of the command line, with the exact values of the ends that it gives,
+with $y \ge 0$ under \verb|-y| and none at infinity under \verb|-i|.
+
+\emph{The blocks, the lag and the threads} (Theorems~\ref{thm:blocks}, \ref{thm:lag}
+and~\ref{thm:threads}). The run delivers the points of its blocks in order, each block sifted with
+moduli that depend neither on the callback nor on the options of the output; a block reads only
+corrections of the moduli made at least $\mathrm{adaptLag} + 1$ blocks before it; and blocks sifted
+apart and delivered in their order give what the run delivers. So the output of the model, which
+sifts the blocks in turn on one thread, is that of ratpoints with any number of threads, provided
+that its pool of threads behaves as its code says (Section~\ref{sec:theoremsBlocks}).
+
+Comparator certifies eleven statements: the two on the brute-force reference, membership, no
+duplicates, the two refusal statements, the order, the three statements without the exact check, and
+the protocol (Section~\ref{sec:comparator}). The others are proved in the same library, but one has
+to read their Lean statements to know what they say: the forms of membership with the permutation
+and the finite set of the points, the part of the order theorem on the depth of the Sturm step, the
+theorems on the program, and the block, lag and thread lemmas.
+
+\section{How the proofs go}\label{sec:overviewProofs}
+
+All the statements on the points come from one description of what a search delivers
+(Section~\ref{sec:theoremsProofs}). A test of the numerators over the denominators is \emph{sound}
+when it lets through the numerator of every point. The search delivers the points at infinity and
+then, over the denominators of its loop in their order and the numerators of its search region in
+increasing order, what the exact check finds for the numerators that pass a sound test
+(Lemma~\ref{lem:searchList}). A sound test loses no point, and the exact check keeps only points;
+so with the exact check on, the list of a search is the brute-force reference, filtered by the
+region and by \verb|RATPOINTS_NO_Y|, in the order of the loop and mapped back after a reversal
+(Lemmas~\ref{lem:searchList} and~\ref{lem:findPointsList}). The test is fixed before the
+callback and the options of the output come into play, so that one test serves for all of them;
+this gives the protocol and the comparison of the searches with and without the exact check.
+
+The chapters on the model supply the pieces: the refusals in the order of the program, and the
+reversal, which maps the points of the reversed curve bijectively onto those of the caller's curve
+(Chapter~\ref{chap:setup}); the exact ranges of the numerators and the Sturm step, which keeps every
+point under Sturm's theorem (Chapter~\ref{chap:region}); the soundness of every sieve entry that the
+choice of the moduli can make and of every row that the run reads (Chapters~\ref{chap:moduli}
+and~\ref{chap:rows}); the tests on the denominators and their order
+(Chapter~\ref{chap:denominators}); the contract of the sieve of one denominator
+(Definition~\ref{def:sift}); and the block lemma, which puts the denominators together
+(Theorem~\ref{thm:blocks}). The two exits before the sieve, at the 2-adic information and at a
+prime modulo which the curve has no points, are taken only when the curve has no points at all
+(Lemmas~\ref{lem:twoAdic_point} and~\ref{lem:exitByPrime}).
+
+Of the moduli the proofs need nothing but their soundness; so the theorems hold for every choice of
+the moduli and every correction between the blocks, and the cost model, computed in doubles, enters
+no proof (Chapter~\ref{chap:moduli}). The contract of each component with a loop is an
+\verb|@[spec]| theorem, proved with \verb|vcgen|, the program logic of Lean core, from loop
+invariants that are named definitions. The contracts of the sieve and of the rows use Lean core and
+\verb|Std| only; those that reason modulo a prime, about valuations, Jacobi symbols or Sturm
+sequences use Mathlib.
+
+\section{What one has to trust}\label{sec:overviewTrust}
+
+\emph{The specification.} No proof can show that the specification describes ratpoints; one has to
+read it. Chapter~\ref{chap:spec} compares each clause with the C code, and three of the four files
+of the specification check examples of their definitions by \verb|decide| against outputs of the C
+program. The specification is written with definitions of Lean core, Batteries and Mathlib, whose
+meaning one takes from these libraries: the greatest common divisor and the integer square root,
+\verb|Squarefree| and \verb|IsSquare|, the prime factors of a number, the sublists of a list, the
+extended rationals \verb|WithBotTop|, and, in Sturm's theorem, the Sturm sequence
+\verb|Polynomial.sturmSeq|, the sign variations \verb|List.signVariations| and the cardinality
+\verb|Set.ncard|. With the specification one reads the types of the model that the statements
+mention and the reference of the delivery (Section~\ref{sec:comparator}).
+
+\emph{The kernel and comparator.} Comparator, a checker for Lean proofs built into Lake, takes a
+challenge that restates the specification verbatim and states the eleven certified theorems with
+\verb|sorry|, and a solution that proves them by the theorems of the library. It accepts the
+solution only when each theorem states the same as in the challenge, the full bodies of the
+definitions that the statements reach included, the proofs use no axioms beyond \verb|propext|,
+\verb|Quot.sound| and \verb|Classical.choice|, and, under \verb|--paranoid|, six kernels accept them
+(Section~\ref{sec:comparator}). The project uses no tactic that adds an axiom, such as
+\verb|native_decide| or \verb|bv_decide|.
+
+\emph{The executable.} The statements are about the definitions of the model, and
+\verb|ratpoints-lean| is these definitions compiled by the compiler of Lean, with its runtime and
+the primitives of Lean core on machine words, arrays and floating-point numbers. That the executable
+runs the model is not certified. What is checked is that the model contains no \verb|partial|,
+\verb|unsafe|, \verb|implemented_by| or \verb|extern|, nor any experimental option, which could let
+the compiled code differ from the definitions that the proofs see, and that the program imports the
+model alone (Section~\ref{sec:ccodeCI}). The theorems on the program speak about its pure core
+\lname{Ratpoints.Cli.run}; the function \lname{Ratpoints.Cli.main} around it writes the text once
+and, where ratpoints is ended by \verb|SIGPIPE| when the reader of its output is gone, exits with
+the status~$141$ that the shell reports for that (Chapter~\ref{chap:output}).
+
+\emph{Sturm's theorem.} Membership, the order and the statement that every point appears without
+the exact check assume Sturm's theorem when the Sturm step is on. It is a hypothesis, not an axiom:
+these statements hold outright with the step off, and with the step on they say something because
+the theorem, stated with Mathlib's Sturm sequence and sign variations, is true, the one mathematical
+fact taken on trust; a proof of it, in Mathlib or here, would discharge the hypothesis without
+changing a statement. No other certified statement needs it.
+
+\emph{The cost model.} The search ranks its candidate moduli by a cost model that computes in
+Lean's \verb|Float|, as the C code computes in doubles, with the \verb|log| and \verb|pow| of the
+C library of the platform. No contract of the choice, of the blocks or of the correction reads the
+value of a \verb|Float|: each states only what the natural numbers of the C code do, which holds
+whatever the doubles are, NaN included (Remark~\ref{rem:moduliFloats}). So the theorems hold for
+every choice of the moduli that the search can make, and the floating-point arithmetic of the
+platform has to be trusted only for the agreement of the choice with that of the C program.
+
+\section{What is not verified}\label{sec:overviewNotVerified}
+
+\emph{The link to the C code is not a proof.} Lean has no semantics of C, and no theorem of this
+blueprint speaks about the C code. The link rests on three things (Chapter~\ref{chap:ccode}): the
+structure of the model, which mirrors the C code component by component, so that a reader can set
+each definition beside its lines of C; the record, in which every line of code of the ten C files
+lies in exactly one range, modelled by the declaration whose docstring names it or excluded with a
+kind and a reason, each range locked with the hash of its text and its owners and checked by CI
+against the pinned commit, and in which paragraphs \verb|Deviation:| say where the model departs
+from the C code (Sections~\ref{sec:ccodeRecord} and~\ref{sec:ccodeDeviations}); and the
+differential tests, which run both programs on the same command lines and compare the points in
+their order, the output byte for byte, the reports and the exit statuses: $5397$ comparisons in the
+default suites and~$13$ and~$92$ in two further suites, none of which fails
+(Section~\ref{sec:ccodeTests}). As glibc's \verb|log| and \verb|pow| are not correctly rounded and
+depend on the processor, the comparisons that depend on the choice of the moduli are made with both
+programs on one machine.
+
+\emph{What the model leaves out.} The record excludes, by kind, the pool of threads, the management
+of memory, the parts of the interface of the library that only another caller meets, such as a
+work space of the caller's own, the instrumentation for timing, counting and debugging, and lines
+without meaning for the model: includes, prototypes, hints to the compiler, the frames of the
+generators of tables, and macros, a field and a message that the C code never uses
+(Section~\ref{sec:ccodeExclusions}); one more exclusion concerns other builds, below. The model
+allocates nothing that can fail, so it has no error for lack of memory. In place of the threads it
+has the block, lag and thread lemmas, whose hypotheses on the pool of threads are read off the C
+code (Section~\ref{sec:theoremsBlocks}).
+
+\emph{The other builds.} The vector code of the C code becomes words: a bit array of the default
+build, a vector of~$256$ bits, is four consecutive~$64$-bit words. The builds of the C code differ
+in compile-time constants, such as the width of the bit arrays and the number of bit arrays that the
+first stage keeps in registers, which choose among the arms of the code. The model has these
+constants as definitions with the values of the default build, and both arms where the C code has
+two, but for the arm of \verb|exact_scale| for a build without a 128-bit integer type, which the
+record excludes (\csource{find_points.c}{3239}{3256}). No proof depends on the values of the
+constants beyond a few facts that are decided; the author checks this, outside CI, by building
+copies of the whole project with eleven other sets of values (Section~\ref{sec:ccodeConstants}). So
+the proofs cover the models of the builds that have \verb|unsigned __int128|, while the tests run
+the default build.
+
+\emph{The platform.} The doubles of the search region are their bits, with a function for each
+operation that ratpoints applies to them, from the comparisons to \verb|frexp|, \verb|ldexp| and
+\verb|nextafter|, and the program reads and prints numbers as glibc's \verb|strtod| and
+\verb|printf| do (Chapters~\ref{chap:region} and~\ref{chap:output}). These functions model the
+platform, not ratpoints: they are checked against gcc and glibc on the cases at the edges, and the
+proofs show of them what the theorems need, but they are not proved to be what glibc computes.
+
+\emph{What is compared but not proved.} The report of the library under \verb|-v| and the messages
+of the program, the numbers of the moduli used, and the pairs that pass the sieve under
+\verb|RATPOINTS_NO_CHECK| beyond what Theorem~\ref{thm:noCheck} says, are compared with the C
+program by the differential tests. Nothing is proved about the work that a search does or about how
+well the choice of the moduli serves it.
+
+\section{How to read this blueprint}\label{sec:overviewReading}
+
+Chapter~\ref{chap:spec} states the specification, and Chapter~\ref{chap:theorems} the main
+theorems, with the proofs in outline and what comparator certifies; a reader who wants only to know
+what is verified can stop there. Chapters~\ref{chap:setup} to~\ref{chap:output} describe the model
+part by part, following a search from the input to the output: the set-up, the search region and
+the Sturm step, the choice of the moduli and the blocks, the tables and the rows, the denominators,
+the sieve of one denominator, and the delivery and the program. Chapter~\ref{chap:ccode} describes
+the link to the C code, and Appendix~\ref{chap:correspondence} lists every recorded range of C.
+
+The notation of this chapter is used throughout: $c = [c_0, \dots, c_n]$, $d$, $D$, $N$, $f$,
+$F_c$ and~$\Phi_c$, the height bound~$H$, and $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$ for the
+range of the denominators; a point $(a : y : b)$ has the numerator~$a$ and the denominator~$b$.
+
+\emph{Nodes.} The definitions, lemmas, theorems and corollaries are the nodes of the dependency
+graph; each names its Lean declarations, which in the web version link to the API documentation. A
+node of the model describes one component: it names the main definition and its contract, says in
+words what the one computes and the other promises, precisely enough that a reader can check the
+Lean statement against it, and links to the C code that the definition models. Each statement is
+followed by its proof in outline. Remarks are not nodes; they compare the specification and the
+model with the C code. Most helpers appear in no node; the API documentation has them all.
+
+\emph{The dependency graph.} In the graph of the web version, a definition is a box and a lemma or
+theorem an ellipse; an arrow leads from a node to each node that uses it, dashed when the statement
+uses it and solid when only the proof does. Every node is green, and every statement dark green: its
+proof and the proofs of all the nodes it rests on are formalized.
+
+\emph{Links to the C code.} A link such as \csource{find_points.c}{4624}{4632} shows the
+lines~$4624$ to~$4632$ of \verb|find_points.c| at the pinned commit. Inside a node, every link is
+one of the ranges that the docstrings of its declarations record, as
+\verb|scripts/correspondence.py| checks. The docstrings carry all the ranges and deviations of each
+declaration, and Appendix~\ref{chap:correspondence} lists every range with its owners, or with the
+reason for its exclusion.

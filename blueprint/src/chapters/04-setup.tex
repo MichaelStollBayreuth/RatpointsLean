@@ -1,829 +1,355 @@
-% Stage D: the set-up of a search: the leading zeros and the degree, the refusal of a binary form
-% that is not squarefree with the remainder chain of sturm.c, the reversal with its three cases, the
-% coefficients as longs, the exit when the curve has no points modulo a prime, and the points at
-% infinity in all cases.
+% The set-up of a search: the checks of the input and the refusals, the squarefree binary form, the
+% reversal and its map of the points, the remainder chain, the points at infinity, and the exit
+% when the curve has no points modulo a prime.
 \chapter{The set-up}\label{chap:setup}
 
-Stage~D models what ratpoints does with its input before the sieve: it drops the leading zero
-coefficients, refuses a binary form that is not squarefree, reverses the polynomial in three cases,
-reads the coefficients as \verb|long|s where they fit, ends the search when the curve has no points
-modulo one of the primes it examines, and delivers the points at infinity, after a reversal as
-affine points of the caller's curve. With it the refusal theorem of Section~\ref{sec:refusals} has
-its proof: with the Sturm step on, as in a run of the program without options, $\mathrm{findPoints}$
-refuses $(c, H)$ exactly when $c$ has fewer than two or more than $\mathrm{maxDegree} + 1$ entries,
-$H = 0$ or $H \ge 2^{63}$, or $\Phi_c$ is not squarefree; with the Sturm step off, it refuses
-exactly what the program refuses under \verb|-s|; and since stage~H both add the search intervals of
-the options that are not well formed, the refusal of the reversal check being met only for the whole
-box (Chapter~\ref{chap:region}).
+This chapter describes what a search does with its input before the sieve: it checks the coefficient
+list and the height bound, drops the leading zero coefficients, refuses a binary form that is not
+squarefree, may reverse the polynomial, delivers the points at infinity, and ends when the curve has
+no points modulo one of the primes it examines. The refusal theorems (Theorem~\ref{thm:refusals})
+rest on it, and so do the statements on the points delivered, since after a reversal ratpoints
+searches another polynomial and maps its points back. The rest of the Sturm step, which begins with
+the remainder chain of this chapter, is in Chapter~\ref{chap:region}, the tests on the denominators
+that follow the set-up in Chapter~\ref{chap:denominators}, and the loop over the primes in which the
+exit fires in Chapter~\ref{chap:moduli}.
 
-The reversal is the transformation of Chapter~\ref{chap:sieve}: it exchanges $x$ and $z$ in the
-binary form, and the map that the C code applies to every point it finds of the reversed polynomial
-is a bijection onto the points of the caller's curve that preserves the box. So after a reversal the
-output is that of the search of the reversed polynomial with each point mapped back, a permutation
-of the reference; the reduction of the run to the reference (Lemma~\ref{lem:searchList}) holds for
-any polynomial and its degree, membership holds with $\mathrm{noCheck}$ false, the set of elements
-with both options of the output off, and no duplicates for every option, since stage~H membership,
-the set of elements and the order for the points in the search region of the options. The set-up has
-been the most error-prone part of ratpoints: the fixes of 2.2.2 include a reversal that marked a
-cubic reversed and left it as it was, and those of 2.2.4 a search that returned before the points at
-infinity when the Sturm step found no real point in the search region.
+Throughout, $c = [c_0, \dots, c_n]$ is the coefficient list, constant term first; $d$ is its degree,
+the largest index with $c_d \ne 0$; $D = d + (d \bmod 2)$ and $N = 2 \lceil n/2 \rceil$ are~$d$
+and~$n$ rounded up to even numbers; $F_c(x, z) = \sum_{i \le d} c_i x^i z^{D-i}$ is the binary form
+of the points (Definition~\ref{def:binaryForm}), $\Phi_c = \sum_{i \le n} c_i X^i Z^{N-i}$ the
+binary form of the refusals (Definition~\ref{def:binaryFormPoly}), and $f = \sum_i c_i X^i \in
+\QQ[X]$ the polynomial that the C code works with.
 
-$\mathrm{findPoints}$ takes an argument for the options of the library that change the refusals or
-the order of the output, and the program reads the options that set them: \verb|-k| and \verb|-K|,
-which forbid and allow the reversal, and \verb|-s| and \verb|-S|, which switch the Sturm step off
-and on; since stage~H they hold the search region too, the search intervals and the range of the
-denominators (Chapter~\ref{chap:region}). Of the Sturm step, stage~D models the test for a repeated
-factor, its first half; stage~H models the rest, which restricts the numerators to the intervals
-where $f$ may be $\ge 0$ (Section~\ref{sec:sturmStep}), and proves, assuming Sturm's theorem, that
-with the exact check on the depth of the step changes only the speed
-(Theorem~\ref{thm:sturmSpeed}).
+\section{The order of the checks}\label{sec:setupOrder}
 
-\section{What the C code does before the sieve}\label{sec:setupC}
-
-For the coefficient list $c_0, \dots, c_n$ and the height $H$, the program checks the number of
-coefficients and the height before it calls the library (\csource{main.c}{362}{380}), and
-\verb|find_points_work| refuses a degree outside $0, \dots, \mathrm{maxDegree}$
-(\csource{find_points.c}{4557}{4558}). Then \verb|find_points_work_1|:
+The program refuses more than $\mathrm{maxDegree} + 1$ coefficients with its error~3, fewer than two
+with error~5, and a height bound below~$1$ or one that is not a \verb|long| with error~4, before it
+calls the library (\csource{main.c}{362}{380}). The library refuses a degree above
+$\mathrm{maxDegree}$ (\csource{find_points.c}{4557}{4558}), and then:
 \begin{enumerate}
-  \item drops the leading zero coefficients and refuses the form as not squarefree
-    (\verb|RATPOINTS_NON_SQUAREFREE|) when that lowers $\lceil n/2 \rceil$
-    (\csource{find_points.c}{4624}{4633}): for the degree $d$ that is left and $N = 2 \lceil n/2
-    \rceil$ this is $d + 2 \le N$, that is $Z^2 \mid \Phi_c$; it covers the zero polynomial and
-    every list whose only nonzero entry is $c_0$, so that the refusal of degree $0$ which follows is
-    never met from the program; it records whether $c_d$ is a square
-    (\csource{find_points.c}{4634}{4634}), caps the parameters and refuses $H < 1$, which the
-    program never passes;
-  \item unless the caller forbids it (\verb|RATPOINTS_NO_REVERSE|, the program's \verb|-k|) or gives
-    search intervals or bounds for the denominators (\csource{find_points.c}{4686}{4687}, stage~H,
-    Chapter~\ref{chap:region}), checks whether to reverse the polynomial
-    (\csource{find_points.c}{4732}{4803}): in case~1, $d$ even and $c_0 = 0$, it refuses the form as
-    not squarefree if also $c_1 = 0$, since then $X^2 \mid \Phi_c$, and otherwise reverses
-    $c_0, \dots, c_d$ and lowers the degree to $d - 1$; in case~2, $d$ even, $c_d$ a square and
-    $c_0$ not, it reverses $c_0, \dots, c_d$; in case~3, $d$ odd, $|c_d| \ne 1$, $c_0 = 0$ and
-    $|c_1| = 1$, it reverses $c_1, \dots, c_d$; in each case the binary form $F'$ of the new list
-    has the degree $D$ of $F$ and $F'(x, z) = F(z, x)$, and the new leading coefficient is not zero;
-  \item records whether the coefficients fit into \verb|long|s
-    (\csource{find_points.c}{4814}{4823}), so that \verb|examine_prime| reduces them modulo $p$ with
-    the helper \verb|mod| (\csource{find_points.c}{477}{492}) rather than with GMP;
-  \item with the Sturm step on (\verb|args->sturm| $\ge 0$, by default $10$; the program's \verb|-s|
-    sets $-1$, and \verb|-S| the default or a depth), computes the remainder chain of $f$ and $f'$
-    (\csource{sturm.c}{99}{163}) and refuses the form as not squarefree when a remainder is zero
-    (\csource{find_points.c}{4857}{4863}, \csource{find_points.c}{4879}{4879}); the rest of the step
-    is stage~H (Section~\ref{sec:sturmStep}), and so is its exit when $f$ is negative on the whole
-    search region, which changes no output, since the search region holds no affine point then and
-    the exit comes only for an even degree whose leading coefficient is not a square, without points
-    at infinity, and the return after the points at infinity when the step leaves nothing to search
-    (\csource{find_points.c}{5106}{5106});
-  \item decides whether there are points at infinity (\csource{find_points.c}{4894}{4899}) and sets
-    up the tests on the denominators and the 2-adic information, with an exit of its own that
-    changes no output either (stage~E);
-  \item examines the primes, and the first prime modulo which the curve has no points, neither a
-    residue $x$ with $f(x)$ a square nor a point at infinity, ends the search with no points
-    (\csource{find_points.c}{1761}{1762}, \csource{find_points.c}{2605}{2614},
-    \csource{find_points.c}{2994}{2998}, \csource{find_points.c}{4992}{5012}); the primes it
-    examines are the first \verb|num_primes| of the table, and more when the number was left to the
-    library;
-  \item delivers the points at infinity, as $(0, y, 1)$ after a reversal
-    (\csource{find_points.c}{5068}{5105}), and runs the sieve, whose check of a survivor $(a, b)$ of
-    the reversed polynomial delivers $(b, y, a)$ for $a \ge 0$ and $(-b, y, -a)$ for $a < 0$
-    (\csource{find_points.c}{5250}{5338}).
+  \item it drops the leading zero coefficients and refuses the form as not squarefree when that
+    lowers $\lceil n/2 \rceil$, that is when $d + 2 \le N$, so that $Z^2 \mid \Phi_c$
+    (\csource{find_points.c}{4624}{4632}); this catches every list of two or more entries of
+    degree~$0$, so that the refusal of a degree~$0$ as bad arguments that follows
+    (\csource{find_points.c}{4633}{4633}) is never met from the program; then it refuses a height
+    bound below~$1$ (\csource{find_points.c}{4658}{4658});
+  \item it turns the reversal off when the caller gives search intervals or a range of the
+    denominators other than $1, \dots, H$ (\csource{find_points.c}{4686}{4687}), and runs the
+    reversal check, which refuses the form when~$d$ is even and $c_0 = c_1 = 0$, so that
+    $X^2 \mid \Phi_c$, and may reverse the polynomial (\csource{find_points.c}{4732}{4803});
+  \item it takes the default interval $[-H, H]$, its ends rounded outward to doubles, when the
+    caller gives none, and otherwise refuses as bad arguments search intervals without $l \le u$,
+    not increasing and strictly apart, or with a NaN end (\csource{find_points.c}{4831}{4855}),
+    which no command line causes;
+  \item with the Sturm step on, it refuses the form when the remainder chain of the polynomial
+    searched meets a zero remainder, then restricts the search intervals, and returns when nothing
+    is left to search and there is no point at infinity (\csource{find_points.c}{4857}{4892});
+  \item it sets up the tests on the denominators and chooses the moduli, each with an exit when it
+    finds that the curve has no points (\csource{find_points.c}{4954}{4963},
+    \csource{find_points.c}{4996}{5012});
+  \item it delivers the points at infinity (\csource{find_points.c}{5068}{5105}) and sieves.
 \end{enumerate}
-The program turns \verb|RATPOINTS_NON_SQUAREFREE| into its error~8, the message
-\verb|Polynomial is not square-free.| and the exit status~8 (\csource{main.c}{256}{261},
-\csource{main.c}{1047}{1047}). No point is printed before it, since all three refusals come before
-the first point: with \verb|-q| nothing at all, and without \verb|-q| the banner and the curve
-(\csource{main.c}{215}{220}), then the height bound, or under \verb|-v|, for the refusals of steps~2
-and~4, the report of the library in its place (for that of step~1 nothing, since it comes before the
-report). With the Sturm step on, the C code refuses the form exactly when $\Phi_c$ is not
-squarefree: $Z^2 \mid \Phi_c$ in step~1, $X^2 \mid \Phi_c$ for even $d$ in step~2, and a repeated
-factor of the polynomial searched in step~4; with the Sturm step off only steps~1 and~2 remain, and
-step~2 only when the reversal check runs. After a reversal the program prints the points of the
-reversed polynomial in the order of its search, each mapped back; where the denominators ascend,
-this is the list of the brute-force reference for the reversed polynomial, mapped. The exit of
-step~6 never fires after a reversal (every case leaves the caller's curve a point of height~$1$),
-and when it fires the curve has no points at all, so the primes it examines cannot change the
-output.
+The program reports the refusal as not squarefree with its error~8, and the other negative codes of
+the library with its error~9, but for a lack of memory, error~10 (\csource{main.c}{256}{261}). All
+refusals come before the first call of the callback. Where the program and the library differ, the
+model follows the program: it refuses the coefficient list and the height bound before the leading
+zeros (so that \verb|5 0| with $H = 0$ is error~4, as in the program), and a height bound
+of~$2^{63}$ or more, which the library cannot be given, with error~4. These first checks are in the
+search with a callback (Definition~\ref{def:findPoints}); the rest of the set-up is one definition.
+Appendix~\ref{chap:correspondence} lists how else the components differ from the C code; the main
+deviations of the set-up are noted in the sections below.
 
-\section{The options}\label{sec:options}
-
-\begin{definition}[The options of a search]\label{def:Options}
-  \uses{def:Double}
-  \lean{Ratpoints.Options, Ratpoints.defaultSturm}
+\begin{definition}[The set-up of a search]\label{def:setupSearch}
+  \uses{def:Options, def:reversal, def:maxDegree, def:deliver, def:callback, def:computeSturm, def:libraryReport, def:searchIntervals, def:searchPoints, def:tableOfPrime}
+  \lean{Ratpoints.findPointsWork}
   \leanok
-  The options of the library that change the refusals, the order of the output or what is delivered,
-  an argument of $\mathrm{findPoints}$ whose defaults are those of a run of the program without
-  options: whether the set-up may reverse the polynomial (the bit \verb|RATPOINTS_NO_REVERSE| of the
-  flags clear), \verb|args->sturm|, the depth of the Sturm step, negative for none, with the default
-  $\mathrm{defaultSturm} = 10$ (\verb|RATPOINTS_DEFAULT_STURM|, \csource{ratpoints.h}{341}{343}; the
-  program's defaults \csource{main.c}{348}{348}, \csource{main.c}{352}{352}), and the options of the
-  output $\mathrm{noCheck}$ and $\mathrm{noY}$, false by default, the bits \verb|RATPOINTS_NO_CHECK|
-  and \verb|RATPOINTS_NO_Y| of the flags (\csource{ratpoints.h}{403}{405}, with
-  \verb|RATPOINTS_NO_REVERSE|), and the search region: the search intervals, a list of pairs of
-  doubles (Definition~\ref{def:Double}), empty by default, for the array \verb|domain| of the type
-  \verb|ratpoints_interval| with its number \verb|num_inter|, and the least and the largest
-  denominator, integers like the \verb|long|s \verb|b_low| and \verb|b_high|, with the defaults $1$
-  and $0$, the latter meaning $H$ (\csource{ratpoints.h}{359}{359}, \csource{ratpoints.h}{363}{364},
-  and the depth \csource{ratpoints.h}{369}{369}, lines that they share with fields of the
-  parameters, of the choice of the moduli and of the options of the program, which the deviation
-  names). The depth switches the test for a repeated factor on when it is not negative, and the
-  Sturm step of the search (Definition~\ref{def:sturmRegion}) reads it, capped at $55$
-  (Definition~\ref{def:normalize}); stage~G added the options of the output, which change what is
-  delivered, as the reversal does too under $\mathrm{noCheck}$, and stage~H the search region
-  (Chapter~\ref{chap:region}).
+  The refusals (Definition~\ref{def:Options}) carry the errors~3, 5, 4, 8 and~9 of the program; an
+  integer is a \verb|long| when it lies in $[-2^{63}, 2^{63})$. The set-up of \verb|find_points_work_1|, whose state is declared at
+  \csource{find_points.c}{4577}{4585}, for the list~$c$ of degree~$d$ and the options~$o$,
+  normalizes the options (\lname{Ratpoints.Options.normalize}), so that the reversal is allowed only
+  when~$o$ allows it and its search region is the whole box; runs the reversal check
+  (Definition~\ref{def:reversal}), which may refuse or hand on a list~$c'$ of degree~$d'$; takes
+  the search intervals of~$o$, or the default one, refusing malformed ones
+  (\lname{Ratpoints.searchIntervals}); runs the Sturm step on~$c'$ (\lname{Ratpoints.sturmRegion}),
+  which with the step on refuses the form when the remainder chain of~$c'$ is none, returns at once
+  with nothing delivered when it keeps no interval and~$c'$ has no point at infinity, and otherwise
+  narrows the intervals; and runs the search of~$c'$ (\lname{Ratpoints.searchPoints}) with the flag
+  of the reversal and the options of the output as the flags of the check. Whether the coefficients
+  of~$c'$ are all \verb|long|s, which the C code tests in the set-up and the model tests in the
+  search of~$c'$, where it is used (Definition~\ref{def:searchPoints}), chooses how the tables
+  reduce them modulo a prime: by the helper \verb|mod| of the C code
+  (\lname{Ratpoints.Sieve.modLong}) or by the Euclidean remainder, which agree
+  (Chapter~\ref{chap:rows}).
 \end{definition}
 
-The options are not parameters: the parameters are the free choices that change neither the points
-nor their order (Definition~\ref{def:Params}), while the reversal changes the order and, without the
-Sturm step, the refusals, and the search region what is delivered, the order (by the largest
-denominator, which decides the shape of the divisors, and by the reversal, which it forbids) and the
-refusals. $\mathrm{defaultSturm}$, an integer like the C \verb|long| that it stands for, which a
-build may make negative, is one of the constants of \verb|Ratpoints/Model/Constants.lean|, and no
-proof depends on its value or its sign. In ratpoints~3.1.1 the depth of the Sturm step changes only
-the speed: the intervals that it keeps hold every point of the box in the search intervals of the
-caller, which stage~H proves assuming Sturm's theorem, so that with the exact check on the search
-with the step off gives the same list (Theorem~\ref{thm:sturmSpeed}).
-
-\section{The squarefree binary form}\label{sec:squarefree}
-
-The refusals speak about $\Phi_c$, the C code about $f = \sum_i c_i X^i$, its degree $d$ and its
-reversal. Chapter~\ref{chap:spec} names the facts that connect them; Mathlib has none of them, and
-they are proved at Mathlib's generality, the general ones in \verb|Ratpoints/Mathlib| as candidates
-for Mathlib.
-
-\begin{lemma}[Homogenizations and squarefreeness]\label{lem:homogenize}
-  \lean{MvPolynomial.IsHomogeneous.of_mul_left, Polynomial.homogenize_eq_homogenize_natDegree_mul, Polynomial.not_X_one_dvd_homogenize_natDegree, Polynomial.squarefree_of_squarefree_homogenize, Polynomial.squarefree_homogenize_iff, Polynomial.homogenize_reflect, MulEquiv.squarefree_iff, Polynomial.squarefree_homogenize_reflect_iff}
+\begin{lemma}[The set-up in the order of the program]\label{lem:setupOrder}
+  \uses{def:findPoints, def:setupSearch, def:reversal, def:maxDegree, def:regionSpec, def:computeSturm, def:searchIntervals}
+  \lean{Ratpoints.findPointsWith_eq, Ratpoints.findPointsWith_eq_ok_iff, Ratpoints.findPointsWith_eq_error_iff, Ratpoints.fitsLong_natCast, Ratpoints.IsSearchedPoly}
   \leanok
-  Over a commutative semiring without zero divisors, a factor of a nonzero homogeneous polynomial
-  is homogeneous. For a polynomial $p$ over a domain and $m \ge \deg p$, the homogenization of $p$
-  of degree $m$ is squarefree if and only if $p$ is squarefree and $m \le \deg p + 1$. Over a
-  commutative semiring, the homogenization of degree $m$ of the reflection of $p$ in degree $m$ is
-  that of $p$ with the two variables exchanged, for every $p$ and $m$; squarefreeness is preserved
-  by multiplicative equivalences; so the reflection does not change whether the homogenization is
-  squarefree.
+  With the print channel that prints nothing, the search with a callback refuses, in this order,
+  more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, $H = 0$ or $H \ge 2^{63}$,
+  $\lceil d/2 \rceil < \lceil n/2 \rceil$ (error~8), the refusal of the reversal check with the
+  switch of the normalized options, malformed search intervals, and the refusal of the Sturm step;
+  otherwise it returns the outcome of the search of the list~$c'$ that the check hands on, or, when
+  the Sturm step returns before the search, the data of the callback with the count~$0$, the flag of
+  the reversal and no interval. The refusals do not depend on the callback. A natural number is a
+  \verb|long| exactly when it is below~$2^{63}$. The predicate $\mathrm{IsSearchedPoly}$ collects
+  what the refusals leave for a successful search, from which the main theorems start
+  (Chapter~\ref{chap:theorems}): the reversal check of the normalized options hands on~$c'$ with its
+  degree~$d'$; $1 \le d' \le \mathrm{maxDegree}$; $1 \le H < 2^{63}$; the caller's search
+  intervals are well formed (Definition~\ref{def:regionSpec}); and with the Sturm step on, the
+  remainder chain of~$c'$ is not none.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  In a product over a semiring without zero divisors the lowest degrees add up (the order of the
-  power series) and so do the highest (the total degree), so a factor of a homogeneous polynomial
-  has the two equal. If $m \ge \deg p + 2$, the square of $Z$ divides the homogenization, and if
-  $p = a^2 q$, the homogenizations of $a$ and $q$ give a square factor. Conversely, a factor $A$ of
-  the homogenization with $A^2$ dividing it is homogeneous; $Z$ does not divide it, since
-  $m \le \deg p + 1$ and the homogenization of degree $\deg p$ takes the leading coefficient of $p$
-  at $(1, 0)$; and $A$ with $Z = 1$, squared, divides $p$, so it is a unit, a constant, and so is
-  $A$. The reflection compares the coefficients of the two homogenizations, which agree for every
-  $p$ and $m$, and exchanging the variables is a ring automorphism.
+  Unfolding the definitions gives the order; a print channel that prints nothing leaves the data as
+  they are, and every refusing branch returns the same error for any callback. A natural number is
+  never below~$-2^{63}$. After the refusals~$c$ has at least two entries and the leading zeros did
+  not lower $\lceil n/2 \rceil$, so $d \ge 1$; the reversal check returns the degree of its list,
+  never raises it and keeps it at least~$1$ (Lemma~\ref{lem:reversal_swap}).
 \end{proof}
 
-\begin{lemma}[The refusal predicate in the terms of the C code]\label{lem:squarefree_binaryFormPoly}
-  \uses{def:binaryFormPoly, lem:homogenize}
-  \lean{Ratpoints.poly, Ratpoints.getD_degree_ne_zero_of_pos, Ratpoints.natDegree_poly, Ratpoints.binaryFormPoly_eq_homogenize, Ratpoints.squarefree_binaryFormPoly_iff, Ratpoints.not_squarefree_binaryFormPoly_of_lt, Ratpoints.not_squarefree_binaryFormPoly_of_getD_zero}
+\section{The squarefree binary form}\label{sec:setupSquarefree}
+
+As $\Phi_c = Z^{N-d}\,\Phi^0$, where~$\Phi^0$ is the homogenization of~$f$ in degree~$d$, which~$Z$
+does not divide, $\Phi_c$ is squarefree exactly when $N \le d + 1$ and~$f$ is squarefree
+(Lemma~\ref{lem:squarefree_binaryFormPoly}): the first condition is the test of the leading zeros,
+the second is what the remainder chain tests (Section~\ref{sec:remainderChain}). Mathlib has nothing
+on the squarefreeness of a homogenization; the facts that are needed are proved at Mathlib's
+generality in \verb|Ratpoints/Mathlib|. The search itself needs no squarefreeness: the statements on
+the points hold for every polynomial that the set-up hands on, also for a form that is not
+squarefree, which the search accepts when the Sturm step is off.
+
+\begin{lemma}[Squarefreeness in the terms of the C code]\label{lem:squarefree_binaryFormPoly}
+  \uses{def:binaryForm, def:binaryFormPoly}
+  \lean{Polynomial.squarefree_homogenize_iff, Polynomial.homogenize_reflect, Polynomial.squarefree_homogenize_iff_squarefree_reflect, Ratpoints.poly, Ratpoints.natDegree_poly, Ratpoints.binaryFormPoly_eq_homogenize, Ratpoints.squarefree_binaryFormPoly_iff, Ratpoints.not_squarefree_binaryFormPoly_of_lt, Ratpoints.not_squarefree_binaryFormPoly_of_getD_zero}
   \leanok
-  For $d \ge 1$ the entry $c_d$ is not zero; the polynomial $f = \sum_i c_i X^i \in \QQ[X]$ has the
-  degree $d$ of $c$, and $\Phi_c$ is its homogenization of degree $N$; so $\Phi_c$ is squarefree if
-  and only if $N \le d + 1$ and $f$ is squarefree. In particular $d + 2 \le N$ gives a form that is
-  not squarefree, and so does $c_0 = c_1 = 0$, for every degree.
+  \begin{enumerate}
+    \item Over a domain and for $m \ge \deg p$, the homogenization of degree~$m$ of a
+      polynomial~$p$ is squarefree if and only if~$p$ is squarefree and $m \le \deg p + 1$. The
+      homogenization of degree~$m$ of the reflection of~$p$ in degree~$m$ is that of~$p$ with the
+      variables exchanged; so, for $m \ge \deg p$, the homogenization of degree~$m$ of~$p$ is
+      squarefree exactly when the reflection of~$p$ in degree~$m$ is, provided that~$m$ exceeds
+      the degree of the reflection by at most one.
+    \item The polynomial~$f$ of the list~$c$ has the degree~$d$ of~$c$, and~$\Phi_c$ is its
+      homogenization of degree~$N$; so~$\Phi_c$ is squarefree if and only if~$f$ is squarefree and
+      $N \le d + 1$. In particular~$\Phi_c$ is not squarefree when the leading zeros lower
+      $\lceil n/2 \rceil$, nor when $c_0 = c_1 = 0$, whatever the degree.
+  \end{enumerate}
 \end{lemma}
 
 \begin{proof}
   \leanok
-  The entries above $d$ are $0$, and $c_d \ne 0$ for $d \ge 1$, so $f$ has degree $d$, and $\Phi_c$
-  is the homogenization of $f$ of degree $N \ge n \ge d$, so Lemma~\ref{lem:homogenize} gives the
-  equivalence; $d + 2 \le N$ violates $N \le d + 1$; and $c_0 = c_1 = 0$ gives $X^2 \mid f$, where
-  $X$ is not a unit, so that $f$ is not squarefree, $f = 0$ included.
+  (1) The homogenization of degree~$m$ is that of degree~$\deg p$ times $Z^{m - \deg p}$. If
+  $m \ge \deg p + 2$, then~$Z^2$ divides it, and if $a^2 \mid p$, the square of the homogenization
+  of~$a$ divides it. Conversely, if~$A^2$ divides it and $m \le \deg p + 1$, then~$A$ is
+  homogeneous, as a factor of a homogeneous polynomial over a semiring without zero divisors
+  (\lname{MvPolynomial.IsHomogeneous.of\_mul\_left}), $Z \nmid A$, and the square of $A(X, 1)$
+  divides~$p$, so $A(X, 1)$ is a constant, and then so is~$A$. The reflection compares
+  coefficients, and the exchange of the variables is a ring automorphism, which keeps
+  squarefreeness. (2) The coefficient of~$X^i$ in~$f$ is~$c_i$, so~$f$ has the degree $d \le N$;
+  $\Phi_c$ and the homogenization agree term by term, and~(1) applies. A drop of
+  $\lceil n/2 \rceil$ means $d + 2 \le N$, and $c_0 = c_1 = 0$ gives $X^2 \mid f$.
 \end{proof}
-
-On every input with $N \le d + 1$, $D = N$, and $\Phi_c$ evaluates to $F_c$
-(Definition~\ref{def:binaryFormPoly}); so the predicate of the refusals and the form of the points
-fit together on every input that passes the test of the leading zeros, in particular on every input
-that is not refused.
-
-\section{The remainder chain}\label{sec:chain}
-
-\begin{definition}[The remainder chain]\label{def:sturmChain}
-  \lean{Ratpoints.Sturm.reduce, Ratpoints.Sturm.chain, Ratpoints.Sturm.fullReduce, Ratpoints.Sturm.normalize, Ratpoints.Sturm.IsChain, Ratpoints.Sturm.IsChainResult, Ratpoints.Sturm.chain_spec, Ratpoints.Sturm.IsChain.size_le, Ratpoints.Sturm.IsChain.size_getElem!_add_one_add_le}
-  \leanok
-  For the coefficients $c_0, \dots, c_d$ of $f$, $d \ge 1$ and $c_d \ne 0$: $s_0 = f$, $s_1 = f'$
-  (the coefficients $(i + 1) c_{i+1}$), and for $k = 2, \dots, d$ the remainder $t$ of $s_{k-2}$ by
-  $s_{k-1}$ as \verb|sturm.c| computes it in integers: starting from $t = s_{k-2}$, while $\deg t
-  \ge \deg s_{k-1}$, $t$ becomes $u t - v X^{\deg t - \deg s_{k-1}} s_{k-1}$, where $u$ and $v$ are
-  the leading coefficients of $s_{k-1}$ and $t$ divided by their positive $\gcd$ and signed so that
-  $u > 0$, and its zero leading coefficients are dropped; the chain ends with $\mathrm{none}$ if $t$
-  becomes zero, and otherwise $s_k$ is $-t$ divided by the $\gcd$ of its coefficients, the chain
-  ending when $s_k$ is constant (\csource{sturm.c}{99}{163}). For $d = 1$ the loop over $k$ does not
-  run, and the chain is $f, f'$, with $f' = c_1$ constant; for $d \ge 2$ it ends at its \verb|break|
-  at a constant $s_k$ or at the return of $\mathrm{none}$, never at its bound, since $\deg s_k \le d
-  - k$. The loops are those of the C code: the loop over $k$, the reduction while the degree of $t$
-  is at least that of $s_{k-1}$, the drop of the zero coefficients, and the loop for the $\gcd$ of
-  the coefficients, which stops when the $\gcd$ is $1$. Each $s_k$ is the array of its coefficients
-  up to its degree, which stands for a row of the C code's table of $(d + 1)^2$ GMP integers
-  together with its entry in the array of degrees; one reduction step, $\mathrm{reduce}$, a helper
-  inside the lines of the chain, has no C range of its own, as \verb|Sieve.evalMod| has none inside
-  those of the tables of a prime power (Definition~\ref{def:examinePower}). The contract, with Lean
-  core's program logic: the loops end by their measures, the sizes of the remainders and of the
-  arrays whose zeros are dropped; and the result is a chain in the sense of the named predicate
-  $\mathrm{IsChain}$ (its first two elements are $f$ and $f'$, each further one is the full
-  reduction ($\mathrm{fullReduce}$) of the element two before by the element before, negated and
-  divided by the $\gcd$ of its coefficients ($\mathrm{normalize}$), every element has a nonzero
-  leading coefficient, and the sizes decrease from $s_1$ on) whose last element is constant, or
-  $\mathrm{none}$, and then a chain in this sense exists whose last element has positive degree and
-  reduces the element before it to zero. A chain has at most $d + 1$ rows, and its row $k + 1$ at
-  most $d - k$ entries, the bounds of the table of the C code.
-\end{definition}
-
-\begin{lemma}[The chain detects a repeated factor]\label{lem:sturmChain_squarefree}
-  \uses{def:sturmChain, lem:squarefree_binaryFormPoly}
-  \lean{Ratpoints.Sturm.IsChain.exists_mul_eq, Ratpoints.Sturm.IsChain.natDegree_lt, Ratpoints.Sturm.run_chain_eq_none_iff, isCoprime_iff_of_mul_eq_mul_sub_mul}
-  \leanok
-  For $d \ge 1$ and $c_d \ne 0$, the chain is $\mathrm{none}$ if and only if $f$ is not squarefree
-  over $\QQ$.
-\end{lemma}
-
-\begin{proof}
-  \leanok
-  The polynomial of an array of coefficients is $\mathrm{poly}$ of its list
-  (Lemma~\ref{lem:squarefree_binaryFormPoly}). Each $s_k$, $k \ge 2$, satisfies $A s_{k-2} = Q
-  s_{k-1} - g s_k$ with integers $A \ge 1$ and $g \ge 1$ and some $Q \in \QQ[X]$, read off the
-  arrays coefficient by coefficient; for units $a$ and $b$ of a commutative ring, $a x = q y - b z$
-  makes $y$ and $z$ coprime exactly when $x$ and $y$ are, so coprimality passes along the chain. A
-  zero remainder after $s_{k-1}$ of degree at least $1$ makes $s_{k-1}$ a common factor of positive
-  degree, and a nonzero constant makes the pair coprime. Over $\QQ$, $f$ and $f'$ are coprime
-  exactly when $f$ is separable, which in characteristic $0$ is squarefreeness. The converse of the
-  contract's clause for $\mathrm{none}$ follows from this lemma: such a chain makes its element of
-  positive degree a common factor of $f$ and $f'$, so that $f$ is not squarefree, and the chain is
-  $\mathrm{none}$.
-\end{proof}
-
-The relation with positive $A$ and $g$ and the decreasing degrees is also what stage~H reads off the
-chain: its rows are positive multiples of the Sturm sequence of $f$ and $f'$
-(Lemma~\ref{lem:chainSturm}), whose signs Sturm's theorem reads, and the Sturm step counts their
-sign changes; so the chain is computed as the C code computes it, row by row, and not only its
-verdict.
 
 \section{The reversal}\label{sec:reversal}
 
-\begin{definition}[The reversal check]\label{def:reversal}
-  \lean{Ratpoints.Setup.isSquare, Ratpoints.Setup.reversal, Ratpoints.Refusal, Ratpoints.Refusal.notSquarefree}
+When the caller allows it and the search region is the whole box, ratpoints may replace the
+polynomial by its reversal, in three cases in which it expects the search of the reversed polynomial
+to be faster. The reversal exchanges~$x$ and~$z$ in the binary form; the C code maps each point of
+the reversed curve back to the caller's curve before it delivers it, so that the output holds the
+same points in another order, which the specification of the order follows: it names the polynomial
+searched, as the reversal check chooses it (Definition~\ref{def:orderedPoints}). The model makes a
+new list where the C code reverses its array in place, and writes back to the caller the flag of the
+reversal, not the reversed coefficients.
+
+\begin{definition}[The reversal check and the map of its points]\label{def:reversal}
+  \uses{def:Options}
+  \lean{Ratpoints.Setup.reversal, Ratpoints.Setup.isSquare, Ratpoints.Sieve.swapPoint}
   \leanok
-  For the switch of the reversal and the coefficients $c$ of degree $d$, the leading zeros dropped:
-  if the reversal is forbidden, $c$ itself; otherwise, for even $d$ with $c_0 = 0$, the refusal if
-  $c_1 = 0$, and otherwise the list $c_d, \dots, c_1, c_0$ with the degree $d - 1$ (case~1); for
-  even $d$ with $c_d$ a square and $c_0$ not, the list $c_d, \dots, c_0$ (case~2); for odd $d$ with
-  $|c_d| \ne 1$, $c_0 = 0$ and $|c_1| = 1$, the list $c_0, c_d, \dots, c_1$ (case~3); and otherwise
-  $c$ itself; with a flag that says whether the list is reversed
-  (\csource{find_points.c}{4732}{4739}, \csource{find_points.c}{4744}{4756},
-  \csource{find_points.c}{4759}{4770}, \csource{find_points.c}{4775}{4790},
-  \csource{find_points.c}{4802}{4803}; the lines of the report under \verb|RATPOINTS_VERBOSE| in its
-  course are those of Definition~\ref{def:report}, which the search prints from its result). The
-  squares are those of \verb|mpz_perfect_square_p|: $0$
-  and the squares of the positive integers. The switch is the test of the flags that guards the C
-  block, the two bits of which, the caller's \verb|RATPOINTS_NO_REVERSE| and
-  \verb|RATPOINTS_NO_REVERSE_AUTO|, which a search region or a range of the denominators sets, the
-  search folds into one, the switch of the normalized options (Definition~\ref{def:normalize}). The
-  refusals of a search carry the errors of the program: more than $\mathrm{maxDegree} + 1$
-  coefficients (3), fewer than two (5), the height bound $0$ or one that is not a C \verb|long| (4),
-  a binary form that is not squarefree (8), and search intervals that are not well formed (9,
-  Definition~\ref{def:searchIntervals}); the check returns the binary form that is not squarefree
-  for even $d$ with $c_0 = c_1 = 0$, as the test of the leading zeros and the remainder chain do for
-  the forms they find.
+  For the switch of the reversal and the list~$c$ of degree~$d$: if the switch is off, $c$ itself;
+  otherwise, for even~$d$ with $c_0 = 0$, the refusal (not squarefree) if also $c_1 = 0$, and else
+  the list $c_d, \dots, c_1, c_0$ with the degree~$d - 1$ (case~1); for even~$d$ with~$c_d$ a square
+  and~$c_0$ not, the list $c_d, \dots, c_0$ (case~2); for odd~$d$ with $|c_d| \ne 1$, $c_0 = 0$ and
+  $|c_1| = 1$, the list $c_0, c_d, \dots, c_1$ (case~3); and otherwise~$c$ itself; with a flag that
+  says whether the list is reversed (\csource{find_points.c}{4744}{4756},
+  \csource{find_points.c}{4759}{4770}, \csource{find_points.c}{4775}{4790}). The squares are those
+  of \verb|mpz_perfect_square_p|: $0$ and the squares of the positive integers. The map of a
+  reversed search sends a point $(a, y, b)$ of the reversed curve to $(b, y, a)$ for $a \ge 0$ and
+  to $(-b, y, -a)$ for $a < 0$; the exact check applies it to every point it finds when the flag of
+  the reversal is set (Chapter~\ref{chap:sieve}), and the points at infinity use its image of the
+  candidate $(1, 0)$ (Definition~\ref{def:pointsAtInfinity}).
 \end{definition}
 
-\begin{lemma}[The reversal exchanges $x$ and $z$]\label{lem:reversal_swap}
-  \uses{def:reversal, def:binaryForm}
-  \lean{Ratpoints.Setup.getD_eq_of_reversal_eq_ok, Ratpoints.Setup.degree_eq_of_reversal_eq_ok, Ratpoints.Setup.eq_of_reversal_eq_ok_false, Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok, Ratpoints.binaryForm_eq_of_getD_eq_getD_sub, Ratpoints.Setup.one_le_of_reversal_eq_ok, Ratpoints.Setup.exists_reversal_eq_error_iff}
+\begin{lemma}[The reversal exchanges~$x$ and~$z$]\label{lem:reversal_swap}
+  \uses{def:reversal, def:binaryForm, def:binaryFormPoly, def:regionSpec, def:Options, def:searchIntervals, lem:squarefree_binaryFormPoly}
+  \lean{Ratpoints.Setup.exists_reversal_eq_error_iff, Ratpoints.exists_reversal_normalize_eq_error_iff, Ratpoints.isFullBox_of_reversal_normalize_eq_ok, Ratpoints.Setup.degree_eq_of_reversal_eq_ok, Ratpoints.Setup.degree_le_of_reversal_eq_ok, Ratpoints.Setup.one_le_of_reversal_eq_ok, Ratpoints.Setup.getD_eq_of_reversal_eq_ok, Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok, Ratpoints.Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok}
   \leanok
-  The check refuses exactly when its switch is on, $d$ is even and $c_0 = c_1 = 0$. For $d$ the
-  degree of $c$: if the check returns the list $c'$ with the degree $d'$, then $d'$ is the degree of
-  $c'$, $d' \ge 1$ when $d \ge 1$, since the check lowers only an even $d \ge 2$, to $d - 1$, and
-  without a reversal $c' = c$ and $d' = d$; if it returns them as reversed, then $c'$ is the
-  reflection of $c$ in degree $D$, $c'_i = c_{D-i}$ for $i \le D$ and $c'_i = 0$ beyond, in each of
-  the three cases, and $F_{c'}(x, z) = F_c(z, x)$ for all integers $x$ and $z$, as for any two lists
-  whose degrees round up to the same even number $D$ and whose coefficients are reflected at $D$.
+  The check refuses exactly when its switch is on, $d$ is even and $c_0 = c_1 = 0$; with the switch
+  of the normalized options, exactly when the options allow the reversal, their search region is the
+  whole box (Definition~\ref{def:regionSpec}), $d$ is even and $c_0 = c_1 = 0$; and it reverses only
+  for the whole box. For~$d$ the degree of~$c$: the degree returned is that of the list returned, at
+  most~$d$, and at least~$1$ when $d \ge 1$. If the check reverses, the list~$c'$ it returns is the
+  reflection of~$c$ in degree~$D$, $c'_i = c_{D-i}$ for $i \le D$ and $c'_i = 0$ beyond, and
+  $F_{c'}(x, z) = F_c(z, x)$ for all integers~$x$ and~$z$. If the leading zeros of~$c$ do not lower
+  $\lceil n/2 \rceil$, then~$\Phi_c$ is squarefree if and only if the polynomial of the list handed
+  on is, reversed or not.
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:squarefree_binaryFormPoly}
+  \uses{lem:squarefree_binaryFormPoly, lem:searchIntervals}
   \leanok
-  Without a reversal the check returns $c$ and $d$. In each case of a reversal the list that the C
-  code builds by its swaps is the reflection (with $c_{d+1} = 0$ in case~3); the new leading
-  coefficient is $c_1$, $c_0$ or $c_1$, which is not zero, so that $c'$ has the degree $d'$, read
-  off the degree of its polynomial (Lemma~\ref{lem:squarefree_binaryFormPoly}), and $D' = D$; and
-  $F_{c'}(x, z) = \sum_i c_{D-i}\, x^i z^{D-i} = F_c(z, x)$.
+  By the cases of the check. In each case of a reversal the list built is the reflection, with
+  $c_{d+1} = 0$ in case~3; the new leading coefficient, $c_1$, $c_0$ or~$c_1$, is not zero, so the
+  reversed list has the degree returned and the same~$D$, and
+  $F_{c'}(x, z) = \sum_i c_{D-i}\, x^i z^{D-i} = F_c(z, x)$. Without a reversal
+  Lemma~\ref{lem:squarefree_binaryFormPoly} gives the last claim; after one, the polynomial of~$c'$
+  is the reflection of~$f$ in degree $D = N$, of degree~$D - 1$ or~$D$, and the reflection does not
+  change whether the homogenization of degree~$D$ is squarefree
+  (Lemma~\ref{lem:squarefree_binaryFormPoly}).
 \end{proof}
 
-\begin{definition}[The points of a reversed search]\label{def:swapPoint}
-  \lean{Ratpoints.Sieve.swapPoint}
+\begin{lemma}[The points of a reversed search]\label{lem:swapPoint_bijection}
+  \uses{def:reversal, def:IsPoint, def:bruteForce, thm:bruteForce, def:orderedPoints, def:maxDegree}
+  \lean{Ratpoints.IsNormalizedPair.swapPoint, Ratpoints.Sieve.swapPoint_inj, Ratpoints.Sieve.isPoint_swapPoint, Ratpoints.Sieve.perm_map_swapPoint_bruteForce, Ratpoints.searchedPoly_eq_of_reversal_eq_ok, Ratpoints.fitsLong_neg}
   \leanok
-  The point of the caller's curve for the point $(a, y, b)$ of the reversed curve: $(b, y, a)$ for
-  $a \ge 0$ and $(-b, y, -a)$ for $a < 0$, the map that the exact check of a survivor applies after
-  a reversal, as does its reference, the check of a numerator, and whose images of the caller's
-  points at infinity the points at infinity deliver (Definitions~\ref{def:accepted},
-  \ref{def:checkNum} and~\ref{def:pointsAtInfinity}, when their flag of the reversal is set). It is
-  also the map that the mapped call of the callback applies, branch by branch
-  (Definition~\ref{def:delivery}). Its negations stay in the range of a \verb|long|, since
-  $|a| \le H$, $1 \le b \le H$ and $H < 2^{63}$ (the lemma on negations of
-  Definition~\ref{def:useCLong}).
-\end{definition}
-
-\begin{lemma}[The reversal is a bijection of the points]\label{lem:swapPoint_bijection}
-  \uses{def:swapPoint, def:IsPoint, def:bruteForce, thm:bruteForce}
-  \lean{Ratpoints.Sieve.isPoint_swapPoint, Ratpoints.Sieve.swapPoint_swapPoint, Ratpoints.Sieve.swapPoint_inj, Ratpoints.IsNormalizedPair.swapPoint, Ratpoints.Sieve.perm_map_swapPoint_bruteForce, List.perm_map_of_nodup}
-  \leanok
-  A pair $(x, z)$ of integers is \emph{normalized of height at most $H$} when $\gcd(x, z) = 1$,
-  $z > 0$ or ($z = 0$ and $x = 1$), $|x| \le H$ and $z \le H$, the conditions of a point
-  (Definition~\ref{def:IsPoint}) without its equation; the map keeps these pairs. It is its own
-  inverse, and so injective, on the triples $(x, y, z)$ with $z > 0$ or $(x, z) = (1, 0)$, among
-  them the normalized points. For lists $c$ and $c'$ with $F_{c'}(x, z) = F_c(z, x)$ for all $x$ and
-  $z$, the map sends a normalized point of height at most $H$ of $c'$ to one of $c$, and back, the
-  two maps being inverse on these points; so $\mathrm{bruteForce}(c', H)$, mapped, is a permutation
-  of $\mathrm{bruteForce}(c, H)$.
+  The map of a reversed search keeps the normalized pairs $(x, z)$ of height at most~$H$
+  (Definition~\ref{def:IsPoint}) and is injective on the triples with $z > 0$ or $(x, z) = (1, 0)$.
+  For lists~$c$ and~$c'$ with $F_{c'}(x, z) = F_c(z, x)$ for all~$x$ and~$z$, it sends the
+  normalized points of height at most~$H$ of~$c'$ to points of~$c$, and the brute-force reference
+  of~$c'$, mapped, is a permutation of that of~$c$. The reversal check hands on the polynomial and
+  the flag of the specification of the order (Definition~\ref{def:orderedPoints}). The negation of
+  an integer of absolute value below~$2^{63}$ is a \verb|long|, so the map stays among the
+  \verb|long|s for $H < 2^{63}$.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  $F_c(-b, -a) = F_c(b, a)$, since $D$ is even, so the equation holds. For $a > 0$ the image has
-  $z = a > 0$; for $a < 0$, $z = -a > 0$; for $a = 0$ the normalization of $(0, y, b)$ forces
-  $b = 1$, whose image $(1, y, 0)$ is the caller's point at infinity; $|x| = b$ and $z = |a|$, so
-  the box goes onto the box, and the same computation without the equation shows that the map keeps
-  the normalized pairs. On the triples with $z > 0$ or $(x, z) = (1, 0)$, among them the points, the
-  map is its own inverse, so it is injective there, and both lists have no duplicates
-  (Theorem~\ref{thm:bruteForce}) and the same members.
+  $F_c(-b, -a) = F_c(b, a)$, since~$D$ is even. For $a \ne 0$ the image has $z = |a| > 0$ and
+  $|x| = b$; for $a = 0$ the normalization forces $b = 1$, and the image $(1, y, 0)$ is a point at
+  infinity; so the box goes onto the box. On the triples with $z > 0$ or $(x, z) = (1, 0)$ the map
+  is its own inverse; both references list their points once (Theorem~\ref{thm:bruteForce}), so the
+  mapped list is a permutation.
 \end{proof}
 
-\begin{lemma}[The reversal and squarefreeness]\label{lem:reversal_squarefree}
-  \uses{lem:reversal_swap, lem:squarefree_binaryFormPoly}
-  \lean{Ratpoints.Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok, Polynomial.squarefree_homogenize_iff_squarefree_reflect}
+\section{The remainder chain}\label{sec:remainderChain}
+
+\begin{definition}[The remainder chain]\label{def:remainderChain}
+  \lean{Ratpoints.Sturm.chain, Ratpoints.Sturm.IsChain, Ratpoints.Sturm.IsChainResult, Ratpoints.Sturm.chain_spec, Ratpoints.Sturm.IsChain.size_le}
   \leanok
-  For $d$ the degree of $c$: if $N \le d + 1$ and the check returns the list $c'$, reversed or not,
-  then $\Phi_c$ is squarefree if and only if the polynomial of $c'$ is.
+  For the coefficients $c_0, \dots, c_d$ of~$f$, with $d \ge 1$ and $c_d \ne 0$, the rows of
+  integers that \verb|sturm.c| computes (\csource{sturm.c}{99}{163}): $s_0 = f$, $s_1 = f'$, and for
+  $k = 2, \dots, d$ the row~$s_k$ from the remainder~$t$ of~$s_{k-2}$ by~$s_{k-1}$: starting from
+  $t = s_{k-2}$, while $\deg t \ge \deg s_{k-1}$, $t$ becomes
+  $u t - v X^{\deg t - \deg s_{k-1}} s_{k-1}$, with~$u$ and~$v$ the leading coefficients
+  of~$s_{k-1}$ and~$t$ divided by their~$\gcd$ and signed so that $u > 0$, and its zero leading
+  coefficients are dropped; the result is none when~$t$ becomes zero. Otherwise~$s_k$ is~$-t$
+  divided by the~$\gcd$ of its coefficients, and the chain ends when~$s_k$ is constant. The
+  contract, proved with the program logic of Lean core: the loops end, and the result is a chain
+  ($\mathrm{IsChain}$: rows as just described, each with a nonzero leading coefficient, their sizes
+  decreasing from~$s_1$ on) whose last row is constant, or none, and then some chain has a last row
+  of positive degree that reduces the row before it to zero. A chain has at most~$d + 1$ rows, the
+  size of the table of the C code.
+\end{definition}
+
+\begin{lemma}[The chain detects a repeated factor]\label{lem:chain_squarefree}
+  \uses{def:remainderChain, lem:squarefree_binaryFormPoly, def:reversal}
+  \lean{Ratpoints.Sturm.IsChain.exists_mul_eq, isCoprime_iff_of_mul_eq_mul_sub_mul, Ratpoints.Sturm.run_chain_eq_none_iff, Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok}
+  \leanok
+  Three consecutive rows of a chain satisfy $A\, s_k = Q\, s_{k+1} - g\, s_{k+2}$ with integers
+  $A, g > 0$ and some $Q \in \QQ[X]$. For $d \ge 1$ and $c_d \ne 0$, the chain is none if and only
+  if~$f$ is not squarefree over~$\QQ$. So for a list~$c$ of at least two entries whose leading zeros
+  do not lower $\lceil n/2 \rceil$, the chain of the list that the reversal check hands on, with the
+  degree it returns, is none if and only if~$\Phi_c$ is not squarefree.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:reversal_swap}
   \leanok
-  Without a reversal $c' = c$, and Lemma~\ref{lem:squarefree_binaryFormPoly} gives the claim. After
-  a reversal the polynomial of $c'$ is the reflection of $f$ in degree $D = N$ and has the degree
-  $d' \in \{D - 1, D\}$; by Lemma~\ref{lem:homogenize} the reflection does not change whether the
-  homogenization of degree $D$ is squarefree, and by Lemma~\ref{lem:squarefree_binaryFormPoly} that
-  homogenization is squarefree exactly when the polynomial of $c'$ is.
+  The relation is read off the arrays coefficient by coefficient. In a commutative ring, for
+  units~$a$ and~$b$, $a x = q y - b z$ makes~$y$ and~$z$ coprime exactly when~$x$ and~$y$ are; so
+  coprimality passes down the chain from $(f, f')$ to its last two rows, which a constant last row
+  makes coprime and a last row of positive degree that reduces the row before it to zero makes not
+  coprime. Over~$\QQ$, $f$ and~$f'$ are coprime exactly when~$f$ is separable, that is squarefree.
+  The last claim follows with Lemma~\ref{lem:reversal_swap}: the degree handed on is at least~$1$,
+  and~$\Phi_c$ is squarefree exactly when the polynomial handed on is.
 \end{proof}
 
-The exact check (Definition~\ref{def:accepted}) takes the flag \verb|RATPOINTS_REVERSED| as an
-argument before the numerator and maps each point it delivers by $\mathrm{swapPoint}$ when it is
-set, as does its reference, the check of a numerator (Definition~\ref{def:checkNum}); the points at
-infinity (Definition~\ref{def:pointsAtInfinity}) take it after the degree and use the candidate
-$(0, 1)$ in place of $(1, 0)$, as the C code does, so that their points are those of the flag clear
-mapped by $\mathrm{swapPoint}$; the lines that the exact check and the points at infinity cite hold
-the reversal. The components between the exact check and the run, \verb|walkWord|,
-\verb|siftBitArray|, \verb|scanPiece|, \verb|siftPiece|, \verb|sift| and \verb|sieveRun|
-(Definitions~\ref{def:walkWord}, \ref{def:siftBitArray}, \ref{def:scanPiece}, \ref{def:siftPiece},
-\ref{def:sift} and~\ref{def:sieveRun}), pass the flag on: the invariants of the walk, of a bit array
-and of the scan take the points of a numerator as an argument; the postconditions of the contracts
-of \verb|sift| and \verb|sieveRun| and their equations map their lists by $\mathrm{swapPoint}$ when
-the flag is set, through the equation of the flagged check with the unflagged one; and the sieve and
-the check of stage~C1, their reference, have no flag, so that the equation of
-Lemma~\ref{lem:sift_eq_checkDen} maps their side.
+The C code keeps the rows, not only the verdict, because the Sturm step goes on with them: the
+relation with positive~$A$ and~$g$ and the decreasing degrees make the rows positive multiples of
+the Sturm sequence of~$f$ and~$f'$, whose sign changes the step counts (Chapter~\ref{chap:region}).
+The model keeps each row as the array of its coefficients up to its degree, where the C code keeps a
+table of GMP integers with an array of degrees.
 
-\section{The coefficients as longs and the exit}\label{sec:longsExit}
+\section{The points at infinity}\label{sec:pointsAtInfinity}
 
-\begin{definition}[The coefficients as longs]\label{def:useCLong}
-  \lean{Ratpoints.fitsLong, Ratpoints.Setup.useCLong, Ratpoints.Sieve.modLong, Ratpoints.Sieve.modLong_eq_emod, Ratpoints.fitsLong_sixteen_mul, Ratpoints.fitsLong_add_sixteen_mul, Ratpoints.fitsLong_neg, Ratpoints.Setup.fitsLong_getD_of_useCLong, Ratpoints.fitsLong_natCast}
+The points at infinity of the polynomial searched are the triples $(1, y, 0)$ with $y^2 = c_D$: for
+odd~$d$ the one point $(1 : 0 : 0)$, for even~$d$ the points $(1 : \pm\sqrt{c_d} : 0)$ when~$c_d$ is
+a square, and none otherwise. After a reversal they are the points $(0 : y : 1)$ of the caller's
+curve.
+
+\begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
+  \uses{def:deliver, def:reversal, def:bruteForce, def:callback, lem:deliverList}
+  \lean{Ratpoints.Sieve.pointsAtInfinity, Ratpoints.Sieve.pointsAtInfinityList, Ratpoints.Sieve.pointsAtInfinity_eq_deliver, Ratpoints.Sieve.pointsAtInfinityList_eq_filter_map_pointsOfDen}
   \leanok
-  Whether every coefficient $c_0, \dots, c_d$ is a C \verb|long|, which has 64 bits in every build
-  (\csource{rp-private.h}{41}{43}, \csource{rp-private.h}{47}{47}), $-2^{63} \le c_i < 2^{63}$
-  (\csource{find_points.c}{4599}{4600}, \csource{find_points.c}{4814}{4823}); and the helper
-  \verb|mod| of the C code, which reduces a \verb|long| $a$ modulo $b > 0$ by subtracting $8b$,
-  $4b$, $2b$ and $b$ where it can, after adding $16b$ to a negative $a \ge -16b$, and by C's
-  division, which truncates, for $a$ outside $[-16b, 16b)$ (\csource{find_points.c}{477}{492}). For
-  every integer $a$ and $b \ge 0$ its result is the Euclidean remainder of $a$ by $b$, so the two
-  paths of the table give the same result; and for $b < 2^{59}$ the values that it computes and that
-  could leave the range of a \verb|long|, $16b$, its negation, and $a + 16b$ for $-16b \le a < 0$,
-  stay in it, its other values lying in $(-b, 16b)$, while its inputs are \verb|long|s by the flag;
-  its copy in \verb|sift.c| is the same function but for the hooks of its counts
-  (\csource{sift.c}{370}{389}); the negation of an integer of absolute value below $2^{63}$ is a
-  \verb|long|, which also covers the negations of the map of a reversed search
-  (Definition~\ref{def:swapPoint}); and a natural number is a \verb|long| exactly when it is below
-  $2^{63}$, so that the test of the height refuses $H = 0$ and $H \ge 2^{63}$.
+  For the callback, the list~$c$ of degree~$d$, the flags of the check and a delivery whose flag of
+  the stop is clear: when~$d$ is odd or~$c_d$ a square, with the candidate $(a, b) = (1, 0)$, or
+  $(0, 1)$ when the flag of the reversal is set, one call with $(a : 0 : b)$ under
+  $\mathrm{noCheck}$ or for odd~$d$, and otherwise the call with $(a : s : b)$ for
+  $s = \lfloor \sqrt{c_d} \rfloor$ and then, unless that call stopped the search or~$\mathrm{noY}$
+  is set, the call with $(a : -s : b)$; nothing otherwise (\csource{find_points.c}{4894}{4896},
+  \csource{find_points.c}{5068}{5074}, \csource{find_points.c}{5078}{5099}). The contract: on a
+  delivery whose flag is clear these calls are the delivery (Definition~\ref{def:deliver}) of the
+  list of $(1, 0, 0)$, or of $(1, s, 0)$ and, unless~$\mathrm{noY}$, $(1, -s, 0)$, each mapped by
+  the map of the reversal when its flag is set, and of the empty list when there are no points at
+  infinity; without $\mathrm{noCheck}$ and for odd~$d$ or $c_d \ne 0$, this list is that of the
+  brute-force reference over the candidate $(1, 0)$, mapped after a reversal and without the point
+  with $y < 0$ under~$\mathrm{noY}$.
 \end{definition}
 
-\begin{definition}[The table of a prime, or the exit]\label{def:examinePrimeExit}
-  \uses{def:examinePrime, def:useCLong, def:barrett}
-  \lean{Ratpoints.Sieve.examinePrime?, Ratpoints.Sieve.examinePrime?_eq_examinePrime?_false}
-  \leanok
-  The function \verb|examine_prime| as the C code has it, for the flag of the \verb|long|s, a
-  component of type \verb|Id|: the coefficients reduced modulo $p$ on the path that the flag
-  chooses, with \verb|mod| for \verb|long|s and with the Euclidean remainder for GMP integers, two
-  paths with the same result, which it hands back with the table; the entry $0$ of the table,
-  whether $c_0$ is a square modulo $p$, then, in the loop over the residues $a = 1, \dots, p - 1$,
-  whether $f(a)$ is a square modulo $p$, with $f(a)$ by Horner's rule with the Barrett reduction on
-  the schedule of Definition~\ref{def:barrett}, and the last entry, the entry $p$, whether there is
-  a point at infinity modulo $p$, $p + 1$ entries as \verb|examine_prime| keeps them, the residues
-  $n_p$ with a square value counted in the loop; no table when no entry is true, so that the curve
-  has no points modulo $p$, the exit; and otherwise, beside the table and the coefficients, the code
-  of \verb|examine_prime| and the density of the prime: the code $0$ when $n_p = p$ and there is no
-  point at infinity modulo $p$, so that the prime says nothing, with the density $0$, which
-  \verb|examine_prime| does not compute; else the density $(n_p + 1)(p - 1)/p^2$ with a point at
-  infinity modulo $p$ and $n_p/p$ without, in doubles, and the code $2$ for $n_p = p$, when the
-  prime says only that numerator and denominator are coprime, and $1$ otherwise
-  (\csource{find_points.c}{1683}{1697}, \csource{find_points.c}{1703}{1723},
-  \csource{find_points.c}{1725}{1725}, \csource{find_points.c}{1732}{1734},
-  \csource{find_points.c}{1736}{1736}, \csource{find_points.c}{1745}{1749},
-  \csource{find_points.c}{1761}{1781}, \csource{find_points.c}{1795}{1819},
-  \csource{find_points.c}{1822}{1826}; the table of rows of the prime that \verb|examine_prime| puts
-  into its entry, lines 1820-1821, is that of Definition~\ref{def:storeTables}). Otherwise its table
-  is that of Definition~\ref{def:examinePrime} for $0 < p < \mathrm{maxPrimeEven}$
-  (Lemma~\ref{lem:examinePrime_eq}), which is the reference of this one, as the sieve and the check
-  of stage~C1 became the reference of the words; so the lemmas on the table and the rows hold as
-  they are.
-\end{definition}
+Like the C code, the model has no test $s \ne 0$, which would matter only for even~$d$ and $c_d = 0$
+(the point $(1, 0, 0)$ twice), excluded by the refusals. The C code computes the flag \verb|lcfsq|
+before the reversal check and clears it in case~2; the model tests~$c_d$ on the polynomial searched,
+which agrees for even degree, the only one that reads the flag. The search delivers the points at
+infinity after the choice of the moduli and returns when a call stops it there
+(Definition~\ref{def:searchPoints}).
 
-\begin{lemma}[A curve without points modulo $p$ has none]\label{lem:examinePrime_none}
-  \uses{def:examinePrimeExit, def:IsPoint, lem:admits_examinePrime, lem:examinePrime_eq}
-  \lean{Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none, Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm, Ratpoints.Sieve.getElem!_squaresMod_of_sq_eq, Ratpoints.Sieve.any_isFSquare_examinePrime_of_sq_eq}
+\section{The exit by a prime}\label{sec:exitByPrime}
+
+While it chooses the moduli (Chapter~\ref{chap:moduli}), ratpoints computes for each prime~$p$ it
+examines the table of the residues~$x$ with~$f(x)$ a square modulo~$p$, with a last entry for the
+points at infinity modulo~$p$ (Chapter~\ref{chap:rows}). When no entry is true,
+\verb|examine_prime| returns~$-1$ (\csource{find_points.c}{1762}{1762}) and the search ends with no
+points (\csource{find_points.c}{2613}{2614}, \csource{find_points.c}{2994}{2998},
+\csource{find_points.c}{4996}{5012}). The model's table with the exit,
+\lname{Ratpoints.Sieve.examinePrime?}, is then none, and otherwise the reference table
+\lname{Ratpoints.Sieve.examinePrime}, for every prime below
+$\mathrm{maxPrimeEven} = 2^{\mathrm{maxBitsInPrime}}$, the bound of the moduli of the sieve, below
+which lie all the primes that the choice examines.
+
+\begin{lemma}[A curve without points modulo~$p$ has none]\label{lem:exitByPrime}
+  \uses{def:IsPoint, def:binaryForm, def:tableOfPrime, lem:hornerBarrett}
+  \lean{Ratpoints.Sieve.any_isFSquare_examinePrime_of_sq_eq, Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm, Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none, Ratpoints.Sieve.not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none}
   \leanok
-  For a prime $p$ and the degree $d$ of $c$: integers $x$ and $y$ and a natural number $z$ with
-  $\gcd(x, z) = 1$ and $y^2 = F(x, z)$ make some entry of the table of $p$
-  (Definition~\ref{def:examinePrime}) true; so if $p < \mathrm{maxPrimeEven}$ and the table of $p$
-  with the exit is none, then $c$ has no normalized point of any height.
+  Let~$p$ be a prime and~$d$ the degree of~$c$. Integers~$a$ and~$y$ and a natural number~$b$ with
+  $\gcd(a, b) = 1$ and $y^2 = F_c(a, b)$ make some entry of the table of~$p$ true: for $p \nmid b$
+  the entry of the residue~$a b^{-1}$, and for $p \mid b$ the entry at infinity, since then~$c_d$ is
+  a square modulo~$p$ when~$d$ is even. So if $p < \mathrm{maxPrimeEven}$ and the table of~$p$ with
+  the exit is none, $c$ has no normalized point of any height; this holds in particular for the
+  prime at each position below $\mathrm{numPrimes}$ of the table.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:sieveEntry_sound, lem:hornerBarrett}
   \leanok
-  For $p \nmid z$, the row of $z$ admits $x$ (Lemma~\ref{lem:admits_examinePrime}), so that the
-  table marks the residue $x z^{-1}$, at which $f$ takes a square value modulo $p$. For $p \mid z$,
-  $z = 0$ included, $p \nmid x$, and $y^2 \equiv c_D x^D$ modulo $p$, so that $c_D$ is a square
-  modulo $p$, and the entry at infinity is set; for odd $d$ it is always set. For
-  $p < \mathrm{maxPrimeEven}$ the table with the exit is none exactly when no entry of the table is
-  true (Lemma~\ref{lem:examinePrime_eq}).
+  For $p \nmid b$ the row of~$b$ admits~$a$ (Lemma~\ref{lem:sieveEntry_sound}), so the entry
+  of~$a b^{-1}$ is true. For $p \mid b$, $b = 0$ included, $p \nmid a$ and
+  $y^2 \equiv c_D a^D \bmod p$, so the entry at infinity is true: for even~$d$ because~$c_d$ is then
+  a square modulo~$p$, for odd~$d$ always. For $0 < p < \mathrm{maxPrimeEven}$ the table with the
+  exit is none exactly when no entry is true (Lemma~\ref{lem:hornerBarrett}).
 \end{proof}
 
-\section{The search and the theorems}\label{sec:setupSearch}
-
-\begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
-  \uses{def:chooseAndSearch, def:arraySize, def:runShape, def:twoAdic, def:setupUs1,
-    def:numClasses, def:Outcome, def:delivery, def:sieveOptions, def:report}
-  \lean{Ratpoints.searchPoints}
-  \leanok
-  For the coefficients $c$ of degree $d$ that the set-up hands on, the flags of the check, the
-  height $H$, the normalized options of the sieve (Definition~\ref{def:sieveOptions}), whether the
-  caller left the number of primes to the library, the callback, a delivery whose flag is clear and
-  the print channel, through which it prints its report (Definition~\ref{def:report}), over the
-  denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the search intervals, in the order
-  of \verb|find_points_work_1|: the flags of the tests on the denominators, the checked loop for
-  even $d$, which the choice of the moduli switches off when nothing comes of it, the Jacobi test
-  for even $d$, $c_d$ not a square and the Jacobi switch of the options, the squares for odd $d$ and
-  $|c_d| = 1$, and for odd $d$ otherwise the divisors of the leading coefficient up to
-  $b_{\mathrm{high}}$ (Definition~\ref{def:setupUs1}; \csource{find_points.c}{4588}{4589},
-  \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4607}{4607},
-  \csource{find_points.c}{4900}{4914}, \csource{find_points.c}{4919}{4920},
-  \csource{find_points.c}{4927}{4927}, \csource{find_points.c}{4942}{4943}, with the bits
-  \verb|RATPOINTS_CHECK_DENOM| and \verb|RATPOINTS_USE_JACOBI| that it sets,
-  \csource{ratpoints.h}{415}{415} and \csource{ratpoints.h}{418}{418}), with their report, printed
-  after the divisor set-up, which prints nothing; the 2-adic information
-  (Definition~\ref{def:twoAdic}) with the packings of the classes and \verb|den_bits|
-  (Definition~\ref{def:numClasses}), and nothing delivered when no class of the denominators admits
-  a numerator and there is no point at infinity (\csource{find_points.c}{4603}{4604},
-  \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4959},
-  \csource{find_points.c}{4962}{4963}), after the message of that exit; then the report of the
-  packing and the mean number of bits per word of the bit arrays of the run
-  (Definition~\ref{def:runShape}; \csource{find_points.c}{4992}{4995}) and the choice of the moduli
-  and the search after it (Definition~\ref{def:chooseAndSearch}; the array of the sieve entries,
-  \csource{find_points.c}{4602}{4602}), with the shape of the run (the flags of the denominators,
-  the height, the range of the denominators, the search intervals, the classes, \verb|den_bits| and
-  the array size of the options normalized for $H$), each point mapped by $\mathrm{swapPoint}$ when
-  the flag of the reversal is set; the lines of the report under \verb|RATPOINTS_VERBOSE| are those
-  of Definition~\ref{def:report}. The 2-adic exit returns the delivery as it came, but for its
-  message. The search returns what a search gives back (Definition~\ref{def:Outcome}): the data and
-  the count of the delivery, with the flag of the reversal, the squares, the success of the divisor
-  set-up, the search intervals and the numbers of the moduli used that the search after the choice
-  returns, $0$ for each after the 2-adic exit. A definition of type \verb|Id|, which the search of
-  \verb|find_points_work_1| runs (Definition~\ref{def:findPointsVerbose}) with the normalized range
-  of the denominators, the search intervals that the Sturm step leaves and its flag
-  \verb|sturm_empty| (Definition~\ref{def:sturmRegion}). What it delivers for normalized options,
-  with the print channel that prints nothing, $1 \le H < 2^{63}$, as the refusals leave it,
-  $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, well-formed search intervals and $d$ the
-  degree of $c$ is the subject of Lemma~\ref{lem:searchList}: the points at infinity and, over the
-  denominators of the search (Definition~\ref{def:searchDens}), the points of the check with the
-  flags of the numerators in the search intervals, none when \verb|sturm_empty| is set, that a sound
-  test of the sieve lets through, up to the first call that stops the search, also when an exit
-  fires, since the curve has no points then (Lemmas~\ref{lem:choice} and~\ref{lem:twoAdic_exit}).
-\end{definition}
-
-The search with a callback, $\mathrm{findPointsWith}(c, H, s, o)$ with the options $s$ of the sieve,
-a callback and its data (Definition~\ref{def:findPointsWith}), the search with a callback and a
-print channel of Definition~\ref{def:findPointsVerbose} with the channel that prints nothing and a
-refusal without the data of the callback (Lemma~\ref{lem:choiceSearch}), refuses, in the order of
-the program, more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$ or
-$H \ge 2^{63}$, a height that is not a \verb|long| (errors 3, 5 and~4), and then, with error~8, a
-drop of $\lceil n/2 \rceil$ by the leading zeros; it normalizes the options
-(Definition~\ref{def:normalize}), runs the reversal check with the normalized switch, which may
-refuse with error~8 as well, takes the search intervals of the options, the default interval for
-none, refusing intervals that are not well formed with error~9
-(Definition~\ref{def:searchIntervals}), and runs the Sturm step of the search
-(Definition~\ref{def:sturmRegion}), which with the step on refuses the form when the remainder chain
-of the polynomial searched is $\mathrm{none}$, returns at once, with the count $0$ and no search
-interval, when the step keeps no interval, so that that polynomial is negative on the search
-intervals within $\pm 2^{63}$, and it has no point at infinity, and otherwise narrows the search
-intervals to those that the step keeps; and it runs $\mathrm{searchPoints}$ on the polynomial that
-the check hands on, with the normalized options of the sieve and whether the caller left the number
-of primes to the library (the number of primes of $s$ negative, \verb|np_is_default|), over the
-normalized range of the denominators and the search intervals that the Sturm step leaves, with its
-flag \verb|sturm_empty| and the flag of the reversal as the flags of the check, from the data of the
-caller, the count $0$ and the flag of the stop clear, and returns what the search gives back.
-$\mathrm{findPoints}(c, H, s, o)$ (Definition~\ref{def:findPoints}) is its instance with the
-appending callback from the empty array, the list of the array, or its refusal. The C ranges of the
-search with a callback and a print channel are the lines of \verb|find_points| and
-\verb|find_points_work| that make the three functions of the library one, the head and the locals of
-\verb|find_points_work_1| that the set-up uses, its reset of the flags and its end, the test of the
-leading zeros and of the height, the height of the arguments of the library, a \verb|long|, the
-prototypes of the library with the callback, the codes of its refusals and the mask of the bits of
-the input that the reset of the flags keeps.
-
-\begin{theorem}[A permutation of the reference]\label{thm:findPoints_perm}
-  \uses{def:findPoints, thm:findPoints_order, lem:swapPoint_bijection, lem:regionFilter,
-    lem:searchDensRange, lem:normalize, def:regionSpec, lem:elimSearchRegion}
-  \lean{Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok}
-  \leanok
-  Assuming Sturm's theorem when the Sturm step is on (Definition~\ref{def:sturmTheorem}), for the
-  options $s$ of the sieve and options $o$ with $\mathrm{noCheck}$ false, if
-  $\mathrm{findPoints}(c, H, s, o)$ returns the list $L$, then $L$ is a permutation of
-  $\mathrm{bruteForce}(c, H)$ filtered by $\mathrm{noY}$ and the search region of $o$
-  (Definition~\ref{def:regionSpec}); and when also $\mathrm{noY}$ is false, the options forbid the
-  reversal and the denominators of the search of $c$ are those of the normalized range, as they are
-  unless the search takes the divisors times squares (Definition~\ref{def:searchDens}), $L$ is
-  $\mathrm{bruteForce}(c, H)$ filtered by the search region.
-\end{theorem}
-
-\begin{proof}
-  \leanok
-  $L$ is the list of the search of the polynomial $c'$ that the reversal check hands on, over the
-  candidate $(1, 0)$ and the denominators of its search up to the largest denominator, mapped back
-  after a reversal and filtered by $\mathrm{noY}$ and the search region, under Sturm's theorem
-  (Theorem~\ref{thm:findPoints_order}, Lemmas~\ref{lem:elimSearchRegion}
-  and~\ref{lem:regionFilter}); that list before the filters is a permutation of the points of
-  $\mathrm{bruteForce}(c', H)$ at infinity or with a denominator up to the largest, the only ones in
-  the search region; without a reversal $c' = c$, and after one, which comes only for the whole box,
-  where the largest denominator is $H$ (Lemma~\ref{lem:normalize}),
-  Lemma~\ref{lem:swapPoint_bijection} gives the permutation of $\mathrm{bruteForce}(c, H)$. Without
-  a reversal and with the denominators of the normalized range, the list is the reference itself
-  over the candidate $(1, 0)$ and these denominators, in their order, filtered
-  (Lemma~\ref{lem:searchDensRange}).
-\end{proof}
-
-\begin{theorem}[The refusals]\label{thm:refusals}
-  \uses{def:findPoints, def:Options, def:reversal, def:useCLong, lem:sturmChain_squarefree,
-    lem:reversal_squarefree, lem:squarefree_binaryFormPoly, thm:protocol, def:regionSpec,
-    lem:searchIntervals, lem:reversalRegion, lem:sturmRegion}
-  \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
-  \leanok
-  For any options of the sieve and options: with the Sturm step on ($\mathrm{sturm} \ge 0$),
-  $\mathrm{findPoints}(c, H, s, o)$ refuses the input exactly when $c$ has fewer than two or more
-  than $\mathrm{maxDegree} + 1$ entries, $H = 0$ or $H \ge 2^{63}$, $\Phi_c$ is not squarefree, or
-  the search intervals of $o$ are not well formed (Definition~\ref{def:regionSpec}). With the Sturm
-  step off, it refuses exactly when $c$ has fewer than two or more than $\mathrm{maxDegree} + 1$
-  entries, $H = 0$ or $H \ge 2^{63}$, $d + 2 \le N$, the reversal is allowed, the search region is
-  the whole box, $d$ is even and $c_0 = c_1 = 0$, or the search intervals of $o$ are not well
-  formed.
-\end{theorem}
-
-\begin{proof}
-  \uses{lem:reversal_swap, lem:choiceSearch}
-  \leanok
-  $\mathrm{findPoints}$ refuses exactly the inputs that the search with a callback refuses, with the
-  appending callback (Theorem~\ref{thm:protocol}), so that the refusals are its tests, those of the
-  search with the print channel that prints nothing (Lemma~\ref{lem:choiceSearch}). The refusals
-  of the leading zeros and of the reversal check stand for $Z^2 \mid \Phi_c$ and $X^2 \mid \Phi_c$,
-  each of which makes $\Phi_c$ not squarefree (Lemma~\ref{lem:squarefree_binaryFormPoly}). When
-  neither happens, $N \le d + 1$; since $c$ has at least two entries, $N \ge 2$ and so $d \ge 1$;
-  case~1 lowers an even $d \ge 2$ to $d - 1 \ge 1$ with the leading coefficient $c_1 \ne 0$, and
-  cases~2 and~3 keep $d$ with the leading coefficients $c_0 \ne 0$ and $c_1 = \pm 1$
-  (Lemma~\ref{lem:reversal_swap}); the Sturm step of the search refuses exactly when it is on and
-  the chain of the polynomial searched is $\mathrm{none}$ (Lemma~\ref{lem:sturmRegion}), which
-  happens exactly when $\Phi_c$ is not squarefree (Lemmas~\ref{lem:sturmChain_squarefree}
-  and~\ref{lem:reversal_squarefree}, the latter also when the reversal is forbidden and the
-  polynomial searched is $f$). Without the Sturm step only the first two remain, the reversal check
-  with the normalized switch refusing only for the whole box (Lemma~\ref{lem:reversalRegion}). The
-  search intervals refuse exactly the intervals that are not well formed
-  (Lemma~\ref{lem:searchIntervals}). The test of the height refuses $H = 0$ and $H \ge 2^{63}$
-  (Definition~\ref{def:useCLong}).
-\end{proof}
-
-The contract of the run (Theorem~\ref{thm:blocks}, with Lemma~\ref{lem:flatMapFilter}) reduces
-the run of any polynomial with its degree to the reference: for an array size at least $1$, sieve
-entries with their reciprocals, those of the first two stages with their tables of inverses, the row
-offsets of the classes, which pack the 2-adic words, and a store of the tables of rows that fits
-them, and those of the third stage prime entries, a well-formed first decision of the cut points,
-denominators and a height below $2^{63}$, and filters that let every point through, it gives the
-points of the reference over its denominators, mapped by $\mathrm{swapPoint}$ when the flag of the
-reversal is set; Lemma~\ref{lem:searchList} rests on it, with what the search hands to the run
-(Lemma~\ref{lem:soundRun}), the lists and the tests of the shapes (Lemma~\ref{lem:shape_dens}), the
-2-adic exit (Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints}
-has membership with $\mathrm{noCheck}$ false and the set of elements with both options of the output
-off, for the points in the search region of the options, from Theorem~\ref{thm:findPoints_order} and
-the permutation, and no duplicates for every option; Theorem~\ref{thm:refusals} has the refusals,
-which since stage~H add the search intervals that are not well formed; both have guards on their
-axioms. Assuming Sturm's theorem, the depth of the Sturm step changes only the speed: with the exact
-check on, the search with the step off returns the same list (Theorem~\ref{thm:sturmSpeed}).
-Comparator certifies the two main theorems with the options argument, membership since stage~G with
-$\mathrm{noCheck}$ false, both refusal theorems and, until stage~I, \verb|wf_sieveParams|, and,
-since stage~G, the order theorem, the three statements under $\mathrm{noCheck}$ and the protocol, by
-which the search with a callback refuses exactly what $\mathrm{findPoints}$ refuses
-(Section~\ref{sec:certifiedG}), since stage~H six of them restated for the search region of the
-options (Section~\ref{sec:certifiedH}), and since stage~I all of them for the options of the sieve
-with no hypothesis on them (Section~\ref{sec:certifiedI}); the challenge restates $\Phi_c$ verbatim,
-as it restates $F_c$, takes the options from the model, and has the refusal theorem with the Sturm
-step off too, so that a $\mathrm{findPoints}$ that refused every input under \verb|-s| would not
-pass. Since the challenge needs \verb|Squarefree|, the specification imports
-\verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports, besides the model,
-exactly the Mathlib modules among the public imports of the files of the specification that it
-restates. Stage~D left the structure \verb|Params| and its well-formedness as stage~C2 had them;
-stage~F1 adds the number of primes examined and the composite moduli (Chapter~\ref{chap:tables}).
-
-\section{The command-line program and the differential tests}\label{sec:setupCli}
-
-\verb|ratpoints-lean| reads \verb|-k| and \verb|-K|, the last of them winning, and \verb|-s| and
-\verb|-S| with its optional argument, a C \verb|long| when the next word exists and does not start
-with \verb|-|, the last of them winning, into the options, as \verb|main.c| does
-(\csource{main.c}{594}{601}, \csource{main.c}{638}{649}), and it refuses a form that is not
-squarefree with error~8 (\csource{main.c}{256}{261}, \csource{main.c}{1047}{1047}), which the
-reading of the command line does not meet. The nodes of the failures and of the command line in
-Chapter~\ref{chap:spec} (Definitions~\ref{def:cliFailure} and~\ref{def:cliInput}) hold these lines,
-the node of the program (Definition~\ref{def:cliRun}) the call of \verb|find_points| and the exit
-status~$0$ (\csource{main.c}{251}{251}, \csource{main.c}{284}{284}), and the order of the printed
-points is that of Theorem~\ref{thm:findPoints_order}. It reads the options of the output since
-stage~G (Section~\ref{sec:outputCli}) and those of the search region and the denominator range,
-\verb|-l -u -dl -du|, since stage~H (Section~\ref{sec:regionCli}), so that every option of ratpoints
-is read. At the end of stage~D the differential tests:
-\begin{itemize}
-  \item compared in the suite \verb|test4| 548 of the 582 runs of \verb|test4.sh|, 261 of them by
-    their points, each in its order: the runs whose only options of the search are \verb|-k|,
-    \verb|-K|, \verb|-s| and \verb|-S| by their points (nine with \verb|-S|, among them the
-    regression tests of the depth of the Sturm step), the 11 refusals with error~8 (three of them
-    runs without \verb|-q|, then compared by the message at the end of the report, since stage~G as
-    whole reports, Section~\ref{sec:outputTests}), and the two runs with a malformed argument of
-    \verb|-S|, which fail with error~6 as the C program does; 21 runs stayed skipped for their
-    filtered output and 13 for their height, which the suite \verb|test4high| compares;
-  \item compared 16 of the 21 runs of \verb|test3.sh|, the refusal among them, the run with
-    \verb|-k| by its points, and the run at the height $300000$, above the largest height of the
-    tests, on which both programs print nothing;
-  \item compared in the random suite the inputs that the C program refuses; searched in the suite
-    of parameters \verb|0 1 1| in place of \verb|0 0 1|, which both programs refuse; compared in
-    the errors suite (then 253 cases) \verb|-k|, \verb|-K|, \verb|-s|, \verb|-S| and \verb|-S 5|,
-    error~8, \verb|-s| on a form that is not squarefree and the order of \verb|-s| and \verb|-S|;
-    and gave in the fuzz \verb|-S| random arguments, on forms that are squarefree and on forms that
-    are not;
-  \item compared every point list in its order, also where ratpoints visits the denominators
-    divisor by divisor (Section~\ref{sec:denCli}).
-\end{itemize}
-Sections~\ref{sec:outputTests} and~\ref{sec:regionTests} give the counts after stages~G and~H.
-
-\section{Deviations}\label{sec:setupDeviations}
-
-Each component of the set-up differs from the C code in a stated way, recorded in its
-\verb|Deviation:| paragraph:
-\begin{itemize}
-  \item the three functions of the library, \verb|find_points|, \verb|find_points_work| and
-    \verb|find_points_work_1|, as one;
-  \item the refusals of the program, in its order and with its errors, for the library's codes and
-    order: the library tests the leading zeros before the height, and refuses as bad arguments a
-    degree $0$ and inputs that the program never passes, of which the model refuses only search
-    intervals that are not well formed, with error~9 (Definition~\ref{def:searchIntervals}); a
-    natural number for the height, a height of $2^{63}$ or more, which is not a \verb|long|, refused
-    with error~4, as the program refuses it when it reads it;
-  \item the options as a structure: Booleans for the bits \verb|RATPOINTS_NO_REVERSE|,
-    \verb|RATPOINTS_NO_CHECK| and \verb|RATPOINTS_NO_Y| of the flags that \verb|main.c| clears,
-    whose Jacobi switch is that of the options of the sieve (Definition~\ref{def:sieveOptions}), an
-    integer for \verb|args->sturm|, and the search region of Chapter~\ref{chap:region}; the bit
-    \verb|RATPOINTS_NO_REVERSE_AUTO| as the switch of the reversal of the normalized options cleared
-    (Definition~\ref{def:normalize});
-  \item a list of integers for the array of GMP integers of the coefficients, a new list for the
-    reversal in place, and nothing written back to the caller but the three bits of the flags that
-    the program reads, the search intervals and, since stage~I, the numbers of the moduli used
-    (Definition~\ref{def:Outcome}): the reversed
-    coefficients and the degree stay unwritten, so that there is no state between calls for the
-    reset of the flags to clear; the square test of $c_d$ made where it is used
-    (\verb|Setup.reversal|, \verb|Sieve.pointsAtInfinity|, \verb|searchPoints|), for the flag
-    \verb|lcfsq|, which the C code computes before the reversal check, and the test on
-    \verb|point_at_infty| of the 2-adic exit computed again;
-  \item the rows of the chain as arrays of their coefficients up to their degree, for the table of
-    $(d + 1)^2$ GMP integers and the array of degrees, with no \verb|mpz_init| and \verb|mpz_clear|;
-    the rows handed back, and $\mathrm{none}$ for the return of $-1$, where
-    \verb|_ratpoints_compute_sturm| keeps its table for the rest of the Sturm step; local values for
-    \verb|work[0]|, \verb|work[1]| and \verb|work[2]|; Lean's division for \verb|mpz_fdiv_q|, the
-    divisions being exact;
-  \item no array \verb|c_long|, the flag of the \verb|long|s returned, and the loop that stops at
-    the first coefficient that is not a \verb|long| as a test of all of them
-    (\verb|Setup.useCLong|); Lean's truncating division for C's, and products for the shifts in the
-    helper \verb|mod| (\verb|Sieve.modLong|);
-  \item of \verb|examine_prime| what the table, its last entry, the coefficients modulo $p$ that it
-    hands back, the exit, its codes and the density need: its reciprocal \verb|magic|, its bias and
-    its inverse \verb|rbainv| are set, with its formulas, in the sieve entry of the prime that the
-    model makes (\verb|primeEntry|); one loop over the residues, where the C code has one for each
-    branch of the schedule of Horner's rule; the table and the coefficients fresh arrays and the
-    entry a fresh value, returned, for the buffers that the C code takes them from and the entry and
-    the array of its caller where it stores them;
-  \item the exits return the delivery as it came, but for the message of the exit under
-    \verb|RATPOINTS_VERBOSE|, where \verb|sieving_info| returns the prime and
-    \verb|find_points_work_1| the count $0$;
-  \item integers for the \verb|long|s, with the range obligations of the helper \verb|mod| and of
-    the negations of the map stated as lemmas; no failure for lack of memory; the report under
-    \verb|RATPOINTS_VERBOSE| printed through the print channel of the search
-    (Definition~\ref{def:report}), that of the reversal check and of the Sturm step from their
-    results, after them, where the C code prints in their course; no output under \verb|DEBUG|.
-\end{itemize}
-The lines of the set-up that are neither modelled nor left to a later stage are excluded in
-\verb|correspondence/ratpoints.toml|: the output under \verb|DEBUG| and the instrumentation of the
-development, the management of memory and its failures, the input fields that
-\verb|find_points_work| saves and puts back, the checks of arguments that only a caller of the
-library can fail, and the threads; so the record of \verb|find_points_work_1| is complete, stages~E,
-F1, F2, F3, F4, H and~I having recorded their lines (Chapters~\ref{chap:denominators},
-\ref{chap:tables}, \ref{chap:stages}, \ref{chap:packing}, \ref{chap:rows}, \ref{chap:region}
-and~\ref{chap:moduli}, the fifth with the exclusions of the buffers of the tables and of the
-functions that set them up and free them, Section~\ref{sec:rowsDeviations}, the last with the choice
-of the moduli, the run over the blocks, the numbers of the moduli used and the report under
-\verb|RATPOINTS_VERBOSE|). Stage~G records the macros of the flags and of the return codes in
-\verb|ratpoints.h| (Chapter~\ref{chap:output}), and stage~H \verb|RATPOINTS_NO_REVERSE_AUTO|, with
-the normalized options (Definition~\ref{def:normalize}).
-
-\section{Files and names}
-
-The remainder chain is in \verb|Ratpoints/Model/Sturm.lean|, in the namespace
-\verb|Ratpoints.Sturm|, followed by the components of the Sturm step that stage~H adds
-(Section~\ref{sec:sturmStep}); the refusals, the reversal check and the coefficients as \verb|long|s
-are in \verb|Ratpoints/Model/Setup.lean|, the refusals and $\mathrm{fitsLong}$ in the namespace
-\verb|Ratpoints| and the rest in \verb|Ratpoints.Setup|, so that $\mathrm{findPoints}$ and the
-search can use them; the table of a prime takes the flag of the \verb|long|s as an argument, which
-the search computes with \verb|Setup.useCLong|. The helper \verb|mod| and the table with the exit
-are in \verb|Ratpoints/Model/Tables.lean|, and $\mathrm{swapPoint}$ in
-\verb|Ratpoints/Model/Candidate.lean| (since stage~F3), before the components that use them;
-$\mathrm{defaultSturm}$ is in \verb|Ratpoints/Model/Constants.lean|; and the options,
-$\mathrm{searchPoints}$, $\mathrm{findPointsWith}$ (since stage~G) and $\mathrm{findPoints}$ are in
-\verb|Ratpoints/Model/FindPoints.lean|. The contract of the chain, without Mathlib, is in
-\verb|Ratpoints/Proof/Sturm.lean|, with those of the components of the Sturm step since stage~H, and
-the lemmas on arrays, on the gcd of the absolute values of a list as a left fold, on the cursor of a
-loop over a range and on exact quotients of integers that it needs and Lean core lacks are in
-\verb|Ratpoints/Proof/Containers.lean|, under their names in the namespaces of core. The flagged
-contracts are in \verb|Ratpoints/Proof/Words.lean|, those from the walk on since stage~F2 in
-\verb|Ratpoints/Proof/Scan.lean| (up to the scan of a piece, split off \verb|Sift.lean| in stage~G),
-\verb|Ratpoints/Proof/SiftBits.lean| (one piece and the bits of one interval, split off
-\verb|Sift.lean| in stage~I) and \verb|Ratpoints/Proof/Sift.lean|, that of the run since stage~I in
-\verb|Ratpoints/Proof/Correction.lean|; the lemma on \verb|mod| in
-\verb|Ratpoints/Proof/Reductions.lean|, without Mathlib, since stage~F3; the lemmas on the
-\verb|long|s and the table with the exit in \verb|Ratpoints/Proof/Tables.lean|; the polynomial of a
-coefficient list, the squarefreeness of the chain and of the reversal, the reflection and the
-bijection in \verb|Ratpoints/Proof/Setup.lean|; the contract of $\mathrm{searchPoints}$ in
-\verb|Ratpoints/Proof/FindPoints.lean| and the theorems, since stage~G, in
-\verb|Ratpoints/Proof/Output.lean|; and the lemmas of Mathlib's generality in
-\verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib: those on homogenizations
-in \verb|Algebra/Polynomial/Homogenize| and \verb|RingTheory/MvPolynomial/Homogeneous|,
-squarefreeness under multiplicative equivalences in \verb|Algebra/Squarefree/Basic|, the coprimality
-lemma in \verb|RingTheory/Coprime/Basic|, and the lemma on lists in \verb|Data/List/Nodup|, under
-its name in the namespace of core.
-
-\section{The evidence}\label{sec:setup-evidence}
-
-Besides the proofs:
-\begin{itemize}
-  \item a reading of the C code of the set-up at the pin, with a build that traces every return of
-    \verb|find_points_work_1|: \verb|test4.sh| and 3012 random inputs under four sets of options
-    reach only the refusals and exits of Section~\ref{sec:setupC}, the stop that the callback
-    requests (stage~G) and the return when the Sturm step leaves nothing to search (stage~H); the
-    refusal predicates of the program, with the Sturm step on and off and with and without the
-    reversal, agree with Lemma~\ref{lem:squarefree_binaryFormPoly} and Theorem~\ref{thm:refusals} on
-    9900 coefficient lists under each set and on 24360 further runs; the three cases of the reversal
-    on 31164 lists, each with $F'(x, z) = F(z, x)$ and $D' = D$; the order of the output, with and
-    without a reversal, on 2962 runs; the exit on curves without points modulo $3$, $5$, $7$ and
-    $131$, and its soundness on 33761 pairs of a curve with a point and a prime; a transcription of
-    the remainder chain against sympy and PARI on 24000 polynomials and against an instrumented
-    build of the C code, row by row, on 3000; and the helper \verb|mod| under the
-    undefined-behaviour sanitizer on 140562 pairs at the ends of the range of a \verb|long|;
-  \item before the stage, a sketch of the model in Lean, checked against the C program on 2600 runs,
-    a prototype of the proofs for it, and a review of the plan of this chapter by four readers, each
-    finding checked by a second reader; after the stage, two independent reviews, each finding
-    checked by a second reader: of the C ranges, the deviations and the exclusions against the C
-    code (18 findings, all confirmed: the lines of \verb|find_points| and \verb|find_points_work|
-    that make the three functions one, the call of \verb|find_points| in the program, the defaults
-    of the sieving options, the head of \verb|examine_prime|, the loop over the primes, the test of
-    the build for a \verb|long| of 64 bits, the instrumentation at the end of
-    \verb|find_points_work_1|, and clauses of the deviations), and of the code against the
-    conventions of the project (77 findings, 68 confirmed), applied in fourteen rounds, among them
-    the invariants of the walk and the scan with the check as one argument, the map of a reversed
-    search stated once, and the comparison of the order wherever the C program visits the
-    denominators in ascending order;
-  \item the \verb|#guard| examples of the model: the remainder chain against the rows of the
-    instrumented C code and its refusals, the three cases of the reversal and its refusal,
-    \verb|mod| at the ends of the range of a \verb|long| and for moduli near $2^{59}$, the table on
-    both paths against the reference, curves without points modulo $3$, $5$ and $7$, the flagged
-    check and the points at infinity against the mapped reference and against the points that
-    ratpoints prints after a reversal, \verb|findPoints| with its refusals and with and without
-    \verb|-k| and \verb|-s|, and the options of the program;
-  \item the differential tests of Section~\ref{sec:setupCli}: \verb|ratpoints-lean| and the C
-    program agree on all 3218 comparisons of the eight default suites and on the 13 of
-    \verb|test4high|;
-  \item Comparator accepted the solution of the challenge of stage~D, with the main theorems for
-    every option and both refusal theorems;
-  \item the project builds, with all its proofs, for other values of the constants of the build,
-    among them $-1$ and $62$ for $\mathrm{defaultSturm}$; so no proof depends on their values, nor
-    on the sign of the default depth of the Sturm step;
-  \item every proof of the stage takes at most 20 lines; the contract of the remainder chain has
-    four named invariants and two measures.
-\end{itemize}
+When the exit fires the curve has no points at all, so it changes no output. After a reversal it
+never fires: each case leaves the caller's curve a point of height~$1$, $(0 : 0 : 1)$ in cases~1
+and~3 and the points at infinity in case~2.

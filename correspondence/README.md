@@ -7,10 +7,10 @@ ratpoints is a record of which Lean declaration models which lines of C, checked
 ## The pin
 
 Every line number refers to one commit of ratpoints, the pin in
-[`ratpoints.toml`](ratpoints.toml): release 3.1.1, commit `1a99853`. The project moves to each
-ratpoints release, and a new optimization of the C code comes, as far as possible, with its
-soundness proof in the model. The C code is read with `git show <commit>:<file>`, so the working tree of the C
-repository may be at any commit.
+[`ratpoints.toml`](ratpoints.toml): release 3.1.1, commit `1a99853`. The project follows the
+releases of ratpoints, and a new optimization of the C code comes, as far as possible, with its
+soundness proof in the model. The C code is read with `git show <commit>:<file>`, so the working
+tree of the C repository may be at any commit.
 
 ## The ranges
 
@@ -22,25 +22,28 @@ which is either
   own,
 
   ```lean
-  /-- Least non-negative residue of `a` modulo `b`, by the ladder of conditional subtractions
-  of the C code.
+  /-- The helper `mod` of the C code, the remainder of the `long` `a` modulo the `long` `b > 0`: …
 
-  C: `sift.c:369-389`
+  C: `find_points.c:477-492`, `sift.c:370-389`
 
-  Deviation: an `Int` for a `long`; the range of the C type is a hypothesis of the contract. -/
+  Deviation: one definition for the two copies of the function, in `find_points.c` and in `sift.c`,
+  …; integers for the `long`s, with the obligations that the values it computes stay in the range
+  of a `long` stated as lemmas: … -/
+  def modLong (a b : Int) : Int :=
   ```
 
   with one or more items `` `file:first-last` `` (or `` `file:line` ``) separated by commas. A
-  range cited by several declarations (a component and its faithful replacement, say) is one range
-  with several names. An optional `Deviation:` paragraph says where the model departs from the C
-  code (an `Int` for a `long`, exact arithmetic for a double, an index for a pointer, the
-  sequential order for the threads, a C defect not yet fixed). A private declaration cannot carry
-  the record (a blueprint node cannot name it), and `check` reports one that does; a docstring
-  that `@[inherit_doc]` lends to a notation or an alias is not the declaration's own and makes no
-  record; or
+  range cited by several declarations (the two arms of the first stage of the sieve, say, which
+  share lines of the C code) is one range with several names. An optional `Deviation:` paragraph
+  says where the model departs from the C code (an `Int` or a `Nat` for a `long`, with the
+  obligations of its range as lemmas, a 64-bit word for the vector code, an index for a pointer,
+  the bits of a double with a model function for each operation on it, the sequential order for
+  the threads). A private declaration cannot carry the record (a blueprint node cannot name it),
+  and `check` reports one that does; a docstring that `@[inherit_doc]` lends to a notation or an
+  alias is not the declaration's own and makes no record; or
 
-- **excluded**: an `[[excluded]]` table of `ratpoints.toml` gives the range, a kind (parameter
-  selection, threads, memory, instrumentation, interface, other) and the reason.
+- **excluded**: an `[[excluded]]` table of `ratpoints.toml` gives the range, a kind (threads,
+  memory, instrumentation, interface or other) and the reason.
 
 Two different ranges must not overlap. When a declaration calls another that models part of its
 C code, it cites the lines around that part, not the whole function.
@@ -61,8 +64,8 @@ the model, reads the docstrings of its declarations with `scripts/Correspondence
   from an exclusion to a declaration, or a declaration added to a shared range) and a new link are
   reported until they are locked;
 - that the generated blueprint chapter `blueprint/src/generated/correspondence.tex` (the table
-  from C to Lean, with the lines not yet recorded) is up to date (`scripts/correspondence.py
-  table` regenerates it);
+  from C to Lean, which also lists any lines of code that no range records) is up to date
+  (`scripts/correspondence.py table` regenerates it);
 - that the blueprint's `\ratpointscommit` is the pin, that every `\csource{file}{first}{last}`
   is a range of a listed file, and that every C link of a node of the dependency graph (the
   environments of the `thms=` option of the blueprint package in `web.tex`, by default

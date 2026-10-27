@@ -59,7 +59,7 @@ RECORD = ROOT / 'correspondence' / 'ratpoints.toml'
 LOCK = ROOT / 'correspondence' / 'lock.json'
 BLUEPRINT = ROOT / 'blueprint' / 'src'
 TABLE = BLUEPRINT / 'generated' / 'correspondence.tex'
-EXCLUDED_KINDS = ('parameters', 'threads', 'memory', 'instrumentation', 'interface', 'other')
+EXCLUDED_KINDS = ('threads', 'memory', 'instrumentation', 'interface', 'other')
 # the theorem types plastexdepgraph draws when web.tex gives no `thms=` option
 GRAPH_ENVS = ('definition', 'lemma', 'proposition', 'theorem', 'corollary')
 ITEM = re.compile(r'^([A-Za-z0-9_.+-]+):(\d+)(?:-(\d+))?$')
@@ -456,15 +456,15 @@ def render_table(pin, files, ranges, deviations):
            '',
            f'The model is checked against ratpoints {tex_escape(pin["tag"])} (commit '
            rf'\texttt{{{pin["commit"][:12]}}}). The C files below are those of the library and '
-           '\\texttt{main.c}, whose parts that the command-line program does not mirror are to '
-           'be excluded. Every line of '
-           'code of them lies in at most one recorded range: a range is either modelled by the '
+           '\\texttt{main.c}, whose parts that the command-line program does not mirror are '
+           'excluded. Every line of '
+           'code of them lies in exactly one recorded range: a range is either modelled by the '
            'Lean declarations named, or excluded from the model with a reason. Each recorded '
            'range is checked against the text it had when it was reviewed.',
            '',
            r'\begin{center}',
            r'\begin{tabular}{lrrrr}',
-           r'file & lines of code & modelled & excluded & not yet recorded \\',
+           r'file & lines of code & modelled & excluded & not recorded \\',
            r'\hline']
     tot = [0, 0, 0]
     for p in files:
@@ -485,7 +485,7 @@ def render_table(pin, files, ranges, deviations):
         for _, kind, x in sorted(rows, key=lambda t: t[0]):
             if kind == 'free':
                 a, b, k = x
-                out.append(rf'\item {csource(p, a, b)}: not yet recorded ({k} lines of code)')
+                out.append(rf'\item {csource(p, a, b)}: not recorded ({k} lines of code)')
             elif x.names:
                 names = ', '.join(rf'\lname{{{tex_escape(n)}}}' for n in x.names)
                 out.append(rf'\item {csource(p, x.first, x.last)}: modelled by {names}')
