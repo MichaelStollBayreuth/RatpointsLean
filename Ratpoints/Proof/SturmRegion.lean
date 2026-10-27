@@ -5,11 +5,12 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Proof.Bounds
+public import Ratpoints.Proof.Region
 public import Ratpoints.Spec.Basic
 public import Ratpoints.Spec.Sturm
 
 import Ratpoints.Mathlib.Algebra.Order.Field.Basic
+import Ratpoints.Proof.Bounds
 import Ratpoints.Proof.SturmCoverage
 
 /-!

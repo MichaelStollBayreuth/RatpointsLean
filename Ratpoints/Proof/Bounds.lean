@@ -81,9 +81,9 @@ theorem run_searchIntervals_eq {H : ℕ} {domain : List (Double × Double)} (h :
       then none else some domain := by
   simp only [searchIntervals, List.isEmpty_iff, h, ↓reduceIte,
     Std.Legacy.Range.forIn_eq_forIn_range', List.size_toArray, List.getElem!_toArray]
-  rw [Std.Legacy.Range.size, ← List.range_eq_range',
-    show ([:domain.length].stop - [:domain.length].start + [:domain.length].step - 1) /
-      [:domain.length].step = domain.length by simp, forIn_list_done_eq]
+  simp only [Std.Legacy.Range.size, Nat.sub_zero, Nat.add_sub_cancel, Nat.div_one,
+    ← List.range_eq_range']
+  rw [forIn_list_done_eq]
   split <;> rfl
 
 theorem intervalsWF_domainBits_iff_getElem (domain : List (Double × Double)) :
@@ -101,8 +101,7 @@ theorem intervalsWF_domainBits_iff_getElem (domain : List (Double × Double)) :
     exact ⟨(h1 (n - 1) (by lia)).2, (h1 n hn).1, this⟩
   · intro h
     refine ⟨fun n hn ↦ ⟨(h n hn).1.1, (h n hn).1.2.1⟩, fun n hn ↦ (h n hn).1.2.2, fun i hi ↦ ?_⟩
-    have := ((h (i + 1) hi).2 (by lia)).2.2
-    simpa using this
+    simpa using ((h (i + 1) hi).2 (by lia)).2.2
 
 -- The test of `Ratpoints.searchIntervals` on the `n`-th interval fails exactly when the
 -- characterization of `Ratpoints.IntervalsWF` by `Ratpoints.intervalsWF_domainBits_iff_getElem`
@@ -131,10 +130,7 @@ theorem run_searchIntervals_of_ne_nil (H : ℕ) {domain : List (Double × Double
     (h : domain ≠ []) (hwf : IntervalsWF (domainBits domain)) :
     Id.run (searchIntervals H domain) = some domain := by
   have hn := mt (run_searchIntervals_eq_none_iff H domain).mp (not_not.mpr hwf)
-  rw [run_searchIntervals_eq h] at hn ⊢
-  split_ifs at hn ⊢
-  · exact absurd rfl hn
-  · rfl
+  simpa [run_searchIntervals_eq h] using hn
 
 /-- The interval `[-h, h]` for a finite double `h ≥ H` is well formed and holds `a / b` for every
 numerator `|a| ≤ H` and denominator `b ≥ 1`. -/
@@ -172,16 +168,15 @@ theorem exists_run_searchIntervals_nil {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 
 /-- The caller's search intervals are well formed when `Ratpoints.searchIntervals` does not refuse
 them. -/
 theorem intervalsWF_of_run_searchIntervals_eq_some {H : ℕ} {domain dom : List (Double × Double)}
-    (h : Id.run (searchIntervals H domain) = some dom) : IntervalsWF (domainBits domain) := by
-  by_contra hc
-  rw [(run_searchIntervals_eq_none_iff H domain).mpr hc] at h
-  simp at h
+    (h : Id.run (searchIntervals H domain) = some dom) : IntervalsWF (domainBits domain) :=
+  not_not.mp (mt (run_searchIntervals_eq_none_iff H domain).mpr (by simp [h]))
 
 /-- The search intervals that `Ratpoints.searchIntervals` returns for `1 ≤ H < 2 ^ 63` are well
 formed: the caller's, which it refuses otherwise, or the default interval. -/
-theorem wf_of_run_searchIntervals_eq_some {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63)
-    {domain dom : List (Double × Double)} (h : Id.run (searchIntervals H domain) = some dom) :
-    IntervalsWF (domainBits dom) := by
+theorem intervalsWF_run_searchIntervals {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63)
+    {domain : List (Double × Double)} :
+    ∀ dom ∈ Id.run (searchIntervals H domain), IntervalsWF (domainBits dom) := by
+  intro dom (h : Id.run (searchIntervals H domain) = some dom)
   rcases eq_or_ne domain [] with rfl | hn
   · obtain ⟨dom', h', hwf, -⟩ := exists_run_searchIntervals_nil hH hH63
     rw [h, Option.some.injEq] at h'
@@ -327,7 +322,7 @@ private theorem isExactMantissa_shiftLeft {m0 : UInt64} {s0 : ℤ} {v : ℚ}
   have h63' : m0.toNat * 2 ^ (-s0).toNat < 2 ^ 63 := by rw [← hv'] at h63; exact_mod_cast h63
   have hk : 2 ^ (52 + (-s0).toNat) < 2 ^ 63 := by
     rw [Nat.pow_add]; exact lt_of_le_of_lt (Nat.mul_le_mul_right _ h52) h63'
-  have hk' : (-s0).toNat < 11 := by have := (Nat.pow_lt_pow_iff_right (by decide)).mp hk; lia
+  have hk' : (-s0).toNat < 11 := by lia [(Nat.pow_lt_pow_iff_right Nat.one_lt_two).mp hk]
   have hm : (m0 <<< (-s0).toNat.toUInt64).toNat = m0.toNat * 2 ^ (-s0).toNat := by
     rw [UInt64.toNat_shiftLeft, Nat.toUInt64_eq, UInt64.toNat_ofNat',
       Nat.mod_eq_of_lt (show (-s0).toNat < 2 ^ 64 by lia),
@@ -376,8 +371,7 @@ private theorem toNat_rounding (up : Bool) {s : ℕ} (hs : s ≤ 127) :
   · simp only [↓reduceIte, h64, UInt64.toNat_one_shiftLeft_sub_one (show s - 64 < 64 by lia),
       UInt64.toNat_not, UInt64.toNat_zero]
     have : 2 ^ s = 2 ^ (s - 64) * 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; lia
-    have := Nat.one_le_two_pow (n := s - 64)
-    rw [Nat.sub_mul]; lia
+    rw [Nat.sub_mul]; lia [Nat.one_le_two_pow (n := s - 64)]
 
 theorem m_run_exactEnd (x : Double) (lower : Bool) : (Id.run (exactEnd x lower)).m =
     (if x.fabs.lt .twoPow63 then Id.run (exactMantissa x.fabs)
@@ -476,13 +470,11 @@ theorem lowNumerator_eq_and_highNumerator_eq_run_exactEnd_of_lt_eq_false {x : Do
   · simp only [h1, Bool.false_eq_true, ↓reduceIte]
     obtain ⟨e1, e2⟩ := lowNumerator_eq_and_highNumerator_eq_of_two_pow_le hb hH h2
     obtain ⟨e3, e4⟩ := lowNumerator_eq_and_highNumerator_eq_of_two_pow_le hb hH le_rfl
-    rw [e1, e2, e3, e4]
-    exact ⟨rfl, rfl⟩
+    exact ⟨e1.trans e3.symm, e2.trans e4.symm⟩
   · simp only [h1, ↓reduceIte]
     obtain ⟨e1, e2⟩ := lowNumerator_eq_and_highNumerator_eq_of_le_neg_two_pow hb hH h2
     obtain ⟨e3, e4⟩ := lowNumerator_eq_and_highNumerator_eq_of_le_neg_two_pow hb hH le_rfl
-    rw [e1, e2, e3, e4]
-    exact ⟨rfl, rfl⟩
+    exact ⟨e1.trans e3.symm, e2.trans e4.symm⟩
 
 /-- A tiny end `0 < |q| < 2 ^ (-75)` has the numerators of `exact_end`'s `±m 2 ^ (-127)` with
 `0 < m < 2 ^ 53` and the same sign, for every denominator `1 ≤ b < 2 ^ 63`: `b |q|` and
@@ -593,12 +585,11 @@ theorem toNat_exactScale_of_isEnd {e : ExactEnd} {lower : Bool} (he : IsEnd e lo
         else B * e.m.toNat / 2 ^ e.s) := by
   obtain ⟨hs, hm, hr⟩ := he
   have hB' := Nat.toNat_toUInt64_toInt64 hB
-  have h127 : 2 ^ e.s ≤ 2 ^ 127 := Nat.pow_le_pow_right (by decide) hs
+  have h127 : 2 ^ e.s ≤ 2 ^ 127 := Nat.pow_le_pow_right Nat.zero_lt_two hs
   rw [toNat_exactScale hs, hB', hr]
   · split <;> simp
   · rw [hB', hr]
-    have : B * e.m.toNat ≤ 2 ^ 63 * 2 ^ 63 := Nat.mul_le_mul hB.le hm
-    split <;> lia
+    split <;> lia [Nat.mul_le_mul hB.le hm]
 
 theorem lowNumerator_value_of_not_neg {e : ExactEnd} (hn : e.neg = false) (B H : ℕ) :
     lowNumerator B H (e.value : WithBotTop ℚ) =
@@ -713,8 +704,7 @@ private theorem lowerOpt_spec {e : ExactEnd} (he : IsEnd e true) {B H : ℕ} (hB
         fun l hl ↦ Option.some.inj hl ▸ h2 (UInt64.not_lt.mp h)⟩
   · refine ⟨iff_of_false nofun fun h ↦ ?_, fun l hl ↦ Option.some.inj hl ▸
       lowNumerator_exact_of_neg he hn hB hH⟩
-    have := lowNumerator_value_of_neg hn B H
-    lia
+    lia [lowNumerator_value_of_neg hn B H]
 
 -- The upper end of `interval_bits_exact`: the code `1` exactly when `⌊b u⌋ < -h`, and otherwise
 -- `⌊b u⌋` clipped to `h`.
@@ -728,8 +718,8 @@ private theorem upperBits_spec {e : ExactEnd} (he : IsEnd e false) {B H : ℕ} (
           else (exactScale B.toInt64 e).toInt64).toInt =
             highNumerator B H (e.value : WithBotTop ℚ)) := by
   cases hn : e.neg
-  · have := highNumerator_value_of_not_neg hn B H
-    exact ⟨iff_of_false nofun (by lia), fun _ ↦ highNumerator_exact_of_not_neg he hn hB hH⟩
+  · exact ⟨iff_of_false nofun (by lia [highNumerator_value_of_not_neg hn B H]),
+      fun _ ↦ highNumerator_exact_of_not_neg he hn hB hH⟩
   · obtain ⟨h1, h2⟩ := highNumerator_exact_of_neg he hn hB hH
     simp only [Bool.true_and, decide_eq_true_eq, decide_eq_false_iff_not, ↓reduceIte]
     exact ⟨h1, fun h ↦ h2 (UInt64.not_lt.mp h)⟩
@@ -748,8 +738,7 @@ theorem toInt_numeratorsToBits_of_range {l h : Int64} {cl : NumClass} (hcl : cl.
   refine toInt_numeratorsToBits hcl fun hs ↦ ?_
   rw [decide_eq_false_iff_not, Int64.lt_iff_toInt_lt, Int64.toInt_ofNat_of_lt hH,
     show (9223372036854775807 - 64 : Int64).toInt = 9223372036854775743 by decide] at hs
-  have := hcl.a0_lt_sixty_four
-  rw [hl, hh]; constructor <;> lia
+  rw [hl, hh]; constructor <;> lia [hcl.a0_lt_sixty_four]
 
 /-- `interval_bits_exact` gives the range of the numerators of the ends: the code `2` only above
 `H`, the code `1` only below `-H`, and otherwise the bits of the range within `-H, …, H`. -/
@@ -841,8 +830,7 @@ theorem mul_add_le_of_le_toUInt64_div {m : UInt64} {c : Int64} {bHigh : ℕ} (hc
   rw [UInt64.le_iff_toNat_le] at h
   have h' : (m.toNat : ℤ) ≤ (2 ^ 63 - 1 - c.toInt) / bHigh := by
     rw [← hd, ← Int64.natCast_toNat_toUInt64 (by rw [hd]; exact h1)]; exact_mod_cast h
-  have := (Int.le_ediv_iff_mul_le (by lia)).mp h'
-  lia
+  lia [(Int.le_ediv_iff_mul_le (by lia)).mp h']
 
 /-- The form `(b (±m) + 2 ^ s - 1) >> s` of a lower end with `s < 64` and the guard of `end_form`,
 clamped to `-H, …, H + 1`, is the least numerator of the end. -/
@@ -877,9 +865,7 @@ theorem le_mul_div_of_le_exactScale_one {e : ExactEnd} {lower : Bool} (he : IsEn
   simp only [hr, Bool.false_eq_true, ↓reduceIte, Nat.one_mul] at h1
   rw [show (1 : Int64) = (1 : ℕ).toInt64 from rfl, UInt64.le_iff_toNat_le,
     Nat.toNat_toUInt64_toInt64 hH, h1] at ht
-  have : e.m.toNat / 2 ^ e.s ≤ B * e.m.toNat / 2 ^ e.s :=
-    Nat.div_le_div_right (Nat.le_mul_of_pos_left _ hB1)
-  lia
+  lia [Nat.div_le_div_right (c := 2 ^ e.s) (Nat.le_mul_of_pos_left e.m.toNat hB1)]
 
 /-- The form `(0, -H, 0)` of a lower end `x ≤ -H`, clamped, is the least numerator `-H`. -/
 theorem lowNumerator_of_le_exactScale_one {e : ExactEnd} (he : IsEnd e true) {H B : ℕ}
@@ -1070,8 +1056,8 @@ theorem intervalBits_eq_intervalBitsExact (low up : ExactEnd) {B H : ℕ} (hB : 
     lia
   simp only [intervalBits, h1, h2, ↓reduceIte, Bool.false_eq_true]
 
-/-- The forms of both ends of an interval taken inline, for a height bound `H ≤ 2 ^ 63 - 65`. -/
-theorem forms_of_eq_some {low up : ExactEnd} {H bHigh : ℕ} (hH : H < 2 ^ 63)
+-- The forms of both ends of an interval taken inline, for a height bound `H ≤ 2 ^ 63 - 65`.
+private theorem forms_of_eq_some {low up : ExactEnd} {H bHigh : ℕ} (hH : H < 2 ^ 63)
     {f : (Int64 × Int64 × ℕ) × Int64 × Int64 × ℕ}
     (h : (if H.toInt64 ≤ 9223372036854775807 - 64 then
       (endForm low true H.toInt64 bHigh.toInt64).bind fun lf ↦

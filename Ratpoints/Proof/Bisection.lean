@@ -94,13 +94,13 @@ theorem hasValue_ldexp_ofInt64 {n e : Int64} (hn : n.toInt.natAbs ≤ 2 ^ 53) (h
   have h1 : (1 : ℚ) ≤ |(n.toInt : ℚ)| := mod_cast Int.one_le_abs h0
   have h2 : |(n.toInt : ℚ)| ≤ 2 ^ 53 := by
     rw [← Int.cast_abs, Int.abs_eq_natAbs]; exact mod_cast hn
-  have h3 : (2 : ℚ) ^ (-e.toInt) ≤ 1 := zpow_le_one_of_nonpos₀ (by norm_num) (by lia)
-  have h4 : (2 : ℚ) ^ (-1022 : ℤ) ≤ 2 ^ (-e.toInt) := zpow_le_zpow_right₀ (by norm_num) (by lia)
-  have h5 : (0 : ℚ) < 2 ^ (-e.toInt) := zpow_pos (by norm_num) _
+  have h3 : (2 : ℚ) ^ (-e.toInt) ≤ 1 := zpow_le_one_of_nonpos₀ one_le_two (by lia)
+  have h4 : (2 : ℚ) ^ (-1022 : ℤ) ≤ 2 ^ (-e.toInt) := zpow_le_zpow_right₀ one_le_two (by lia)
+  have h5 : (0 : ℚ) < 2 ^ (-e.toInt) := zpow_pos two_pos _
   obtain ⟨hf', -, hr'⟩ := Double.ldexp_exact (n := -e.toInt) hf hr0
     (by rw [hr]; exact h4.trans (le_mul_of_one_le_left h5.le h1))
     (by rw [hr]; calc |(n.toInt : ℚ)| * 2 ^ (-e.toInt) ≤ 2 ^ (53 : ℤ) * 1 := by gcongr; simpa
-      _ < 2 ^ (1023 : ℤ) := by rw [mul_one]; exact zpow_lt_zpow_right₀ (by norm_num) (by norm_num))
+      _ < 2 ^ (1023 : ℤ) := by rw [mul_one]; exact zpow_lt_zpow_right₀ one_lt_two (by norm_num))
   exact ⟨Double.isNaN_eq_false_of_isFinite hf', by rw [Double.doubleValue_eq_toRat hf', hr', hr]⟩
 
 /-- The end `LONG_MAX` at `+∞` of the bisection has the double `2 ^ 63`. -/
@@ -171,10 +171,12 @@ theorem endsWF_zero : EndsWF 0 (-longMax) longMax 0 0 where
   bound_right h := absurd rfl h
   lt := by simp only [endValue]; norm_num [show (-longMax ≠ longMax) by decide]
 
-theorem natAbs_le_of_four_mul_le {n : ℤ} {k depth : ℕ} (hd : depth ≤ 55)
+-- A finite end scaled as the bound of `Ratpoints.Sturm.EndsWF` at a depth up to `55` is at most
+-- `2 ^ 53` in absolute value.
+private theorem natAbs_le_of_four_mul_le {n : ℤ} {k depth : ℕ} (hd : depth ≤ 55)
     (h : 4 * |n| * 2 ^ k ≤ 2 ^ depth) : n.natAbs ≤ 2 ^ 53 := by
-  have h1 : (2 : ℤ) ^ depth ≤ 2 ^ 55 := pow_le_pow_right₀ (by norm_num) hd
-  have h2 : (1 : ℤ) ≤ 2 ^ k := one_le_pow₀ (by norm_num)
+  have h1 : (2 : ℤ) ^ depth ≤ 2 ^ 55 := pow_le_pow_right₀ one_le_two hd
+  have h2 : (1 : ℤ) ≤ 2 ^ k := one_le_pow₀ one_le_two
   have h3 : 4 * |n| ≤ 4 * |n| * 2 ^ k := le_mul_of_one_le_right (by positivity) h2
   have : |n| ≤ 2 ^ 53 := by norm_num at h1 ⊢; lia
   rw [Int.abs_eq_natAbs] at this
@@ -247,9 +249,7 @@ theorem endsWF_left_inf {depth : ℕ} {nr : Int64} (hd : depth ≤ 55) (h1 : 1 �
   rw [endValue_of_ne 0 hn1 hn2]
   simp only [endValue, show (-longMax ≠ longMax) by decide, ↓reduceIte, Int64.toInt_zero, neg_zero,
     zpow_zero, mul_one]
-  have : (-(2 ^ 53) : ℚ) ≤ nr.toInt := by
-    have : -(2 ^ 53) ≤ nr.toInt := by lia
-    exact_mod_cast this
+  have : (-(2 ^ 53) : ℚ) ≤ nr.toInt := mod_cast (by lia : -(2 ^ 53) ≤ nr.toInt)
   linarith
 
 theorem endsWF_right_inf {depth : ℕ} {nl : Int64} (hd : depth ≤ 55) (h1 : 1 ≤ depth)
@@ -260,9 +260,7 @@ theorem endsWF_right_inf {depth : ℕ} {nl : Int64} (hd : depth ≤ 55) (h1 : 1 
     by simp, by simp, fun _ ↦ ⟨h1, by simpa using hA⟩, fun h ↦ absurd rfl h, ?_⟩
   rw [endValue_of_ne 0 hn1 hn2]
   simp only [endValue, ↓reduceIte, Int64.toInt_zero, neg_zero, zpow_zero, mul_one]
-  have : (nl.toInt : ℚ) ≤ 2 ^ 53 := by
-    have : nl.toInt ≤ 2 ^ 53 := by lia
-    exact_mod_cast this
+  have : (nl.toInt : ℚ) ≤ 2 ^ 53 := mod_cast (by lia : nl.toInt ≤ 2 ^ 53)
   linarith
 
 theorem endsWF_finite {depth : ℕ} {nl nr del der : Int64} (hd : depth ≤ 55) (h1 : 1 ≤ depth)
@@ -463,7 +461,7 @@ theorem EndsWF.midpoint_lt {depth : ℕ} {nl nr del der : Int64} (h : EndsWF dep
   rw [show (der.toInt - del.toInt).toNat = 0 by lia, pow_zero, mul_one] at hA
   rw [hk, show ((k : ℤ) + 1).toNat = k + 1 by lia] at hB
   rw [show del.toInt.toNat = der.toInt.toNat + (k + 1) by lia, pow_add] at hlt'
-  have h2d : (2 : ℤ) ^ depth ≤ 2 ^ 54 := pow_le_pow_right₀ (by norm_num) (by lia)
+  have h2d : (2 : ℤ) ^ depth ≤ 2 ^ 54 := pow_le_pow_right₀ one_le_two (by lia)
   rw [midpoint_of_lt hl hr hlt]
   exact endsWF_halves_of_lt hd h.zero_le_der (by lia) hpd hA hB
     (lt_of_mul_lt_mul_right (hlt'.trans_eq (by ring)) (by positivity))
@@ -538,7 +536,7 @@ theorem EndsWF.midpoint_gt {depth : ℕ} {nl nr del der : Int64} (h : EndsWF dep
   rw [show (del.toInt - der.toInt).toNat = 0 by lia, pow_zero, mul_one] at hB
   rw [hk, show ((k : ℤ) + 1).toNat = k + 1 by lia] at hA
   rw [show der.toInt.toNat = del.toInt.toNat + (k + 1) by lia, pow_add] at hlt'
-  have h2d : (2 : ℤ) ^ depth ≤ 2 ^ 54 := pow_le_pow_right₀ (by norm_num) (by lia)
+  have h2d : (2 : ℤ) ^ depth ≤ 2 ^ 54 := pow_le_pow_right₀ one_le_two (by lia)
   rw [midpoint_of_gt hl hr hlt]
   exact endsWF_halves_of_gt hd h.zero_le_del (by lia) hqd hA hB
     (lt_of_mul_lt_mul_right ((by ring : _ = _).trans_lt hlt') (by positivity))

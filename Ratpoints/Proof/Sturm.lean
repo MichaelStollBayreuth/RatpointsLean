@@ -263,7 +263,7 @@ theorem IsChain.push {c : List Int} {d : Nat} {ch : Array (Array Int)} {t : Arra
     · rw [hn, hp (by lia), hp (by lia), ht]
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk' | rfl
     · exact hp hk' ▸ h.back!_ne_zero k (hm ▸ hk')
-    · exact (congrArg Array.back! hn).symm ▸ back!_normalize_ne_zero ht0
+    · exact hn.symm ▸ back!_normalize_ne_zero ht0
   · rcases Nat.lt_succ_iff_lt_or_eq.mp (by lia : k < m + 1) with hk' | rfl
     · rw [hp (by lia), hp (by lia)]
       exact h.size_lt k (by lia)

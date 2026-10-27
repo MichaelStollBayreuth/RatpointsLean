@@ -8,6 +8,7 @@ module
 public import Ratpoints.Proof.FindPoints
 public import Ratpoints.Proof.SturmRegion
 
+import Ratpoints.Proof.Bounds
 import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Order
@@ -114,7 +115,7 @@ reversal check hands on, with its degree (`Ratpoints.Setup.degree_eq_of_reversal
 positive after the refusals (`Ratpoints.Setup.one_le_of_reversal_eq_ok`), and its flag of the
 reversal, with the options of the output as the flags of the check, the normalized range of the
 denominators (`Ratpoints.Options.normalize`) and the search intervals of the Sturm step, which are
-well formed (`Ratpoints.wf_of_run_searchIntervals_eq_some`, `Ratpoints.run_sturmRegion_subset`;
+well formed (`Ratpoints.intervalsWF_run_searchIntervals`, `Ratpoints.run_sturmRegion_subset`;
 `Ratpoints.exists_isSoundTest_run_searchPoints`, `Ratpoints.run_searchPoints_eq_deliver`,
 `Ratpoints.searchList_of_noCheck_eq_false`); the binary form of a reversed polynomial is that of `c`
 with `x` and `z` exchanged (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`), so that its
@@ -275,7 +276,7 @@ theorem map_findPointsWith_eq_map_findPoints (c : List ℤ) (H : ℕ) (s : Sieve
       ⟨c', _, rev, dom, h1, h2, hH, hH63, hl, hr, hsi, .inl ⟨hst, rfl⟩⟩]
     rfl
   · have hwf := (run_sturmRegion_subset (o.sturm_normalize_le H)
-      (wf_of_run_searchIntervals_eq_some hH hH63 hsi) hst).1
+      (intervalsWF_run_searchIntervals hH hH63 _ hsi) hst).1
     rw [findPoints, h, findPointsWith_eq_ok_iff.mpr
       ⟨c', _, rev, dom, h1, h2, hH, hH63, hl, hr, hsi, .inr ⟨dom', empty, hst, rfl⟩⟩]
     exact congr(Except.ok $(run_searchPoints_eq_deliver s (decide (s.numPrimes < 0)) hH hH63
@@ -365,7 +366,7 @@ private theorem exists_run_sturmRegion_eq_ok {c : List ℤ} {d H : ℕ} {o : Opt
         .ok (some (dom', empty)) ∧ q dom' empty) :
     ∃ r, Id.run (sturmRegion c d (o.normalize H).sturm dom) = .ok r ∧ ∃ dom₀ empty₀,
       IntervalsWF (domainBits dom₀) ∧ ∀ x ∈ r, x = (dom₀, empty₀) := by
-  have hwf := wf_of_run_searchIntervals_eq_some hH hH63 hsi
+  have hwf := intervalsWF_run_searchIntervals hH hH63 _ hsi
   rcases hst with ⟨hst, -⟩ | ⟨dom', empty, hst, -⟩
   exacts [⟨_, hst, dom, false, hwf, nofun⟩,
     ⟨_, hst, dom', empty, (run_sturmRegion_subset (o.sturm_normalize_le H) hwf hst).1,

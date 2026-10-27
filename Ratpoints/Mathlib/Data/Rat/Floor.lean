@@ -35,8 +35,7 @@ theorem ceil_intCast_div_natCast_eq_add_sub_one_div (n : ℤ) {d : ℕ} (hd : 0 
   have h' : (0 : ℚ) < d := mod_cast hd
   refine le_antisymm (Int.ceil_le.mpr ?_) ?_
   · rw [div_le_iff₀ h']
-    have := Int.lt_ediv_add_one_mul_self (n + d - 1) h
-    exact_mod_cast (by lia : n ≤ (n + d - 1) / d * d)
+    exact_mod_cast (by lia [Int.lt_ediv_add_one_mul_self (n + d - 1) h] : n ≤ (n + d - 1) / d * d)
   · have := Int.le_ceil ((n : ℚ) / d)
     rw [div_le_iff₀ h'] at this
     have h3 : n ≤ ⌈(n : ℚ) / d⌉ * d := mod_cast this

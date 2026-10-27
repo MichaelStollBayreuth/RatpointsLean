@@ -24,26 +24,26 @@ of the caller's intervals (`Ratpoints.Sturm.covers_computeSturm`); the bisection
 intervals has at most `⌊d / 2⌋` intervals more than they, within the room that the caller's array
 must have (`Ratpoints.Sturm.size_run_computeSturm_le`).
 
-The bisection (`Ratpoints.Sturm.iterate`) keeps the invariant `Ratpoints.Sturm.HalvingInv`: its
-intervals are intervals of the bisection (`Ratpoints.Sturm.EndsWF`), and the counts and signs it
+The bisection (`Ratpoints.Sturm.iterate`) keeps the invariant `Ratpoints.Sturm.IterateInvariant`:
+its intervals are intervals of the bisection (`Ratpoints.Sturm.EndsWF`), and the counts and signs it
 hands on are those of the real polynomial `f` at their ends, since the rows of the chain are, over
 `ℝ`, positive multiples of the entries of the Sturm sequence of `f` and `f'`
 (`Ratpoints.Sturm.IsChain.signsOf`, `Ratpoints.Sturm.IsChain.run_countsAtInfinity_eq`). An interval
-that it drops holds no `x` with `f(x) ≥ 0` (`Ratpoints.Sturm.HalvingInv.not_kept`, from
-`Ratpoints.eval_neg_of_vLeft_eq_vRight`); one that it keeps holds every value between the doubles
-of its ends (`Ratpoints.Sturm.covers_addInterval`) and a point where `f` is positive
-(`Ratpoints.Sturm.HalvingInv.exists_pos`, from `Ratpoints.exists_inside_eval_pos`); and a value
-`x` with `f(x) ≥ 0` that an interval it splits would keep is kept by one of its halves
-(`Ratpoints.Sturm.kept_halves`), where at a simple root `m` the signs of `f'(m)` that the halves
-get decide which. Between two intervals it keeps, `f` is negative, so that their positive points and
-the negative points between them alternate in sign, and a polynomial of degree `d` changes its sign
-at most `d` times (`Ratpoints.Sturm.length_le_of_witnessed`).
+that it drops holds no `x` with `f(x) ≥ 0` (`Ratpoints.Sturm.IterateInvariant.not_kept`, from
+`Ratpoints.eval_neg_of_vLeft_eq_vRight`); one that it keeps holds every value between the doubles of
+its ends (`Ratpoints.Sturm.covers_addInterval`) and a point where `f` is positive
+(`Ratpoints.Sturm.IterateInvariant.exists_pos`, from `Ratpoints.exists_inside_eval_pos`); and a
+value `x` with `f(x) ≥ 0` that an interval it splits would keep is kept by one of its halves
+(`Ratpoints.Sturm.kept_halves`), where at a simple root `m` the signs of `f'(m)` that the halves get
+decide which. Between two intervals it keeps, `f` is negative, so that their positive points and the
+negative points between them alternate in sign, and a polynomial of degree `d` changes its sign at
+most `d` times (`Ratpoints.Sturm.length_le_of_witnessed`).
 
 ## Main definitions
 
 * `Ratpoints.Sturm.lowerEnd`, `Ratpoints.Sturm.upperEnd`: the real ends of an interval of the
   bisection, none at infinity.
-* `Ratpoints.Sturm.HalvingInv`: the invariant of the bisection for a real polynomial.
+* `Ratpoints.Sturm.IterateInvariant`: the invariant of the bisection for a real polynomial.
 * `Ratpoints.Sturm.Kept`: the values that the bisection of an interval keeps.
 * `Ratpoints.Sturm.SignsOf`: the signs and counts that `Ratpoints.Sturm.signsAt` computes are those
   of a real polynomial.
@@ -95,7 +95,7 @@ to `nr / 2 ^ der` at the depth `depth`, for the real polynomial `F` whose chain 
 interval of the bisection (`Ratpoints.Sturm.EndsWF`) whose counts `cl`, `cr` and signs `sl`, `sr`
 are those of `F` at its ends (`Ratpoints.vLeft`, `Ratpoints.vRight`, `Ratpoints.sgnLeftEnd`,
 `Ratpoints.sgnRightEnd`). -/
-structure HalvingInv (F : ℝ[X]) (depth : ℕ) (nl nr del der : Int64) (cl cr : ℕ) (sl sr : ℤ) :
+structure IterateInvariant (F : ℝ[X]) (depth : ℕ) (nl nr del der : Int64) (cl cr : ℕ) (sl sr : ℤ) :
     Prop where
   /-- An interval of the bisection at the depth. -/
   ends : EndsWF depth nl nr del der
@@ -133,9 +133,9 @@ theorem Kept.inside_or {nl nr del der : Int64} {sl sr : ℤ} {x : ℚ}
 
 /-- By Sturm's theorem, an interval that the bisection drops, with equal counts at its ends and `F`
 negative just inside its lower end, holds no value `x` with `F(x) ≥ 0` that it would keep. -/
-theorem HalvingInv.not_kept (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F) {depth : ℕ}
+theorem IterateInvariant.not_kept (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F) {depth : ℕ}
     {nl nr del der : Int64} {cl cr : ℕ} {sl sr : ℤ}
-    (hI : HalvingInv F depth nl nr del der cl cr sl sr) (hc : cl = cr) (hsl : sl < 0) {x : ℚ}
+    (hI : IterateInvariant F depth nl nr del der cl cr sl sr) (hc : cl = cr) (hsl : sl < 0) {x : ℚ}
     (hx : 0 ≤ F.eval (x : ℝ)) : ¬ Kept nl nr del der sl sr x := by
   have hs : sgnLeftEnd F (lowerEnd nl del) = -1 := by
     have := hI.sl_eq ▸ hsl
@@ -153,15 +153,16 @@ theorem HalvingInv.not_kept (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
 /-- The halves at the midpoint `m = nm / 2 ^ dem` of an interval of the bisection keep the
 invariant with the counts and signs that `Ratpoints.Sturm.iterate` hands them, when `s0`, `s1` and
 `cmid` are the signs of `F(m)` and `F'(m)` and the count `V(m)`. -/
-theorem HalvingInv.halves {F : ℝ[X]} {depth : ℕ} {nl nr del der : Int64} {cl cr : ℕ} {sl sr : ℤ}
-    (hI : HalvingInv F depth nl nr del der cl cr sl sr) (hd : depth < 55) {nm dem : Int64}
+theorem IterateInvariant.halves {F : ℝ[X]} {depth : ℕ} {nl nr del der : Int64} {cl cr : ℕ}
+    {sl sr : ℤ} (hI : IterateInvariant F depth nl nr del der cl cr sl sr) (hd : depth < 55)
+    {nm dem : Int64}
     (hm : midpoint nl nr del der = (nm, dem)) {s0 s1 : ℤ} {cmid : ℕ}
     (h0 : s0 = SignType.sign (F.eval (endValue nm dem : ℝ)))
     (h1 : s1 = SignType.sign (F.derivative.eval (endValue nm dem : ℝ)))
     (hc : cmid = sturmV F (endValue nm dem)) :
-    HalvingInv F (depth + 1) nl nm del dem cl (if s0 = 0 then cmid + 1 else cmid) sl
+    IterateInvariant F (depth + 1) nl nm del dem cl (if s0 = 0 then cmid + 1 else cmid) sl
         (if s0 = 0 then -s1 else s0) ∧
-      HalvingInv F (depth + 1) nm nr dem der cmid cr (if s0 = 0 then s1 else s0) sr := by
+      IterateInvariant F (depth + 1) nm nr dem der cmid cr (if s0 = 0 then s1 else s0) sr := by
   obtain ⟨hL, hR⟩ := hI.ends.halves hd
   rw [hm] at hL hR
   have hl : lowerEnd nm dem = some (endValue nm dem : ℝ) := by simp [lowerEnd, hL.right_ne]
@@ -227,13 +228,13 @@ theorem SignsOf.midpoint {F : ℝ[X]} {rows : Array (Array ℤ)} {k : ℕ} (h : 
   rwa [hs, Prod.mk.injEq, Prod.mk.injEq] at this
 
 /-- By Sturm's theorem, the bisection `Ratpoints.Sturm.iterate` of an interval with the invariant
-`Ratpoints.Sturm.HalvingInv` of a squarefree `F`, up to the depth `iter ≤ 55`, keeps what the
+`Ratpoints.Sturm.IterateInvariant` of a squarefree `F`, up to the depth `iter ≤ 55`, keeps what the
 intervals kept so far hold, and every value with `F ≥ 0` that it keeps
 (`Ratpoints.Sturm.Kept`). -/
 theorem covers_iterate (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
     {rows : Array (Array ℤ)} {k iter : ℕ} (hsig : SignsOf F rows k) (hit : iter ≤ 55)
     {nl nr del der : Int64} {cl cr : ℕ} {sl sr : ℤ} {depth : ℕ} {acc : Array (Double × Double)}
-    (hI : HalvingInv F depth nl nr del der cl cr sl sr) (hd : depth ≤ iter)
+    (hI : IterateInvariant F depth nl nr del der cl cr sl sr) (hd : depth ≤ iter)
     (hacc : AreIntervals acc.toList)
     (hb : ∀ i ∈ acc.back?, doubleValue i.2.bits ≤ (endValue nl del : WithBotTop ℚ)) :
     (∀ x, InIntervals (domainValues acc.toList) x → InIntervals (domainValues
@@ -264,13 +265,12 @@ by `Ratpoints.Sturm.run_chain_eq_none_iff`, and a separable polynomial stays sep
 theorem squarefree_chainPoly {c : List ℤ} {d : ℕ} (hd : 1 ≤ d) (hc : c.getD d 0 ≠ 0)
     {rows : Array (Array ℤ)} (h : Id.run (chain c d) = some rows) :
     Squarefree (chainPoly c d) := by
-  have := (run_chain_eq_none_iff hd hc).not.mp (by simp [h])
-  rw [not_not] at this
-  exact (PerfectField.separable_iff_squarefree.mpr this).map.squarefree
+  exact (PerfectField.separable_iff_squarefree.mpr
+    (not_not.mp ((run_chain_eq_none_iff hd hc).not.mp (by simp [h])))).map.squarefree
 
 /-- The invariant of the bisection on the whole line, with the counts and signs of `F` at `∓∞`. -/
-theorem halvingInv_zero (F : ℝ[X]) :
-    HalvingInv F 0 (-longMax) longMax 0 0 (vBot F) (vTop F) (sgnLeftEnd F none)
+theorem iterateInvariant_zero (F : ℝ[X]) :
+    IterateInvariant F 0 (-longMax) longMax 0 0 (vBot F) (vTop F) (sgnLeftEnd F none)
       (sgnRightEnd F none) :=
   ⟨endsWF_zero, by simp [lowerEnd, vLeft], by simp [upperEnd, vRight], by simp [lowerEnd],
     by simp [upperEnd]⟩
@@ -344,7 +344,8 @@ theorem covers_computeSturm (hS : SturmTheorem) {c : List ℤ} {d iter : ℕ}
   rw [← hch.sgnLeftEnd_none, ← hch.sgnRightEnd_none, toList_run_intersect]
   exact inIntervals_intersectList ((intervalsWF_domainBits_iff _).mpr
     (areIntervals_run_iterate_zero hit)) hwf ((covers_iterate hS hF (hch.signsOf h1 hd57 hF) hit
-      (halvingInv_zero _) (by lia) .nil nofun).2 x hx (kept_neg_longMax_longMax_of_abs_le hb)) hxi
+      (iterateInvariant_zero _) (by lia) .nil nofun).2 x hx
+        (kept_neg_longMax_longMax_of_abs_le hb)) hxi
 
 /-! ### The size of the intervals kept -/
 
@@ -352,10 +353,10 @@ theorem covers_computeSturm (hS : SturmTheorem) {c : List ℤ} {d iter : ℕ}
 theorem abs_endValue_le {n e : Int64} (hn : n.toInt.natAbs ≤ 2 ^ 53) (he : 0 ≤ e.toInt) :
     |endValue n e| ≤ 2 ^ 53 := by
   obtain ⟨h1, h2⟩ := ne_longMax_of_natAbs_le hn
-  rw [endValue_of_ne e h1 h2, abs_mul, abs_of_pos (zpow_pos (by norm_num : (0 : ℚ) < 2) _)]
+  rw [endValue_of_ne e h1 h2, abs_mul, abs_of_pos (zpow_pos (two_pos (α := ℚ)) _)]
   have h3 : |(n.toInt : ℚ)| ≤ 2 ^ 53 := by
     rw [← Int.cast_abs, Int.abs_eq_natAbs]; exact_mod_cast hn
-  have h4 : (2 : ℚ) ^ (-e.toInt) ≤ 1 := zpow_le_one_of_nonpos₀ (by norm_num) (by lia)
+  have h4 : (2 : ℚ) ^ (-e.toInt) ≤ 1 := zpow_le_one_of_nonpos₀ one_le_two (by lia)
   simpa using mul_le_mul h3 h4 (by positivity) (by positivity)
 
 /-- The ends of an interval of the bisection up to the depth `55` have values in
@@ -423,9 +424,9 @@ theorem witnessed_addInterval {F : ℝ[X]} {acc : Array (Double × Double)} {nl 
 /-- By Sturm's theorem, an interval that the bisection keeps, without equal counts at its ends and
 `F` negative just inside its lower end, holds a point where `F` is positive: next to a root
 between its ends, or just inside its lower end. -/
-theorem HalvingInv.exists_pos (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F) {depth : ℕ}
+theorem IterateInvariant.exists_pos (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F) {depth : ℕ}
     {nl nr del der : Int64} {cl cr : ℕ} {sl sr : ℤ}
-    (hI : HalvingInv F depth nl nr del der cl cr sl sr) (h : ¬(cl = cr ∧ sl < 0)) :
+    (hI : IterateInvariant F depth nl nr del der cl cr sl sr) (h : ¬(cl = cr ∧ sl < 0)) :
     ∃ p : ℝ, 0 < F.eval p ∧ (-2 ^ 63 < endValue nl del → endValue nl del ≤ p) ∧
       (endValue nr der < 2 ^ 63 → p ≤ endValue nr der) := by
   have h' : vLeft F (lowerEnd nl del) ≠ vRight F (upperEnd nr der) ∨
@@ -452,7 +453,7 @@ the depth `iter ≤ 55`, after witnessed intervals, keeps witnessed intervals
 theorem witnessed_iterate (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
     {rows : Array (Array ℤ)} {k iter : ℕ} (hsig : SignsOf F rows k) (hit : iter ≤ 55)
     {nl nr del der : Int64} {cl cr : ℕ} {sl sr : ℤ} {depth : ℕ} {acc : Array (Double × Double)}
-    (hI : HalvingInv F depth nl nr del der cl cr sl sr) (hd : depth ≤ iter)
+    (hI : IterateInvariant F depth nl nr del der cl cr sl sr) (hd : depth ≤ iter)
     (hacc : AreIntervals acc.toList)
     (hb : ∀ i ∈ acc.back?, doubleValue i.2.bits ≤ (endValue nl del : WithBotTop ℚ))
     (hw : ∀ i ∈ acc.toList, Witnessed F i) :
@@ -608,8 +609,8 @@ theorem size_run_iterate_le_of_chain_eq_some (hS : SturmTheorem) {c : List ℤ} 
     (sl := sgnLeftEnd (chainPoly c d) none) (sr := sgnRightEnd (chainPoly c d) none) hit
   have hsig := hch.signsOf h1 hd57 hF
   refine (length_le_of_witnessed hF.ne_zero (witnessed_iterate hS hF hsig hit
-    (halvingInv_zero _) (by lia) .nil nofun nofun) hwf.1 hwf.2 fun x h1 h2 h3 ↦
-    (covers_iterate hS hF hsig hit (halvingInv_zero _) (by lia) .nil nofun).2 x h3
+    (iterateInvariant_zero _) (by lia) .nil nofun nofun) hwf.1 hwf.2 fun x h1 h2 h3 ↦
+    (covers_iterate hS hF hsig hit (iterateInvariant_zero _) (by lia) .nil nofun).2 x h3
       (kept_neg_longMax_longMax_of_abs_le (abs_le.mpr ⟨h1, h2⟩))).trans ?_
   rw [hch.natDegree_chainPoly]
 
