@@ -155,8 +155,7 @@ theorem WalkDeliveryInvariant.eq_deliver_of_quit
   obtain ⟨k, hk, hP, -⟩ := h.2.2
   have hx0 := bne_iff_ne.mp hx
   rw [hP.eq_deliver_succ hk hx0 hr'] at hq ⊢
-  refine (Delivery.deliver_flatMap_eq_of_prefix process ((List.IsPrefix.filter _ ?_).map _) g
-    hq).symm
+  refine (Delivery.deliver_flatMap_eq_of_prefix ((List.IsPrefix.filter _ ?_).map _) hq).symm
   exact List.range_prefix_range (UInt64.toNat_ctz_lt hx0)
 
 /-- The exit of the walk, when the word is `0`. -/
@@ -366,7 +365,7 @@ theorem SiftBitArrayInvariant.deliver_eq_of_quit {k k' m : Nat} {D : List (Int �
     r.deliver process D = r0.deliver process
       ((bitNumbers words (rbaLength * i) m).flatMap fun j ↦ g (cl.numerator j)) := by
   rw [h.2, ← Delivery.deliver_append, ← hD] at hq ⊢
-  exact (Delivery.deliver_flatMap_eq_of_prefix process (bitNumbers_prefix _ _ hk') _ hq).symm
+  exact (Delivery.deliver_flatMap_eq_of_prefix (bitNumbers_prefix _ _ hk') hq).symm
 
 /-- The walk through word `k` from its first numerator, when the callback does not stop the
 search in it. -/

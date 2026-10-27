@@ -136,7 +136,7 @@ theorem BlockPost.of_prefix (h : BlockPost process P L κ Q M st0 st) (hM : M <+
   obtain ⟨h1, h2, -⟩ := h
   refine ⟨fun x hx ↦ ?_, h2, fun h ↦ by simp [hq] at h⟩
   rw [h1 x hx] at hq ⊢
-  exact (Delivery.deliver_flatMap_eq_of_prefix process hM (L x) hq).symm
+  exact (Delivery.deliver_flatMap_eq_of_prefix hM hq).symm
 
 end
 

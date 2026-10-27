@@ -34,6 +34,8 @@ position (`Ratpoints.IsChoiceEntries`), whose tables of rows the store then fits
 
 * `Ratpoints.Sieve.SieveEntry.IsSound`: a sieve entry that lets the numerator of every point
   through.
+* `Ratpoints.Sieve.EntriesWF`: sieve entries fit for the run, with the reciprocals of their moduli
+  and a store of the tables of rows.
 * `Ratpoints.IsSievingInfo`: what the run needs of the result of the choice.
 * `Ratpoints.Sieve.PrimeStore`: the store of the tables of rows that the loop of the tables makes.
 * `Ratpoints.TableLoop.WF`: the state of the loop of the tables.
@@ -70,6 +72,36 @@ structure SieveEntry.IsSound (c : List ℤ) (e : SieveEntry) : Prop where
   admits_of_sq_eq {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     e.admits b a = true
 
+/-- Sieve entries fit for the run of the search on the curve `y ^ 2 = F(x, z)` with the coefficient
+list `c`: sound (`Ratpoints.Sieve.SieveEntry.IsSound`), each with no factors counted a prime entry
+of the table (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`), as the third stage needs, with the tables
+of inverses of their factors (`Ratpoints.Sieve.SieveEntry.HasInverses`), the reciprocals `magics`
+of their moduli in their order, and a store of the tables of rows that fits them all
+(`Ratpoints.Sieve.RowStore.Fits`). -/
+structure EntriesWF (c : List ℤ) (entries : List SieveEntry) (magics : Array ℕ)
+    (store : RowStore) : Prop where
+  /-- The sieve entries are sound. -/
+  isSound : ∀ e ∈ entries, e.IsSound c
+  /-- An entry with no factors counted is a prime entry of the table. -/
+  isPrimeEntry_of_nf : ∀ e ∈ entries, e.nf = 0 → e.IsPrimeEntry
+  /-- The reciprocals of the moduli, in the order of the entries. -/
+  magics_eq : magics.toList = entries.map fun e ↦ magic e.p
+  /-- The factors of the sieve entries have their tables of inverses. -/
+  hasInverses : ∀ e ∈ entries, e.HasInverses
+  /-- The store of the tables of rows fits all the entries. -/
+  fits : store.Fits entries
+
+/-- Sieve entries fit for the run stay so when the inverses of the strides that each records
+change. -/
+theorem EntriesWF.map_dinv {c : List ℤ} {entries : List SieveEntry} {magics : Array ℕ}
+    {store : RowStore} (h : EntriesWF c entries magics store) (dinv : SieveEntry → Array ℕ) :
+    EntriesWF c (entries.map fun e ↦ { e with dinv := dinv e }) magics store := by
+  refine ⟨fun e he ↦ ?_, fun e he ↦ ?_, by simp [h.magics_eq], fun e he ↦ ?_,
+    h.fits.map_dinv dinv⟩ <;> obtain ⟨e', he', rfl⟩ := List.mem_map.mp he
+  · exact ⟨(h.isSound e' he').pos, (h.isSound e' he').admits_of_sq_eq⟩
+  · exact h.isPrimeEntry_of_nf e' he'
+  · exact h.hasInverses e' he'
+
 end Sieve
 
 open Sieve
@@ -80,36 +112,24 @@ theorem IsModulusEntry.isSound {c : List ℤ} {m : ℕ} {s : SieveEntry} (h : Is
   ⟨Nat.zero_lt_of_lt h.packable.one_lt, fun hab hy ↦ h.admits_of_sq_eq hab hy⟩
 
 /-- What the run needs of the result `si` of the choice of the moduli for the curve
-`y ^ 2 = F(x, z)` with the coefficient list `c` and the largest denominator `bHigh`: sound sieve
-entries (`Ratpoints.Sieve.SieveEntry.IsSound`), with the fields that the packing reads
-(`Ratpoints.Sieve.SieveEntry.Packable`) and the tables of inverses of their factors
-(`Ratpoints.Sieve.Factor.HasInverses`), each with no factors counted a prime entry of the table
-(`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`), as the third stage needs; the reciprocals of the moduli
-in the order of the entries; the first decision, from the block `0` on, with the cut points of the
-parameters, well-formed for the entries (`Ratpoints.Sieve.DecisionWF`); the forbidden divisors among
-those that the loops of the tables and of the further primes may record
-(`Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`); a store of the tables of
-rows that fits all the entries, the reserve included (`Ratpoints.Sieve.RowStore.Fits`); and the test
-of the denominators only for even degree. -/
-structure IsSievingInfo (c : List ℤ) (bHigh : ℕ) (si : SievingInfo) : Prop where
-  /-- The sieve entries are sound. -/
-  isSound : ∀ e ∈ si.entries, e.IsSound c
+`y ^ 2 = F(x, z)` with the coefficient list `c` and the largest denominator `bHigh`: sieve entries
+fit for the run with the reciprocals of their moduli and the store of the tables of rows, the
+reserve included (`Ratpoints.Sieve.EntriesWF`), with the fields that the packing reads
+(`Ratpoints.Sieve.SieveEntry.Packable`); the first decision, from the block `0` on, with the cut
+points of the parameters, well-formed for the entries (`Ratpoints.Sieve.DecisionWF`); the forbidden
+divisors among those that the loops of the tables and of the further primes may record
+(`Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`); and the test of the
+denominators only for even degree. -/
+structure IsSievingInfo (c : List ℤ) (bHigh : ℕ) (si : SievingInfo) : Prop
+    extends EntriesWF c si.entries si.magics si.store where
   /-- The sieve entries have the fields that the packing reads. -/
   packable : ∀ e ∈ si.entries, e.Packable
-  /-- The factors of the sieve entries have their tables of inverses. -/
-  hasInverses : ∀ e ∈ si.entries, e.HasInverses
-  /-- An entry with no factors counted is a prime entry of the table. -/
-  isPrimeEntry_of_nf : ∀ e ∈ si.entries, e.nf = 0 → e.IsPrimeEntry
-  /-- The reciprocals of the moduli, in the order of the entries. -/
-  magics_eq : si.magics.toList = si.entries.map fun e ↦ magic e.p
   /-- The first decision is well-formed. -/
   decisionWF : DecisionWF si.entries si.params.sp1 ⟨0, si.params.sp2, si.params.sp3⟩
   /-- The forbidden divisors tested with words are sound. -/
   isForbiddenEntry : ∀ e ∈ si.forb, IsForbiddenEntry c (degree c) bHigh e
   /-- The forbidden divisors tested by their valuations are sound. -/
   isForbiddenVal : ∀ e ∈ si.forbVal, IsForbiddenVal c (degree c) bHigh e
-  /-- The store of the tables of rows fits all the entries. -/
-  fits : si.store.Fits si.entries
   /-- The denominators are tested only for even degree. -/
   degree_mod_two_eq_zero_of_checkDenom : si.checkDenom = true → degree c % 2 = 0
 
@@ -418,12 +438,11 @@ theorem isSievingInfo_choiceEnd {c : List ℤ} {bHigh sp1 sp2 : ℕ} {t : ThirdS
         forb, forbVal, store := (choiceEnd t sp2 store).2.2, checkDenom } := by
   obtain ⟨hE, hl⟩ := isChoiceEntries_choiceEnd ht store
   subst h1 h2
-  refine ⟨fun _ he ↦ (hE.isModulusEntry_of_mem he).isSound,
-    fun _ he ↦ (hE.isModulusEntry_of_mem he).packable,
-    fun _ he ↦ (hE.isModulusEntry_of_mem he).hasInverses,
+  refine ⟨⟨fun _ he ↦ (hE.isModulusEntry_of_mem he).isSound,
     fun e he ↦ (hE.exists_isChoiceEntry_of_mem he).elim fun _ h ↦ h.isPrimeEntry, ?_,
-    ⟨h12, h3 ▸ ht.2.1, h3 ▸ hl ▸ ht.2.2, fun _ he ↦ hE.nf_eq_zero_of_mem_drop he⟩, hforb, hval,
-    hE.fits_foldl_addTables hs, hcd⟩
+    fun _ he ↦ (hE.isModulusEntry_of_mem he).hasInverses, hE.fits_foldl_addTables hs⟩,
+    fun _ he ↦ (hE.isModulusEntry_of_mem he).packable,
+    ⟨h12, h3 ▸ ht.2.1, h3 ▸ hl ▸ ht.2.2, fun _ he ↦ hE.nf_eq_zero_of_mem_drop he⟩, hforb, hval, hcd⟩
   simp only [choiceEnd, List.toList_toArray]
   exact List.map_congr_left fun _ he ↦ (hE.isModulusEntry_of_mem he).packable.magic_eq
 

@@ -638,8 +638,7 @@ theorem SiftBitsInvariant.eq_deliver_of_quit {range rr mH : Nat} {w0 w1 w1' : In
   rw [hp.1, h.eq_deliver, ← Delivery.deliver_append,
     flatMap_filter_range_append h.le_w0 hr hmH] at hq ⊢
   rw [← flatMap_filter_range_eq g _ (by lia [h.le_w0, h.w0_le])]
-  exact (Delivery.deliver_eq_of_prefix process (flatMap_filter_range_prefix g _ low high hw1')
-    hq).symm
+  exact (Delivery.deliver_eq_of_prefix (flatMap_filter_range_prefix g _ low high hw1') hq).symm
 
 /-- The pieces advance: the measure `high / rbaLength + 1 - w0` of the loop of
 `Ratpoints.Sieve.siftBits` decreases from one piece to the next. -/

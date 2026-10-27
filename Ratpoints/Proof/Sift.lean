@@ -432,7 +432,7 @@ theorem SiftIntervalsInvariant.post_of_quit
       (l.filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g) := by
   have he := h.2.eq_deliver_take_succ hr
   rw [he] at hq ⊢
-  exact (Delivery.deliver_flatMap_eq_of_prefix process (List.take_prefix _ rs) _ hq).symm
+  exact (Delivery.deliver_flatMap_eq_of_prefix (List.take_prefix _ rs) hq).symm
 
 /-- Once the sieve specs are made, they are `specs0`, and the store fits the entries. -/
 theorem SiftIntervalsInvariant.specs_eq_and_fits_of_not {k : Nat}

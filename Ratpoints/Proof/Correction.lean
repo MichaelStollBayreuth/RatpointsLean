@@ -639,8 +639,8 @@ theorem SieveRunLoopInvariant.quit (hl : ForIn.toList [:n] = pref ++ cur :: suff
   refine ⟨fun x hx ↦ ?_, fun h' ↦ absurd (hq.symm.trans h') Bool.true_eq_false.mp, .inl rfl⟩
   have hd := deliver_append_blockPoints hl h hb x hx
   rw [hd]
-  exact (Delivery.deliver_flatMap_eq_of_prefix process (l₂ := ForIn.toList [:n])
-    ⟨suff, by rw [hl]; simp⟩ _ (hd ▸ hq)).symm
+  exact (Delivery.deliver_flatMap_eq_of_prefix (l₂ := ForIn.toList [:n])
+    ⟨suff, by rw [hl]; simp⟩ (hd ▸ hq)).symm
 
 /-- The block at the cursor `cur` after which the callback has not stopped the search. -/
 theorem SieveRunLoopInvariant.append (hl : ForIn.toList [:n] = pref ++ cur :: suff)
@@ -823,8 +823,8 @@ theorem DeliverSlotsInvariant.quit (hl : ForIn.toList [:n] = pref ++ cur :: suff
   refine ⟨?_, .inl trivial⟩
   rw [← Delivery.deliver_append, ← List.flatMap_singleton (fun i ↦ (slot i).toList) cur,
     ← List.flatMap_append] at hq ⊢
-  exact (Delivery.deliver_flatMap_eq_of_prefix process (l₂ := ForIn.toList [:n])
-    ⟨suff, by rw [hl]; simp⟩ _ hq).symm
+  exact (Delivery.deliver_flatMap_eq_of_prefix (l₂ := ForIn.toList [:n])
+    ⟨suff, by rw [hl]; simp⟩ hq).symm
 
 /-- The slot at the cursor `cur` after which the callback has not stopped the search. -/
 theorem DeliverSlotsInvariant.append

@@ -150,13 +150,13 @@ def appendPoint (x z y : Int) (pts : Array (Int × Int × Int)) : Answer (Array 
 delivery `r`: for each point `(x, y, z)` of `L`, while the flag `quit` is clear, the call with
 `(x : y : z)` (`Ratpoints.Delivery.call`); the points after a call that sets the flag, and all of
 them when it is set at the start, are passed over. So the calls made are those of the points of `L`
-up to and including the first at which the callback stops the search, the count grows by the sum of
-the values that they return, and with the callback that appends each point to an array and never
-stops the search (`Ratpoints.appendPoint`) the array grows by `L` and the count by its length. It is
-a reference of the model, as the brute-force reference `Ratpoints.bruteForce` is, and models no C
-code: the search with a callback (`Ratpoints.findPointsWith`) delivers each point where it finds it
-and tests the flag where the C code tests `*quit`, and this fold over the list of the points of the
-search (`Ratpoints.findPoints`) is what that delivery is compared with. -/
+up to and including the first at which the callback stops the search, and with the callback that
+appends each point to an array and never stops the search (`Ratpoints.appendPoint`) the array grows
+by `L` and the count by its length. It is a reference of the model, as the brute-force reference
+`Ratpoints.bruteForce` is, and models no C code: the search with a callback
+(`Ratpoints.findPointsWith`) delivers each point where it finds it and tests the flag where the C
+code tests `*quit`, and this fold over the list of the points of the search (`Ratpoints.findPoints`)
+is what that delivery is compared with. -/
 def Delivery.deliver (process : Int → Int → Int → σ → Answer σ) (r : Delivery σ)
     (L : List (Int × Int × Int)) :
     Delivery σ :=

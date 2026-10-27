@@ -16,6 +16,7 @@ import Mathlib.Data.List.DropRight
 import Mathlib.Data.List.GetD
 import Mathlib.FieldTheory.Perfect
 import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
+import Ratpoints.Mathlib.Data.Int.Sqrt
 import Ratpoints.Mathlib.Data.List.Nodup
 import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 import Ratpoints.Proof.BruteForce
@@ -431,9 +432,8 @@ namespace Setup
 /-- The square test of the set-up, as GMP decides it, is `IsSquare`. -/
 theorem isSquare_eq_true_iff (a : ℤ) : isSquare a = true ↔ IsSquare a := by
   simp only [isSquare, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
-  refine ⟨fun ⟨h0, h⟩ ↦ ⟨a.toNat.sqrt, ?_⟩, fun ⟨r, hr⟩ ↦ ⟨hr ▸ mul_self_nonneg r, ?_⟩⟩
-  · rw [← Nat.cast_mul, h, Int.toNat_of_nonneg h0]
-  · rw [hr, ← Int.natAbs_mul_self, Int.toNat_natCast, Nat.sqrt_eq]
+  rw [← Int.sqrt_mul_self_eq_iff, ← Int.exists_mul_self]
+  exact exists_congr fun _ ↦ eq_comm
 
 theorem isSquare_eq_false_iff (a : ℤ) : isSquare a = false ↔ ¬IsSquare a := by
   rw [← Bool.not_eq_true, isSquare_eq_true_iff]
@@ -444,11 +444,13 @@ theorem reversal_false (c : List ℤ) (d : ℕ) : reversal false c d = .ok (c, d
 /-- In each of the three cases of the reversal check `Ratpoints.Setup.reversal`, the reversed list
 is the reflection of `c` in the even degree `d + d % 2` of the binary form (with `c_(d+1) = 0` in
 its third case, of odd `d`). -/
-theorem getD_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ} (hd : d = degree c)
-    (h : reversal allow c d = .ok (c', d', true)) (i : ℕ) :
-    c'.getD i 0 = if i ≤ d + d % 2 then c.getD (d + d % 2 - i) 0 else 0 := by
+theorem getD_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d' : ℕ}
+    (h : reversal allow c (degree c) = .ok (c', d', true)) (i : ℕ) :
+    c'.getD i 0 =
+      if i ≤ degree c + degree c % 2 then c.getD (degree c + degree c % 2 - i) 0 else 0 := by
+  generalize hd : degree c = d at h ⊢
   obtain rfl | hc := eq_or_ne c []
-  · cases allow <;> simp [reversal, hd] at h
+  · cases allow <;> simp [reversal, ← hd] at h
   have hlt : d < c.length := by lia [degree_le_length_sub_one c, List.length_pos_iff.mpr hc]
   simp only [reversal] at h
   split_ifs at h with hs h2 h0 h1 hsq hodd <;>
@@ -475,10 +477,11 @@ theorem exists_reversal_eq_error_iff {allow : Bool} {c : List ℤ} {d : ℕ} :
 
 -- The cases that reverse: `c₀ = 0`, `c₁ ≠ 0` and the degree `D - 1` (cases 1 and 3), or `c₀ ≠ 0`,
 -- even `d` and the degree `d` (case 2).
-private theorem reversal_eq_ok_cases {allow : Bool} {c c' : List ℤ} {d d' : ℕ} (hd : d = degree c)
-    (h : reversal allow c d = .ok (c', d', true)) :
-    c.getD 0 0 = 0 ∧ c.getD 1 0 ≠ 0 ∧ d' + 1 = d + d % 2 ∨
-      c.getD 0 0 ≠ 0 ∧ d' = d ∧ d % 2 = 0 := by
+private theorem reversal_eq_ok_cases {allow : Bool} {c c' : List ℤ} {d' : ℕ}
+    (h : reversal allow c (degree c) = .ok (c', d', true)) :
+    c.getD 0 0 = 0 ∧ c.getD 1 0 ≠ 0 ∧ d' + 1 = degree c + degree c % 2 ∨
+      c.getD 0 0 ≠ 0 ∧ d' = degree c ∧ degree c % 2 = 0 := by
+  generalize hd : degree c = d at h ⊢
   simp only [reversal] at h
   split_ifs at h with hs h2 h0 h1 hsq hodd <;>
     simp only [Except.ok.injEq, Prod.mk.injEq, Bool.false_eq_true, and_false] at h <;>
@@ -491,13 +494,13 @@ private theorem reversal_eq_ok_cases {allow : Bool} {c c' : List ℤ} {d d' : �
 /-- The new leading coefficient of a reversal by `Ratpoints.Setup.reversal`, `c₁` when `c₀ = 0` and
 `c₀` otherwise, is not zero, so the degree that the check returns is that of its list, also without
 a reversal. -/
-theorem degree_eq_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' : ℕ}
-    (hd : d = degree c) (h : reversal allow c d = .ok (c', d', rev)) : degree c' = d' := by
+theorem degree_eq_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d' : ℕ}
+    (h : reversal allow c (degree c) = .ok (c', d', rev)) : degree c' = d' := by
   cases rev
   · obtain ⟨rfl, rfl⟩ := eq_of_reversal_eq_ok_false h
-    exact hd.symm
-  have hc' := getD_eq_of_reversal_eq_ok hd h
-  rcases reversal_eq_ok_cases hd h with ⟨h0, h1, hN⟩ | ⟨h0, rfl, h2⟩ <;>
+    rfl
+  have hc' := getD_eq_of_reversal_eq_ok h
+  rcases reversal_eq_ok_cases h with ⟨h0, h1, hN⟩ | ⟨h0, rfl, h2⟩ <;>
     refine degree_eq_of_getD_ne_zero ?_ fun i hi ↦ ?_ <;> rw [hc'] <;> grind
 
 /-- The reversal check `Ratpoints.Setup.reversal` keeps the degree at least `1`: it lowers only an
@@ -515,38 +518,37 @@ theorem degree_le_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' :
   split_ifs at h <;> simp only [Except.ok.injEq, Prod.mk.injEq] at h <;> lia
 
 -- The binary form of the reversed list has the even degree `d + d % 2` of that of `c`.
-private theorem add_mod_two_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ}
-    (hd : d = degree c) (h : reversal allow c d = .ok (c', d', true)) :
-    d' + d' % 2 = d + d % 2 := by
-  rcases reversal_eq_ok_cases hd h with ⟨-, -, hN⟩ | ⟨-, rfl, -⟩ <;> lia
+private theorem add_mod_two_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d' : ℕ}
+    (h : reversal allow c (degree c) = .ok (c', d', true)) :
+    d' + d' % 2 = degree c + degree c % 2 := by
+  rcases reversal_eq_ok_cases h with ⟨-, -, hN⟩ | ⟨-, rfl, -⟩ <;> lia
 
 /-- The binary form of the reversed list is that of `c` with `x` and `z` exchanged, since the list
 is the reflection of `c` in the even degree `d + d % 2` of the binary form. -/
-theorem binaryForm_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ}
-    (hd : d = degree c) (h : reversal allow c d = .ok (c', d', true)) (x z : ℤ) :
+theorem binaryForm_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d' : ℕ}
+    (h : reversal allow c (degree c) = .ok (c', d', true)) (x z : ℤ) :
     binaryForm c' x z = binaryForm c z x := by
-  refine binaryForm_eq_of_getD_eq_getD_sub (N := d + d % 2) (by rw [hd])
-    (by rw [degree_eq_of_reversal_eq_ok hd h, add_mod_two_eq_of_reversal_eq_ok hd h])
-    (fun i hi ↦ ?_) x z
-  rw [getD_eq_of_reversal_eq_ok hd h, ite_eq_left hi]
+  refine binaryForm_eq_of_getD_eq_getD_sub rfl
+    (by rw [degree_eq_of_reversal_eq_ok h, add_mod_two_eq_of_reversal_eq_ok h]) (fun i hi ↦ ?_) x z
+  rw [getD_eq_of_reversal_eq_ok h, ite_eq_left hi]
 
 /-- Once the test of the leading zeros has passed, the binary form `Ratpoints.binaryFormPoly c` is
 squarefree exactly when the polynomial of the list that the reversal check hands on is, whether it
 reverses or not: the reflection does not change whether the homogenization of degree `d + d % 2` is
 squarefree (`Polynomial.squarefree_homogenize_iff_squarefree_reflect`). -/
 theorem squarefree_binaryFormPoly_iff_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ}
-    {d d' : ℕ} (hd : d = degree c) (hc : c.length / 2 ≤ (d + 1) / 2)
-    (h : reversal allow c d = .ok (c', d', rev)) :
+    {d' : ℕ} (hc : c.length / 2 ≤ (degree c + 1) / 2)
+    (h : reversal allow c (degree c) = .ok (c', d', rev)) :
     Squarefree (binaryFormPoly c) ↔ Squarefree (poly c') := by
   have hl := degree_le_length_sub_one c
   cases rev
   · obtain ⟨rfl, rfl⟩ := eq_of_reversal_eq_ok_false h
     rw [squarefree_binaryFormPoly_iff, and_iff_left (by lia)]
-  have hr := poly_eq_reflect_of_getD (N := d + d % 2) (by lia) (getD_eq_of_reversal_eq_ok hd h)
-  rw [binaryFormPoly_eq_homogenize, show 2 * (c.length / 2) = d + d % 2 by lia, hr,
+  have hr := poly_eq_reflect_of_getD le_self_add (getD_eq_of_reversal_eq_ok h)
+  rw [binaryFormPoly_eq_homogenize, show 2 * (c.length / 2) = degree c + degree c % 2 by lia, hr,
     squarefree_homogenize_iff_squarefree_reflect (by rw [natDegree_poly]; lia)]
-  rw [← hr, natDegree_poly, degree_eq_of_reversal_eq_ok hd h]
-  lia [add_mod_two_eq_of_reversal_eq_ok hd h]
+  rw [← hr, natDegree_poly, degree_eq_of_reversal_eq_ok h]
+  lia [add_mod_two_eq_of_reversal_eq_ok h]
 
 /-- The refusal of the reversal check is sound: it refuses only when the square of the first
 variable divides `Ratpoints.binaryFormPoly c`
@@ -569,11 +571,11 @@ theorem Sturm.run_chain_eq_none_iff_of_reversal_eq_ok {allow rev : Bool} {c c' :
     (h2 : 2 ≤ c.length) (hc : c.length / 2 ≤ (degree c + 1) / 2)
     (h : Setup.reversal allow c (degree c) = .ok (c', d', rev)) :
     Id.run (chain c' d') = none ↔ ¬ Squarefree (binaryFormPoly c) := by
-  obtain rfl := Setup.degree_eq_of_reversal_eq_ok rfl h
+  obtain rfl := Setup.degree_eq_of_reversal_eq_ok h
   have h1 := Setup.one_le_of_reversal_eq_ok h (by lia)
   rw [run_chain_eq_none_iff h1 (getD_degree_ne_zero_of_pos h1),
     poly_take_of_degree_lt (Nat.lt_succ_self _),
-    Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok rfl hc h]
+    Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok hc h]
 
 /-! ### The map of a reversed search -/
 

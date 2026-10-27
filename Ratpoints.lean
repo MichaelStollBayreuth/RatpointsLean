@@ -12,6 +12,7 @@ public import Ratpoints.Mathlib.Analysis.Polynomial.Order
 public import Ratpoints.Mathlib.Analysis.Polynomial.Sturm
 public import Ratpoints.Mathlib.Basic.Sign.Defs
 public import Ratpoints.Mathlib.Data.Int.GCD
+public import Ratpoints.Mathlib.Data.Int.Sqrt
 public import Ratpoints.Mathlib.Data.List.Basic
 public import Ratpoints.Mathlib.Data.List.Chain
 public import Ratpoints.Mathlib.Data.List.Nodup
@@ -73,7 +74,6 @@ public import Ratpoints.Proof.CompositeRows
 public import Ratpoints.Proof.Containers
 public import Ratpoints.Proof.Correction
 public import Ratpoints.Proof.Delivery
-public import Ratpoints.Proof.DeliveryCount
 public import Ratpoints.Proof.Denominators
 public import Ratpoints.Proof.Divisors
 public import Ratpoints.Proof.Double

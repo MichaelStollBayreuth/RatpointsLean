@@ -9,6 +9,7 @@ public import Ratpoints.Model.BruteForce
 public import Ratpoints.Spec.Basic
 
 import Mathlib.Algebra.Order.Ring.Abs
+import Ratpoints.Mathlib.Data.Int.Sqrt
 import Ratpoints.Mathlib.Data.List.Basic
 import Ratpoints.Proof.Containers
 
@@ -81,17 +82,6 @@ theorem horner_scaledCoeffs_mul (c : List ℤ) (x z : ℤ) :
   · rw [show Ratpoints.degree c % 2 = 0 by lia, add_zero]
     ring
 
--- The test of `pointsAbove` says that `v` is a square.
-private theorem sqrt_mul_self_iff (v : ℤ) :
-    (0 ≤ v ∧ v.toNat.sqrt * v.toNat.sqrt = v.toNat) ↔ Int.sqrt v * Int.sqrt v = v := by
-  simp only [Int.sqrt]
-  constructor
-  · intro ⟨hv, h⟩
-    rw [← Nat.cast_mul, h, Int.toNat_of_nonneg hv]
-  · intro h
-    refine ⟨h ▸ mul_self_nonneg _, ?_⟩
-    lia
-
 private theorem sq_eq_iff (b v : ℤ) :
     b ^ 2 = v ↔ Int.sqrt v * Int.sqrt v = v ∧ (b = Int.sqrt v ∨ b = -Int.sqrt v) := by
   constructor
@@ -103,7 +93,7 @@ private theorem sq_eq_iff (b v : ℤ) :
 theorem mem_pointsAbove_iff {x z v : ℤ} {p : ℤ × ℤ × ℤ} :
     p ∈ pointsAbove x z v ↔ p.1 = x ∧ p.2.2 = z ∧ p.2.1 ^ 2 = v := by
   obtain ⟨a, b, e⟩ := p
-  rw [sq_eq_iff, ← sqrt_mul_self_iff]
+  rw [sq_eq_iff, Int.sqrt_mul_self_eq_iff]
   simp only [pointsAbove]
   split_ifs with h h0
   · simp only [List.mem_singleton, Prod.mk.injEq, Int.sqrt, h0]
@@ -165,11 +155,7 @@ theorem pointsAbove_eq_ite (x z v : ℤ) :
     pointsAbove x z v = if Int.sqrt v ^ 2 = v then
       (if Int.sqrt v = 0 then [(x, 0, z)] else [(x, Int.sqrt v, z), (x, -Int.sqrt v, z)])
     else [] := by
-  simp only [pointsAbove, Int.sqrt, Int.natCast_eq_zero]
-  congr 1
-  refine propext ⟨fun ⟨hv, h⟩ ↦ ?_, fun h ↦ ⟨h ▸ sq_nonneg _, ?_⟩⟩
-  · rw [sq, ← Nat.cast_mul, h, Int.toNat_of_nonneg hv]
-  · lia
+  simp only [pointsAbove, sq, ← Int.sqrt_mul_self_eq_iff, Int.sqrt, Int.natCast_eq_zero]
 
 theorem nodup_numerators (H : ℕ) : (numerators H).Nodup :=
   List.nodup_range.map fun _ _ h ↦ by lia

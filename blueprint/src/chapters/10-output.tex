@@ -262,7 +262,7 @@ protocol theorem (Theorem~\ref{thm:protocol}) carries them over to the search wi
 
 \begin{lemma}[The delivery of a list]\label{lem:deliver}
   \uses{def:deliver}
-  \lean{Ratpoints.Delivery.deliver_nil, Ratpoints.Delivery.deliver_cons, Ratpoints.Delivery.deliver_append, Ratpoints.Delivery.deliver_flatMap, Ratpoints.Delivery.deliver_cons_of_quit_eq_false, Ratpoints.Delivery.deliver_singleton_of_quit_eq_false, Ratpoints.Delivery.deliver_of_quit, Ratpoints.Delivery.deliver_append_of_quit, Ratpoints.Delivery.deliver_eq_of_prefix, Ratpoints.Delivery.deliver_flatMap_eq_of_prefix, Ratpoints.Delivery.ite_quit_eq_deliver_append, Ratpoints.Delivery.deliver_appendPoint, Ratpoints.Delivery.deliver_eq_foldl_call, Ratpoints.Delivery.exists_prefix_deliver_eq, Ratpoints.Delivery.total_deliver_eq_sum, Ratpoints.Delivery.exists_prefix_total_deliver_eq_sum}
+  \lean{Ratpoints.Delivery.deliver_nil, Ratpoints.Delivery.deliver_cons, Ratpoints.Delivery.deliver_append, Ratpoints.Delivery.deliver_cons_of_quit_eq_false, Ratpoints.Delivery.deliver_singleton_of_quit_eq_false, Ratpoints.Delivery.deliver_of_quit, Ratpoints.Delivery.deliver_append_of_quit, Ratpoints.Delivery.deliver_eq_of_prefix, Ratpoints.Delivery.deliver_flatMap_eq_of_prefix, Ratpoints.Delivery.ite_quit_eq_deliver_append, Ratpoints.Delivery.deliver_appendPoint, Ratpoints.Delivery.exists_prefix_deliver_eq}
   \leanok
   The delivery of the empty list leaves a delivery as it is, and that of $p :: L$ delivers $L$ after
   the call with $p$, when the flag is clear; the delivery of $L_1 \mathbin{+\!\!+} L_2$ delivers
@@ -595,7 +595,7 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
     lem:twoAdic_exit, lem:choice, lem:sift_eq_checkDen,
     lem:exactBounds, lem:numeratorRanges, def:regionSpec, def:inIntervals, lem:searchDensRange,
     lem:searchListRegion, def:sieveOptions}
-  \lean{Ratpoints.exists_isSoundTest_run_searchPoints, Ratpoints.exists_isSoundTest_run_searchPoints_appendPoint, Ratpoints.exists_isSoundTest_run_sieveRun, Ratpoints.run_searchPoints_eq_deliver, Ratpoints.run_searchPoints_flags, Ratpoints.searchList_of_noCheck_eq_false, Ratpoints.searchList_false, Ratpoints.isSoundTest_false_of_forall_not_isPoint, Ratpoints.pointsAtInfinityList_eq_nil_of_forall_not_isPoint, Ratpoints.Sieve.pointsAtInfinityList_eq_filter_map_pointsOfDen, Ratpoints.Sieve.pointsAtInfinityList_eq_nil_of_pointsOfDen_eq_nil, Ratpoints.BruteForce.pointsOfDen_zero_singleton_one, Ratpoints.BruteForce.pointsOfDen_ne_nil_of_mem}
+  \lean{Ratpoints.exists_isSoundTest_run_searchPoints, Ratpoints.exists_isSoundTest_run_searchPoints_appendPoint, Ratpoints.exists_isSoundTest_run_sieveRun, Ratpoints.run_searchPoints_eq_deliver, Ratpoints.searchList_of_noCheck_eq_false, Ratpoints.searchList_false, Ratpoints.isSoundTest_false_of_forall_not_isPoint, Ratpoints.pointsAtInfinityList_eq_nil_of_forall_not_isPoint, Ratpoints.Sieve.pointsAtInfinityList_eq_filter_map_pointsOfDen, Ratpoints.Sieve.pointsAtInfinityList_eq_nil_of_pointsOfDen_eq_nil, Ratpoints.BruteForce.pointsOfDen_zero_singleton_one, Ratpoints.BruteForce.pointsOfDen_ne_nil_of_mem}
   \leanok
   For normalized options of the sieve, $1 \le H < 2^{63}$, the range of the denominators from
   $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} \le H$ and well-formed search intervals
@@ -647,7 +647,7 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
 
 \begin{theorem}[The protocol of the delivery]\label{thm:protocol}
   \uses{def:findPointsWith, def:findPoints, lem:searchList, lem:deliver, lem:reversal_swap}
-  \lean{Ratpoints.map_findPointsWith_eq_map_findPoints, Ratpoints.findPointsWith_eq_ok_iff, Ratpoints.findPointsWith_eq_error_iff, Ratpoints.exists_findPoints_eq_error_iff, Ratpoints.map_findPointsWith_flags, Ratpoints.info_total_eq_of_findPointsWith_eq_ok, Ratpoints.exists_findPointsWith_eq_ok_of_findPoints_eq_ok}
+  \lean{Ratpoints.map_findPointsWith_eq_map_findPoints, Ratpoints.findPointsWith_eq_ok_iff, Ratpoints.findPointsWith_eq_error_iff, Ratpoints.exists_findPoints_eq_error_iff, Ratpoints.info_total_eq_of_findPointsWith_eq_ok, Ratpoints.exists_findPointsWith_eq_ok_of_findPoints_eq_ok}
   \leanok
   For every value of the options of the sieve, every option and every callback with its data,
   $\mathrm{findPointsWith}$ refuses exactly the inputs that $\mathrm{findPoints}$ refuses, with the

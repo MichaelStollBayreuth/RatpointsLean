@@ -33,8 +33,6 @@ brute-force reference restricted to these denominators.
 * `Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens`: the points at infinity and those of
   the denominators of the search from `bLow` to `bHigh` are a permutation of the brute-force
   reference restricted to these denominators.
-* `Ratpoints.searchDens_eq_range'`: the denominators of the search are `bLow, …, bHigh` when it does
-  not use the divisor shape.
 * `Ratpoints.searchDens_one_eq_searchDenominators`: the denominators of the search from `1` on are
   those of the specification of the order up to `bHigh`; `Ratpoints.searchDens_eq_filter`: from
   `bLow` on, they are those from `1` on that are at least `bLow`.
@@ -67,16 +65,6 @@ def searchDens (c : List ℤ) (d bLow bHigh : ℕ) : List ℕ :=
   with
   | some (_, divisors) => squares1Dens divisors bLow bHigh
   | none => List.range' bLow (bHigh + 1 - bLow)
-
-/-- The denominators of the search are `bLow, …, bHigh` when it does not use the divisor shape: for
-even degree, for `|c_d| = 1`, and when the divisor set-up fails. -/
-theorem searchDens_eq_range' {c : List ℤ} {d bLow bHigh : ℕ}
-    (h : d % 2 = 0 ∨ (c.getD d 0).natAbs = 1 ∨ Id.run (Setup.setupUs1 c d bHigh) = none) :
-    searchDens c d bLow bHigh = List.range' bLow (bHigh + 1 - bLow) := by
-  rcases h with h | h | h
-  · simp [searchDens, h]
-  · simp only [searchDens, h, bne_self_eq_false, Bool.and_false, Bool.false_eq_true, ↓reduceIte]
-  · simp [searchDens, h]
 
 -- The denominators of the search are `bLow, …, bHigh` or, for odd degree, those of the divisor
 -- shape.

@@ -22,21 +22,20 @@ prefix up to and including the first point whose call sets the flag.
 ## Main statements
 
 * `Ratpoints.Delivery.deliver_nil`, `Ratpoints.Delivery.deliver_cons`,
-  `Ratpoints.Delivery.deliver_append`, `Ratpoints.Delivery.deliver_flatMap`: the unfolding.
+  `Ratpoints.Delivery.deliver_append`: the unfolding.
 * `Ratpoints.Delivery.deliver_of_quit`, `Ratpoints.Delivery.deliver_append_of_quit`,
   `Ratpoints.Delivery.deliver_eq_of_prefix`, `Ratpoints.Delivery.ite_quit_eq_deliver_append`:
   nothing changes once the flag is set.
 * `Ratpoints.Delivery.deliver_appendPoint`: the appending callback.
-* `Ratpoints.Delivery.exists_prefix_deliver_eq`, `Ratpoints.Delivery.deliver_eq_foldl_call`: the
-  calls made are those of a prefix of the list, up to and including the first call that sets the
-  flag, and on such a prefix every point gets its call.
+* `Ratpoints.Delivery.exists_prefix_deliver_eq`: the calls made are those of a prefix of the list,
+  before each point of which the flag is clear, up to and including the first call that sets the
+  flag.
 
 ## Implementation notes
 
 The file uses Lean core only, so that the contracts of the sieve in the files without Mathlib
 (`Ratpoints.Proof.Stages`, `Ratpoints.Proof.Scan`, `Ratpoints.Proof.SiftBits`,
-`Ratpoints.Proof.Sift`) can state what they deliver with it; the count as the sum of the values that
-the calls return is in `Ratpoints.Proof.DeliveryCount`.
+`Ratpoints.Proof.Sift`) can state what they deliver with it.
 -/
 
 @[expose] public section
@@ -60,11 +59,6 @@ theorem deliver_append (r : Delivery σ) (L₁ L₂ : List (Int × Int × Int)) 
     r.deliver process (L₁ ++ L₂) = (r.deliver process L₁).deliver process L₂ :=
   List.foldl_append
 
-theorem deliver_flatMap {α : Type} (r : Delivery σ) (l : List α)
-    (f : α → List (Int × Int × Int)) :
-    r.deliver process (l.flatMap f) = l.foldl (fun r a ↦ r.deliver process (f a)) r :=
-  List.foldl_flatMap
-
 theorem deliver_cons_of_quit_eq_false {r : Delivery σ} (h : r.quit = false)
     (p : Int × Int × Int) (L : List (Int × Int × Int)) :
     r.deliver process (p :: L) = (r.call process p.1 p.2.2 p.2.1).deliver process L := by
@@ -85,6 +79,8 @@ theorem deliver_of_quit {r : Delivery σ} (h : r.quit = true) (L : List (Int × 
   | nil => rfl
   | cons p L ih => simp [deliver_cons, h, ih]
 
+variable {process}
+
 /-- Once a call has set the flag, the points that follow are passed over. -/
 theorem deliver_append_of_quit {r : Delivery σ} {L₁ : List (Int × Int × Int)}
     (h : (r.deliver process L₁).quit = true) (L₂ : List (Int × Int × Int)) :
@@ -96,17 +92,17 @@ flag is set: the points that follow are passed over. -/
 theorem deliver_eq_of_prefix {r : Delivery σ} {M L : List (Int × Int × Int)} (h : M <+: L)
     (hq : (r.deliver process M).quit = true) :
     r.deliver process L = r.deliver process M :=
-  h.elim fun t ht ↦ ht ▸ deliver_append_of_quit process hq t
+  h.elim fun t ht ↦ ht ▸ deliver_append_of_quit hq t
 
 /-- `Ratpoints.Delivery.deliver_eq_of_prefix` for the concatenations of the lists `f a` of the
 elements `a` of a prefix `l₁` of `l₂`. -/
 theorem deliver_flatMap_eq_of_prefix {α : Type} {r : Delivery σ} {l₁ l₂ : List α}
-    (h : l₁ <+: l₂) (f : α → List (Int × Int × Int))
+    {f : α → List (Int × Int × Int)} (h : l₁ <+: l₂)
     (hq : (r.deliver process (l₁.flatMap f)).quit = true) :
     r.deliver process (l₂.flatMap f) = r.deliver process (l₁.flatMap f) := by
   obtain ⟨t, rfl⟩ := h
   rw [List.flatMap_append]
-  exact deliver_append_of_quit process hq _
+  exact deliver_append_of_quit hq _
 
 /-- The delivery `r₁` of the points of `L₁`, followed, unless the callback has stopped the search,
 by a delivery `r₂` of the points of `L₂` from `r₁`, is the delivery of the points of `L₁ ++ L₂`. -/
@@ -117,6 +113,8 @@ theorem ite_quit_eq_deliver_append {r r₁ r₂ : Delivery σ} {L₁ L₂ : List
   cases hq : r₁.quit
   · simp [h₂ hq]
   · simp [deliver_of_quit process hq]
+
+variable (process)
 
 /-! ### The appending callback -/
 
@@ -132,24 +130,12 @@ theorem deliver_appendPoint (arr : Array (Int × Int × Int)) (n : Int)
     simp only [call, appendPoint, ih, List.length_cons, Delivery.mk.injEq, and_true]
     exact ⟨by simp, by lia⟩
 
-/-! ### The calls made and the count -/
-
-/-- On a list before each of whose points the flag is clear, every point gets its call. -/
-theorem deliver_eq_foldl_call {r : Delivery σ} {M : List (Int × Int × Int)}
-    (h : ∀ m < M.length, (r.deliver process (M.take m)).quit = false) :
-    r.deliver process M = M.foldl (fun r p ↦ r.call process p.1 p.2.2 p.2.1) r := by
-  induction M generalizing r with
-  | nil => rfl
-  | cons p M ih =>
-    have h0 : r.quit = false := h 0 (by simp)
-    rw [deliver_cons_of_quit_eq_false process h0, List.foldl_cons]
-    refine ih fun m hm ↦ ?_
-    simpa [deliver_cons_of_quit_eq_false process h0] using h (m + 1) (by simpa using hm)
+/-! ### The calls made -/
 
 /-- The calls that the delivery of `L` makes are those of the points of a prefix `M` of `L`: the
-flag is clear before each point of `M`, so that each gets its call
-(`Ratpoints.Delivery.deliver_eq_foldl_call`), and unless `M` is all of `L`, the flag is set after
-them, by the call of the last point of `M`, or at the start when `M` is empty. -/
+flag is clear before each point of `M`, so that each gets its call, and unless `M` is all of `L`,
+the flag is set after them, by the call of the last point of `M`, or at the start when `M` is
+empty. -/
 theorem exists_prefix_deliver_eq (r : Delivery σ) (L : List (Int × Int × Int)) :
     ∃ M, M <+: L ∧ r.deliver process L = r.deliver process M ∧
       (∀ m < M.length, (r.deliver process (M.take m)).quit = false) ∧
