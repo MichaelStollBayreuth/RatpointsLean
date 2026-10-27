@@ -6,8 +6,8 @@ form of even degree with integer coefficients, by sieving; with proofs that the 
 specification for every value of the options of the sieve, and a record, checked in CI, of which
 Lean definition models which lines of C.
 
-The C code is that of `ratpoints` 3.1.1. The project follows the releases of `ratpoints`, and a new
-optimization of the C code comes, as far as possible, with its soundness proof here.
+The C code is that of `ratpoints` 3.1.1. The project follows the releases of `ratpoints`, and future
+changes of the C code come, as far as possible, with their soundness proofs here.
 
 ## What is verified
 
@@ -25,7 +25,7 @@ binary form of `c` of even degree, normalized as `ratpoints` prints them (`gcd(x
 `y`. The specification also gives the order in which `ratpoints` finds the points; the search region
 that the caller may give, made of search intervals whose ends are doubles, read by their values, and
 a range of the denominators; and Sturm's theorem, as a proposition that the theorems on the Sturm
-step assume, since Mathlib does not have it.
+step assume, since Mathlib does not have it (yet).
 
 For every coefficient list, height bound, options of the search and options of the sieve, with no
 hypothesis on the latter (from them and from the curve the search chooses its moduli, as `ratpoints`
@@ -58,6 +58,8 @@ sifted apart and delivered in their order, give what the run delivers
 model leaves out, sift the blocks apart and deliver their points in the order of the blocks, so the
 model, which sifts the blocks in turn on one thread, gives the output of every number of threads,
 provided that the pool of threads of `ratpoints` behaves as its code says.
+
+## What one has to trust
 
 What one has to trust is the specification, which the challenge of Comparator restates verbatim,
 with the definitions of Lean core and Mathlib that it is written in;
@@ -154,6 +156,15 @@ as `ratpoints` reads them, the ends as the numbers they are and the doubles outw
 gives the output of every number of threads if the pool of `ratpoints` behaves as its code says. It
 refuses a binary form that is not squarefree with error 8 as `ratpoints` does with the same options,
 and prints the points of the search region of its command line in the order of `ratpoints`.
+
+At large height bounds, `ratpoints-lean` runs about 100 times slower than `ratpoints`.
+This is mostly due to overhead from not using the CPU's vector bit-wise AND operations and from
+memory inefficiencies in Lean's array handling. So, while `ratpoints-lean` can be used as a
+certified program for computing rational points on hyperelliptic curves, it is not really designed
+for that purpose (designing a reasonably fast Lean implementation is a different project).
+Rather, the purpose of this project is to get as close as reasonably possible to certifying
+the correctness of the original `ratpoints` code, thus providing efficiency and a good level
+of trust at the same time.
 
 ## Licence
 
