@@ -124,25 +124,25 @@ reference, mapped back, is a permutation of that of `c`
 the reversal check hands on the polynomial of `Ratpoints.searchedPoly`
 (`Ratpoints.searchedPoly_eq_of_reversal_eq_ok`), the denominators of the search are those of
 `Ratpoints.searchDenominators` up to the largest denominator
-(`Ratpoints.searchDens_eq_filter_searchDenominators`), and the reference finds over a denominator,
-and over the candidate `(1, 0)`, the points of `Ratpoints.pointsWithDen`
-(`Ratpoints.pointsOfDen_eq_pointsWithDen`, `Ratpoints.pointsOfDen_zero_eq_pointsWithDen`). Under
-`RATPOINTS_NO_CHECK` the search delivers, for the same sound test of the sieve, the survivors of the
-numerators prime to the denominators of the search in its search region
-(`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`, `Ratpoints.mem_region_of_mem_searchList`,
-`Ratpoints.searchRegion_subset`, distinct by `Ratpoints.nodup_searchList_of_noCheck`), of which the
-points with `y ≥ 0` that the search delivers without it are a sublist
-(`Ratpoints.map_searchList_sublist`). Of the refusals, the heights that are not `long`s are those of
-`2 ^ 63` or more (`Ratpoints.fitsLong_natCast`), and the test of the leading zeros and that of the
-reversal check stand for `Z ^ 2 ∣ Φ_c` and `X ^ 2 ∣ Φ_c`
+(`Ratpoints.searchDens_one_eq_searchDenominators`, `Ratpoints.searchDens_eq_filter`), and the
+reference finds over a denominator, and over the candidate `(1, 0)`, the points of
+`Ratpoints.pointsWithDen` (`Ratpoints.pointsOfDen_eq_pointsWithDen`,
+`Ratpoints.pointsOfDen_zero_eq_pointsWithDen`). Under `RATPOINTS_NO_CHECK` the search delivers, for
+the same sound test of the sieve, the survivors of the numerators prime to the denominators of the
+search in its search region (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`,
+`Ratpoints.mem_region_of_mem_searchList`, `Ratpoints.searchRegion_subset`, distinct by
+`Ratpoints.nodup_searchList_of_noCheck`), of which the points with `y ≥ 0` that the search delivers
+without it are a sublist (`Ratpoints.map_searchList_sublist`). Of the refusals, the heights that are
+not `long`s are those of `2 ^ 63` or more (`Ratpoints.fitsLong_natCast`), and the test of the
+leading zeros and that of the reversal check stand for `Z ^ 2 ∣ Φ_c` and `X ^ 2 ∣ Φ_c`
 (`Ratpoints.not_squarefree_binaryFormPoly_of_lt`,
 `Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error`), the refusal of the search
 intervals is the negation of `Ratpoints.IntervalsWF` (`Ratpoints.run_searchIntervals_eq_none_iff`),
 and after them the Sturm step refuses exactly when the remainder chain of the polynomial searched is
 none (`Ratpoints.run_sturmRegion_eq_error_iff`), that is when `Φ_c` is not squarefree
-(`Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok`). Assuming Sturm's theorem when the
-Sturm step is on, the search region after it holds, of the numerators of the points of a
-denominator, exactly those in the caller's search intervals (`Ratpoints.searchRegion_covers`,
+(`Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok`). Assuming Sturm's theorem when the Sturm
+step is on, the search region after it holds, of the numerators of the points of a denominator,
+exactly those in the caller's search intervals (`Ratpoints.searchRegion_covers`,
 `Ratpoints.searchRegion_subset`, `Ratpoints.elim_searchRegion_pointsOfDen_filter`), and when it
 returns before the search the polynomial searched has no points at infinity
 (`Ratpoints.elim_searchRegion_pointsOfDen_zero`); the filter by the caller's intervals and the
@@ -150,8 +150,8 @@ denominators from the normalized `bLow` on is the filter by the search region of
 (`Ratpoints.inRegion_ite_swapPoint_iff`, `Ratpoints.map_append_flatMap_filter_eq_filter_inRegion`),
 which holds the points at infinity and those of the denominators up to the largest of the search
 (`Ratpoints.eq_zero_or_le_toNat_bHigh_normalize_of_inRegion`,
-`Ratpoints.perm_map_append_flatMap_searchDens`). The search without the Sturm step refuses no
-other inputs, so that it returns the same list (`Ratpoints.findPoints_sturm_neg_eq_ok`).
+`Ratpoints.perm_map_append_flatMap_searchDens`). The search without the Sturm step refuses no other
+inputs, so that it returns the same list (`Ratpoints.findPoints_sturm_neg_eq_ok`).
 -/
 @[expose] public section
 
@@ -717,8 +717,8 @@ theorem exists_eq_filter_inRegion_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {
     rintro rfl
     exact isFullBox_of_reversal_normalize_eq_ok hr
   refine ⟨c', rev, hr, hH, ?_⟩
-  rw [searchDens_eq_filter c' (o.one_le_toNat_bLow_normalize H)
-    (o.one_le_toNat_bHigh_normalize hH), map_append_flatMap_filter_eq_filter_inRegion hb hH
+  rw [searchDens_eq_filter c' _ (o.one_le_toNat_bLow_normalize H),
+    map_append_flatMap_filter_eq_filter_inRegion hb hH
       fun b hb' ↦ le_and_le_of_mem_searchDens le_rfl hb', List.filter_filter]
 
 /-- Assuming Sturm's theorem when the Sturm step is on, without the options of the output, when the
@@ -841,7 +841,7 @@ theorem nodup_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions} {o
     · refine ((perm_filter_bruteForce_append_flatMap_searchDens c' hbL hbH
         (o.toNat_bHigh_normalize_le H)).map _).nodup_iff.mpr (.sublist (.map _ List.filter_sublist)
           (nodup_map_bruteForce_of_reversal_eq_ok hr H))
-  · exact nodup_searchList_of_noCheck hH hbL hbH (o.toNat_bHigh_normalize_le H) D S rfl
+  · exact nodup_searchList_of_noCheck hH hbL (o.toNat_bHigh_normalize_le H) D S rfl
 
 /-- Assuming Sturm's theorem when the Sturm step is on, without the options of the output, the set
 of the elements of the list that `Ratpoints.findPoints` returns is the set of the points in the

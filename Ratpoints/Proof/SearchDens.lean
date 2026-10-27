@@ -32,13 +32,12 @@ brute-force reference restricted to these denominators.
 
 * `Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens`: the points at infinity and those of
   the denominators of the search from `bLow` to `bHigh` are a permutation of the brute-force
-  reference restricted to these denominators; `Ratpoints.append_flatMap_searchDens_eq_bruteForce`:
-  they are the reference when the denominators of the search are `1, …, H`
-  (`Ratpoints.searchDens_eq_range'`).
-* `Ratpoints.searchDens_eq_filter_searchDenominators`: the denominators of the search are those of
-  the specification of the order up to `bHigh`, from `bLow` on;
-  `Ratpoints.searchDens_one_eq_searchDenominators`: from `1` on, they are those of the
-  specification.
+  reference restricted to these denominators.
+* `Ratpoints.searchDens_eq_range'`: the denominators of the search are `bLow, …, bHigh` when it does
+  not use the divisor shape.
+* `Ratpoints.searchDens_one_eq_searchDenominators`: the denominators of the search from `1` on are
+  those of the specification of the order up to `bHigh`; `Ratpoints.searchDens_eq_filter`: from
+  `bLow` on, they are those from `1` on that are at least `bLow`.
 
 ## Proof
 
@@ -107,7 +106,7 @@ private theorem nodup_squares1Dens_of_setupUs1_eq_some {c : List ℤ} {bHigh : �
     (hs : Id.run (Setup.setupUs1 c (degree c) bHigh) = some (info, divisors)) (bLow : ℕ) :
     (squares1Dens divisors bLow bHigh).Nodup :=
   have hc : c.getD (degree c) 0 ≠ 0 := getD_degree_ne_zero_of_pos (by lia)
-  nodup_squares1Dens (Setup.nodup_of_setupUs1_eq_some hs hc)
+  nodup_squares1Dens (Setup.nodup_of_setupUs1_eq_some hs hc hb)
     (fun _ hs' ↦ ((Setup.mem_iff_of_setupUs1_eq_some hs hc hb).mp hs').1) bLow bHigh
 
 -- The divisor shape over `bLow, …, bHigh` lists denominators of `bLow, …, bHigh`.
@@ -125,43 +124,18 @@ theorem le_and_le_of_mem_searchDens {c : List ℤ} {bLow bHigh b : ℕ} (hbLow :
     lia [List.mem_range'_1.mp hb]
   · exact le_and_le_of_mem_squares1Dens hbLow (h ▸ hb)
 
-/-- The denominators of the search are distinct: `bLow, …, bHigh`, or for odd degree the products
-of the distinct squarefree divisors of the set-up with squares
-(`Ratpoints.Sieve.nodup_squares1Dens`). -/
-theorem nodup_searchDens (c : List ℤ) {bLow bHigh : ℕ} (hb : 1 ≤ bHigh) :
+/-- The denominators of the search from `bLow ≥ 1` are distinct: `bLow, …, bHigh`, or for odd degree
+the products of the distinct squarefree divisors of the set-up with squares
+(`Ratpoints.Sieve.nodup_squares1Dens`), and none for `bHigh = 0`. -/
+theorem nodup_searchDens (c : List ℤ) {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow) :
     (searchDens c (degree c) bLow bHigh).Nodup := by
+  rcases Nat.eq_zero_or_pos bHigh with rfl | hb
+  · have h : searchDens c (degree c) bLow 0 = [] := List.eq_nil_iff_forall_not_mem.mpr fun b hb ↦
+      absurd (le_and_le_of_mem_searchDens hbLow hb) (by lia)
+    exact h ▸ List.nodup_nil
   obtain h | ⟨info, divisors, hd, hs, h⟩ := searchDens_eq_range'_or c (degree c) bLow bHigh
   · exact h ▸ List.nodup_range'
   · exact h ▸ nodup_squares1Dens_of_setupUs1_eq_some hb hd hs bLow
-
-/-- The denominators of the search of the polynomial with the coefficient list `c` of its degree
-from `bLow ≥ 1` to `bHigh ≥ 1` are those of the specification of the order up to `bHigh`
-(`Ratpoints.searchDenominators`) from `bLow` on: the divisor set-up succeeds exactly when the
-specification takes the divisor shape, with the divisors of `Ratpoints.binaryDivisors`
-(`Ratpoints.Setup.map_snd_run_setupUs1`). -/
-theorem searchDens_eq_filter_searchDenominators (c : List ℤ) {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow)
-    (hb : 1 ≤ bHigh) :
-    searchDens c (degree c) bLow bHigh =
-      (searchDenominators maxDivisors c bHigh).filter (bLow ≤ ·) := by
-  rw [searchDens, searchDenominators]
-  by_cases hd : degree c % 2 = 1 ∧ (c.getD (degree c) 0).natAbs ≠ 1
-  · have hs := Setup.map_snd_run_setupUs1 (getD_degree_ne_zero_of_pos (c := c) (by lia)) hb
-    rw [ite_eq_left (show (degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1) = true by
-      simpa using hd)]
-    simp only [hd.1, hd.2, true_and, ne_eq, not_false_eq_true]
-    rcases h : Id.run (Setup.setupUs1 c (degree c) bHigh) with _ | ⟨info, divs⟩ <;> rw [h] at hs <;>
-      split_ifs at hs ⊢
-    · simp at hs
-    · exact List.range'_eq_filter_range' hbLow bHigh
-    · simp only [Option.map_some, Option.some.injEq] at hs
-      subst hs
-      have hpos (e : ℕ) (he : e ∈ binaryDivisors (c.getD (degree c) 0).natAbs bHigh) : 0 < e :=
-        pos_of_mem_binaryDivisors he
-      exact (squares1Dens_eq_filter hpos hbLow bHigh).trans
-        (by rw [squares1Dens_one_eq_filter hpos])
-    · simp at hs
-  · rw [ite_eq_right (by simpa using hd), ite_eq_right (by tauto)]
-    exact List.range'_eq_filter_range' hbLow bHigh
 
 /-- The divisor shape visits each denominator of a point once, so that it gives a permutation of
 the points of the denominators `bLow, …, bHigh`: the denominator of every point is `s k ^ 2` with
@@ -204,28 +178,38 @@ theorem perm_filter_bruteForce_append_flatMap_searchDens (c : List ℤ) {H bLow 
   · rw [h]
     exact perm_flatMap_squares1Dens hbLow hb hd hs
 
-theorem append_flatMap_searchDens_eq_bruteForce {c : List ℤ} {H : ℕ} (hH : 1 ≤ H)
-    (hs : searchDens c (degree c) 1 H = List.range' 1 H) :
-    pointsOfDen c (degree c) 0 [1] ++ (searchDens c (degree c) 1 H).flatMap
-      (fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)) = bruteForce c H := by
-  rw [hs, bruteForce_eq_append c hH]
-
 /-- The denominators of the search from `bLow ≥ 1` on are those from `1` on that are at least
-`bLow`. -/
-theorem searchDens_eq_filter (c : List ℤ) {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow) (hb : 1 ≤ bHigh) :
-    searchDens c (degree c) bLow bHigh = (searchDens c (degree c) 1 bHigh).filter (bLow ≤ ·) := by
-  rw [searchDens_eq_filter_searchDenominators c hbLow hb,
-    searchDens_eq_filter_searchDenominators c le_rfl hb, List.filter_filter]
-  exact List.filter_congr fun b hb' ↦ by
-    simp [(le_and_le_of_mem_searchDenominators hb').1]
+`bLow`, for each shape by its listing (`Ratpoints.Sieve.squares1Dens_eq_filter`). -/
+theorem searchDens_eq_filter (c : List ℤ) (d : ℕ) {bLow : ℕ} (hbLow : 1 ≤ bLow) (bHigh : ℕ) :
+    searchDens c d bLow bHigh = (searchDens c d 1 bHigh).filter (bLow ≤ ·) := by
+  rw [searchDens, searchDens]
+  split
+  · exact squares1Dens_eq_filter hbLow bHigh
+  · exact List.range'_eq_filter_range' hbLow bHigh
 
-/-- The denominators of the search from `1` to `bHigh ≥ 1` are those of the specification of the
-order (`Ratpoints.searchDenominators`). -/
+/-- The denominators of the search of the polynomial with the coefficient list `c` of its degree
+from `1` to `bHigh ≥ 1` are those of the specification of the order
+(`Ratpoints.searchDenominators`): the divisor set-up succeeds exactly when the specification takes
+the divisor shape, with the divisors of `Ratpoints.binaryDivisors`
+(`Ratpoints.Setup.map_snd_run_setupUs1`). -/
 theorem searchDens_one_eq_searchDenominators (c : List ℤ) {bHigh : ℕ} (hb : 1 ≤ bHigh) :
     searchDens c (degree c) 1 bHigh = searchDenominators maxDivisors c bHigh := by
-  rw [searchDens_eq_filter_searchDenominators c le_rfl hb]
-  exact List.filter_eq_self.mpr fun b hb' ↦ by
-    simpa using (le_and_le_of_mem_searchDenominators hb').1
+  rw [searchDens, searchDenominators]
+  by_cases hd : degree c % 2 = 1 ∧ (c.getD (degree c) 0).natAbs ≠ 1
+  · have hs := Setup.map_snd_run_setupUs1 (getD_degree_ne_zero_of_pos (c := c) (by lia)) hb
+    rw [ite_eq_left (show (degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1) = true by
+      simpa using hd)]
+    simp only [hd.1, hd.2, true_and, ne_eq, not_false_eq_true]
+    rcases h : Id.run (Setup.setupUs1 c (degree c) bHigh) with _ | ⟨info, divs⟩ <;> rw [h] at hs <;>
+      split_ifs at hs ⊢
+    · simp at hs
+    · simp
+    · simp only [Option.map_some, Option.some.injEq] at hs
+      subst hs
+      exact squares1Dens_one_eq_filter (fun _ ↦ pos_of_mem_binaryDivisors) bHigh
+    · simp at hs
+  · rw [ite_eq_right (by simpa using hd), ite_eq_right (by tauto)]
+    simp
 
 end Ratpoints
 

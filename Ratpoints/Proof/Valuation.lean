@@ -23,18 +23,18 @@ The loop of `Ratpoints.Setup.valuation`, repeated division with remainder, gives
 
 * `Ratpoints.Setup.valuation_spec`: for `p > 1` the loop ends with `|n| = p ^ v m` and
   `m mod p = r ≠ 0`, and with `(Ratpoints.veryBig, 0)` for `n = 0`;
-  `Ratpoints.Setup.exists_eq_run_valuation` states this for `n ≠ 0` without the program logic, and
-  `Ratpoints.Setup.exists_eq_of_eq_run_valuation` for a natural number `w ≠ 0`, as `w = p ^ v m`
-  with `p ∤ m`.
-* `Ratpoints.Setup.fst_run_valuation`, `Ratpoints.Setup.snd_run_valuation`: for `p > 1` and
-  `n ≠ 0`, the valuation is `padicValNat p |n|` and the remainder the unit part
-  `Nat.divMaxPow |n| p` modulo `p`.
+  `Ratpoints.Setup.exists_eq_run_valuation` states this for `n ≠ 0` without the program logic,
+  with `p ∤ m`, and `Ratpoints.Setup.exists_eq_of_eq_run_valuation` for a natural number `w ≠ 0`,
+  as `w = p ^ v m` with `p ∤ m`.
+* `Ratpoints.Setup.fst_run_valuation`: for `p > 1` and `n ≠ 0`, the valuation is
+  `padicValNat p |n|`.
 
 ## Implementation notes
 
 The contract is proved with `vcgen`, the program logic of Lean core, with a loop invariant that is
 a named definition, in a file with Mathlib, since the valuation of the C code is Mathlib's
-`padicValNat`.
+`padicValNat`. `Ratpoints.Setup.valuation_value` gives the result as its own value, for the
+contracts of the loops that bind it and read it through the plain statements.
 -/
 
 @[expose] public section
@@ -101,32 +101,33 @@ theorem valuation_spec (n : ℤ) (p : ℕ) :
     | exact ValuationInvariant.add_one ‹_› ‹_› ‹_› ‹_›
     | exact ValuationInvariant.exit ‹_› ‹_›
 
+/-- The result of `Ratpoints.Setup.valuation` as its own value, for the contracts of the loops that
+bind it and read it through `Ratpoints.Setup.exists_eq_run_valuation` and its corollaries. -/
+theorem valuation_value (n : ℤ) (p : ℕ) :
+    ⦃ True ⦄ valuation n p ⦃ fun r ↦ r = Id.run (valuation n p) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
+
 /-- `Ratpoints.Setup.valuation_spec` for `n ≠ 0` as a plain statement, which the proofs use without
-the program logic. -/
+the program logic, with `p ∤ m` for the remainder `≠ 0`. -/
 theorem exists_eq_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : 1 < p) :
     ∃ m, n.natAbs = p ^ (Id.run (valuation n p)).1 * m ∧ m % p = (Id.run (valuation n p)).2 ∧
-      (Id.run (valuation n p)).2 ≠ 0 :=
-  ((Std.WP.Id.of_run_eq_wp rfl _ ((valuation_spec n p).le_wp hp)).resolve_left fun h ↦ hn h.1).2
+      ¬p ∣ m := by
+  obtain ⟨m, hm, hmr, hr⟩ :=
+    ((Std.WP.Id.of_run_eq_wp rfl _ ((valuation_spec n p).le_wp hp)).resolve_left fun h ↦ hn h.1).2
+  exact ⟨m, hm, hmr, fun h ↦ hr (hmr ▸ Nat.mod_eq_zero_of_dvd h)⟩
 
 theorem fst_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : 1 < p) :
     (Id.run (valuation n p)).1 = padicValNat p n.natAbs := by
-  obtain ⟨m, hm, hmr, hr⟩ := exists_eq_run_valuation hn hp
-  exact (padicValNat_eq_of_eq_pow_mul_of_not_dvd (Nat.ne_zero_of_lt hp) hm
-    fun h ↦ hr (hmr ▸ Nat.mod_eq_zero_of_dvd h)).symm
-
-theorem snd_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : 1 < p) :
-    (Id.run (valuation n p)).2 = n.natAbs.divMaxPow p % p := by
-  obtain ⟨m, hm, hmr, hr⟩ := exists_eq_run_valuation hn hp
-  rw [← Nat.snd_maxPowDvdDiv, Nat.maxPowDvdDiv_of_pow_mul_eq (Int.natAbs_ne_zero.mpr hn) hm.symm
-    fun h ↦ hr (hmr ▸ Nat.mod_eq_zero_of_dvd h), hmr]
+  obtain ⟨m, hm, -, hpm⟩ := exists_eq_run_valuation hn hp
+  exact (padicValNat_eq_of_eq_pow_mul_of_not_dvd (Nat.ne_zero_of_lt hp) hm hpm).symm
 
 /-- The valuation of a natural number `w ≠ 0` at `p > 1` by `Ratpoints.Setup.valuation`, in the form
 in which a loop that binds its result reads it: `w = p ^ v m` with `p ∤ m`. -/
 theorem exists_eq_of_eq_run_valuation {w v r p : ℕ} (hw : w ≠ 0) (hp : 1 < p)
     (hv : (v, r) = Id.run (valuation (w : ℤ) p)) : ∃ m, w = p ^ v * m ∧ ¬p ∣ m := by
-  obtain ⟨m, hm, hmr, hr⟩ := exists_eq_run_valuation (Int.natCast_ne_zero.mpr hw) hp
-  simp only [← hv, Int.natAbs_natCast] at hm hmr hr
-  exact ⟨m, hm, fun h ↦ hr (hmr ▸ Nat.mod_eq_zero_of_dvd h)⟩
+  obtain ⟨m, hm, -, hpm⟩ := exists_eq_run_valuation (Int.natCast_ne_zero.mpr hw) hp
+  simp only [← hv, Int.natAbs_natCast] at hm
+  exact ⟨m, hm, hpm⟩
 
 end Setup
 

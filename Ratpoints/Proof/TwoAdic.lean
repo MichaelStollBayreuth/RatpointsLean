@@ -27,13 +27,14 @@ The words of the classes of the denominators modulo 64 (`Ratpoints.Sieve.twoAdic
 of every point through, and the word of the classes that admit a numerator
 (`Ratpoints.Sieve.denBits`) has the bit of every class whose word is not `0`. The mask of the
 squares modulo 64 is checked by `decide`; Horner's rule on words is exact modulo `2 ^ 64` and so
-modulo 64, so that the word of `f` (`Ratpoints.Sieve.fsq`) has bit `k` set exactly when `f(k)` is a
-square modulo 64, and the word of the reversed polynomial (`Ratpoints.Sieve.gsq`) bit `t` for the
-even `t` at which it takes a square value; the loops of `Ratpoints.Sieve.twoAdic` scatter these bits
-into the words of the classes. A point `(a, y, b)` with odd `b` has `a ≡ k b (mod 64)` for a `k`
-with `f(k)` a square, since `F(a, b) = b ^ D f(k)` modulo 64, and one with even `b` an odd `a` and
-`b ≡ t a (mod 64)` for an even `t` at which the reversed polynomial takes a square value; so when
-no class admits a numerator, the curve has no points at all, not even at infinity
+modulo 64 (`UInt64.natCast_toNat_foldr`, `UInt64.natCast_toNat_foldl`), so that the word of `f`
+(`Ratpoints.Sieve.fsq`) has bit `k` set exactly when `f(k)` is a square modulo 64, and the word of
+the reversed polynomial (`Ratpoints.Sieve.gsq`) bit `t` for the even `t` at which it takes a square
+value; the loops of `Ratpoints.Sieve.twoAdic` scatter these bits into the words of the classes. A
+point `(a, y, b)` with odd `b` has `a ≡ k b (mod 64)` for a `k` with `f(k)` a square, since
+`F(a, b) = b ^ D f(k)` modulo 64, and one with even `b` an odd `a` and `b ≡ t a (mod 64)` for an
+even `t` at which the reversed polynomial takes a square value; so when no class admits a numerator,
+the curve has no points at all, not even at infinity
 (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`).
 
 ## Main definitions
@@ -98,28 +99,30 @@ theorem squares64_test_iff (s : UInt64) :
   rw [h, squares64_test_iff_of_lt (Nat.mod_lt _ (by decide)), ZMod.natCast_mod]
 
 /-- Horner's rule on words from the last entry of `l` down, as `Ratpoints.Sieve.fsq` evaluates `f`,
-read modulo 64. -/
-theorem natCast_toNat_foldr (l : List UInt64) (x : UInt64) :
-    ((l.foldr (fun a s ↦ s * x + a) 0).toNat : ZMod 64) =
-      ∑ i ∈ Finset.range l.length, ((l.getD i 0).toNat : ZMod 64) * (x.toNat : ZMod 64) ^ i := by
+read in `ZMod n` for `n ∣ 2 ^ 64`: the value of the polynomial with the coefficients `l` at `x`. -/
+theorem _root_.UInt64.natCast_toNat_foldr {n : ℕ} (hn : n ∣ 2 ^ 64) (l : List UInt64)
+    (x : UInt64) :
+    ((l.foldr (fun a s ↦ s * x + a) 0).toNat : ZMod n) =
+      ∑ i ∈ Finset.range l.length, ((l.getD i 0).toNat : ZMod n) * (x.toNat : ZMod n) ^ i := by
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [List.foldr_cons, UInt64.natCast_toNat_mul_add (by decide), ih, List.length_cons,
+    rw [List.foldr_cons, UInt64.natCast_toNat_mul_add hn, ih, List.length_cons,
       Finset.sum_range_succ']
     simp only [List.getD_cons_succ, List.getD_cons_zero, pow_succ, pow_zero, mul_one,
       Finset.sum_mul, mul_assoc]
 
 /-- Horner's rule on words from the first entry of `l` on and from the value `s`, as
-`Ratpoints.Sieve.gsq` evaluates the reversed polynomial, read modulo 64. -/
-theorem natCast_toNat_foldl (l : List UInt64) (x s : UInt64) :
-    ((l.foldl (fun s a ↦ s * x + a) s).toNat : ZMod 64) =
-      (s.toNat : ZMod 64) * x.toNat ^ l.length + ∑ i ∈ Finset.range l.length,
-        ((l.getD i 0).toNat : ZMod 64) * (x.toNat : ZMod 64) ^ (l.length - 1 - i) := by
+`Ratpoints.Sieve.gsq` evaluates the reversed polynomial, read in `ZMod n` for `n ∣ 2 ^ 64`. -/
+theorem _root_.UInt64.natCast_toNat_foldl {n : ℕ} (hn : n ∣ 2 ^ 64) (l : List UInt64)
+    (x s : UInt64) :
+    ((l.foldl (fun s a ↦ s * x + a) s).toNat : ZMod n) =
+      (s.toNat : ZMod n) * x.toNat ^ l.length + ∑ i ∈ Finset.range l.length,
+        ((l.getD i 0).toNat : ZMod n) * (x.toNat : ZMod n) ^ (l.length - 1 - i) := by
   induction l generalizing s with
   | nil => simp
   | cons a l ih =>
-    rw [List.foldl_cons, ih, UInt64.natCast_toNat_mul_add (by decide), List.length_cons,
+    rw [List.foldl_cons, ih, UInt64.natCast_toNat_mul_add hn, List.length_cons,
       Finset.sum_range_succ']
     simp only [List.getD_cons_succ, List.getD_cons_zero, Nat.add_sub_cancel, Nat.sub_zero,
       Nat.sub_sub, Nat.add_comm 1]
@@ -167,8 +170,9 @@ theorem getLsbD_fsq_coeffsMod64 (c : List ℤ) (d k : ℕ) :
   rw [fsq, UInt64.getLsbD_fold_or_one_shiftLeft _ (Nat.le_refl 64), Bool.and_eq_true,
     decide_eq_true_iff]
   refine and_congr_right fun hk ↦ ?_
-  rw [squares64_test_iff, ← Array.foldr_toList, natCast_toNat_foldr, length_toList_coeffsMod64,
-    Nat.toUInt64_eq, UInt64.toNat_ofNat_of_lt' (by lia), sum_range_coeffsMod64]
+  rw [squares64_test_iff, ← Array.foldr_toList, UInt64.natCast_toNat_foldr (by decide),
+    length_toList_coeffsMod64, Nat.toUInt64_eq, UInt64.toNat_ofNat_of_lt' (by lia),
+    sum_range_coeffsMod64]
 
 /-- Bit `t` of the word of the reversed polynomial (`Ratpoints.Sieve.gsq`) for the coefficients
 modulo 64 is set exactly when `t < 64` is even and `∑ cᵢ t^(D - i)` is a square modulo 64, for
@@ -184,10 +188,10 @@ theorem getLsbD_gsq_coeffsMod64 (c : List ℤ) (d t : ℕ) :
     congr
     funext i hi w
     refine if_congr ?_ rfl rfl
-    rw [decide_eq_true_iff, squares64_test_iff, ← Array.foldl_toList, natCast_toNat_foldl,
-      length_toList_coeffsMod64, UInt64.toNat_zero, Nat.cast_zero, zero_mul, zero_add,
-      Nat.add_sub_cancel, Nat.toUInt64_eq, UInt64.toNat_ofNat_of_lt' (by lia),
-      sum_range_coeffsMod64]
+    rw [decide_eq_true_iff, squares64_test_iff, ← Array.foldl_toList,
+      UInt64.natCast_toNat_foldl (by decide), length_toList_coeffsMod64, UInt64.toNat_zero,
+      Nat.cast_zero, zero_mul, zero_add, Nat.add_sub_cancel, Nat.toUInt64_eq,
+      UInt64.toNat_ofNat_of_lt' (by lia), sum_range_coeffsMod64]
   rw [h, UInt64.getLsbD_fold_or_one_shiftLeft_comp _ (2 * ·) fun i hi ↦ by lia,
     decide_eq_true_iff]
   constructor

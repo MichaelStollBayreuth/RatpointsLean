@@ -215,7 +215,8 @@ C: `find_points.c:3919-3925`, `find_points.c:3928-3935`
 Deviation: the denominator sifted by the argument `step`, for the two calls of each shape
 (`Ratpoints.Sieve.siftDen`); the pattern of the class read as its one word, for `EXT0(cl->bits)`;
 the state of the block passed and returned (`Ratpoints.Sieve.BlockState`); natural numbers for the
-`long`s; no output under `DEBUG`. -/
+`long`s, the denominators `k ^ 2` being at most `b_high` and so `long`s for a `long` `b_high`
+(`Ratpoints.Sieve.fitsLong_of_mem_squaresDens`); no output under `DEBUG`. -/
 def squaresBlock {σ : Type} (step : Nat → BlockState σ → Id (BlockState σ))
     (cls : Vector NumClass 64) (a e : Nat) (st : BlockState σ) : Id (BlockState σ) := do
   let mut st := st
@@ -237,7 +238,8 @@ C: `find_points.c:3937-3943`, `find_points.c:3954`, `find_points.c:3957-3965`
 Deviation: the denominator sifted by the argument `step`, for the two calls of each shape
 (`Ratpoints.Sieve.siftDen`); the valuation test a function of its own; the pattern of the class read
 as its one word; the state of the block passed and returned (`Ratpoints.Sieve.BlockState`); natural
-numbers for the `long`s; no output under `DEBUG`. -/
+numbers for the `long`s, the denominators `dv k ^ 2` being at most `b_high` and so `long`s for a
+`long` `b_high` (`Ratpoints.Sieve.fitsLong_of_mem_squares1Dens`); no output under `DEBUG`. -/
 def squares1Block {σ : Type} (step : Nat → BlockState σ → Id (BlockState σ))
     (cls : Vector NumClass 64) (info : List Setup.DenInfo) (dv a e : Nat) (st : BlockState σ) :
     Id (BlockState σ) := do
@@ -298,8 +300,9 @@ Deviation: the denominator sifted by the argument `step`, for the two calls of e
 (`Ratpoints.Sieve.siftDen`), and the tests of the word shape the argument `test`, for the code of
 `Ratpoints.Sieve.wordsTest` in the loop; the lowest set bit by the loop of `RP_CTZL`
 (`Ratpoints.Sieve.ctz`); the class of the denominator read by `Ratpoints.Sieve.siftDen`; the state
-of the block passed and returned (`Ratpoints.Sieve.BlockState`); natural numbers for the `long`s; no
-output under `DEBUG`. -/
+of the block passed and returned (`Ratpoints.Sieve.BlockState`); natural numbers for the `long`s,
+the denominators `base + j` being at most `b_high` and so `long`s for a `long` `b_high`
+(`Ratpoints.Sieve.fitsLong_of_mem_wordsDens`); no output under `DEBUG`. -/
 def walkDens {σ : Type} (step : Nat → BlockState σ → Id (BlockState σ)) (test : Nat → Id Bool)
     (x : UInt64) (base : Nat) (st : BlockState σ) : Id (BlockState σ) := do
   let mut x := x
@@ -328,7 +331,8 @@ Deviation: the denominator sifted by the argument `step`, for the two calls of e
 tests of the word shape the argument `test` (`Ratpoints.Sieve.wordsTest`); the forbidden divisors an
 array, for the pointer `run->forb_ba` and their count `nfb`; the product `64 w` for the shift by
 `LONG_SHIFT`; the state of the block passed and returned (`Ratpoints.Sieve.BlockState`); natural
-numbers for the `long`s. -/
+numbers for the `long`s, the products `64 w` and the denominators being at most `b_high` and so
+`long`s for a `long` `b_high` (`Ratpoints.Sieve.fitsLong_of_mem_wordsDens`). -/
 def wordsBlock {σ : Type} (step : Nat → BlockState σ → Id (BlockState σ))
     (forb : Array ForbiddenEntry) (test : Nat → Id Bool) (db : UInt64)
     (lo0 hi0 bLow bHigh a e : Nat) (st : BlockState σ) : Id (BlockState σ) := do

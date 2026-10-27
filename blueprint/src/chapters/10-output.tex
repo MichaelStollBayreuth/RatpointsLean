@@ -939,7 +939,7 @@ has stopped at $\mathrm{maxDivisors}$ entries, that the list is a prefix of the 
 \begin{lemma}[The denominators and the points of the search]\label{lem:searchDenominators}
   \uses{lem:binaryDivisors, def:searchDens, def:binaryDivisors, def:searchedPoly, def:orderedPoints,
     def:reversal, lem:shape_dens, def:bruteForce}
-  \lean{Ratpoints.searchDens_eq_filter_searchDenominators, Ratpoints.searchedPoly_eq_of_reversal_eq_ok, Ratpoints.pointsOfDen_eq_pointsWithDen, Ratpoints.pointsOfDen_zero_eq_pointsWithDen, Ratpoints.pos_of_mem_binaryDivisors, Ratpoints.le_and_le_of_mem_searchDenominators, Ratpoints.Sieve.squares1Dens_one_eq_filter, Ratpoints.Sieve.squares1Dens_eq_filter, List.range'_eq_filter_range', Ratpoints.Setup.isSquare_eq_true_iff, Ratpoints.Setup.isSquare_eq_false_iff, Ratpoints.BruteForce.pointsAbove_eq_ite, Ratpoints.isPoint_iff_of_le, Ratpoints.ite_pointsAbove_eq_filter, List.filter_eq_ite_of_forall}
+  \lean{Ratpoints.searchedPoly_eq_of_reversal_eq_ok, Ratpoints.pointsOfDen_eq_pointsWithDen, Ratpoints.pointsOfDen_zero_eq_pointsWithDen, Ratpoints.pos_of_mem_binaryDivisors, Ratpoints.le_and_le_of_mem_searchDenominators, Ratpoints.Sieve.squares1Dens_one_eq_filter, Ratpoints.Sieve.squares1Dens_eq_filter, List.range'_eq_filter_range', Ratpoints.Setup.isSquare_eq_true_iff, Ratpoints.Setup.isSquare_eq_false_iff, Ratpoints.BruteForce.pointsAbove_eq_ite, Ratpoints.isPoint_iff_of_le, Ratpoints.ite_pointsAbove_eq_filter, List.filter_eq_ite_of_forall}
   \leanok
   For $1 \le b_{\mathrm{low}}$ and $1 \le b_{\mathrm{high}}$, the denominators of the search of $c$
   of its degree from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ (Definition~\ref{def:searchDens}) are

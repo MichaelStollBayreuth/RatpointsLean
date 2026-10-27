@@ -16,6 +16,7 @@ public import Ratpoints.Mathlib.Data.List.Basic
 public import Ratpoints.Mathlib.Data.List.Chain
 public import Ratpoints.Mathlib.Data.List.Nodup
 public import Ratpoints.Mathlib.Data.List.Pairwise
+public import Ratpoints.Mathlib.Data.List.Prime
 public import Ratpoints.Mathlib.Data.List.Sort
 public import Ratpoints.Mathlib.Data.Nat.Factors
 public import Ratpoints.Mathlib.Data.Nat.PadicValNat

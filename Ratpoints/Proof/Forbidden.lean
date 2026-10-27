@@ -46,15 +46,19 @@ one of the first `Ratpoints.numPrimes` primes of the table are the first `p` wor
 its prime (`Ratpoints.Sieve.IsForbiddenEntry.magic_eq`), with which the C code reduces the word
 number of the first word of a block. The loop of the tables also makes the tables of rows of the
 primes that say something with their rows of `0`, the patterns `sieves0`
-(`Ratpoints.Sieve.PrimeStore`). The masks, which the C code keeps in an `unsigned long`, stay below
-`2 ^ 40` for an odd prime and a `long` `b_high`, so that its cap on the valuations never binds; the
-products `pm p` of its loops of the valuations and the square `p p` of a prime of the table that its
-loop over the further primes compares with `b_high` are `long`s
-(`Ratpoints.Setup.fitsLong_mul_of_le_div`, `Ratpoints.Setup.mul_self_lt_of_mem_primeTable`).
+(`Ratpoints.Sieve.PrimeStore`). The masks, which the C code keeps in an `unsigned long`, have no
+bit from `40` on for an odd prime and a `long` `b_high`, so that its cap on the valuations never
+binds (`Ratpoints.Sieve.lt_forty_of_pow_le`); the products `pm p` of its loops of the valuations and
+the square `p p` of a prime of the table that its loop over the further primes compares with
+`b_high` are `long`s (`Ratpoints.Setup.fitsLong_mul_of_le_div`,
+`Ratpoints.Setup.mul_self_lt_of_mem_primeTable`). `Ratpoints.Sieve.lt_forty_of_pow_le` and
+`Ratpoints.Setup.fitsLong_mul_of_le_div` discharge range obligations that the Deviation paragraphs
+of the model state, and no proof consumes them.
 
 ## Main definitions
 
 * `Ratpoints.Sieve.IsUnitPart`: what an entry of `Ratpoints.Sieve.unitParts` says of a coefficient.
+* `Ratpoints.Sieve.ExcludesByTerm`: the terms of `F(a, b)` exclude a valuation at a prime.
 * `Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`: the forbidden divisors of
   the primes of `Ratpoints.primeTable` that the loop of the tables may record, tested with
   words or by their valuations, and those tested with words that `Ratpoints.Sieve.forbidden` may
@@ -80,17 +84,17 @@ loop over the further primes compares with `b_high` are `long`s
   with the words of `Ratpoints.Sieve.forbiddenRow` and their reciprocals.
 * `Ratpoints.Sieve.IsForbiddenEntry.not_dvd`, `Ratpoints.Sieve.IsForbiddenVal.excludes_eq_false`:
   the forbidden divisors let the denominator of every point through.
-* `Ratpoints.Sieve.lt_forty_of_pow_le`, `Ratpoints.Sieve.run_forbiddenValuations_lt`,
-  `Ratpoints.Sieve.run_allValuations_lt`: the cap of the loops of the valuations never binds, and
-  the masks fit an `unsigned long`.
+* `Ratpoints.Sieve.lt_forty_of_pow_le`: the cap of the loops of the valuations never binds, and the
+  masks fit an `unsigned long`.
 
 ## Implementation notes
 
 The contracts are proved with `vcgen`, the program logic of Lean core, with loop invariants that are
 named definitions, in a file with Mathlib, since they speak of primes, their valuations and the
 squares modulo a prime. A contract that needs the exact value of a component that its loop calls
-takes a private specification `⦃True⦄ x ⦃fun r ↦ r = Id.run x⦄` of it, since the registered
-contract would give only what it says of the value.
+takes a specification `⦃True⦄ x ⦃fun r ↦ r = Id.run x⦄` of it (`Ratpoints.Setup.valuation_value`
+for the valuation, private ones for the components of this file), since the registered contract
+would give only what it says of the value.
 -/
 
 @[expose] public section
@@ -187,12 +191,12 @@ carries its sign. -/
 theorem isUnitPart_of_eq_run_valuation {p : ℕ} (hp : 1 < p) {x : ℤ} (hx : x ≠ 0) {w r : ℕ}
     (h : (w, r) = Id.run (Setup.valuation x p)) :
     IsUnitPart p x (some (w, if x < 0 then p - r else r)) := by
-  obtain ⟨m, hm, hmr, hr⟩ := Setup.exists_eq_run_valuation hx hp
-  rw [← h] at hm hmr hr
-  dsimp only at hm hmr hr
+  obtain ⟨m, hm, hmr, hpm⟩ := Setup.exists_eq_run_valuation hx hp
+  rw [← h] at hm hmr
+  dsimp only at hm hmr
   have hrp : r < p := hmr ▸ Nat.mod_lt _ (by lia)
-  have hpm : ¬(p : ℤ) ∣ m := fun h ↦
-    hr (hmr ▸ Nat.mod_eq_zero_of_dvd (Int.natCast_dvd_natCast.mp h))
+  have hr : r ≠ 0 := fun h0 ↦ hpm (Nat.dvd_of_mod_eq_zero (hmr.trans h0))
+  replace hpm : ¬(p : ℤ) ∣ m := mt Int.natCast_dvd_natCast.mp hpm
   have hmr' : (m : ZMod p) = r := by rw [← hmr, ZMod.natCast_mod]
   split_ifs with hneg
   · refine ⟨by lia, -m, ?_, by rwa [Int.dvd_neg], ?_⟩
@@ -204,11 +208,6 @@ theorem isUnitPart_of_eq_run_valuation {p : ℕ} (hp : 1 < p) {x : ℤ} (hx : x 
     rw [← Int.natAbs_of_nonneg (Int.not_lt.mp hneg), hm]
     push_cast
     ring
-
--- The valuation of a coefficient, as a value for the contract of the unit parts.
-private theorem valuation_value (n : ℤ) (p : ℕ) :
-    ⦃ True ⦄ Setup.valuation n p ⦃ fun r ↦ r = Id.run (Setup.valuation n p) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
 
 /-- The invariant of the loop of `Ratpoints.Sieve.unitParts` after `k` coefficients: the entries
 describe the coefficients `c_d, …, c_{d-k+1}`. -/
@@ -253,7 +252,7 @@ describe the coefficients `c_d, …, c_0` at `p` (`Ratpoints.Sieve.IsUnitPart`).
 theorem unitParts_spec (c : List ℤ) (d p : ℕ) (cm : Array ℕ) :
     ⦃ 1 < p ∧ ∀ j ≤ d, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat ⦄ unitParts c d p cm
     ⦃ fun us ↦ us.size = d + 1 ∧ ∀ j ≤ d, IsUnitPart p (c.getD (d - j) 0) us[j]! ⦄ := by
-  vcgen [unitParts, valuation_value] invariants
+  vcgen [unitParts, Setup.valuation_value] invariants
   · fun pref _ us ↦ UnitPartsInvariant c d p pref.length us
   all_goals first
     | exact unitPartsInvariant_zero c d p
@@ -265,7 +264,7 @@ theorem unitParts_spec (c : List ℤ) (d p : ℕ) (cm : Array ℕ) :
         (isUnitPart_of_eq_toNat_emod (Nat.zero_lt_of_lt ‹1 < p ∧ _›.1) (getElem!_sub_eq ‹_› _) ‹_›)
 
 /-- `Ratpoints.Sieve.unitParts_spec` as a plain statement. -/
-theorem isUnitPart_run_unitParts (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 1 < p) {cm : Array ℕ}
+theorem isUnitPart_run_unitParts {c : List ℤ} {d p : ℕ} (hp : 1 < p) {cm : Array ℕ}
     (hcm : ∀ j ≤ d, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat) {j : ℕ} (hj : j ≤ d) :
     IsUnitPart p (c.getD (d - j) 0) (Id.run (unitParts c d p cm))[j]! :=
   (Std.WP.Id.of_run_eq_wp rfl _ ((unitParts_spec c d p cm).le_wp ⟨hp, hcm⟩)).2 j hj
@@ -279,6 +278,19 @@ theorem le_of_getElem!_run_unitParts_eq_some {c : List ℤ} {d p j : ℕ} (hp : 
   exact Option.some_ne_none _ h.symm
 
 /-! ### The valuations that the terms exclude -/
+
+/-- The terms of `F(a, b)` exclude the valuation `m` at a prime, with the entries `us` of the
+coefficients at the prime (`Ratpoints.Sieve.IsUnitPart`) and the table `sq` of the squares modulo
+it: the term of some `j₀`, `0` or a coefficient present, has a valuation `w_{j₀} + j₀ m` less than
+those of the other terms (the term of `j = 0` counted as present), which is odd, or `j₀` is even
+and the residue of its unit part is not marked in `sq`; by the Newton polygon at the prime, no
+denominator of a point then has the valuation `m`. -/
+abbrev ExcludesByTerm (us : Array (Option (ℕ × ℕ))) (sq : Array Bool) (m : ℕ) : Prop :=
+  ∃ j₀, (j₀ = 0 ∨ us[j₀]!.isSome) ∧
+    (∀ j, (j = 0 ∨ us[j]!.isSome) → j ≠ j₀ →
+      (us[j₀]!.getD (0, 0)).1 + j₀ * m < (us[j]!.getD (0, 0)).1 + j * m) ∧
+    (((us[j₀]!.getD (0, 0)).1 + j₀ * m) % 2 = 1 ∨
+      (j₀ % 2 = 0 ∧ sq[(us[j₀]!.getD (0, 0)).2]! = false))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.forbiddenAt` over the coefficients `j ≤ k`, on
 the index `jmin`, the least valuation `vmin` and the flag `tie`: `jmin` is `0` or a coefficient
@@ -360,11 +372,7 @@ theorem ForbiddenAtInvariant.exists_of_eq_true {us : Array (Option (ℕ × ℕ))
     {m jmin vmin : ℕ} {tie : Bool}
     (h : ForbiddenAtInvariant us m (ForIn.toList [1:us.size]).length jmin vmin tie)
     (hr : (!tie && (vmin % 2 == 1 || jmin % 2 == 0 && !sq[(us[jmin]!.getD (0, 0)).2]!)) = true) :
-    ∃ j₀, (j₀ = 0 ∨ us[j₀]!.isSome) ∧
-      (∀ j, (j = 0 ∨ us[j]!.isSome) → j ≠ j₀ →
-        (us[j₀]!.getD (0, 0)).1 + j₀ * m < (us[j]!.getD (0, 0)).1 + j * m) ∧
-      (((us[j₀]!.getD (0, 0)).1 + j₀ * m) % 2 = 1 ∨
-        (j₀ % 2 = 0 ∧ sq[(us[j₀]!.getD (0, 0)).2]! = false)) := by
+    ExcludesByTerm us sq m := by
   obtain ⟨-, hc, rfl, -, hlt⟩ := h
   simp only [Bool.and_eq_true, Bool.not_eq_true', Bool.or_eq_true, beq_iff_eq] at hr
   refine ⟨jmin, hc, fun j hcj hne ↦ hlt hr.1 j ?_ hcj hne, by simpa using hr.2⟩
@@ -376,18 +384,11 @@ theorem ForbiddenAtInvariant.exists_of_eq_true {us : Array (Option (ℕ × ℕ))
   lia
 
 attribute [local irreducible] ForbiddenAtInvariant in
-/-- The contract of `Ratpoints.Sieve.forbiddenAt`: when it excludes the valuation `m`, the term of
-some `j₀`, `0` or a coefficient present, has a valuation `w_{j₀} + j₀ m` less than those of the
-other terms (the term of `j = 0` counted as present), which is odd, or `j₀` is even and the residue
-of its unit part is not marked in `sq`. -/
+/-- The contract of `Ratpoints.Sieve.forbiddenAt`: it excludes the valuation `m` only when the
+terms exclude it (`Ratpoints.Sieve.ExcludesByTerm`). -/
 @[spec]
 theorem forbiddenAt_spec (us : Array (Option (ℕ × ℕ))) (sq : Array Bool) (m : ℕ) :
-    ⦃ True ⦄ forbiddenAt us sq m
-    ⦃ fun r ↦ r = true → ∃ j₀, (j₀ = 0 ∨ us[j₀]!.isSome) ∧
-        (∀ j, (j = 0 ∨ us[j]!.isSome) → j ≠ j₀ →
-          (us[j₀]!.getD (0, 0)).1 + j₀ * m < (us[j]!.getD (0, 0)).1 + j * m) ∧
-        (((us[j₀]!.getD (0, 0)).1 + j₀ * m) % 2 = 1 ∨
-          (j₀ % 2 = 0 ∧ sq[(us[j₀]!.getD (0, 0)).2]! = false)) ⦄ := by
+    ⦃ True ⦄ forbiddenAt us sq m ⦃ fun r ↦ r = true → ExcludesByTerm us sq m ⦄ := by
   vcgen [forbiddenAt] invariants
   · fun pref _ s ↦ ForbiddenAtInvariant us m pref.length s.1 s.2.1 s.2.2
   all_goals dsimp only at *
@@ -400,12 +401,7 @@ theorem forbiddenAt_spec (us : Array (Option (ℕ × ℕ))) (sq : Array Bool) (m
 
 /-- `Ratpoints.Sieve.forbiddenAt_spec` as a plain statement. -/
 theorem exists_of_run_forbiddenAt_eq_true {us : Array (Option (ℕ × ℕ))} {sq : Array Bool} {m : ℕ}
-    (h : Id.run (forbiddenAt us sq m) = true) :
-    ∃ j₀, (j₀ = 0 ∨ us[j₀]!.isSome) ∧
-      (∀ j, (j = 0 ∨ us[j]!.isSome) → j ≠ j₀ →
-        (us[j₀]!.getD (0, 0)).1 + j₀ * m < (us[j]!.getD (0, 0)).1 + j * m) ∧
-      (((us[j₀]!.getD (0, 0)).1 + j₀ * m) % 2 = 1 ∨
-        (j₀ % 2 = 0 ∧ sq[(us[j₀]!.getD (0, 0)).2]! = false)) :=
+    (h : Id.run (forbiddenAt us sq m) = true) : ExcludesByTerm us sq m :=
   Std.WP.Id.of_run_eq_wp rfl _ ((forbiddenAt_spec us sq m).le_wp trivial) h
 
 /-- A coefficient `x` with the entry `o` at `p` makes `x p ^ (i m)` divisible by `p ^ (V + 1)` when
@@ -435,10 +431,10 @@ theorem even_and_getElem!_squaresMod_of_sq_eq {c : List ℤ} (hd : degree c % 2 
     Even (w + j₀ * padicValNat p b) ∧ (Even j₀ → (squaresMod p)[r]! = true) := by
   have : Fact p.Prime := ⟨hp⟩
   have hj₀ := le_of_getElem!_run_unitParts_eq_some hp.one_lt hcm hus
-  obtain ⟨hr, u, hu, hpu, hru⟩ := hus ▸ isUnitPart_run_unitParts c (degree c) hp.one_lt hcm hj₀
+  obtain ⟨hr, u, hu, hpu, hru⟩ := hus ▸ isUnitPart_run_unitParts hp.one_lt hcm hj₀
   obtain ⟨hev, hsq⟩ := even_and_isSquare_of_sq_eq_binaryForm_of_even hd hab hy hm hj₀ hu hpu
     fun i hi hne ↦
-      pow_dvd_mul_pow_of_isUnitPart (isUnitPart_run_unitParts c (degree c) hp.one_lt hcm hi)
+      pow_dvd_mul_pow_of_isUnitPart (isUnitPart_run_unitParts hp.one_lt hcm hi)
         fun w' r' h' ↦ by simpa [h'] using hmin i (by simp [h']) hne
   exact ⟨hev, fun hj ↦ getElem!_squaresMod_of_isSquare hp hr (hru ▸ hsq hj)⟩
 
@@ -767,7 +763,7 @@ def IsForbiddenVal (c : List ℤ) (d bHigh : ℕ) (e : ForbiddenVal) : Prop :=
     ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
     (examinePrime c d p).isFSquare[p]!) = some (.inr e)
 
-theorem getElem!_map_range_toNat_emod (c : List ℤ) (d p : ℕ) {j : ℕ} (hj : j ≤ d) :
+theorem getElem!_map_range_toNat_emod (c : List ℤ) {d : ℕ} (p : ℕ) {j : ℕ} (hj : j ≤ d) :
     ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[j]! =
       (c.getD j 0 % (p : ℤ)).toNat :=
   Array.getElem!_map_range _ (Nat.lt_succ_of_le hj)
@@ -806,7 +802,7 @@ theorem IsForbiddenEntry.not_dvd {c : List ℤ} {bHigh : ℕ} {e : ForbiddenEntr
   rcases h with ⟨p, hp, h⟩ | ⟨h, -, -, hsq⟩
   · obtain ⟨rfl, -⟩ := eq_of_run_forbiddenOfPrime_eq_inl h
     exact not_dvd_of_run_forbiddenOfPrime_eq_inl hd (prime_of_mem_primeTable hp)
-      (fun _ hj ↦ getElem!_map_range_toNat_emod c _ p hj) rfl h hb hbH hab hy
+      (fun _ hj ↦ getElem!_map_range_toNat_emod c p hj) rfl h hb hbH hab hy
   · exact fun hpb ↦ Bool.false_ne_true (hsq.symm.trans
       (getElem!_squaresMod_of_sq_eq hd (prime_of_mem_primeTable h) hab hy hpb))
 
@@ -818,7 +814,7 @@ theorem IsForbiddenVal.excludes_eq_false {c : List ℤ} {bHigh : ℕ} {e : Forbi
     e.excludes b = false :=
   let ⟨p, hp, h⟩ := h
   ForbiddenVal.excludes_eq_false_of_run_forbiddenOfPrime_eq_inr hd (prime_of_mem_primeTable hp)
-    (fun _ hj ↦ getElem!_map_range_toNat_emod c _ p hj) h hb hab hy
+    (fun _ hj ↦ getElem!_map_range_toNat_emod c p hj) h hb hab hy
 
 /-! ### The loop of the tables -/
 
@@ -929,30 +925,13 @@ theorem forbidden_spec (c : List ℤ) (d examined maxForbidden bHigh : ℕ) (ba 
 are below `40`, since `3 ^ 40 > 2 ^ 63`: the cap `m < LONG_LENGTH - 1` of the loops of
 `forbidden_valuations` and of the valuations that a denominator can have (`find_points.c:2217`,
 `find_points.c:2636-2637`), which the model drops, never binds, and the bits `1UL << m` that they
-set are defined. The values `pm * p` of these loops, computed only for `pm ≤ ⌊b_high / p⌋`, are
-`long`s too (`Ratpoints.Setup.fitsLong_mul_of_le_div`). -/
+set are defined, so that the masks fit an `unsigned long` (`find_points.c:2229`,
+`find_points.c:2638`). The values `pm * p` of these loops, computed only for `pm ≤ ⌊b_high / p⌋`,
+are `long`s too (`Ratpoints.Setup.fitsLong_mul_of_le_div`). -/
 theorem lt_forty_of_pow_le {p m bHigh : ℕ} (hp : 3 ≤ p) (hH : bHigh < 2 ^ 63) (h : p ^ m ≤ bHigh) :
     m < 40 := by
   by_contra hm
   lia [Nat.pow_le_pow_left hp m, Nat.pow_le_pow_right three_pos (Nat.le_of_not_lt hm)]
-
-/-- For `p ≥ 3`, as for an odd prime, and a `long` `bHigh`, the mask of the forbidden valuations is
-below `2 ^ 40`, so that the `unsigned long` `mask` of `forbidden_valuations` holds it
-(`find_points.c:2229`). -/
-theorem run_forbiddenValuations_lt (c : List ℤ) (d : ℕ) {p bHigh : ℕ} (cm : Array ℕ) (hp : 3 ≤ p)
-    (hH : bHigh < 2 ^ 63) : Id.run (forbiddenValuations c d p bHigh cm) < 2 ^ 40 :=
-  Nat.lt_pow_two_of_testBit _ fun m hm ↦ by
-    have : ¬p ^ m ≤ bHigh := mt (lt_forty_of_pow_le hp hH) (by lia)
-    simp [testBit_run_forbiddenValuations c d (by lia : 1 < p), this]
-
-/-- For `p ≥ 3`, as for an odd prime, and a `long` `bHigh`, the mask of the valuations that a
-denominator can have is below `2 ^ 40`, so that the `unsigned long` `all` of `sieving_info` holds it
-(`find_points.c:2638`). -/
-theorem run_allValuations_lt {p bHigh : ℕ} (hp : 3 ≤ p) (hH : bHigh < 2 ^ 63) :
-    Id.run (allValuations p bHigh) < 2 ^ 40 :=
-  Nat.lt_pow_two_of_testBit _ fun m hm ↦ by
-    have : ¬p ^ m ≤ bHigh := mt (lt_forty_of_pow_le hp hH) (by lia)
-    simp [testBit_run_allValuations (by lia : 1 < p), this]
 
 end Sieve
 

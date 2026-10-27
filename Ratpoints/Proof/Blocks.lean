@@ -344,8 +344,8 @@ private theorem le_and_le_and_bits_ne_zero_of_mem {shape : Shape} {db : UInt64}
     bLow ≤ b ∧ b ≤ bHigh ∧ cls[b % 64]!.bits ≠ 0 := by
   obtain ⟨hb, hk⟩ := List.mem_filter.mp hb
   have hd := Shape.mem_dens_of_mem_blockDens hi hb
-  exact ⟨(shape.le_and_le_of_mem_dens db hbLow hd).1, (shape.le_and_le_of_mem_dens db hbLow hd).2,
-    shape.bits_ne_zero_of_mem_dens hdb hd hk⟩
+  obtain ⟨h1, h2⟩ := shape.le_and_le_of_mem_dens hbLow hd
+  exact ⟨h1, h2, shape.bits_ne_zero_of_mem_dens hdb hd hk⟩
 
 /-- The report of block `i` of the run with the decisions `decs`, in closed form: the counts of the
 sieve of its denominators that pass the tests of the shape (`Ratpoints.Sieve.denCounts`), with the

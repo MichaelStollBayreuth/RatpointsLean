@@ -309,13 +309,13 @@ theorem searchList_nil (c : List ℤ) (H bLow bHigh : ℕ) (S : ℕ → ℤ → 
 -- the search delivers are distinct pairs over distinct denominators `b ≥ 1`
 -- (`Ratpoints.nodup_searchDens`), the point `(1, 0, 0)` at infinity apart.
 private theorem nodup_searchList_of_noCheck_of_reversed_eq_false {c : List ℤ} {H bLow bHigh : ℕ}
-    (hbLow : 1 ≤ bLow) (hb : 1 ≤ bHigh) (D : List (WithBotTop ℚ × WithBotTop ℚ))
-    (S : ℕ → ℤ → Bool) {fl : CheckFlags} (hc : fl.noCheck = true) (hr : fl.reversed = false) :
+    (hbLow : 1 ≤ bLow) (D : List (WithBotTop ℚ × WithBotTop ℚ)) (S : ℕ → ℤ → Bool)
+    {fl : CheckFlags} (hc : fl.noCheck = true) (hr : fl.reversed = false) :
     (searchList c H bLow bHigh D S fl).Nodup := by
   have hmem {b : ℕ} {a : ℤ} {q : ℤ × ℤ × ℤ} (hq : q ∈ checkNumWith (scaledCoeffs c (degree c) b)
       (if degree c % 2 = 1 then b else 1) b fl a) : q = (a, 0, (b : ℤ)) := by
     simpa [hr] using ((mem_checkNumWith_of_noCheck hc).mp hq).2
-  refine List.Nodup.append ?_ ((nodup_searchDens c hb).flatMap (fun b _ ↦ ?_)
+  refine List.Nodup.append ?_ ((nodup_searchDens c hbLow).flatMap (fun b _ ↦ ?_)
     (fun q ↦ q.2.2.toNat) fun b _ q hq ↦ ?_) fun q hq hq' ↦ ?_
   · rw [pointsAtInfinityList_of_noCheck_eq_true hc]
     split_ifs <;> simp
@@ -336,12 +336,12 @@ private theorem nodup_searchList_of_noCheck_of_reversed_eq_false {c : List ℤ} 
 the point at infinity apart, and the map of the reversal is injective on the normalized pairs
 (`Ratpoints.Sieve.swapPoint_inj`). -/
 theorem nodup_searchList_of_noCheck {c : List ℤ} {H bLow bHigh : ℕ} (hH : 1 ≤ H)
-    (hbLow : 1 ≤ bLow) (hb : 1 ≤ bHigh) (hbH : bHigh ≤ H) (D : List (WithBotTop ℚ × WithBotTop ℚ))
+    (hbLow : 1 ≤ bLow) (hbH : bHigh ≤ H) (D : List (WithBotTop ℚ × WithBotTop ℚ))
     (S : ℕ → ℤ → Bool) {fl : CheckFlags} (hc : fl.noCheck = true) :
     (searchList c H bLow bHigh D S fl).Nodup := by
   have hc' : ({ fl with reversed := false } : CheckFlags).noCheck = true := hc
   rw [searchList_eq_map]
-  refine (nodup_searchList_of_noCheck_of_reversed_eq_false hbLow hb D S hc' rfl).map_on
+  refine (nodup_searchList_of_noCheck_of_reversed_eq_false hbLow D S hc' rfl).map_on
     fun q hq q' hq' h ↦ ?_
   obtain ⟨x, z, rfl, hn⟩ := exists_eq_of_mem_searchList_of_noCheck hc' hH hbLow hbH hq
   obtain ⟨x', z', rfl, hn'⟩ := exists_eq_of_mem_searchList_of_noCheck hc' hH hbLow hbH hq'
@@ -548,15 +548,6 @@ private theorem exists_dens_eq_filter_runSetup {c : List ℤ} {H bLow bHigh : �
     exact exists_dens_eq_filter_all hrun bLow bHigh
   · exact exists_dens_eq_filter_squares1 hrun hd hbLow (Option.ite_none_right_eq_some.mp hus1).2
 
--- The denominators of the search from `bLow ≥ 1` are distinct: there are none for `bHigh = 0`.
-private theorem nodup_searchDens_of_one_le {c : List ℤ} {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow) :
-    (searchDens c (degree c) bLow bHigh).Nodup := by
-  rcases Nat.eq_zero_or_pos bHigh with rfl | hb
-  · have h : searchDens c (degree c) bLow 0 = [] := List.eq_nil_iff_forall_not_mem.mpr fun b hb ↦
-      absurd (le_and_le_of_mem_searchDens hbLow hb) (by lia)
-    exact h ▸ List.nodup_nil
-  · exact nodup_searchDens c hb
-
 -- The points of the numerators in the ranges of the bounds of the search intervals `dom` that pass
 -- the tests `T` and `T'`, over the denominators of the search that the filters `p` and `k` let
 -- through, are those of the numerators `a` with `a / b` in the intervals that pass all four tests.
@@ -621,7 +612,7 @@ theorem exists_isSoundTest_run_sieveRun {c : List ℤ} {H A bLow bHigh : ℕ} {s
   obtain ⟨sp3At, hsp⟩ := exists_run_sieveRun_eq_deliver c (degree c) H A s P entries magics cls
     offsets db shape _ bLow bHigh store hA (fun e he ↦ ⟨hrun.isPrimeEntry_of_nf e he,
       hrun.hasInverses e he⟩) hrun.magics_eq hrun.offsetsFor (fun _ ↦ hrun.getLsbD_db) hdec hff
-    (hdens ▸ (nodup_searchDens_of_one_le hbLow).filter p) hbLow (by lia) hH63 hrun.fits
+    (hdens ▸ (nodup_searchDens c hbLow).filter p) hbLow (by lia) hH63 hrun.fits
   refine ⟨fun b a ↦ p b && Id.run (shape.keep cls b) &&
       classBit (Id.run (twoAdic c (degree c)))[b % 64]! a && survives (entries.take (sp3At b)) b a,
     fun b hb a ha hne ↦ ?_, fun process fl r hr ↦ ?_⟩

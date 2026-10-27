@@ -15,6 +15,8 @@ public import Std.WP
 
 import Mathlib.Data.Nat.Squarefree
 import Ratpoints.Mathlib.Data.Int.GCD
+import Ratpoints.Mathlib.Data.List.Prime
+import Ratpoints.Mathlib.Data.Nat.PadicValNat
 import Ratpoints.Mathlib.Data.Nat.Prime.Defs
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
 import Ratpoints.Proof.Containers
@@ -74,11 +76,10 @@ than `Ratpoints.maxDivisors` divisors.
 * `Ratpoints.Setup.map_snd_run_setupUs1`: the divisor set-up succeeds exactly when ratpoints factors
   `|c_d|` completely and finds fewer than `Ratpoints.maxDivisors` divisors, and its divisors are
   then those of `Ratpoints.binaryDivisors`.
-* `Ratpoints.Setup.mem_foldl_extendDivisors_one_iff`,
-  `Ratpoints.Setup.nodup_foldl_extendDivisors`: the doubling loop over distinct primes lists the
-  squarefree products of the primes up to the bound, each once.
-* `Ratpoints.Setup.mem_iff_of_setupUs1_eq_some`, `Ratpoints.Setup.nodup_of_setupUs1_eq_some`: the
-  divisors of the divisor set-up are the squarefree divisors of `|c_d|` up to the largest
+* `Ratpoints.mem_binaryDivisors_iff`, `Ratpoints.nodup_binaryDivisors`: the divisors of
+  `Ratpoints.binaryDivisors` are the squarefree divisors up to the bound, each once.
+* `Ratpoints.Setup.mem_iff_of_setupUs1_eq_some`, `Ratpoints.Setup.nodup_of_setupUs1_eq_some`: so
+  the divisors of the divisor set-up are the squarefree divisors of `|c_d|` up to the largest
   denominator, each once.
 * `Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq`: no entry of the valuation test, a prime of
   `c_d` with its valuation and its slope, excludes the denominator of a point.
@@ -92,6 +93,8 @@ The contracts are proved with `vcgen`, the program logic of Lean core, with loop
 named definitions, in a file with Mathlib, since they speak of primes and their valuations. That
 the macro `CEIL` of the C code rounds up is a private lemma of this file, which only the slopes use:
 its `if` is that of the macro, and Mathlib has no ceiling division of integers to state it with.
+`Ratpoints.Setup.fitsLong_mul_of_le_div` discharges a range obligation that a Deviation paragraph of
+the model states, and no proof consumes it.
 -/
 
 @[expose] public section
@@ -257,18 +260,44 @@ theorem eq_one_iff_factorsByTrialDivision_of_isRoughPart {n w m : ℕ} (h : Nat.
     have := hf _ ((Nat.mem_primeFactorsList hn).mpr ⟨hp, (Nat.minFac_dvd m).mul_left k⟩)
     lia [hk _ hp (Nat.minFac_dvd m)]
 
+/-! ### The squarefree divisors in the order of binary counting -/
+
+-- A sublist of the distinct prime factors of `n` is the list of the prime factors of its product.
+private theorem eq_primeFactorsList_prod_of_sublist {n : ℕ} {t : List ℕ}
+    (ht : t.Sublist n.primeFactorsList.dedup) : t = t.prod.primeFactorsList :=
+  (Nat.primeFactorsList_unique rfl fun _ hp ↦ Nat.prime_of_mem_primeFactorsList
+    (List.mem_dedup.mp (ht.subset hp))).eq_of_sortedLE
+    ((Nat.primeFactorsList_sorted n).pairwise.sublist (ht.trans (List.dedup_sublist _))).sortedLE
+    (Nat.primeFactorsList_sorted _)
+
+/-- The products of the sublists of the distinct prime factors of `n ≠ 0` are its squarefree
+divisors; for `n = 0` there is only the empty product `1`. -/
+theorem mem_binaryDivisors_iff {n H s : ℕ} (hn : n ≠ 0) :
+    s ∈ binaryDivisors n H ↔ Squarefree s ∧ s ∣ n ∧ s ≤ H := by
+  simp only [binaryDivisors, List.mem_filter, List.mem_map, List.mem_sublists, decide_eq_true_eq]
+  refine ⟨fun ⟨⟨t, ht, hts⟩, hsH⟩ ↦ ?_, fun ⟨hs, hsn, hsH⟩ ↦ ⟨⟨s.primeFactorsList, ?_,
+    Nat.prod_primeFactorsList hs.ne_zero⟩, hsH⟩⟩
+  · subst hts
+    have hdvd := (ht.trans (List.dedup_sublist _)).prod_dvd_prod.trans
+      (Nat.prod_primeFactorsList hn).dvd
+    refine ⟨(Nat.squarefree_iff_nodup_primeFactorsList (ne_zero_of_dvd_ne_zero hn hdvd)).mpr ?_,
+      hdvd, hsH⟩
+    exact eq_primeFactorsList_prod_of_sublist ht ▸ (List.nodup_dedup _).sublist ht
+  · refine List.sublist_of_subperm_of_sortedLE (((Nat.squarefree_iff_nodup_primeFactorsList
+      hs.ne_zero).mp hs).subperm fun p hp ↦ List.mem_dedup.mpr
+        (Nat.primeFactorsList_subset_of_dvd hsn hn hp)) (Nat.primeFactorsList_sorted s)
+      ((Nat.primeFactorsList_sorted n).pairwise.sublist (List.dedup_sublist _)).sortedLE
+
+/-- Distinct sublists of the distinct prime factors of `n` have distinct products. -/
+theorem nodup_binaryDivisors (n H : ℕ) : (binaryDivisors n H).Nodup :=
+  ((List.nodup_sublists.mpr (List.nodup_dedup _)).map_on (f := List.prod) fun _ ht _ hu h ↦
+    (eq_primeFactorsList_prod_of_sublist (List.mem_sublists.mp ht)).trans
+      (congr(Nat.primeFactorsList $h).trans
+        (eq_primeFactorsList_prod_of_sublist (List.mem_sublists.mp hu)).symm)).filter _
+
 namespace Setup
 
 /-! ### The factorization of the leading coefficient -/
-
-/-- A prime that is none of the primes of the list `l` of primes with exponents does not divide the
-product of the powers. -/
-theorem not_dvd_prod_pow {p : ℕ} (hp : p.Prime) {l : List (ℕ × ℕ)}
-    (hl : ∀ x ∈ l, x.1.Prime ∧ x.1 ≠ p) : ¬p ∣ (l.map fun x ↦ x.1 ^ x.2).prod := by
-  rw [hp.prime.dvd_prod_iff]
-  intro ⟨a, ha, hpa⟩
-  obtain ⟨x, hx, rfl⟩ := List.mem_map.mp ha
-  exact (hl x hx).2 ((Nat.prime_dvd_prime_iff_eq hp (hl x hx).1).mp (hp.dvd_of_dvd_pow hpa)).symm
 
 /-- The list `fac` of pairs `(p, v)` is the factorization of `w`: its primes `p` ascend, each with
 its valuation `v = v_p(w) ≥ 1`, and every prime factor of `w` is among them. -/
@@ -337,25 +366,20 @@ theorem FactorLcfInvariant.isRoughPart {w0 w cur : ℕ} {suff : List ℕ} {fac :
 /-- A new prime factor `p` of the cofactor `w = p ^ v m`, `p ∤ m`, above the primes found, taken
 with its exponent `v ≥ 1`, leaves the cofactor `m`. -/
 theorem FactorLcfInvariant.push {w0 w m p v : ℕ} {suff suff' : List ℕ} {fac : Array (ℕ × ℕ)}
-    (h : FactorLcfInvariant w0 suff w fac) (hw0 : 0 < w0) (hp : p.Prime) (hv : 0 < v)
-    (hm : w = p ^ v * m) (hpm : ¬p ∣ m) (hlt : ∀ x ∈ fac.toList, x.1 < p)
+    (h : FactorLcfInvariant w0 suff w fac) (hp : p.Prime) (hv : 0 < v) (hm : w = p ^ v * m)
+    (hpm : ¬p ∣ m) (hlt : ∀ x ∈ fac.toList, x.1 < p)
     (h4 : CofactorInvariant w0 (fac.push (p, v)).toList suff' m) :
     FactorLcfInvariant w0 suff' m (fac.push (p, v)) := by
   obtain ⟨h1, h2, h3, -⟩ := h
-  have hP := not_dvd_prod_pow hp (l := fac.toList) fun x hx ↦ ⟨(h3 x hx).1, (hlt x hx).ne⟩
-  have : Fact p.Prime := ⟨hp⟩
-  have hm0 : m ≠ 0 := by rintro rfl; exact hpm (dvd_zero p)
+  have hP : ¬p ∣ (fac.toList.map fun x ↦ x.1 ^ x.2).prod :=
+    hp.prime.not_dvd_prod_map_pow fun x hx ↦ ⟨(h3 x hx).1.prime, (hlt x hx).ne⟩
   refine ⟨by rw [h1, hm, Array.toList_push, List.map_append, List.prod_append]; simp; ring,
     Array.pairwise_map_toList_push.mpr ⟨h2, hlt⟩, Array.forall_mem_toList_push (fun x hx ↦ ?_) ?_,
     h4⟩
   · exact ⟨(h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1,
       fun hd ↦ (h3 x hx).2.2.2 (hd.trans (hm ▸ dvd_mul_left m _))⟩
-  · have hw0' : w * (fac.toList.map fun x ↦ x.1 ^ x.2).prod ≠ 0 := h1 ▸ hw0.ne'
-    refine ⟨hp, ?_, hv, hpm⟩
-    rw [h1, padicValNat.mul (left_ne_zero_of_mul hw0') (right_ne_zero_of_mul hw0'), hm,
-      padicValNat.mul (pow_ne_zero _ hp.ne_zero) hm0, padicValNat.prime_pow,
-      padicValNat.eq_zero_of_not_dvd hpm, padicValNat.eq_zero_of_not_dvd hP]
-    rfl
+  · exact ⟨hp, (padicValNat_eq_of_eq_pow_mul_of_not_dvd hp.ne_zero (by rw [h1, hm]; ring)
+      (hp.prime.not_dvd_mul hpm hP)).symm, hv, hpm⟩
 
 /-- After the power `2 ^ v2 ≠ 1` of `w0`, found: the odd part of `w0`, every prime factor of which
 is at least `3`, the first prime of the table. -/
@@ -366,7 +390,7 @@ theorem factorLcfInvariant_nil_push {w0 v2 r : ℕ} (hw0 : 0 < w0)
   have hw : FactorLcfInvariant w0 [2] w0 #[] :=
     ⟨by simp, by simp, by simp, by simp, fun p hp _ ↦ hp.two_le⟩
   rw [Nat.div_eq_of_eq_mul_right (Nat.two_pow_pos v2) hm, forIn_toList_primeTable]
-  exact hw.push hw0 Nat.prime_two h hm hm2 (by simp)
+  exact hw.push Nat.prime_two h hm hm2 (by simp)
     ⟨by simp, fun p hp hpm ↦ hp.two_le.lt_of_ne fun h2 ↦ hm2 (h2 ▸ hpm)⟩
 
 /-- For odd `w0`: the cofactor `w0`, every prime factor of which is at least `3`, the first prime of
@@ -415,7 +439,7 @@ theorem FactorLcfInvariant.push_cur {w0 w cur v r : ℕ} {pref suff : List ℕ}
   have hw := h.isRoughPart
   obtain ⟨m, hm, hpm⟩ := exists_eq_of_eq_run_valuation (h.ne_zero hw0) hcur.one_lt hv
   rw [Nat.div_eq_of_eq_mul_right (Nat.pow_pos hcur.pos) hm]
-  refine h.push hw0 hcur hpos hm hpm h.cofactor.1 (cofactorInvariant_of_isRoughPart hl hw0.ne' hw
+  refine h.push hcur hpos hm hpm h.cofactor.1 (cofactorInvariant_of_isRoughPart hl hw0.ne' hw
     hlt ((hm ▸ hw).succ hcur hpm) ?_)
   exact Array.forall_mem_toList_push (fun x hx ↦ (h.cofactor.1 x hx).le) le_rfl
 
@@ -444,7 +468,7 @@ theorem FactorLcfInvariant.push_self {w0 w cur : ℕ} {pref suff : List ℕ} {fa
   have hcur := lt_of_mem_primeTable (Array.mem_of_forIn_toList_eq_append_cons hl)
   have h4 : CofactorInvariant w0 fac.toList (cur :: suff) w := h.cofactor
   have hw : w.Prime := Nat.prime_of_lt_mul_self (h.ne_zero hw0) (by simpa using h1) hlt h4.2
-  exact h.push hw0 hw Nat.one_pos (by simp) hw.not_dvd_one
+  exact h.push hw Nat.one_pos (by simp) hw.not_dvd_one
     (fun x hx ↦ (h4.1 x hx).trans_le (h4.2 w hw dvd_rfl))
     (iff_of_true rfl
       (factorsByTrialDivision_of_isRoughPart_of_lt h.isRoughPart hw0.ne' (by lia) hlt))
@@ -475,13 +499,8 @@ theorem FactorLcfInvariant.iff_and_isFactorization {w0 w : ℕ} {fac : Array (�
   refine ⟨h4, fun hw ↦ ⟨h2, fun x hx ↦ ⟨(h3 x hx).1, (h3 x hx).2.2.1, (h3 x hx).2.1⟩,
     fun q hq hqw ↦ by_contra fun hn ↦ ?_⟩⟩
   rw [h1, hw, Nat.one_mul] at hqw
-  exact not_dvd_prod_pow hq
-    (fun x hx ↦ ⟨(h3 x hx).1, fun he ↦ hn (List.mem_map.mpr ⟨x, hx, he⟩)⟩) hqw
-
--- The valuation, as a value for the contracts of the factorization and of the slopes.
-private theorem valuation_value (n : ℤ) (p : ℕ) :
-    ⦃ True ⦄ valuation n p ⦃ fun r ↦ r = Id.run (valuation n p) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
+  exact hq.prime.not_dvd_prod_map_pow
+    (fun x hx ↦ ⟨(h3 x hx).1.prime, fun he ↦ hn (List.mem_map.mpr ⟨x, hx, he⟩)⟩) hqw
 
 -- The table of primes, the test of the `long`s and the valuation are irreducible here: their
 -- unfolding in a failed unification of the dispatch does not end.
@@ -711,107 +730,6 @@ theorem run_squarefreeDivisors_eq_or (ps : List ℕ) (bHigh : ℕ) :
         Id.run (squarefreeDivisors ps bHigh) <+: ps.foldl (extendDivisors bHigh) [1] :=
   Std.WP.Id.of_run_eq_wp rfl _ ((squarefreeDivisors_spec ps bHigh).le_wp trivial)
 
--- `t p` for a squarefree `t` whose primes lie in `qs ∌ p` is squarefree with the primes `qs ∪ {p}`.
-private theorem squarefree_mul_and_primeFactors_subset {p t : ℕ} (hp : p.Prime) {qs : Finset ℕ}
-    (hpq : p ∉ qs) (ht : Squarefree t) (htq : t.primeFactors ⊆ qs) :
-    Squarefree (t * p) ∧ (t * p).primeFactors ⊆ insert p qs := by
-  have hpt : ¬p ∣ t := fun h ↦ hpq (htq (Nat.mem_primeFactors.mpr ⟨hp, h, ht.ne_zero⟩))
-  refine ⟨Nat.squarefree_mul_iff.mpr ⟨Nat.coprime_comm.mp (hp.coprime_iff_not_dvd.mpr hpt), ht,
-    hp.squarefree⟩, ?_⟩
-  rw [Nat.primeFactors_mul ht.ne_zero hp.ne_zero, hp.primeFactors, Finset.union_comm]
-  exact Finset.union_subset_union (fun _ h ↦ h) htq
-
--- A squarefree `s ≤ bHigh` whose primes lie in `insert p qs` arises in the pass with `p`.
-private theorem mem_extendDivisors_of_squarefree {bHigh p : ℕ} (hp : p.Prime) {qs : Finset ℕ}
-    {ds : List ℕ} (hds : ∀ s, s ∈ ds ↔ Squarefree s ∧ s.primeFactors ⊆ qs ∧ s ≤ bHigh) {s : ℕ}
-    (hs : Squarefree s) (hsub : s.primeFactors ⊆ insert p qs) (hb : s ≤ bHigh) :
-    s ∈ extendDivisors bHigh ds p := by
-  simp only [extendDivisors, List.mem_append, List.mem_map, List.mem_filter, decide_eq_true_eq, hds]
-  by_cases hps : p ∣ s
-  · obtain ⟨t, rfl⟩ := hps
-    have ht : Squarefree t := hs.of_mul_right
-    have hpt : ¬p ∣ t := fun h ↦ hp.one_lt.ne' (Nat.isUnit_iff.mp (hs p (mul_dvd_mul_left p h)))
-    refine .inr ⟨t, ⟨⟨ht, fun x hx ↦ ?_, ?_⟩, ?_⟩, Nat.mul_comm t p⟩
-    · rcases Finset.mem_insert.mp (hsub (Nat.primeFactors_mono (dvd_mul_left t p)
-        (mul_ne_zero hp.ne_zero ht.ne_zero) hx)) with rfl | h
-      · exact absurd (Nat.dvd_of_mem_primeFactors hx) hpt
-      · exact h
-    · exact (Nat.le_mul_of_pos_left t hp.pos).trans hb
-    · exact (Nat.le_div_iff_mul_le hp.pos).mpr (by rwa [Nat.mul_comm])
-  · refine .inl ⟨hs, fun x hx ↦ ?_, hb⟩
-    rcases Finset.mem_insert.mp (hsub hx) with rfl | h
-    · exact absurd (Nat.dvd_of_mem_primeFactors hx) hps
-    · exact h
-
-theorem mem_extendDivisors_iff {bHigh p : ℕ} (hp : p.Prime) {qs : Finset ℕ} (hpq : p ∉ qs)
-    {ds : List ℕ} (hds : ∀ s, s ∈ ds ↔ Squarefree s ∧ s.primeFactors ⊆ qs ∧ s ≤ bHigh) (s : ℕ) :
-    s ∈ extendDivisors bHigh ds p ↔ Squarefree s ∧ s.primeFactors ⊆ insert p qs ∧ s ≤ bHigh := by
-  refine ⟨fun h ↦ ?_, fun ⟨hs, hsub, hb⟩ ↦ mem_extendDivisors_of_squarefree hp hds hs hsub hb⟩
-  simp only [extendDivisors, List.mem_append, List.mem_map, List.mem_filter, decide_eq_true_eq,
-    hds] at h
-  rcases h with ⟨hs, hsub, hb⟩ | ⟨t, ⟨⟨ht, htsub, -⟩, htp⟩, rfl⟩
-  · exact ⟨hs, hsub.trans (Finset.subset_insert _ _), hb⟩
-  · exact ⟨(squarefree_mul_and_primeFactors_subset hp hpq ht htsub).1,
-      (squarefree_mul_and_primeFactors_subset hp hpq ht htsub).2,
-      (Nat.le_div_iff_mul_le hp.pos).mp htp⟩
-
-theorem mem_foldl_extendDivisors_iff {bHigh : ℕ} {ps : List ℕ} (hps : ∀ p ∈ ps, p.Prime)
-    (hnd : ps.Nodup) {qs : Finset ℕ} (hdisj : ∀ p ∈ ps, p ∉ qs) {ds : List ℕ}
-    (hds : ∀ s, s ∈ ds ↔ Squarefree s ∧ s.primeFactors ⊆ qs ∧ s ≤ bHigh) (s : ℕ) :
-    s ∈ ps.foldl (extendDivisors bHigh) ds ↔
-      Squarefree s ∧ s.primeFactors ⊆ qs ∪ ps.toFinset ∧ s ≤ bHigh := by
-  induction ps generalizing qs ds with
-  | nil => simpa using hds s
-  | cons p ps ih =>
-    rw [List.foldl_cons, ih (fun q hq ↦ hps q (.tail _ hq)) hnd.of_cons (qs := insert p qs)
-      (fun q hq ↦ ?_) (mem_extendDivisors_iff (hps p (.head _)) (hdisj p (.head _)) hds)]
-    · simp [Finset.insert_union, Finset.union_insert]
-    · rw [Finset.mem_insert, not_or]
-      exact ⟨fun h ↦ (List.nodup_cons.mp hnd).1 (h ▸ hq), hdisj q (.tail _ hq)⟩
-
-/-- The doubling loop over distinct primes lists exactly the squarefree numbers up to `bHigh ≥ 1`
-made of these primes. -/
-theorem mem_foldl_extendDivisors_one_iff {bHigh : ℕ} (hbHigh : 1 ≤ bHigh) {ps : List ℕ}
-    (hps : ∀ p ∈ ps, p.Prime) (hnd : ps.Nodup) (s : ℕ) :
-    s ∈ ps.foldl (extendDivisors bHigh) [1] ↔
-      Squarefree s ∧ s.primeFactors ⊆ ps.toFinset ∧ s ≤ bHigh := by
-  rw [mem_foldl_extendDivisors_iff hps hnd (qs := ∅) (by simp) fun s ↦ ?_, Finset.empty_union]
-  simp only [List.mem_singleton, Finset.subset_empty, Nat.primeFactors_eq_empty]
-  exact ⟨by rintro rfl; exact ⟨squarefree_one, .inr rfl, hbHigh⟩,
-    fun ⟨hs, h, _⟩ ↦ h.resolve_left hs.ne_zero⟩
-
--- One pass with a new prime keeps the list without duplicates, and its entries made of the primes.
-private theorem nodup_extendDivisors {bHigh p : ℕ} (hp : p.Prime) {qs : Finset ℕ} (hpq : p ∉ qs)
-    {ds : List ℕ} (hd : ds.Nodup) (hds : ∀ s ∈ ds, s ≠ 0 ∧ s.primeFactors ⊆ qs) :
-    (extendDivisors bHigh ds p).Nodup ∧
-      ∀ s ∈ extendDivisors bHigh ds p, s ≠ 0 ∧ s.primeFactors ⊆ insert p qs := by
-  have hpd (s : ℕ) (hs : s ∈ ds) : ¬p ∣ s := fun h ↦
-    hpq ((hds s hs).2 (Nat.mem_primeFactors.mpr ⟨hp, h, (hds s hs).1⟩))
-  refine ⟨List.nodup_append.mpr ⟨hd, (hd.filter _).map fun a b h ↦
-    Nat.eq_of_mul_eq_mul_right hp.pos h, fun a ha b hb hab ↦ ?_⟩, fun s hs ↦ ?_⟩
-  · obtain ⟨c, -, rfl⟩ := List.mem_map.mp hb
-    exact hpd a ha (hab ▸ dvd_mul_left p c)
-  rcases List.mem_append.mp hs with hs | hs
-  · exact ⟨(hds s hs).1, (hds s hs).2.trans (Finset.subset_insert _ _)⟩
-  · obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hs
-    have hc := hds c (List.mem_filter.mp hc).1
-    refine ⟨mul_ne_zero hc.1 hp.ne_zero, ?_⟩
-    rw [Nat.primeFactors_mul hc.1 hp.ne_zero, hp.primeFactors, Finset.union_comm]
-    exact Finset.union_subset_union (fun _ h ↦ h) hc.2
-
-theorem nodup_foldl_extendDivisors {bHigh : ℕ} {ps : List ℕ} (hps : ∀ p ∈ ps, p.Prime)
-    (hnd : ps.Nodup) {qs : Finset ℕ} (hdisj : ∀ p ∈ ps, p ∉ qs) {ds : List ℕ} (hd : ds.Nodup)
-    (hds : ∀ s ∈ ds, s ≠ 0 ∧ s.primeFactors ⊆ qs) :
-    (ps.foldl (extendDivisors bHigh) ds).Nodup := by
-  induction ps generalizing qs ds with
-  | nil => exact hd
-  | cons p ps ih =>
-    have h := nodup_extendDivisors (bHigh := bHigh) (hps p (.head _)) (hdisj p (.head _)) hd hds
-    refine ih (fun q hq ↦ hps q (.tail _ hq)) hnd.of_cons (qs := insert p qs) (fun q hq ↦ ?_)
-      h.1 h.2
-    rw [Finset.mem_insert, not_or]
-    exact ⟨fun h ↦ (List.nodup_cons.mp hnd).1 (h ▸ hq), hdisj q (.tail _ hq)⟩
-
 /-! ### The divisors in the order of binary counting -/
 
 -- One pass of the doubling loop with `p > 0` over the divisors at most `bHigh` of a list `L`:
@@ -969,66 +887,19 @@ theorem run_setupUs1_eq {c : List ℤ} {d bHigh : ℕ} {fac : List (ℕ × ℕ)}
       some (fac.map fun x ↦ ⟨x.1, x.2, Id.run (slope c d x.1 x.2)⟩, divs) else none :=
   Std.WP.Id.of_run_eq_wp rfl _ ((setupUs1_spec c d bHigh).le_wp trivial) fac w divs hf hd
 
-/-- The divisor set-up, when it succeeds, is made of the factorization of `|c_d|` with the cofactor
-`1` (`Ratpoints.Setup.factorLcf`), the list of the doubling loop over its primes
-(`Ratpoints.Setup.squarefreeDivisors`) with fewer than `Ratpoints.maxDivisors` entries, and the
-primes with their valuations and slopes (`Ratpoints.Setup.slope`). -/
-theorem exists_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List DenInfo}
-    {divisors : List ℕ} (h : Id.run (setupUs1 c d bHigh) = some (info, divisors)) :
-    ∃ fac, Id.run (factorLcf (c.getD d 0).natAbs) = (fac, 1) ∧
-      divisors = Id.run (squarefreeDivisors (fac.map Prod.fst) bHigh) ∧
-      divisors.length < maxDivisors ∧
+/-- The divisor set-up, when it succeeds for `c_d ≠ 0`, is made of the factorization of `|c_d|`
+(`Ratpoints.Setup.factorLcf`, with the cofactor `1`) and its primes with their valuations and
+slopes (`Ratpoints.Setup.slope`). -/
+theorem exists_isFactorization_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ}
+    {info : List DenInfo} {divisors : List ℕ}
+    (h : Id.run (setupUs1 c d bHigh) = some (info, divisors)) (hc : c.getD d 0 ≠ 0) :
+    ∃ fac : List (ℕ × ℕ), IsFactorization (c.getD d 0).natAbs fac ∧
       info = fac.map fun x ↦ ⟨x.1, x.2, Id.run (slope c d x.1 x.2)⟩ := by
   rcases hf : Id.run (factorLcf (c.getD d 0).natAbs) with ⟨fac, w⟩
   rw [run_setupUs1_eq hf rfl] at h
-  split_ifs at h with hc
-  · obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj h)
-    exact ⟨fac, hc.1 ▸ rfl, rfl, hc.2, rfl⟩
-
-/-- When the divisor set-up succeeds, its divisors are those of the doubling loop over the distinct
-primes of `|c_d|`, each with its valuation. -/
-theorem eq_foldl_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List DenInfo}
-    {divisors : List ℕ} (h : Id.run (setupUs1 c d bHigh) = some (info, divisors))
-    (hc : c.getD d 0 ≠ 0) :
-    ∃ fac : List (ℕ × ℕ), IsFactorization (c.getD d 0).natAbs fac ∧
-      divisors = (fac.map Prod.fst).foldl (extendDivisors bHigh) [1] ∧
-      info = fac.map fun x ↦ ⟨x.1, x.2, Id.run (slope c d x.1 x.2)⟩ := by
-  obtain ⟨fac, hfac, hdiv, hlen, rfl⟩ := exists_of_setupUs1_eq_some h
-  refine ⟨fac, isFactorization_of_run_factorLcf_eq (Int.natAbs_pos.mpr hc) hfac, ?_, rfl⟩
-  subst hdiv
-  exact (run_squarefreeDivisors_eq_or _ bHigh).resolve_right fun h ↦ absurd h.1 (by lia)
-
-/-- When the divisor set-up succeeds, its divisors are exactly the squarefree divisors of `|c_d|` up
-to the largest denominator `bHigh ≥ 1`: the factorization is complete and the list of the doubling
-loop has fewer than `Ratpoints.maxDivisors` entries, so that it did not stop early. -/
-theorem mem_iff_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List DenInfo}
-    {divisors : List ℕ} (h : Id.run (setupUs1 c d bHigh) = some (info, divisors))
-    (hc : c.getD d 0 ≠ 0) (hbHigh : 1 ≤ bHigh) {s : ℕ} :
-    s ∈ divisors ↔ Squarefree s ∧ s ∣ (c.getD d 0).natAbs ∧ s ≤ bHigh := by
-  obtain ⟨fac, ⟨hasc, hp, hall⟩, rfl, -⟩ := eq_foldl_of_setupUs1_eq_some h hc
-  rw [mem_foldl_extendDivisors_one_iff hbHigh (fun p hp' ↦ ?_) hasc.nodup]
-  · refine and_congr_right fun hs ↦ and_congr_left fun _ ↦ ?_
-    have hdvd : s ∣ (c.getD d 0).natAbs ↔ s.primeFactors ⊆ (c.getD d 0).natAbs.primeFactors := by
-      nth_rw 1 [← Nat.prod_primeFactors_of_squarefree hs]
-      exact Nat.prod_primeFactors_dvd_iff (Int.natAbs_ne_zero.mpr hc)
-    rw [hdvd]
-    refine ⟨fun hsub q hq ↦ ?_, fun hsub q hq ↦ ?_⟩
-    · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp (List.mem_toFinset.mp (hsub hq))
-      refine Nat.mem_primeFactors.mpr ⟨(hp x hx).1, ?_, Int.natAbs_ne_zero.mpr hc⟩
-      have : Fact x.1.Prime := ⟨(hp x hx).1⟩
-      exact dvd_of_one_le_padicValNat ((hp x hx).2.2 ▸ (hp x hx).2.1)
-    · obtain ⟨hqp, hqd, -⟩ := Nat.mem_primeFactors.mp (hsub hq)
-      exact List.mem_toFinset.mpr (hall q hqp hqd)
-  · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hp'
-    exact (hp x hx).1
-
-theorem nodup_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List DenInfo}
-    {divisors : List ℕ} (h : Id.run (setupUs1 c d bHigh) = some (info, divisors))
-    (hc : c.getD d 0 ≠ 0) : divisors.Nodup := by
-  obtain ⟨fac, ⟨hasc, hp, -⟩, rfl, -⟩ := eq_foldl_of_setupUs1_eq_some h hc
-  exact nodup_foldl_extendDivisors (fun q hq ↦ by
-    obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hq
-    exact (hp x hx).1) hasc.nodup (qs := ∅) (by simp) (List.nodup_singleton 1) (by simp)
+  split_ifs at h with hw
+  obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj h)
+  exact ⟨fac, isFactorization_of_run_factorLcf_eq (Int.natAbs_pos.mpr hc) (hw.1 ▸ hf), rfl⟩
 
 /-- For a factorization of `n ≥ 1` with the cofactor `1`, the doubling loop over its primes lists
 the squarefree divisors of `n` up to `bHigh ≥ 1` in the order of `Ratpoints.binaryDivisors`. -/
@@ -1066,6 +937,31 @@ theorem map_snd_run_setupUs1 {c : List ℤ} {d bHigh : ℕ} (hc : c.getD d 0 ≠
       rfl
   · rw [ite_eq_right fun h ↦ hw h.1, ite_eq_right fun h ↦ hw (hcof.mpr h.1)]
     rfl
+
+/-- When the divisor set-up of `c_d ≠ 0` succeeds, its divisors are those of
+`Ratpoints.binaryDivisors` up to `bHigh ≥ 1`. -/
+theorem eq_binaryDivisors_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List DenInfo}
+    {divisors : List ℕ} (h : Id.run (setupUs1 c d bHigh) = some (info, divisors))
+    (hc : c.getD d 0 ≠ 0) (hb : 1 ≤ bHigh) :
+    divisors = binaryDivisors (c.getD d 0).natAbs bHigh := by
+  have := map_snd_run_setupUs1 hc hb
+  rw [h, Option.map_some] at this
+  split_ifs at this
+  exact Option.some.inj this
+
+/-- When the divisor set-up succeeds, its divisors are exactly the squarefree divisors of `|c_d|` up
+to the largest denominator `bHigh ≥ 1`. -/
+theorem mem_iff_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List DenInfo}
+    {divisors : List ℕ} (h : Id.run (setupUs1 c d bHigh) = some (info, divisors))
+    (hc : c.getD d 0 ≠ 0) (hbHigh : 1 ≤ bHigh) {s : ℕ} :
+    s ∈ divisors ↔ Squarefree s ∧ s ∣ (c.getD d 0).natAbs ∧ s ≤ bHigh :=
+  eq_binaryDivisors_of_setupUs1_eq_some h hc hbHigh ▸ mem_binaryDivisors_iff
+    (Int.natAbs_ne_zero.mpr hc)
+
+theorem nodup_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List DenInfo}
+    {divisors : List ℕ} (h : Id.run (setupUs1 c d bHigh) = some (info, divisors))
+    (hc : c.getD d 0 ≠ 0) (hb : 1 ≤ bHigh) : divisors.Nodup :=
+  eq_binaryDivisors_of_setupUs1_eq_some h hc hb ▸ nodup_binaryDivisors _ _
 
 /-- The products `x p` that the doubling loop of the C code computes, only for `x ≤ ⌊bHigh / p⌋`
 (`find_points.c:876`), are at most `bHigh`, and so `long`s for a `long` `bHigh`. -/

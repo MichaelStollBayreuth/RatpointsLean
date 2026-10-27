@@ -268,8 +268,8 @@ Deviation: the prime `p` itself, for its index `pn` in the table `prime`, and th
 by `Ratpoints.Sieve.squaresMod`, for the row of `p` in the table `squares` of the build; an array
 for the pointer `coeffs_mod_p`; a natural number for the `unsigned long` mask, without the cap
 `m < LONG_LENGTH - 1` of the loop, which never binds for a `long` `b_high` and an odd prime, the
-loop ending before `m = 40`, and for `p ≤ 1`, which the C code never examines, the loop, once
-entered, does not end; natural numbers for the `long`s. -/
+loop ending before `m = 40` (`Ratpoints.Sieve.lt_forty_of_pow_le`), and for `p ≤ 1`, which the C
+code never examines, the loop, once entered, does not end; natural numbers for the `long`s. -/
 def forbiddenValuations (c : List Int) (d p bHigh : Nat) (cm : Array Nat) : Id Nat := do
   let us ← unitParts c d p cm
   let sq := squaresMod p
@@ -291,9 +291,9 @@ of a point.
 C: `find_points.c:2632-2641`
 
 Deviation: a natural number for the `unsigned long` mask, without the cap `m < LONG_LENGTH - 1` of
-the loop, which never binds for a `long` `b_high` and an odd prime, the loop ending before `m = 40`,
-and for `p ≤ 1`, which the C code never examines, the loop, once entered, does not end; natural
-numbers for the `long`s. -/
+the loop, which never binds for a `long` `b_high` and an odd prime, the loop ending before `m = 40`
+(`Ratpoints.Sieve.lt_forty_of_pow_le`), and for `p ≤ 1`, which the C code never examines, the loop,
+once entered, does not end; natural numbers for the `long`s. -/
 def allValuations (p bHigh : Nat) : Id Nat := do
   let mut all : Nat := 0
   let mut m := 1

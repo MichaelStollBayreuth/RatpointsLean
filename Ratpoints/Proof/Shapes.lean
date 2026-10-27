@@ -15,6 +15,7 @@ import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.JacobiTables
 import Ratpoints.Proof.Setup
 import Ratpoints.Proof.TwoAdic
+import Ratpoints.Proof.Valuation
 import Ratpoints.Proof.Words
 import Std.Tactic.Do
 
@@ -73,15 +74,19 @@ have a class with a pattern, which the packing of the numerators needs.
   of the C code are `long`s for a `long` largest denominator.
 * `Ratpoints.Sieve.Shape.le_and_le_of_mem_dens`: the denominators of every shape lie between the
   smallest denominator `bLow ≥ 1` and the largest.
-* `Ratpoints.Sieve.getLsbD_of_mem_wordsDens`, `Ratpoints.Sieve.Shape.bits_ne_zero_of_mem_dens`: a
-  denominator of a shape that passes its tests has a class with a pattern, when the word `den_bits`
-  has the bits of the classes with a pattern.
+* `Ratpoints.Sieve.le_and_le_and_getLsbD_of_mem_wordsDens`,
+  `Ratpoints.Sieve.Shape.bits_ne_zero_of_mem_dens`: a denominator of a shape that passes its tests
+  has a class with a pattern, when the word `den_bits` has the bits of the classes with a pattern.
 
 ## Implementation notes
 
-The contracts are proved with `vcgen`, with loop invariants that are named definitions; the tests
-read the valuation and the Jacobi tests through private specifications `⦃True⦄ x ⦃fun r ↦ r =
-Id.run x⦄`, so that they do not depend on the contracts of these components.
+The lemmas on the `long`s of the C code (`Ratpoints.Sieve.fitsLong_of_mem_squaresDens`,
+`Ratpoints.Sieve.fitsLong_of_mem_squares1Dens`, `Ratpoints.Sieve.fitsLong_of_mem_wordsDens`)
+discharge range obligations that the Deviation paragraphs of the model state, and no proof consumes
+them. The contracts are proved with `vcgen`, with loop invariants that are named definitions; the
+tests read the valuation and the Jacobi tests through specifications
+`⦃True⦄ x ⦃fun r ↦ r = Id.run x⦄` of their values (`Ratpoints.Setup.valuation_value`, and private
+ones for the Jacobi tests), so that they do not depend on the contracts of these components.
 -/
 
 @[expose] public section
@@ -227,6 +232,13 @@ theorem mem_squares1Dens_iff {divisors : List ℕ} (hpos : ∀ s ∈ divisors, 0
   · rintro ⟨h1, h2, s, hs, k, rfl⟩
     exact ⟨s, hs, k, (mem_range'_ceilSqrt_iff (hpos s hs) hbLow).mpr ⟨h1, h2⟩, rfl⟩
 
+-- The products `e k k` of a positive `e` over a range of `k` increase.
+private theorem pairwise_lt_map_range'_mul_mul {e : ℕ} (he : 0 < e) (lo n : ℕ) :
+    ((List.range' lo n).map fun k ↦ e * k * k).Pairwise (· < ·) :=
+  List.pairwise_map.mpr ((List.pairwise_lt_range').imp fun h ↦ by
+    rw [Nat.mul_assoc, Nat.mul_assoc]
+    exact Nat.mul_lt_mul_of_pos_left (Nat.mul_self_lt_mul_self h) he)
+
 /-- The divisor shape from the smallest denominator `1`: for each positive divisor `e` in turn, the
 products `e k ^ 2 ≤ H` with `k = 1, 2, …`. -/
 theorem squares1Dens_one_eq_filter {divisors : List ℕ} (hpos : ∀ e ∈ divisors, 0 < e) (H : ℕ) :
@@ -234,9 +246,7 @@ theorem squares1Dens_one_eq_filter {divisors : List ℕ} (hpos : ∀ e ∈ divis
       (divisors.flatMap fun e ↦ (List.range' 1 H).map fun k ↦ e * k ^ 2).filter (· ≤ H) := by
   rw [List.filter_flatMap, squares1Dens]
   refine List.flatMap_congr fun e he ↦ List.Pairwise.eq_of_mem_iff (r := (· < ·)) ?_ ?_ fun b ↦ ?_
-  · refine List.pairwise_map.mpr ((List.pairwise_lt_range').imp fun h ↦ ?_)
-    rw [Nat.mul_assoc, Nat.mul_assoc]
-    exact Nat.mul_lt_mul_of_pos_left (Nat.mul_self_lt_mul_self h) (hpos e he)
+  · exact pairwise_lt_map_range'_mul_mul (hpos e he) _ _
   · refine (List.pairwise_map.mpr ((List.pairwise_lt_range').imp fun h ↦ ?_)).filter _
     exact Nat.mul_lt_mul_of_pos_left (Nat.pow_lt_pow_left h two_ne_zero) (hpos e he)
   simp only [List.mem_map, List.mem_filter, mem_range'_ceilSqrt_iff (hpos e he) le_rfl,
@@ -247,24 +257,19 @@ theorem squares1Dens_one_eq_filter {divisors : List ℕ} (hpos : ∀ e ∈ divis
       Nat.mul_assoc e k k]⟩, hb⟩, by lia⟩
   · exact ⟨k, ⟨Nat.mul_pos (Nat.mul_pos (hpos e he) (by lia)) (by lia), by lia⟩, hb⟩
 
--- The products `e k k` of a positive `e` over a range of `k` increase.
-private theorem pairwise_lt_map_range'_mul_mul {e : ℕ} (he : 0 < e) (lo n : ℕ) :
-    ((List.range' lo n).map fun k ↦ e * k * k).Pairwise (· < ·) :=
-  List.pairwise_map.mpr ((List.pairwise_lt_range').imp fun h ↦ by
-    rw [Nat.mul_assoc, Nat.mul_assoc]
-    exact Nat.mul_lt_mul_of_pos_left (Nat.mul_self_lt_mul_self h) he)
-
 /-- The divisor shape from the smallest denominator `bLow ≥ 1` is the one from `1` without the
-denominators below `bLow`, for positive divisors (`Ratpoints.Sieve.mem_range'_ceilSqrt_iff`). -/
-theorem squares1Dens_eq_filter {divisors : List ℕ} (hpos : ∀ e ∈ divisors, 0 < e) {bLow : ℕ}
-    (hbLow : 1 ≤ bLow) (bHigh : ℕ) :
+denominators below `bLow` (`Ratpoints.Sieve.mem_range'_ceilSqrt_iff`); a divisor `0` gives an empty
+segment in both. -/
+theorem squares1Dens_eq_filter {divisors : List ℕ} {bLow : ℕ} (hbLow : 1 ≤ bLow) (bHigh : ℕ) :
     squares1Dens divisors bLow bHigh = (squares1Dens divisors 1 bHigh).filter (bLow ≤ ·) := by
   rw [squares1Dens, squares1Dens, List.filter_flatMap]
-  refine List.flatMap_congr fun e he ↦ List.Pairwise.eq_of_mem_iff (r := (· < ·))
-    (pairwise_lt_map_range'_mul_mul (hpos e he) _ _)
-    ((pairwise_lt_map_range'_mul_mul (hpos e he) _ _).filter _) fun b ↦ ?_
-  simp only [List.mem_map, List.mem_filter, mem_range'_ceilSqrt_iff (hpos e he) hbLow,
-    mem_range'_ceilSqrt_iff (hpos e he) le_rfl, decide_eq_true_eq]
+  refine List.flatMap_congr fun e _ ↦ ?_
+  rcases Nat.eq_zero_or_pos e with rfl | he
+  · simp [ceilSqrt, floorSqrt]
+  refine List.Pairwise.eq_of_mem_iff (r := (· < ·)) (pairwise_lt_map_range'_mul_mul he _ _)
+    ((pairwise_lt_map_range'_mul_mul he _ _).filter _) fun b ↦ ?_
+  simp only [List.mem_map, List.mem_filter, mem_range'_ceilSqrt_iff he hbLow,
+    mem_range'_ceilSqrt_iff he le_rfl, decide_eq_true_eq]
   constructor
   · rintro ⟨k, ⟨h1, h2⟩, rfl⟩
     exact ⟨⟨k, ⟨by lia, h2⟩, rfl⟩, h1⟩
@@ -310,11 +315,6 @@ theorem fitsLong_of_mem_squares1Dens {divisors : List ℕ} {bLow bHigh b : ℕ}
 
 /-! ### The valuation test of the divisor shape -/
 
--- The valuation of a denominator, as a value for the contracts of the tests.
-private theorem valuation_value (n : ℤ) (p : ℕ) :
-    ⦃ True ⦄ Setup.valuation n p ⦃ fun r ↦ r = Id.run (Setup.valuation n p) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
-
 -- The test of the loop of `Ratpoints.Sieve.denInfoTest` on an entry that does not exclude `b`.
 private theorem not_slope_le_and_odd_of_mem {info pref suff : List Setup.DenInfo}
     {cur : Setup.DenInfo} {b v r : ℕ} (hinfo : ∀ e ∈ info, e.excludes b = false)
@@ -326,7 +326,7 @@ private theorem not_slope_le_and_odd_of_mem {info pref suff : List Setup.DenInfo
 private theorem denInfoTest_spec {info : List Setup.DenInfo} {b : ℕ}
     (hinfo : ∀ e ∈ info, e.excludes b = false) :
     ⦃ True ⦄ denInfoTest info b ⦃ fun r ↦ r = true ⦄ := by
-  vcgen [denInfoTest, valuation_value] invariants
+  vcgen [denInfoTest, Setup.valuation_value] invariants
   · fun _ _ s ↦ s.1 = none
   all_goals first
     | exact absurd ‹_› (not_slope_le_and_odd_of_mem hinfo ‹_› ‹_›)
@@ -345,8 +345,8 @@ theorem run_denInfoTest_of_sq_eq {c : List ℤ} {bHigh : ℕ} {info : List Setup
     (hs : Id.run (Setup.setupUs1 c (degree c) bHigh) = some (info, divisors)) {a y : ℤ} {b : ℕ}
     (hb : b ≠ 0) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     Id.run (denInfoTest info b) = true := by
-  obtain ⟨fac, ⟨-, hp, -⟩, -, rfl⟩ :=
-    Setup.eq_foldl_of_setupUs1_eq_some hs (getD_degree_ne_zero_of_pos (by lia))
+  obtain ⟨fac, ⟨-, hp, -⟩, rfl⟩ :=
+    Setup.exists_isFactorization_of_setupUs1_eq_some hs (getD_degree_ne_zero_of_pos (by lia))
   refine run_denInfoTest_eq_true fun e he ↦ ?_
   obtain ⟨x, hx, rfl⟩ := List.mem_map.mp he
   exact Setup.DenInfo.excludes_eq_false_of_sq_eq hd (hp x hx).1 (hp x hx).2.2 hb hab hy
@@ -436,31 +436,19 @@ theorem toList_run_wordsDens {db : UInt64} {forb : List ForbiddenEntry}
   rw [getLsbD_wordBits db forb hw (by lia), all_getLsbD_words hpos hwords w ht,
     Nat.mul_add_mod_self_left, Nat.mod_eq_of_lt ht, Bool.and_assoc _ (decide _)]
 
-theorem le_and_le_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
-    (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) : bLow ≤ b ∧ b ≤ bHigh := by
+/-- The word shape lists only denominators from `bLow` to `bHigh` whose class has its bit in
+`db`. -/
+theorem le_and_le_and_getLsbD_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry}
+    {bLow bHigh b : ℕ} (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) :
+    bLow ≤ b ∧ b ≤ bHigh ∧ db.toBitVec.getLsbD (b % 64) = true := by
   rw [Std.WP.Id.of_run_eq_wp rfl _ ((wordsDens_spec db forb bLow bHigh).le_wp trivial)] at hb
   obtain ⟨w, hw, hb⟩ := List.mem_flatMap.mp hb
   obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hb
-  have hw' := List.mem_range'_1.mp hw
-  have := (List.mem_filter.mp ht).2
-  rw [getLsbD_wordBits db forb hw'.1 (by lia)] at this
-  simp only [Bool.and_eq_true, decide_eq_true_eq] at this
-  exact ⟨this.1.2, this.2⟩
-
-/-- The word shape lists only denominators whose class has its bit in `db`. -/
-theorem getLsbD_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
-    (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) :
-    db.toBitVec.getLsbD (b % 64) = true := by
-  rw [Std.WP.Id.of_run_eq_wp rfl _ ((wordsDens_spec db forb bLow bHigh).le_wp trivial)] at hb
-  obtain ⟨w, hw, hb⟩ := List.mem_flatMap.mp hb
-  obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hb
-  have hw' := List.mem_range'_1.mp hw
-  have ht' := List.mem_range.mp (List.mem_filter.mp ht).1
-  have := (List.mem_filter.mp ht).2
-  rw [getLsbD_wordBits db forb hw'.1 (by lia)] at this
-  simp only [Bool.and_eq_true] at this
-  rw [Nat.mul_add_mod_self_left, Nat.mod_eq_of_lt ht']
-  exact this.1.1.1
+  obtain ⟨ht', ht⟩ := List.mem_filter.mp ht
+  rw [getLsbD_wordBits db forb (List.mem_range'_1.mp hw).1 (by lia [List.mem_range'_1.mp hw])] at ht
+  simp only [Bool.and_eq_true, decide_eq_true_eq] at ht
+  rw [Nat.mul_add_mod_self_left, Nat.mod_eq_of_lt (List.mem_range.mp ht')]
+  exact ⟨ht.1.2, ht.2, ht.1.1.1⟩
 
 /-- The denominators `64 w + t` of the word shape, which the C code computes as `long`s
 (`base = w << LONG_SHIFT` and `b = base + RP_CTZL(b_bits)`, `find_points.c:3991`,
@@ -470,34 +458,33 @@ theorem fitsLong_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bL
     (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) (hH : bHigh < 2 ^ 63) :
     fitsLong (b : ℤ) = true := by
   simp [fitsLong]
-  lia [le_and_le_of_mem_wordsDens hb]
+  lia [(le_and_le_and_getLsbD_of_mem_wordsDens hb).2.1]
 
 /-! ### The bounds of the denominators of the shapes -/
 
 /-- No divisor need be positive: a divisor `0` has an empty segment. -/
 theorem le_and_le_of_mem_squares1Dens {divisors : List ℕ} {bLow bHigh b : ℕ} (hbLow : 1 ≤ bLow)
     (hb : b ∈ squares1Dens divisors bLow bHigh) : bLow ≤ b ∧ b ≤ bHigh := by
-  obtain ⟨s, -, k, hk, rfl⟩ : ∃ s ∈ divisors, ∃ k ∈ List.range' (ceilSqrt ((bLow - 1) / s + 1))
-      (floorSqrt (bHigh / s) + 1 - ceilSqrt ((bLow - 1) / s + 1)), b = s * k * k := by
-    simpa [squares1Dens, eq_comm] using hb
+  simp only [squares1Dens, List.mem_flatMap, List.mem_map] at hb
+  obtain ⟨s, -, k, hk, rfl⟩ := hb
   rcases Nat.eq_zero_or_pos s with rfl | hs
   · simp [ceilSqrt, floorSqrt] at hk
   · exact (mem_range'_ceilSqrt_iff hs hbLow).mp hk
 
 /-- The denominators of every shape lie between `bLow ≥ 1` and `bHigh`, as the test for common
 factors on the words of the C code needs (`Ratpoints.Sieve.sift_spec`). -/
-theorem Shape.le_and_le_of_mem_dens (s : Shape) (db : UInt64) {bLow bHigh b : ℕ} (hbLow : 1 ≤ bLow)
+theorem Shape.le_and_le_of_mem_dens (s : Shape) {db : UInt64} {bLow bHigh b : ℕ} (hbLow : 1 ≤ bLow)
     (hb : b ∈ Id.run (s.dens db bLow bHigh)) : bLow ≤ b ∧ b ≤ bHigh := by
   cases s with
   | squares => exact ((mem_squaresDens_iff hbLow).mp hb).imp_right And.left
   | squares1 _ divisors => exact le_and_le_of_mem_squares1Dens hbLow hb
-  | words forb _ _ _ _ => exact le_and_le_of_mem_wordsDens hb
+  | words forb _ _ _ _ => exact (le_and_le_and_getLsbD_of_mem_wordsDens hb).imp_right And.left
   | all => lia [List.mem_range'_1.mp hb]
 
 /-- A denominator of a shape that passes its tests has a class with a pattern, when the bits of the
 word `db` are those of the classes with a pattern: the class test of the other shapes reads the
 pattern, and the word shape lists only denominators whose class has its bit in `db`
-(`Ratpoints.Sieve.getLsbD_of_mem_wordsDens`). -/
+(`Ratpoints.Sieve.le_and_le_and_getLsbD_of_mem_wordsDens`). -/
 theorem Shape.bits_ne_zero_of_mem_dens (s : Shape) {db : UInt64} {cls : Vector NumClass 64}
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) {bLow bHigh b : ℕ}
     (hb : b ∈ Id.run (s.dens db bLow bHigh)) (hk : Id.run (s.keep cls b) = true) :
@@ -506,7 +493,7 @@ theorem Shape.bits_ne_zero_of_mem_dens (s : Shape) {db : UInt64} {cls : Vector N
   | squares => simpa [Shape.keep] using hk
   | squares1 => simp only [Shape.keep] at hk; split at hk <;> simp_all
   | words =>
-    have := getLsbD_of_mem_wordsDens hb
+    have := (le_and_le_and_getLsbD_of_mem_wordsDens hb).2.2
     rw [hdb _ (Nat.mod_lt _ (by decide))] at this
     simpa using this
   | all => simpa [Shape.keep] using hk
@@ -537,7 +524,7 @@ private theorem wordsTest_spec {forbVal : List ForbiddenVal} {useJacobi : Bool}
     (hval : ∀ e ∈ forbVal, e.excludes b = false)
     (hjac : fast = none → useJacobi = true → Id.run (jacobi b lcf) = 1) :
     ⦃ True ⦄ wordsTest forbVal useJacobi fast lcf b ⦃ fun r ↦ r = true ⦄ := by
-  vcgen [wordsTest, valuation_value, jacobiTest_value, jacobi_value] invariants
+  vcgen [wordsTest, Setup.valuation_value, jacobiTest_value, jacobi_value] invariants
   · fun _ _ s ↦ s.1 = none
   · fun _ _ s ↦ s.1 = none
   all_goals first

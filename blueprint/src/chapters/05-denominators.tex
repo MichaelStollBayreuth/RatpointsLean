@@ -211,7 +211,7 @@ $G(a, b) = c_d a^d + b \sum_{k < d} c_k a^k b^{d - 1 - k}$, and for coprime $a$ 
 $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points.
 
 \begin{definition}[The valuation]\label{def:valuation}
-  \lean{Ratpoints.veryBig, Ratpoints.Setup.valuation, Ratpoints.Setup.valuation_spec, Ratpoints.Setup.fst_run_valuation, Ratpoints.Setup.snd_run_valuation}
+  \lean{Ratpoints.veryBig, Ratpoints.Setup.valuation, Ratpoints.Setup.valuation_spec, Ratpoints.Setup.fst_run_valuation}
   \leanok
   The valuation $v$ of an integer $n \ne 0$ at $p$ and the unit part $|n| / p^v$ modulo $p$, by
   repeated division with remainder, and $(\mathrm{veryBig}, 0)$ for $n = 0$, with
@@ -223,7 +223,7 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
 
 \begin{definition}[The divisors of the leading coefficient]\label{def:setupUs1}
   \uses{def:valuation, def:primeTable, def:useCLong, def:binaryDivisors, lem:roughPart}
-  \lean{Ratpoints.maxDivisors, Ratpoints.Setup.DenInfo, Ratpoints.Setup.factorLcf, Ratpoints.Setup.squarefreeDivisors, Ratpoints.Setup.slope, Ratpoints.Setup.setupUs1, Ratpoints.Setup.IsFactorization, Ratpoints.Setup.FactorLcfInvariant, Ratpoints.Setup.CofactorInvariant, Ratpoints.Setup.FactorLcfInvariant.isRoughPart, Ratpoints.Setup.FactorLcfInvariant.iff_and_isFactorization, Ratpoints.Setup.factorLcf_spec, Ratpoints.Setup.extendDivisors, Ratpoints.Setup.squarefreeDivisors_spec, Ratpoints.Setup.slope_spec, Ratpoints.Setup.setupUs1_spec, Ratpoints.Setup.run_setupUs1_eq, Ratpoints.Setup.snd_run_factorLcf_eq_one_iff, Ratpoints.Setup.run_squarefreeDivisors_eq_or, Ratpoints.Setup.isFactorization_of_run_factorLcf_eq, Ratpoints.Setup.exists_of_setupUs1_eq_some, Ratpoints.Setup.eq_foldl_of_setupUs1_eq_some, Ratpoints.mem_primeTable_of_prime, Ratpoints.mem_of_toList_primeTable_eq, Ratpoints.forIn_toList_primeTable, Ratpoints.eq_of_toList_primeTable_eq_append_singleton, Ratpoints.le_of_toList_primeTable_eq_append_cons_cons, List.mem_of_mem_append_cons_of_rel, Nat.prime_of_lt_mul_self, Ratpoints.Setup.fitsLong_mul_of_le_div, Ratpoints.Setup.mul_self_lt_of_mem_primeTable, Ratpoints.Setup.fitsLong_of_lt_mul_self}
+  \lean{Ratpoints.maxDivisors, Ratpoints.Setup.DenInfo, Ratpoints.Setup.factorLcf, Ratpoints.Setup.squarefreeDivisors, Ratpoints.Setup.slope, Ratpoints.Setup.setupUs1, Ratpoints.Setup.IsFactorization, Ratpoints.Setup.FactorLcfInvariant, Ratpoints.Setup.CofactorInvariant, Ratpoints.Setup.FactorLcfInvariant.isRoughPart, Ratpoints.Setup.FactorLcfInvariant.iff_and_isFactorization, Ratpoints.Setup.factorLcf_spec, Ratpoints.Setup.extendDivisors, Ratpoints.Setup.squarefreeDivisors_spec, Ratpoints.Setup.slope_spec, Ratpoints.Setup.setupUs1_spec, Ratpoints.Setup.run_setupUs1_eq, Ratpoints.Setup.snd_run_factorLcf_eq_one_iff, Ratpoints.Setup.run_squarefreeDivisors_eq_or, Ratpoints.Setup.isFactorization_of_run_factorLcf_eq, Ratpoints.Setup.exists_isFactorization_of_setupUs1_eq_some, Ratpoints.mem_primeTable_of_prime, Ratpoints.mem_of_toList_primeTable_eq, Ratpoints.forIn_toList_primeTable, Ratpoints.eq_of_toList_primeTable_eq_append_singleton, Ratpoints.le_of_toList_primeTable_eq_append_cons_cons, List.mem_of_mem_append_cons_of_rel, Nat.prime_of_lt_mul_self, Ratpoints.Setup.fitsLong_mul_of_le_div, Ratpoints.Setup.mul_self_lt_of_mem_primeTable, Ratpoints.Setup.fitsLong_of_lt_mul_self}
   \leanok
   For odd $d$ and $|c_d| \ne 1$, as \verb|setup_us1| computes it: the factorization of $|c_d|$, the
   power of $2$ divided off, then for the odd primes $p$ of the table in turn, while the cofactor is
@@ -283,7 +283,7 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
 
 \begin{lemma}[The denominators of odd degree]\label{lem:odd_denominators}
   \uses{def:setupUs1, def:binaryForm, lem:squarefree_binaryFormPoly}
-  \lean{Ratpoints.even_of_sq_eq_binaryForm_of_odd, Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd, Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.mem_foldl_extendDivisors_one_iff, Ratpoints.Setup.nodup_foldl_extendDivisors, Ratpoints.Setup.mem_iff_of_setupUs1_eq_some, Ratpoints.Setup.nodup_of_setupUs1_eq_some, Ratpoints.even_add_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.DenInfo.excludes, Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq}
+  \lean{Ratpoints.even_of_sq_eq_binaryForm_of_odd, Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd, Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd, Ratpoints.mem_binaryDivisors_iff, Ratpoints.nodup_binaryDivisors, Ratpoints.Setup.mem_iff_of_setupUs1_eq_some, Ratpoints.Setup.nodup_of_setupUs1_eq_some, Ratpoints.even_add_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.DenInfo.excludes, Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq}
   \leanok
   Let $d$ be odd, $a$ and $y$ integers and $b \ge 1$ a natural number with $\gcd(a, b) = 1$ and
   $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$.
@@ -321,7 +321,7 @@ $w_j = v_p(c_{d - j})$.
 
 \begin{definition}[The forbidden valuations]\label{def:forbiddenValuations}
   \uses{def:valuation, def:squaresMod}
-  \lean{Ratpoints.Sieve.unitParts, Ratpoints.Sieve.forbiddenAt, Ratpoints.Sieve.forbiddenValuations, Ratpoints.Sieve.allValuations, Ratpoints.Sieve.IsUnitPart, Ratpoints.Sieve.unitParts_spec, Ratpoints.Sieve.forbiddenAt_spec, Ratpoints.Sieve.forbiddenValuations_spec, Ratpoints.Sieve.allValuations_spec, Ratpoints.Sieve.lt_forty_of_pow_le, Ratpoints.Sieve.run_forbiddenValuations_lt, Ratpoints.Sieve.run_allValuations_lt}
+  \lean{Ratpoints.Sieve.unitParts, Ratpoints.Sieve.forbiddenAt, Ratpoints.Sieve.forbiddenValuations, Ratpoints.Sieve.allValuations, Ratpoints.Sieve.IsUnitPart, Ratpoints.Sieve.unitParts_spec, Ratpoints.Sieve.forbiddenAt_spec, Ratpoints.Sieve.forbiddenValuations_spec, Ratpoints.Sieve.allValuations_spec, Ratpoints.Sieve.lt_forty_of_pow_le}
   \leanok
   For a prime $p \mid c_d$ and the coefficients modulo $p$, which \verb|examine_prime| hands back to
   its caller: the valuation $w_j$ and the unit part $r_j$ modulo $p$, its sign included, of each
@@ -466,7 +466,7 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{definition}[The Jacobi test by tables]\label{def:jacobiTables}
   \uses{def:valuation, def:primeTable, def:ctz, def:mulMod, lem:mulMod}
-  \lean{Ratpoints.jacobiPrimes, Ratpoints.jacobiTable, Ratpoints.mulModLimit, Ratpoints.Sieve.JacobiInfo, Ratpoints.Sieve.nonSquares, Ratpoints.Sieve.jacobiSigns, Ratpoints.Sieve.jacobiSetup, Ratpoints.Sieve.jacobiTest, Ratpoints.Sieve.nonSquares_spec, Ratpoints.Sieve.legendreSym_eq_ite_getElem!_nonSquares, Ratpoints.Sieve.ite_getElem!_jacobiSigns, Ratpoints.Sieve.IsJacobiInfo, Ratpoints.Sieve.jacobiSetup_spec, Ratpoints.Sieve.jacobiTest_spec, ZMod.isSquare_natCast_iff_exists_mul_self_mod_eq, Ratpoints.mulModLimit_lt_size, Ratpoints.mulModLimit_lt_two_pow_32, Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit, Ratpoints.Sieve.le_mulModLimit_of_jacobiSetup_eq_some}
+  \lean{Ratpoints.jacobiPrimes, Ratpoints.jacobiTable, Ratpoints.mulModLimit, Ratpoints.Sieve.JacobiInfo, Ratpoints.Sieve.nonSquares, Ratpoints.Sieve.jacobiSigns, Ratpoints.Sieve.jacobiSetup, Ratpoints.Sieve.jacobiTest, Ratpoints.Sieve.nonSquares_spec, Ratpoints.Sieve.legendreSym_eq_ite_getElem!_nonSquares, Ratpoints.Sieve.ite_getElem!_jacobiSigns, Ratpoints.Sieve.IsJacobiInfo, Ratpoints.Sieve.jacobiSetup_spec, Ratpoints.Sieve.jacobiTest_spec, ZMod.isSquare_natCast_iff_exists_mul_self_mod_eq, Ratpoints.mulModLimit_lt_size, Ratpoints.mulModLimit_lt_two_pow_32, Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit}
   \leanok
   For $\ell = \pm 2^v \prod q_i^{e_i}$ and $b_{\mathrm{high}} \le \mathrm{mulModLimit} = 2^{32} - 1$
   (\verb|RP_MULMOD_LIMIT|, \csource{rp-private.h}{421}{421}): a record
@@ -571,7 +571,7 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{lemma}[The lists of the shapes]\label{lem:shape_dens}
   \uses{def:Shape, lem:twoAdic_point, lem:odd_denominators, lem:forbidden, lem:jacobiTest}
-  \lean{Ratpoints.Sieve.squaresDens_eq_filter, Ratpoints.Sieve.mem_squaresDens_iff, Ratpoints.Sieve.mem_range'_ceilSqrt_iff, Ratpoints.Sieve.mem_squares1Dens_iff, Ratpoints.Sieve.nodup_squares1Dens, Nat.eq_of_mul_sq_eq_mul_sq, Ratpoints.Sieve.toList_run_wordsDens, Ratpoints.Sieve.run_denInfoTest_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits_and_all_of_sq_eq, Ratpoints.Sieve.run_wordsTest_of_sq_eq, Ratpoints.Sieve.Shape.le_and_le_of_mem_dens, Ratpoints.Sieve.getLsbD_of_mem_wordsDens, Ratpoints.Sieve.Shape.bits_ne_zero_of_mem_dens}
+  \lean{Ratpoints.Sieve.squaresDens_eq_filter, Ratpoints.Sieve.mem_squaresDens_iff, Ratpoints.Sieve.mem_range'_ceilSqrt_iff, Ratpoints.Sieve.mem_squares1Dens_iff, Ratpoints.Sieve.nodup_squares1Dens, Nat.eq_of_mul_sq_eq_mul_sq, Ratpoints.Sieve.toList_run_wordsDens, Ratpoints.Sieve.run_denInfoTest_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits_and_all_of_sq_eq, Ratpoints.Sieve.run_wordsTest_of_sq_eq, Ratpoints.Sieve.Shape.le_and_le_of_mem_dens, Ratpoints.Sieve.le_and_le_and_getLsbD_of_mem_wordsDens, Ratpoints.Sieve.Shape.bits_ne_zero_of_mem_dens}
   \leanok
   Let $1 \le b_{\mathrm{low}}$. The denominators of every shape lie between $b_{\mathrm{low}}$ and
   $b_{\mathrm{high}}$, and when the bits of $\mathrm{den\_bits}$ are those of the classes with a
@@ -687,7 +687,7 @@ the sieving holds the frame of the block that sets up the run and the rows of of
 \begin{theorem}[The output of the search]\label{thm:findPoints_order}
   \uses{def:findPoints, def:searchPoints, def:searchDens, lem:shape_dens, lem:twoAdic_exit,
     lem:examinePrime_none, lem:reversal_swap, def:normalize, def:searchRegion, def:inIntervals}
-  \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.perm_flatMap_squares1Dens, Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens, Ratpoints.append_flatMap_searchDens_eq_bruteForce, List.perm_flatMap_of_nodup}
+  \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.perm_flatMap_squares1Dens, Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens, List.perm_flatMap_of_nodup}
   \leanok
   For the options $s$ of the sieve and options $o$ with $\mathrm{noCheck}$ false, if
   $\mathrm{findPoints}(c, H, s, o)$ returns the list $L$, and the reversal check with the normalized
