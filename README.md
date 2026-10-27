@@ -84,7 +84,7 @@ record; the vector code of the C builds is modelled by the operations on 64-bit 
 implements, and the first stage of the sieve is that of the default build, with chunks of 16 bit
 arrays. The compile-time constants of the C code are definitions of the model
 (`Ratpoints/Model/Constants.lean`), and no proof depends on their values beyond a few facts checked
-by `decide`, which its module docstring lists.
+by `decide`, which its module docstring lists (`scripts/constants_check.py` checks this).
 
 The blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
@@ -115,6 +115,7 @@ python3 scripts/correspondence.py check --complete   # the record of the C code 
 python3 scripts/difftest.py                  # ratpoints-lean against the C program
 python3 scripts/difftest.py --suites test4high   # the runs of test4.sh above height 30000
 python3 scripts/difftest.py --suites adapt       # searches where ratpoints corrects its moduli
+python3 scripts/constants_check.py --workdir tmp/cc   # builds with other values of the constants
 ```
 
 `scripts/correspondence.py` and `scripts/difftest.py` read the C code and the test suites from a
@@ -125,6 +126,10 @@ that `--c PATH` or `RATPOINTS_BIN` names), which must be the default build at th
 the moduli computes with the `log` and `pow` of the C library of the platform. CI runs these checks
 and more (`.github/workflows/build-project.yml`). `scripts/run-comparator.sh --paranoid` runs
 Comparator, built into Lake as `lake comparator` (`comparator/README.md`).
+`scripts/constants_check.py` builds copies of the committed project with eleven other sets of
+values of the compile-time constants, one after the other, each without the `#guard` examples of
+the model, and reports whether the library still builds; it uses the built packages of the
+repository and runs on demand, not in CI.
 
 ## The program `ratpoints-lean`
 

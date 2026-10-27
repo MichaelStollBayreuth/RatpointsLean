@@ -273,18 +273,18 @@ with $\mathrm{rbaShift} < 32$, that $\mathrm{maxBitsInPrime} \le 10$, that the b
 is positive and below~$2^{57}$, that a fixed length of the blocks is positive, and a few more of
 that kind.
 
-The author checks this by building copies of the project, with all its proofs and without the
-\verb|#guard| examples of the model, which test the default values, for eleven other sets of
-values, each of which builds: two that change every constant, one to small values (among them bit
+The script \verb|scripts/constants_check.py| checks this by building copies of the committed
+project, with all its proofs and without the \verb|#guard| examples of the model, which test the
+default values, for eleven other sets of values, each of which builds: two that change every constant, one to small values (among them bit
 arrays of~$64$~bits, the chunk~$1$, the lag~$0$ and blocks of length~$1$) and one to large values
 (bit arrays of~$512$~bits, the chunk~$17$, which compiles the other arm of the first stage, the
 lag~$1000$); four that change the chunk alone, to~$2$, $3$, $5$ and~$12$; three that pair the
 chunked first stage with the widths of the other builds, $512$, $128$ and~$64$~bits; one with the
 lag~$1$ and blocks of length~$3$; and one with one block wanted. So the proofs hold for the models
 of the configurations of the C code that differ in these constants, the widths of the bit arrays of
-all its builds among them. The check runs outside CI; anyone can repeat it by changing the values
-in \verb|Ratpoints/Model/Constants.lean|, removing the \verb|#guard| examples of the model and
-building the project.
+all its builds among them. The script builds the copies one after the other, with the built
+packages of the repository, and runs on demand, outside CI; the sets of values are a table in it,
+and \verb|--variant| gives others.
 
 \section{Continuous integration}\label{sec:ccodeCI}
 
@@ -301,4 +301,4 @@ and runs the default suites of the differential tests against it. The build fail
 depends on an axiom beyond \verb|propext|, \verb|Classical.choice| and \verb|Quot.sound|, by the
 guards \verb|#print axioms| under \verb|#guard_msgs|. Comparator (Section~\ref{sec:comparator}),
 the suites \verb|test4high| and \verb|adapt|, the pair with a fixed length of the blocks and the
-builds with other values of the constants run outside CI.
+builds with other values of the constants (\verb|scripts/constants_check.py|) run outside CI.

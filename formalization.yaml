@@ -184,9 +184,10 @@ automation:
         the types of all declarations), with sub-agents for research, for drafts of the Lean code
         (written in a separate copy and transplanted into the repository after review, through the
         verification chain), and for the review of the C ranges and of the code; the project is also
-        built with other values of the compile-time constants of the C code, to check that no proof
-        depends on them. The statements of comparator/challenges.json are certified with Lake's lake
-        comparator --paranoid (Lean v4.35.0 and later), which builds and exports the project in a
+        built with other values of the compile-time constants of the C code
+        (scripts/constants_check.py, run on demand), to check that no proof depends on them. The
+        statements of comparator/challenges.json are certified with Lake's lake comparator
+        --paranoid (Lean v4.35.0 and later), which builds and exports the project in a
         sandbox and checks the export with Lean's kernel and the five external checkers bundled with
         Lean.
       cost:

@@ -38,6 +38,8 @@
 *.pdfsync
 ## Python
 __pycache__/
+## Copies of the project built by scripts/constants_check.py with a workdir under tmp/
+/tmp/
 ## Working notes, the notes for Claude Code sessions and the author's local tooling (local/),
 ## not part of the project
 /PLAN.md

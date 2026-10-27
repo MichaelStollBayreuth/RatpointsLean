@@ -362,7 +362,7 @@ first stage keeps in registers, which choose among the arms of the code. The mod
 constants as definitions with the values of the default build, and both arms where the C code has
 two, but for the arm of \verb|exact_scale| for a build without a 128-bit integer type, which the
 record excludes (\csource{find_points.c}{3239}{3256}). No proof depends on the values of the
-constants beyond a few facts that are decided; the author checks this, outside CI, by building
+constants beyond a few facts that are decided; a script checks this, outside CI, by building
 copies of the whole project with eleven other sets of values (Section~\ref{sec:ccodeConstants}). So
 the proofs cover the models of the builds that have \verb|unsigned __int128|, while the tests run
 the default build.
