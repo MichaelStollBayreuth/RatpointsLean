@@ -3,7 +3,7 @@
 
 usage: scripts/fasttest.py --c PATH --repo DIR [--lean PATH] [--height H] [--ranges N]
 
-Runs ratpoints-lean (the fast search, Ratpoints.Fast.fastPoints) and the C program ratpoints on
+Runs ratpoints-lean (the fast search, Ratpoints.FastMask.fastPoints) and the C program ratpoints on
 the curves of the three test suites of ratpoints (testdata.h, testdata-many.h and
 testdata-degrees.h in DIR) at the height bound H (default 16383, that of rptest), and on N curves
 of testdata.h (default 200) with random bounds -dl and -du of the denominators, and compares the

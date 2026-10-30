@@ -22,16 +22,17 @@ order (`Ratpoints.FastMask.fastPoints_perm`), so it lists exactly the points of 
 once (`Ratpoints.FastMask.mem_fastPoints_iff`, `Ratpoints.FastMask.nodup_fastPoints`).
 
 A mask is read as the natural number `Ratpoints.Mask.toNat`, whose bit `j` is bit `j` of the mask
-(`Ratpoints.Mask.testBit_toNat`). The reference definitions of the two primitives then do what
-the search on natural numbers does: `Ratpoints.Mask.andShr` is the AND with a row shifted to the
-right (`Ratpoints.Mask.toNat_andShr`), and `Ratpoints.Mask.setBits`, on
-`Ratpoints.Mask.nextSet`, lists the set bits in ascending order where `Ratpoints.Fast.setBits` lists
-them in descending order (`Ratpoints.Mask.setBits_perm`). The periodic rows of
-`Ratpoints.FastMask.baseRow` and `Ratpoints.Fast.baseRow` agree on the bits that a family keeps
+(`Ratpoints.Mask.testBit_toNat`). The reference definitions of the two primitives then do what the
+search on natural numbers does: `Ratpoints.Mask.andShr` is the AND with a row shifted to the right
+(`Ratpoints.Mask.toNat_andShr`), and `Ratpoints.Mask.setBits`, on `Ratpoints.Mask.nextSet`, lists
+the set bits in ascending order where `Ratpoints.Fast.setBits` lists them in descending order
+(`Ratpoints.Mask.setBits_perm`). The periodic rows of `Ratpoints.FastMask.baseRow` and
+`Ratpoints.Fast.baseRow` agree on the bits that a family keeps
 (`Ratpoints.FastMask.testBit_toNat_baseRow`, `Ratpoints.Fast.testBit_baseRow_of_lt`), so the
 families of the two searches agree once their rows are read as numbers
-(`Ratpoints.FastMask.map_toFast_mkFamily`), and so do the parameters, the entries of a chunk and
-the candidates that the sieve leaves (`Ratpoints.FastMask.toNat_sieveFrom_ones`).
+(`Ratpoints.FastMask.map_toFast_mkFamily`), and so do the parameters, the denominators whose rows
+are not `0` (`Ratpoints.FastMask.all_map_isZero_eq`) and the candidates that the sieve leaves in a
+chunk (`Ratpoints.FastMask.toNat_sieveFrom_ones`).
 
 ## Main statements
 
@@ -57,6 +58,12 @@ theorem Nat.testBit_of_le_one {x : ℕ} (hx : x ≤ 1) (n : ℕ) :
   · simp
   · rw [Bool.eq_iff_iff, Nat.testBit_one_eq_true_iff_self_eq_zero]
     simp
+
+theorem Array.getElem!_map_list_map {α β γ : Type*} (f : α → List β) (φ : β → γ) (xs : Array α)
+    (n : ℕ) :
+    (xs.map fun a ↦ (f a).map φ)[n]! = (xs.map f)[n]!.map φ := by
+  rw [← Array.getElem!_map (f := List.map φ) rfl, Array.map_map]
+  rfl
 
 namespace Ratpoints
 
@@ -551,8 +558,8 @@ theorem Family.toFast_rows (F : Family) : F.toFast.rows = F.rows.map toNat := rf
 @[simp]
 theorem Family.shift_toFast (F : Family) (a₀ : ℤ) : F.toFast.shift a₀ = F.shift a₀ := rfl
 
-theorem map_toFast_mkFamily (G N : ℕ) (ts : List (ℕ × Array (Array Bool))) :
-    (mkFamily G N ts).map Family.toFast = Fast.mkFamily G N ts := by
+theorem map_toFast_mkFamily (G L : ℕ) (ts : List (ℕ × Array (Array Bool))) :
+    (mkFamily G L ts).map Family.toFast = Fast.mkFamily G L ts := by
   rw [mkFamily, Fast.mkFamily]
   split_ifs with h
   · dsimp only
@@ -568,66 +575,39 @@ theorem map_toFast_fams_choose (tu : Fast.Tuning) (c : List ℤ) (d H B : ℕ) :
     (choose tu c d H B).fams.map Family.toFast = (Fast.choose tu c d H B).fams := by
   simp only [choose, Fast.choose, List.map_toArray, List.map_filterMap, map_toFast_mkFamily]
 
-/-! ### The entries and the sieve -/
-
-/-- The entry `e` with its rows as natural numbers (`Ratpoints.Mask.toNat`): the entry of
-`Ratpoints.Fast` that `Ratpoints.Fast.entries` makes where `Ratpoints.FastMask.entries` makes `e`
-(`Ratpoints.FastMask.map_toFast_entries`). -/
-def Entry.toFast (e : Entry) : Fast.Entry := ⟨e.M, e.rows.map toNat, e.shift⟩
-
-theorem map_toFast_entries (fams : Array Family) (nb : ℕ) (a₀ : ℤ) (len : ℕ) :
-    (entries fams nb a₀ len).map Entry.toFast =
-      Fast.entries (fams.map Family.toFast) nb a₀ len := by
-  rw [entries, Fast.entries, Array.zipIdx_map, Array.map_map, Array.map_map]
-  refine Array.map_congr_left fun ⟨F, i⟩ _ ↦ ?_
-  simp only [Function.comp_apply, Prod.map_apply, id_eq, Family.toFast_M, Family.toFast_rows,
-    Family.shift_toFast]
-  by_cases h : (i + 1) * F.M ≤ nb
-  · simp only [h, ↓reduceIte, Entry.toFast, Array.map_map, Fast.Entry.mk.injEq, true_and,
-      and_true]
-    exact Array.map_congr_left fun R _ ↦ by simp [toNat_andShr, toNat_ones, Nat.and_comm]
-  · simp only [h, ↓reduceIte]
-    rfl
-
-theorem row_toFast (e : Entry) (b : ℕ) : e.toFast.row b = toNat e.rows[b % e.M]! >>> e.shift := by
-  have hr : e.toFast.rows[b % e.toFast.M]! = toNat e.rows[b % e.M]! :=
-    Array.getElem!_map toNat_empty ..
-  rw [Fast.Entry.row, hr]
-  split_ifs with h
-  · rw [show e.shift = 0 from beq_iff_eq.mp h, Nat.shiftRight_zero]
-  · rfl
+/-! ### The sieve -/
 
 /-- The sieve on masks, from position `i` on, with the zero tests of the search on natural numbers
 dropped: an AND with `0` stays `0`. -/
-theorem toNat_sieveFrom (es : Array Entry) (b : ℕ) (acc : ByteArray) (i : ℕ) :
-    toNat (sieveFrom es b acc i) =
-      (es.toList.drop i).foldl (fun n e ↦ n &&& toNat e.rows[b % e.M]! >>> e.shift)
+theorem toNat_sieveFrom (rs : Array ByteArray) (sh : Array ℕ) (acc : ByteArray) (i : ℕ) :
+    toNat (sieveFrom rs sh acc i) =
+      ((List.range rs.size).drop i).foldl (fun n j ↦ n &&& toNat rs[j]! >>> sh[j]!)
         (toNat acc) := by
-  fun_induction sieveFrom es b acc i with
-  | case1 acc i h e acc' h0 =>
-    rw [List.drop_eq_getElem_cons (by simpa using h), List.foldl_cons, Array.getElem_toList,
-      ← toNat_andShr]
+  fun_induction sieveFrom rs sh acc i with
+  | case1 acc i h acc' h0 =>
+    rw [List.drop_eq_getElem_cons (by simpa using h), List.foldl_cons, List.getElem_range,
+      getElem!_pos rs i h, ← toNat_andShr]
     change toNat acc' = List.foldl _ (toNat acc') _
     rw [toNat_of_size_eq_zero (beq_iff_eq.mp h0), Fast.foldl_and_zero]
-  | case2 acc i h e acc' h0 ih =>
+  | case2 acc i h acc' h0 ih =>
     rw [ih, List.drop_eq_getElem_cons (i := i) (by simpa using h), List.foldl_cons,
-      Array.getElem_toList, ← toNat_andShr]
+      List.getElem_range, getElem!_pos rs i h, ← toNat_andShr]
   | case3 acc i h => rw [List.drop_eq_nil_of_le (by simpa using h), List.foldl_nil]
 
-theorem sieve_map_toFast (es : Array Entry) (mask b : ℕ) :
-    Fast.sieve (es.map Entry.toFast) mask b =
-      es.toList.foldl (fun n e ↦ n &&& toNat e.rows[b % e.M]! >>> e.shift) mask := by
-  rw [Fast.sieve_eq_foldl, Array.toList_map, List.foldl_map]
+theorem sieve_map_toNat (rs : Array ByteArray) (sh : Array ℕ) (mask : ℕ) :
+    Fast.sieve (rs.map toNat) sh mask =
+      (List.range rs.size).foldl (fun n i ↦ n &&& toNat rs[i]! >>> sh[i]!) mask := by
+  rw [Fast.sieve, Array.size_map]
   congr 1
-  funext n e
-  rw [row_toFast]
+  funext n i
+  rw [Array.getElem!_map toNat_empty]
   split_ifs with h
   · rw [beq_iff_eq.mp h, Nat.zero_and]
   · rfl
 
-theorem toNat_sieveFrom_ones (es : Array Entry) (b len : ℕ) :
-    toNat (sieveFrom es b (ones len) 0) = Fast.sieve (es.map Entry.toFast) (2 ^ len - 1) b := by
-  rw [toNat_sieveFrom, List.drop_zero, toNat_ones, sieve_map_toFast]
+theorem toNat_sieveFrom_ones (rs : Array ByteArray) (sh : Array ℕ) (len : ℕ) :
+    toNat (sieveFrom rs sh (ones len) 0) = Fast.sieve (rs.map toNat) sh (2 ^ len - 1) := by
+  rw [toNat_sieveFrom, List.drop_zero, toNat_ones, sieve_map_toNat]
 
 /-! ### The points -/
 
@@ -640,15 +620,12 @@ theorem pointsOfDen_eq_pointsOfDen : FastMask.pointsOfDen = BruteForce.pointsOfD
   funext c d z xs
   simp only [pointsOfDen, BruteForce.pointsOfDen, hornerRec_eq_horner]
 
-theorem chunkPoints_perm (c : List ℤ) (d G : ℕ) (es : Array Entry) (a₀ : ℤ) (len : ℕ)
-    (bs : List ℕ) :
-    (chunkPoints c d G es a₀ len bs).Perm
-      (Fast.chunkPoints c d G (es.map Entry.toFast) a₀ len bs) := by
-  rw [chunkPoints, Fast.chunkPoints, pointsOfDen_eq_pointsOfDen]
-  refine List.Perm.flatMap_left _ fun b _ ↦ ?_
-  dsimp only
-  rw [← toNat_sieveFrom_ones]
-  generalize sieveFrom es b (ones len) 0 = acc
+theorem chunkPoints_perm (c : List ℤ) (d G : ℕ) (rs : Array ByteArray) (sh : Array ℕ) (a₀ : ℤ)
+    (len b : ℕ) :
+    (chunkPoints c d G rs sh a₀ (ones len) b).Perm
+      (Fast.chunkPoints c d G (rs.map toNat) sh a₀ len b) := by
+  rw [chunkPoints, Fast.chunkPoints, pointsOfDen_eq_pointsOfDen, ← toNat_sieveFrom_ones]
+  generalize sieveFrom rs sh (ones len) 0 = acc
   rw [ite_eq_right_iff.mpr fun h ↦ ?_, ite_eq_right_iff.mpr fun h ↦ ?_]
   · exact ((setBits_perm acc).map _).flatMap_right _
   · rw [beq_iff_eq.mp h, Fast.setBits_zero]
@@ -656,29 +633,39 @@ theorem chunkPoints_perm (c : List ℤ) (d G : ℕ) (es : Array Entry) (a₀ : �
   · rw [setBits, beq_iff_eq.mp h]
     rfl
 
-theorem all_map_toFast (fams : Array Family) (b : ℕ) :
-    (fams.map Family.toFast).all (fun F ↦ F.rows[b % F.M]! != 0) =
-      fams.all fun F ↦ !isZero F.rows[b % F.M]! := by
-  rw [Array.all_map]
-  congr 1
-  funext F
-  rw [Function.comp_apply, Family.toFast_rows, Family.toFast_M, Array.getElem!_map toNat_empty,
-    isZero_eq_beq]
-  rfl
+/-- The zero tests of the rows through the table of the search on masks are those of the search on
+natural numbers, for families with a row for the residue of `b`. -/
+theorem all_map_isZero_eq {fams : Array Family} {b : ℕ} (h : ∀ F ∈ fams, b % F.M < F.rows.size) :
+    ((fams.map fun F ↦ (F.M, F.rows.map isZero)).all fun x ↦ !x.2[b % x.1]!) =
+      (fams.map Family.toFast).all fun F ↦ F.rows[b % F.M]! != 0 := by
+  rw [Bool.eq_iff_iff]
+  simp only [Array.all_map, Array.all_eq_true_iff_forall_mem]
+  refine forall₂_congr fun F hF ↦ ?_
+  simp [getElem!_pos, h F hF, isZero_eq_beq]
 
-theorem search_perm (c : List ℤ) (d H G L N pre : ℕ) (fams : Array Family) (dens : List ℕ) :
-    (search c d H G L N pre fams dens).Perm
-      (Fast.search c d H G L N pre (fams.map Family.toFast) dens) := by
-  have hp : ((fun F : Fast.Family ↦ decide (L + F.M ≤ N) && F.rows.size == F.M &&
-      decide (0 < F.M)) ∘ Family.toFast) =
-      fun F ↦ decide (L + F.M ≤ N) && F.rows.size == F.M && decide (0 < F.M) := by
+theorem search_perm (c : List ℤ) (d H G L : ℕ) (fams : Array Family) (dens : List ℕ) :
+    (search c d H G L fams dens).Perm
+      (Fast.search c d H G L (fams.map Family.toFast) dens) := by
+  have hrs (b : ℕ) (xs : Array Family) : (xs.map fun F ↦ toNat F.rows[b % F.M]!) =
+      (xs.map fun F ↦ F.rows[b % F.M]!).map toNat := by
+    rw [Array.map_map]
+    rfl
+  have hlt (b : ℕ) (F) (h : F ∈ fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M) :
+      b % F.M < F.rows.size := by
+    obtain ⟨h1, h2⟩ : F.rows.size = F.M ∧ 0 < F.M := by simpa using (Array.mem_filter.mp h).2
+    exact (Nat.mod_lt _ h2).trans_eq h1.symm
+  have hp : ((fun F : Fast.Family ↦ F.rows.size == F.M && decide (0 < F.M)) ∘ Family.toFast) =
+      fun F ↦ F.rows.size == F.M && decide (0 < F.M) := by
     funext F
     simp only [Function.comp_apply, Family.toFast_M, Family.toFast_rows, Array.size_map]
     rfl
-  rw [search, Fast.search]
-  dsimp only
-  simp only [Array.filter_map, hp, all_map_toFast, ← map_toFast_entries]
-  exact List.Perm.flatMap_left _ fun ρ _ ↦ List.Perm.flatMap_left _ fun x _ ↦ chunkPoints_perm ..
+  rw [search, Fast.search, Array.filter_map, hp]
+  simp only [Array.map_map, Function.comp_def, Family.toFast_M, Family.toFast_rows,
+    Family.shift_toFast, Array.getElem!_map toNat_empty, List.filter_map,
+    Array.getElem!_map_list_map, List.flatMap_map]
+  simp only [hrs]
+  rw [List.filter_congr fun b _ ↦ all_map_isZero_eq (hlt b)]
+  exact List.Perm.flatMap_left _ fun b _ ↦ List.Perm.flatMap_left _ fun a _ ↦ chunkPoints_perm ..
 
 /-- **The search on byte-array masks lists the same points as the search on natural numbers**,
 `Ratpoints.Fast.fastPoints`, in another order, for every coefficient list, every height bound,

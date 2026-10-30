@@ -146,38 +146,39 @@ The blueprint and the API documentation are at <https://michaelstollbayreuth.git
 
 ## The programs `ratpoints-lean` and `ratpoints-model`
 
-`ratpoints-lean 'a_0 a_1 ... a_n' H [-dl b] [-du b] [-q]` prints the points of height at most `H`
-on `y² = a_n xⁿ + ⋯ + a_0` (coefficients constant term first), one line `(x : y : z)` per point,
-the points at infinity included; `-dl` and `-du` bound the denominators from below and above, and
-`-q` is accepted and ignored. It runs the fast search `Ratpoints.FastMask.fastPoints`
+`ratpoints-lean 'a_0 a_1 ... a_n' H [-dl b] [-du b] [-q]` prints the points of height at most `H` on
+`y² = a_n xⁿ + ⋯ + a_0` (coefficients constant term first), one line `(x : y : z)` per point, the
+points at infinity included; `-dl` and `-du` bound the denominators from below and above, and `-q`
+is accepted and ignored. It runs the fast search `Ratpoints.FastMask.fastPoints`
 (`Ratpoints/Fast/Search.lean`), which is not a model of the C code. The numerators are split into
 their classes modulo 16, a class searched for a denominator only where the residues allow a point;
 each class is sieved in chunks, bit masks with one bit per numerator, ANDed with the rows of
-families of odd moduli, built once and shifted to each chunk; the candidates that survive go to the
-exact check of the brute force; for odd degree only the denominators `s k²` with `s` dividing the
-leading coefficient are searched. The masks are byte arrays, and the two operations on them that
-take the time are primitives with a few lines of C each (`Ratpoints/Fast/Mask.lean`, in
+families of odd moduli, built once and shifted to each chunk by whole bytes; the denominators are
+the outer loop, so that the rows of a denominator serve all its chunks in turn; the candidates that
+survive go to the exact check of the brute force; for odd degree only the denominators `s k²` with
+`s` dividing the leading coefficient are searched. The masks are byte arrays, and the two operations
+on them that take the time are primitives with a few lines of C each (`Ratpoints/Fast/Mask.lean`, in
 `@[extern c inline]`): the AND of a mask with a row shifted to the right, in place, 64 bits at a
 time, and the next set bit of a mask. Their Lean bodies are reference definitions, which the proofs
 use; `lake exe masktest` compares the C code with them on five million cases, in CI. The same sieve
 with the masks in natural numbers (GMP integers), `Ratpoints.Fast.fastPoints`
-(`Ratpoints/Fast/Sieve.lean`), has no C of its own and is about three times slower;
+(`Ratpoints/Fast/Sieve.lean`), has no C of its own and is four to fourteen times slower;
 `Ratpoints.FastMask.fastPoints_perm` proves that the two list the same points, and
 `Ratpoints.FastMask.mem_fastPoints_iff` and `Ratpoints.FastMask.nodup_fastPoints`
-(`Ratpoints/Proof/FastMask.lean`) that the list holds exactly the points of height at most `H`
-with their denominator in the range, each once, in an order of its own, for every input and every
-setting of the parameters of the sieve; both are certified by Comparator. `scripts/fasttest.py`
-compares the points, as sets, with those of `ratpoints` on its test suites, in CI.
+(`Ratpoints/Proof/FastMask.lean`) that the list holds exactly the points of height at most `H` with
+their denominator in the range, each once, in an order of its own, for every input and every setting
+of the parameters of the sieve; both are certified by Comparator. `scripts/fasttest.py` compares the
+points, as sets, with those of `ratpoints` on its test suites, in CI.
 
 Running times against `ratpoints` (C) and the program of the model (`ratpoints-model`), on one
 core of an Intel Core i7-1355U (wall times, one process per curve):
 
 | curve | H | C | `ratpoints-model` | `ratpoints-lean` |
 | --- | ---: | ---: | ---: | ---: |
-| generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 0.43 s |
-| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.55 s | 48 s | 2.0 s |
-| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.17 s |
-| the 1206 curves of the three test suites | 16383 | 4.3 s | 162 s | 24 s |
+| generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 0.33 s |
+| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.55 s | 48 s | 1.5 s |
+| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.10 s |
+| the 1206 curves of the three test suites | 16383 | 4.3 s | 162 s | 20 s |
 
 `ratpoints-model 'a_0 a_1 ... a_n' H [options]` is the program of the faithful model; it has the
 command line of `ratpoints`. It reads the coefficients (constant term first), the height bound and

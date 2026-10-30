@@ -21,12 +21,15 @@ in byte arrays, which lists the same points in another order.
 * The numerators `x = -H, …, H` are split into the classes of `x + H` modulo `G = 2 ^ e`; a class
   is searched for the denominator `b` only when the residues of `x` and `b` modulo `G` allow a
   point (`Ratpoints.Fast.admitTable`).
-* Each class is searched in chunks of at most `L` numerators `a₀, a₀ + G, a₀ + 2G, …`. A chunk
-  is a bit mask with one bit per numerator, ANDed with the rows of the families of moduli
-  (`Ratpoints.Fast.Family`): the row of the family of the moduli `m₁, …, mₖ` for `b` has the bit
-  of `x` set when for every `mᵢ` the residues of `x` and `b` allow a point. The rows of a family
+* Each class is searched in chunks of at most `L` numerators `a₀, a₀ + G, a₀ + 2G, …`. A chunk is a
+  bit mask with one bit per numerator, ANDed with the rows of the families of moduli
+  (`Ratpoints.Fast.Family`): the row of the family of the moduli `m₁, …, mₖ` for `b` has the bit of
+  `x` set when for every `mᵢ` the residues of `x` and `b` allow a point. The rows of a family
   depend on `b` modulo `M = m₁ ⋯ mₖ` only, and on `x` modulo `M`: they are made once, for the
-  numerators `0, G, 2G, …`, and shifted to the start of a chunk.
+  numerators `0, G, 2G, …`, and shifted to the start of a chunk, by a multiple of `8` when `M` is
+  odd (`Ratpoints.Fast.Family.shift`).
+* The denominators are the outer loop: for each `b`, every chunk of every class that `b` allows is
+  searched in turn, with the same rows, which the search on byte arrays then finds in the cache.
 * The bits that survive go to the exact check of the brute force,
   `Ratpoints.BruteForce.pointsOfDen`.
 * For odd degree only the denominators `s k ^ 2` with `s` dividing the leading coefficient can
@@ -156,52 +159,36 @@ structure Family where
   rows : Array Nat
 
 /-- The family of the moduli `m` of the list `ts` of pairs `(m, T)`, `T` the table
-`Ratpoints.Fast.admitTable c d m`, for the step `G` and rows of `N` bits, if every modulus is
-positive and `G` is invertible modulo their product. -/
-def mkFamily (G N : Nat) (ts : List (Nat × Array (Array Bool))) : Option Family :=
+`Ratpoints.Fast.admitTable c d m`, for the step `G` and chunks of at most `L` numerators, if every
+modulus is positive and `G` is invertible modulo their product `M`: its rows have `L + 8 M` bits,
+enough for a chunk at every shift below `8 M` (`Ratpoints.Fast.Family.shift`). -/
+def mkFamily (G L : Nat) (ts : List (Nat × Array (Array Bool))) : Option Family :=
   if ts.all (0 < ·.1) then
     let M := ts.foldl (· * ·.1) 1
     match (List.range M).find? fun u ↦ G * u % M == 1 % M with
     | none => none
     | some ginv =>
+      let N := L + 8 * M
       let base := ts.map fun (m, T) ↦ (m, (List.range m).toArray.map (baseRow T m G N))
       let full := 2 ^ N - 1
       some { M, ginv, rows := (List.range M).toArray.map fun r ↦
         base.foldl (fun acc (m, B) ↦ acc &&& B[r % m]!) full }
   else none
 
-/-- The shift that aligns the rows of the family `F` with a chunk starting at the numerator
-`a₀`: `s` with `G s ≡ a₀` modulo `F.M`. -/
-def Family.shift (F : Family) (a₀ : Int) : Nat := (a₀ * F.ginv % (F.M : Int)).toNat
+/-- The shift that aligns the rows of the family `F` with a chunk starting at the numerator `a₀`:
+`s < 8 F.M` with `G s ≡ a₀` modulo `F.M`, the least one plus the multiple of `F.M` that makes it a
+multiple of `8` when `F.M` is odd (`F.M ^ 2 ≡ 1` modulo `8`), so that the search on byte arrays
+reads whole bytes of the rows. -/
+def Family.shift (F : Family) (a₀ : Int) : Nat :=
+  let s := (a₀ * F.ginv % (F.M : Int)).toNat
+  s + F.M * ((8 - s % 8) * F.M % 8)
 
 /-! ### The sieve -/
 
-/-- An entry of the sieve of a chunk: the modulus `M`, the rows and the shift to apply to them. -/
-structure Entry where
-  /-- The period of the rows in the denominator. -/
-  M : Nat
-  /-- The rows. -/
-  rows : Array Nat
-  /-- The shift to apply to a row. -/
-  shift : Nat
-
-/-- The candidates of a chunk for the denominator `b`: the mask ANDed with the row of every entry,
-shifted; once nothing is left, the rest is skipped. -/
-def sieve (es : Array Entry) (mask b : Nat) : Nat :=
-  es.foldl (fun acc e ↦
-    if acc == 0 then 0 else
-      let row := e.rows[b % e.M]!
-      acc &&& if e.shift == 0 then row else row >>> e.shift) mask
-
-/-- The entries of the sieve for the chunk of `len` numerators from `a₀`, for `nb` denominators:
-the family at position `i` with its rows shifted and cut to the chunk once when
-`(i + 1) M ≤ nb` (it is used often enough), the others shifted for each use. -/
-def entries (fams : Array Family) (nb : Nat) (a₀ : Int) (len : Nat) : Array Entry :=
-  let mask := 2 ^ len - 1
-  (fams.zipIdx).map fun (F, i) ↦
-    if (i + 1) * F.M ≤ nb then
-      { M := F.M, rows := F.rows.map fun R ↦ (R >>> F.shift a₀) &&& mask, shift := 0 }
-    else { M := F.M, rows := F.rows, shift := F.shift a₀ }
+/-- The candidates of a chunk: the mask ANDed with the rows `rs[i]` shifted by `sh[i]`, in turn;
+once nothing is left, the rest is skipped. -/
+def sieve (rs sh : Array Nat) (mask : Nat) : Nat :=
+  (List.range rs.size).foldl (fun acc i ↦ if acc == 0 then 0 else acc &&& rs[i]! >>> sh[i]!) mask
 
 /-- The number of the indices `i < n` with `i % G = ρ`. -/
 def classCount (n G ρ : Nat) : Nat := (n + G - 1 - ρ) / G
@@ -210,27 +197,35 @@ def classCount (n G ρ : Nat) : Nat := (n + G - 1 - ρ) / G
 def chunks (cnt L : Nat) : List (Nat × Nat) :=
   (List.range ((cnt + L - 1) / L)).map fun k ↦ (k * L, min L (cnt - k * L))
 
-/-- The points of the chunk of `len` numerators `a₀, a₀ + G, …` for the denominators `bs`. -/
-def chunkPoints (c : List Int) (d G : Nat) (es : Array Entry) (a₀ : Int) (len : Nat)
-    (bs : List Nat) : List (Int × Int × Int) :=
-  let mask := 2 ^ len - 1
-  bs.flatMap fun b ↦
-    let acc := sieve es mask b
-    if acc == 0 then [] else pointsOfDen c d b ((setBits acc).map fun t ↦ a₀ + (G * t : Nat))
+/-- The chunks of the search, class by class: for the numerators `x` with `x + H ≡ ρ` modulo `G`,
+each chunk as the residue of its numerators modulo `G`, its first numerator `a₀` and its length
+`len`, for the numerators `a₀, a₀ + G, …, a₀ + (len - 1) G`. -/
+def slots (H G L : Nat) : List (Nat × Int × Nat) :=
+  (List.range G).flatMap fun ρ ↦
+    (chunks (classCount (2 * H + 1) G ρ) L).map fun (t₀, len) ↦
+      ((((ρ : Int) - H) % (G : Int)).toNat, ((ρ + G * t₀ : Nat) : Int) - H, len)
+
+/-- The points with the denominator `b` in the chunk of `len` numerators `a₀, a₀ + G, …`, by the
+sieve with the rows `rs` of `b` and the shifts `sh` of the chunk. -/
+def chunkPoints (c : List Int) (d G : Nat) (rs sh : Array Nat) (a₀ : Int) (len b : Nat) :
+    List (Int × Int × Int) :=
+  let acc := sieve rs sh (2 ^ len - 1)
+  if acc == 0 then [] else pointsOfDen c d b ((setBits acc).map fun t ↦ a₀ + (G * t : Nat))
 
 /-- The points with the denominators `dens` (all positive), by the sieve with the step `G`, chunks
-of `L` numerators and the families `fams` with rows of `N` bits; `pre` weighs the number of
-denominators in the choice of the families cut to a chunk (`Ratpoints.Fast.entries`). -/
-def search (c : List Int) (d H G L N pre : Nat) (fams : Array Family) (dens : List Nat) :
+of at most `L` numerators and the families `fams`: for each denominator `b`, the chunks of the
+classes that the residue of `b` modulo `G` allows (`Ratpoints.Fast.admitTable` modulo `G`; these
+chunks are listed once for each residue), each with the rows of `b` and the shifts of the chunk. -/
+def search (c : List Int) (d H G L : Nat) (fams : Array Family) (dens : List Nat) :
     List (Int × Int × Int) :=
-  let fams := fams.filter fun F ↦ L + F.M ≤ N && F.rows.size == F.M && 0 < F.M
+  let fams := fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M
   let dens := dens.filter fun b ↦ fams.all fun F ↦ F.rows[b % F.M]! != 0
   let TG := admitTable c d G
-  (List.range G).flatMap fun (ρ : Nat) ↦
-    let bs := dens.filter fun b ↦ TG[b % G]![(((ρ : Int) - H) % (G : Int)).toNat]!
-    (chunks (classCount (2 * H + 1) G ρ) L).flatMap fun (t₀, len) ↦
-      let a₀ : Int := ((ρ + G * t₀ : Nat) : Int) - H
-      chunkPoints c d G (entries fams (pre * bs.length) a₀ len) a₀ len bs
+  let sl := (slots H G L).map fun (r, a₀, len) ↦ (r, a₀, len, fams.map (Family.shift · a₀))
+  let byRes := (List.range G).toArray.map fun g ↦ sl.filter fun (r, _) ↦ TG[g]![r]!
+  dens.flatMap fun b ↦
+    let rs := fams.map fun F ↦ F.rows[b % F.M]!
+    byRes[b % G]!.flatMap fun (_, a₀, len, sh) ↦ chunkPoints c d G rs sh a₀ len b
 
 /-! ### The denominators -/
 
@@ -271,18 +266,13 @@ def groupModuli (Mmax : Nat) :
     | (g :: gs) => if t.1 * g.foldl (· * ·.1) 1 ≤ Mmax then (t :: g) :: gs else [t] :: g :: gs
     | [] => [[t]]
 
-/-- The parameters of the search: the step `G`, the chunk length `L`, the length `N` of the rows,
-the number `pre` of families cut to each chunk, and the families, the most selective first. -/
+/-- The parameters of the search: the step `G`, the chunk length `L` and the families, the most
+selective first. -/
 structure Config where
   /-- The step of the numerators in a chunk, a power of `2`. -/
   G : Nat
   /-- The largest number of numerators in a chunk. -/
   L : Nat
-  /-- The length of the rows of the families. -/
-  N : Nat
-  /-- The weight of the number of denominators in the choice of the families cut to a chunk
-  (`Ratpoints.Fast.entries`). -/
-  pre : Nat
   /-- The families. -/
   fams : Array Family
 
@@ -306,9 +296,9 @@ def takeFurther (κ : Nat) : List Nat → Nat → List Nat
   | [], _ => []
   | m :: ms, E => if 64 * m * m ≤ κ * E then m :: takeFurther κ ms (E / 2) else []
 
-/-- Settings of the choice of the parameters (for tuning): the step `G`, the largest chunk
-length, the largest product of a family, the number of families cut to each chunk, the divisor of
-the work bound for the moduli and the weight of the further moduli; `0` for the default. -/
+/-- Settings of the choice of the parameters (for tuning): the step `G`, the largest chunk length,
+the largest product of a family, the divisor of the work bound for the moduli and the weight of the
+further moduli; `0` for the default. -/
 structure Tuning where
   /-- The step. -/
   G : Nat := 0
@@ -316,8 +306,6 @@ structure Tuning where
   L : Nat := 0
   /-- The largest product of the moduli of a family. -/
   Mmax : Nat := 0
-  /-- The weight of the number of denominators in the choice of the families cut to a chunk. -/
-  pre : Nat := 0
   /-- A modulus `m` is used when `m ^ 2 * work ≤ n B`. -/
   work : Nat := 0
   /-- The weight `κ` of `Ratpoints.Fast.takeFurther`. -/
@@ -352,9 +340,7 @@ def choose (tu : Tuning) (c : List Int) (d H B : Nat) : Config :=
   let G := orDefault tu.G 16
   let cnt := (2 * H + 1 + G - 1) / G
   let L := max 1 (min (orDefault tu.L 8192) cnt)
-  let sorted := sortedGroups tu c d H B
-  let N := L + sorted.foldl (fun n g ↦ max n (g.foldl (· * ·.1) 1)) 1
-  { G, L, N, pre := orDefault tu.pre 1, fams := (sorted.filterMap (mkFamily G N)).toArray }
+  { G, L, fams := ((sortedGroups tu c d H B).filterMap (mkFamily G L)).toArray }
 
 /-! ### The search -/
 
@@ -367,7 +353,7 @@ def fastPoints (c : List Int) (H : Nat) (bLow bHigh : Int) (tu : Tuning := {}) :
   let dens := denominators c d H bLow bHigh
   let cfg := choose tu c d H dens.length
   (if 1 ≤ H then pointsOfDen c d 0 [1] else []) ++
-    search c d H cfg.G cfg.L cfg.N cfg.pre cfg.fams dens
+    search c d H cfg.G cfg.L cfg.fams dens
 
 end Fast
 

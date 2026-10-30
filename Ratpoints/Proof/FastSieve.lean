@@ -27,14 +27,16 @@ once, for every setting `tu` of its parameters (`Ratpoints.Fast.mem_fastPoints_i
 
 The sieve is a sound filter: a point `(a, y, b)` makes `(a, b)` a candidate
 (`Ratpoints.Fast.IsCandidate`), and the residues of a candidate modulo every `m` pass the table
-`Ratpoints.Fast.admitTable` (`Ratpoints.Fast.admitTable_spec`), so the bit of `a` survives in
-the row of every family (`Ratpoints.Fast.Family.IsSound`, `Ratpoints.Fast.mkFamily_isSound`), in
-the entries of each chunk (`Ratpoints.Fast.testBit_entry_row_of_mem_entries`) and in the sieve
-(`Ratpoints.Fast.testBit_sieve`); `Ratpoints.Fast.setBits` lists the bits that survive
+`Ratpoints.Fast.admitTable` (`Ratpoints.Fast.admitTable_spec`), so the bit of `a` survives in the
+row of every family (`Ratpoints.Fast.Family.IsSound`, `Ratpoints.Fast.mkFamily_isSound`), in that
+row shifted to the start of each chunk (`Ratpoints.Fast.Family.IsSound.testBit_shiftRight`) and in
+the sieve (`Ratpoints.Fast.testBit_sieve`); `Ratpoints.Fast.setBits` lists the bits that survive
 (`Ratpoints.Fast.mem_setBits`), and the exact check of `Ratpoints.BruteForce.pointsOfDen` keeps the
-points among them. The classes modulo `G` and the chunks cover each numerator once
-(`Ratpoints.Fast.mem_search`, `Ratpoints.Fast.nodup_search`), and for odd degree the denominators
-that the search leaves out carry no point (`Ratpoints.Fast.mem_denominators_of_isCandidate`, from
+points among them. The slots, the chunks of the classes modulo `G`, cover each numerator once
+(`Ratpoints.Fast.exists_mem_slots`, `Ratpoints.Fast.pairwise_slots`), so the search lists the
+points of its denominators, each once (`Ratpoints.Fast.mem_search`, `Ratpoints.Fast.nodup_search`),
+and for odd degree the denominators that the search leaves out carry no point
+(`Ratpoints.Fast.mem_denominators_of_isCandidate`, from
 `Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`).
 
 ## Main statements
@@ -334,10 +336,10 @@ theorem testBit_baseRow {T : Array (Array Bool)} {m G N r j : ℕ} (hm : 0 < m) 
 
 /-! ### Families -/
 
-/-- The family `F` is sound for the step `G` and rows of `N` bits: it has a row for every residue
-modulo `F.M > 0`, `F.ginv` inverts `G` modulo `F.M`, and the row of `b` has the bit `j < N` set
-for every candidate `(a, b)` with `a ≡ G j` modulo `F.M`. -/
-structure Family.IsSound (c : List ℤ) (G N : ℕ) (F : Family) : Prop where
+/-- The family `F` is sound for the step `G` and chunks of at most `L` numerators: it has a row for
+every residue modulo `F.M > 0`, `F.ginv` inverts `G` modulo `F.M`, and the row of `b` has the bit
+`j < L + 8 F.M` set for every candidate `(a, b)` with `a ≡ G j` modulo `F.M`. -/
+structure Family.IsSound (c : List ℤ) (G L : ℕ) (F : Family) : Prop where
   /-- A row for every residue. -/
   size_eq : F.rows.size = F.M
   /-- The modulus is positive. -/
@@ -345,7 +347,7 @@ structure Family.IsSound (c : List ℤ) (G N : ℕ) (F : Family) : Prop where
   /-- `F.ginv` inverts `G`. -/
   mul_ginv : G * F.ginv % F.M = 1 % F.M
   /-- The row of `b` keeps the bit `j` of every candidate `(a, b)` with `a ≡ G j`. -/
-  testBit : ∀ (a : ℤ) (b j : ℕ), j < N → IsCandidate c a b → (F.M : ℤ) ∣ a - G * j →
+  testBit : ∀ (a : ℤ) (b j : ℕ), j < L + 8 * F.M → IsCandidate c a b → (F.M : ℤ) ∣ a - G * j →
     (F.rows[b % F.M]!).testBit j = true
 
 theorem foldl_mul_fst {α : Type*} (ts : List (ℕ × α)) (k : ℕ) :
@@ -392,9 +394,10 @@ theorem testBit_baseRows {c : List ℤ} {m M G N j : ℕ} (hm : 0 < m) (hmM : m 
     ((Int.natCast_dvd_natCast.mpr hmM).trans (by simpa using hdvd))]
   exact admitTable_spec hm hc
 
-theorem mkFamily_isSound {c : List ℤ} {G N : ℕ} {ts : List (ℕ × Array (Array Bool))}
+theorem mkFamily_isSound {c : List ℤ} {G L : ℕ} {ts : List (ℕ × Array (Array Bool))}
     (hts : ∀ t ∈ ts, t.2 = admitTable c (BruteForce.degree c) t.1) {F : Family}
-    (h : mkFamily G N ts = some F) : F.IsSound c G N := by
+    (h : mkFamily G L ts = some F) :
+    F.IsSound c G L := by
   rw [mkFamily] at h
   split_ifs at h with hpos
   dsimp only at h
@@ -411,80 +414,72 @@ theorem mkFamily_isSound {c : List ℤ} {G N : ℕ} {ts : List (ℕ × Array (Ar
   obtain rfl : T = admitTable c (BruteForce.degree c) m := hts _ ht
   exact testBit_baseRows (hpos' _ ht) (dvd_foldl_mul_fst ht) hj hc hdvd
 
-/-! ### The shift and the entries -/
+/-! ### The shift -/
 
-theorem Family.shift_lt (F : Family) (hF : 0 < F.M) (a₀ : ℤ) : F.shift a₀ < F.M := by
-  have := Int.emod_lt_of_pos (a₀ * F.ginv) (Int.natCast_pos.mpr hF)
-  rw [Family.shift]
-  lia
+theorem Family.shift_lt (F : Family) (hF : 0 < F.M) (a₀ : ℤ) : F.shift a₀ < 8 * F.M := by
+  have hs : (a₀ * F.ginv % (F.M : ℤ)).toNat < F.M := by
+    lia [Int.emod_lt_of_pos (a₀ * F.ginv) (Int.natCast_pos.mpr hF)]
+  simp only [Family.shift]
+  generalize (a₀ * F.ginv % (F.M : ℤ)).toNat = s at hs ⊢
+  have h7 : (8 - s % 8) * F.M % 8 ≤ 7 := Nat.le_of_lt_succ (Nat.mod_lt _ (by decide))
+  lia [Nat.mul_le_mul_left F.M h7]
 
-theorem Family.dvd_sub_shift {c : List ℤ} {G N : ℕ} {F : Family} (hF : F.IsSound c G N) (a₀ : ℤ) :
+theorem Family.IsSound.dvd_sub_shift {c : List ℤ} {G L : ℕ} {F : Family}
+    (hF : F.IsSound c G L) (a₀ : ℤ) :
     (F.M : ℤ) ∣ a₀ - G * F.shift a₀ := by
   have hg : (G : ℤ) * F.ginv ≡ 1 [ZMOD F.M] := by
     have := congr((($hF.mul_ginv : ℕ) : ℤ))
     push_cast [Int.natCast_mod] at this
     exact this
-  rw [Family.shift, Int.toNat_of_nonneg (Int.emod_nonneg _ (by have := hF.pos; lia))]
-  refine (Int.modEq_iff_dvd.mp ?_)
-  calc (G : ℤ) * (a₀ * F.ginv % F.M) ≡ G * (a₀ * F.ginv) [ZMOD F.M] :=
-        (Int.mod_modEq _ _).mul_left _
-    _ = a₀ * (G * F.ginv) := by ring
-    _ ≡ a₀ * 1 [ZMOD F.M] := hg.mul_left _
-    _ = a₀ := mul_one a₀
+  have hs : (G : ℤ) * (a₀ * F.ginv % F.M) ≡ a₀ [ZMOD F.M] :=
+    calc (G : ℤ) * (a₀ * F.ginv % F.M) ≡ G * (a₀ * F.ginv) [ZMOD F.M] :=
+          (Int.mod_modEq _ _).mul_left _
+      _ = a₀ * (G * F.ginv) := by ring
+      _ ≡ a₀ * 1 [ZMOD F.M] := hg.mul_left _
+      _ = a₀ := mul_one a₀
+  obtain ⟨k, hk⟩ : ∃ k, F.shift a₀ = (a₀ * F.ginv % (F.M : ℤ)).toNat + F.M * k := ⟨_, rfl⟩
+  have h0 : 0 ≤ a₀ * F.ginv % (F.M : ℤ) := Int.emod_nonneg _ (by lia [hF.pos])
+  rw [hk]
+  push_cast [Int.toNat_of_nonneg h0]
+  refine Int.modEq_iff_dvd.mp ?_
+  rw [mul_add, mul_left_comm]
+  exact Int.modEq_add_fac_self.trans hs
 
-/-- The row of the entry `e` for the denominator `b`, shifted as the sieve shifts it. -/
-def Entry.row (e : Entry) (b : ℕ) : ℕ :=
-  if e.shift == 0 then e.rows[b % e.M]! else e.rows[b % e.M]! >>> e.shift
+/-- The row of `b`, shifted to the chunk that starts at `a₀`, keeps the bit `t < L` of every
+candidate `(a₀ + G t, b)`. -/
+theorem Family.IsSound.testBit_shiftRight {c : List ℤ} {G L : ℕ} {F : Family}
+    (hF : F.IsSound c G L) {a₀ : ℤ} {b t : ℕ} (ht : t < L) (hc : IsCandidate c (a₀ + G * t) b) :
+    (F.rows[b % F.M]! >>> F.shift a₀).testBit t = true := by
+  rw [Nat.testBit_shiftRight]
+  refine hF.testBit _ b _ (by lia [F.shift_lt hF.pos a₀]) hc ?_
+  have := hF.dvd_sub_shift a₀
+  rwa [show a₀ + G * t - G * (F.shift a₀ + t : ℕ) = a₀ - G * F.shift a₀ by push_cast; ring]
 
-theorem testBit_entry_row_of_mem_entries {c : List ℤ} {G N L : ℕ} {fams : Array Family}
-    (hfams : ∀ F ∈ fams, F.IsSound c G N ∧ L + F.M ≤ N) {nb len : ℕ} (hlen : len ≤ L) {a₀ : ℤ}
-    {e : Entry} (he : e ∈ entries fams nb a₀ len) {b t : ℕ} (ht : t < len)
-    (hc : IsCandidate c (a₀ + G * t) b) : (e.row b).testBit t = true := by
-  obtain ⟨⟨F, i⟩, hFi, rfl⟩ := Array.mem_map.mp he
-  obtain ⟨hF, hN⟩ := hfams F (Array.fst_mem_of_mem_zipIdx hFi)
-  have hbit : (F.rows[b % F.M]!).testBit (t + F.shift a₀) = true := by
-    refine hF.testBit _ b _ (by have := F.shift_lt hF.pos a₀; lia) hc ?_
-    have := Family.dvd_sub_shift hF a₀
-    rwa [show a₀ + G * t - G * (t + F.shift a₀ : ℕ) = a₀ - G * F.shift a₀ by push_cast; ring]
-  have hlt : b % F.M < F.rows.size := by rw [hF.size_eq]; exact Nat.mod_lt _ hF.pos
-  dsimp only
-  split_ifs
-  · simp only [Entry.row, beq_self_eq_true, ↓reduceIte]
-    rw [getElem!_pos _ _ (by simpa using hlt), Array.getElem_map, ← getElem!_pos]
-    simp [Nat.testBit_shiftRight, ht, add_comm, hbit]
-  · simp only [Entry.row]
-    split_ifs with h0
-    · simpa [beq_iff_eq.mp h0] using hbit
-    · simpa [Nat.testBit_shiftRight, add_comm] using hbit
+theorem Family.IsSound.rows_ne_zero {c : List ℤ} {G L : ℕ} {F : Family} (hF : F.IsSound c G L)
+    {a : ℤ} {b : ℕ} (hc : IsCandidate c a b) :
+    F.rows[b % F.M]! ≠ 0 := by
+  intro h0
+  have := hF.testBit a b (F.shift a) (by lia [F.shift_lt hF.pos a]) hc (hF.dvd_sub_shift a)
+  simp [h0] at this
 
 /-! ### The sieve -/
 
-/-- The step of the sieve. -/
-theorem sieve_eq_foldl (es : Array Entry) (mask b : ℕ) :
-    sieve es mask b =
-      es.toList.foldl (fun acc e ↦ if acc == 0 then 0 else acc &&& e.row b) mask := by
-  rw [sieve, ← Array.foldl_toList]
-  rfl
-
-theorem testBit_foldl_sieve {b t : ℕ} (l : List Entry) {mask : ℕ} (hmask : mask.testBit t = true)
-    (hl : ∀ e ∈ l, (e.row b).testBit t = true) :
-    (l.foldl (fun acc e ↦ if acc == 0 then 0 else acc &&& e.row b) mask).testBit t = true := by
+theorem testBit_foldl_sieve {α : Type*} (g : α → ℕ) (l : List α) {mask t : ℕ}
+    (hmask : mask.testBit t = true) (hl : ∀ x ∈ l, (g x).testBit t = true) :
+    (l.foldl (fun acc x ↦ if acc == 0 then 0 else acc &&& g x) mask).testBit t = true := by
   induction l generalizing mask with
   | nil => exact hmask
-  | cons e l ih =>
-    refine ih ?_ fun e' he' ↦ hl e' (by simp [he'])
-    have h0 : (mask == 0) = false := by
-      rcases Nat.eq_zero_or_pos mask with rfl | h
-      · simp at hmask
-      · simpa using h.ne'
-    simp [h0, Nat.testBit_and, hmask, hl e (by simp)]
+  | cons x l ih =>
+    refine ih ?_ fun y hy ↦ hl y (by simp [hy])
+    have h0 : mask ≠ 0 := fun h ↦ by simp [h] at hmask
+    simp [h0, Nat.testBit_and, hmask, hl x (by simp)]
 
-theorem testBit_of_testBit_foldl_sieve {b t : ℕ} (l : List Entry) {mask : ℕ}
-    (h : (l.foldl (fun acc e ↦ if acc == 0 then 0 else acc &&& e.row b) mask).testBit t = true) :
+theorem testBit_of_testBit_foldl_sieve {α : Type*} {g : α → ℕ} {l : List α} {mask t : ℕ}
+    (h : (l.foldl (fun acc x ↦ if acc == 0 then 0 else acc &&& g x) mask).testBit t = true) :
     mask.testBit t = true := by
   induction l generalizing mask with
   | nil => exact h
-  | cons e l ih =>
+  | cons x l ih =>
     have := ih h
     dsimp only at this
     split_ifs at this with h0
@@ -492,66 +487,50 @@ theorem testBit_of_testBit_foldl_sieve {b t : ℕ} (l : List Entry) {mask : ℕ}
     · rw [Nat.testBit_and, Bool.and_eq_true] at this
       exact this.1
 
-theorem testBit_sieve {es : Array Entry} {mask b t : ℕ} (hmask : mask.testBit t = true)
-    (hes : ∀ e ∈ es, (e.row b).testBit t = true) : (sieve es mask b).testBit t = true := by
-  rw [sieve_eq_foldl]
-  exact testBit_foldl_sieve _ hmask fun e he ↦ hes e (by simpa using he)
+theorem testBit_sieve {rs sh : Array ℕ} {mask t : ℕ} (hmask : mask.testBit t = true)
+    (h : ∀ i < rs.size, (rs[i]! >>> sh[i]!).testBit t = true) :
+    (sieve rs sh mask).testBit t = true :=
+  testBit_foldl_sieve (fun i ↦ rs[i]! >>> sh[i]!) _ hmask fun i hi ↦ h i (List.mem_range.mp hi)
 
-theorem testBit_of_testBit_sieve {es : Array Entry} {mask b t : ℕ}
-    (h : (sieve es mask b).testBit t = true) : mask.testBit t = true := by
-  rw [sieve_eq_foldl] at h
-  exact testBit_of_testBit_foldl_sieve _ h
+theorem testBit_of_testBit_sieve {rs sh : Array ℕ} {mask t : ℕ}
+    (h : (sieve rs sh mask).testBit t = true) :
+    mask.testBit t = true :=
+  testBit_of_testBit_foldl_sieve h
 
 /-! ### The points of a chunk -/
 
-theorem of_mem_chunkPoints {c : List ℤ} {G : ℕ} {es : Array Entry} {a₀ : ℤ} {len : ℕ}
-    {bs : List ℕ} {p : ℤ × ℤ × ℤ} (h : p ∈ chunkPoints c (BruteForce.degree c) G es a₀ len bs) :
-    (∃ b ∈ bs, p.2.2 = b) ∧ (∃ t < len, p.1 = a₀ + G * t) ∧ Int.gcd p.1 p.2.2 = 1 ∧
+theorem of_mem_chunkPoints {c : List ℤ} {G : ℕ} {rs sh : Array ℕ} {a₀ : ℤ} {len b : ℕ}
+    {p : ℤ × ℤ × ℤ} (h : p ∈ chunkPoints c (BruteForce.degree c) G rs sh a₀ len b) :
+    p.2.2 = b ∧ (∃ t < len, p.1 = a₀ + G * t) ∧ Int.gcd p.1 p.2.2 = 1 ∧
       p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
-  simp only [chunkPoints, List.mem_flatMap] at h
-  obtain ⟨b, hb, hp⟩ := h
-  split_ifs at hp with h0
-  · simp at hp
-  rw [mem_pointsOfDen_iff, horner_scaledCoeffs_mul] at hp
-  obtain ⟨hx, hz, hg, hy⟩ := hp
+  simp only [chunkPoints] at h
+  split_ifs at h
+  · simp at h
+  rw [mem_pointsOfDen_iff, horner_scaledCoeffs_mul] at h
+  obtain ⟨hx, hz, hg, hy⟩ := h
   obtain ⟨t, ht, hx⟩ := List.mem_map.mp hx
   have := testBit_of_testBit_sieve (mem_setBits.mp ht)
   rw [Nat.testBit_two_pow_sub_one, decide_eq_true_eq] at this
-  exact ⟨⟨b, hb, hz⟩, ⟨t, this, hx.symm⟩, hz ▸ hg, hz ▸ hy⟩
+  exact ⟨hz, ⟨t, this, hx.symm⟩, hz ▸ hg, hz ▸ hy⟩
 
-theorem mem_chunkPoints {c : List ℤ} {G : ℕ} {es : Array Entry} {a₀ : ℤ} {len : ℕ}
-    {bs : List ℕ}
-    (hes : ∀ b t, t < len → IsCandidate c (a₀ + G * t) b → ∀ e ∈ es, (e.row b).testBit t = true)
-    {p : ℤ × ℤ × ℤ} :
-    p ∈ chunkPoints c (BruteForce.degree c) G es a₀ len bs ↔
-      (∃ b ∈ bs, p.2.2 = b) ∧ (∃ t < len, p.1 = a₀ + G * t) ∧ Int.gcd p.1 p.2.2 = 1 ∧
+theorem mem_chunkPoints {c : List ℤ} {G : ℕ} {rs sh : Array ℕ} {a₀ : ℤ} {len b : ℕ}
+    (hrs : ∀ t < len, IsCandidate c (a₀ + G * t) b →
+      ∀ i < rs.size, (rs[i]! >>> sh[i]!).testBit t = true) {p : ℤ × ℤ × ℤ} :
+    p ∈ chunkPoints c (BruteForce.degree c) G rs sh a₀ len b ↔
+      p.2.2 = b ∧ (∃ t < len, p.1 = a₀ + G * t) ∧ Int.gcd p.1 p.2.2 = 1 ∧
         p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
-  refine ⟨of_mem_chunkPoints, fun ⟨⟨b, hb, hz⟩, ⟨t, ht, hx⟩, hg, hy⟩ ↦ ?_⟩
-  simp only [chunkPoints, List.mem_flatMap]
-  refine ⟨b, hb, ?_⟩
-  have hbit := testBit_sieve (mask := 2 ^ len - 1) (es := es)
-    (by simp [Nat.testBit_two_pow_sub_one, ht]) (hes b t ht ⟨hx ▸ hz ▸ hg, p.2.1, hx ▸ hz ▸ hy⟩)
-  have h0 : (sieve es (2 ^ len - 1) b == 0) = false := by
-    rcases Nat.eq_zero_or_pos (sieve es (2 ^ len - 1) b) with h | h
-    · simp [h] at hbit
-    · simpa using h.ne'
-  simp only [h0, Bool.false_eq_true, ↓reduceIte]
+  refine ⟨of_mem_chunkPoints, fun ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩ ↦ ?_⟩
+  have hbit := testBit_sieve (rs := rs) (sh := sh) (mask := 2 ^ len - 1)
+    (by simp [Nat.testBit_two_pow_sub_one, ht]) (hrs t ht ⟨hx ▸ hz ▸ hg, p.2.1, hx ▸ hz ▸ hy⟩)
+  have h0 : sieve rs sh (2 ^ len - 1) ≠ 0 := fun h ↦ by simp [h] at hbit
+  simp only [chunkPoints, beq_iff_eq, h0, ↓reduceIte]
   rw [mem_pointsOfDen_iff, horner_scaledCoeffs_mul]
   exact ⟨List.mem_map.mpr ⟨t, mem_setBits.mpr hbit, hx.symm⟩, hz, hz ▸ hg, hz ▸ hy⟩
 
-theorem nodup_chunkPoints (c : List ℤ) {G : ℕ} (hG : 0 < G) (es : Array Entry) (a₀ : ℤ)
-    (len : ℕ) {bs : List ℕ} (hbs : bs.Nodup) :
-    (chunkPoints c (BruteForce.degree c) G es a₀ len bs).Nodup := by
-  have key {b : ℕ} {p : ℤ × ℤ × ℤ} {xs : List ℤ} {acc : ℕ}
-      (h : p ∈ if acc == 0 then [] else pointsOfDen c (BruteForce.degree c) b xs) :
-      p.2.2 = b := by
-    split_ifs at h
-    · simp at h
-    · exact (mem_pointsOfDen_iff.mp h).2.1
-  rw [chunkPoints, List.nodup_flatMap]
-  refine ⟨fun b _ ↦ ?_, hbs.pairwise_of_forall_ne fun b _ b' _ hne p hp hp' ↦
-    hne (by have := (key hp).symm.trans (key hp'); lia)⟩
-  dsimp only
+theorem nodup_chunkPoints (c : List ℤ) {G : ℕ} (hG : 0 < G) (rs sh : Array ℕ) (a₀ : ℤ)
+    (len b : ℕ) :
+    (chunkPoints c (BruteForce.degree c) G rs sh a₀ len b).Nodup := by
+  simp only [chunkPoints]
   split_ifs
   · exact List.nodup_nil
   · refine nodup_pointsOfDen _ _ _ ((nodup_setBits _).map fun t t' h ↦ ?_)
@@ -592,36 +571,6 @@ theorem add_mul_lt_of_lt_classCount {n G ρ u : ℕ} (hG : 0 < G) (h : u < class
 theorem lt_classCount {n G ρ u : ℕ} (hG : 0 < G) (h : ρ + G * u < n) : u < classCount n G ρ :=
   (Nat.le_div_iff_mul_le hG).mpr (by rw [Nat.succ_mul, mul_comm]; lia)
 
-/-! ### The search -/
-
-/-- The families that the search keeps are sound and short enough. -/
-theorem isSound_of_mem_filter {c : List ℤ} {G L N : ℕ} {fams : Array Family}
-    (hfams : ∀ F ∈ fams, F.IsSound c G N) {F : Family}
-    (hF : F ∈ fams.filter fun F ↦ L + F.M ≤ N && F.rows.size == F.M && 0 < F.M) :
-    F.IsSound c G N ∧ L + F.M ≤ N := by
-  obtain ⟨hF, h⟩ := Array.mem_filter.mp hF
-  exact ⟨hfams F hF, by simp only [Bool.and_eq_true, decide_eq_true_eq] at h; exact h.1.1⟩
-
-theorem rows_ne_zero {c : List ℤ} {G N : ℕ} {F : Family} (hF : F.IsSound c G N)
-    (hN : F.M ≤ N) {a : ℤ} {b : ℕ} (hc : IsCandidate c a b) : F.rows[b % F.M]! ≠ 0 := by
-  intro h0
-  have := hF.testBit a b (F.shift a) ((F.shift_lt hF.pos a).trans_le hN) hc (F.dvd_sub_shift hF a)
-  simp [h0] at this
-
-theorem of_mem_search {c : List ℤ} {H G L N pre : ℕ} {fams : Array Family} {dens : List ℕ}
-    (hG : 0 < G) {p : ℤ × ℤ × ℤ} (h : p ∈ search c (BruteForce.degree c) H G L N pre fams dens) :
-    (∃ b ∈ dens, p.2.2 = b) ∧ |p.1| ≤ H ∧ Int.gcd p.1 p.2.2 = 1 ∧
-      p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
-  simp only [search, List.mem_flatMap, List.mem_range, Prod.exists] at h
-  obtain ⟨ρ, hρ, t₀, len, hch, hp⟩ := h
-  obtain ⟨hcnt, hlen, -⟩ := le_of_mem_chunks hch
-  obtain ⟨⟨b, hb, hz⟩, ⟨t, ht, hx⟩, hg, hy⟩ := of_mem_chunkPoints hp
-  refine ⟨⟨b, (List.mem_filter.mp (List.mem_filter.mp hb).1).1, hz⟩, ?_, hg, hy⟩
-  have := add_mul_lt_of_lt_classCount (n := 2 * H + 1) (ρ := ρ) (u := t₀ + t) hG (by lia)
-  rw [hx, abs_le]
-  push_cast
-  constructor <;> lia
-
 /-- The numerator `x` with `x + H = i` in the chunk of the class `i % G` that holds it. -/
 theorem eq_sub_add_mul_of_natCast_eq {i G L H : ℕ} {x : ℤ} (hi : (i : ℤ) = x + H) :
     x = ((i % G + G * (i / G / L * L) : ℕ) : ℤ) - H + G * ((i / G % L : ℕ) : ℤ) := by
@@ -631,36 +580,6 @@ theorem eq_sub_add_mul_of_natCast_eq {i G L H : ℕ} {x : ℤ} (hi : (i : ℤ) =
   simp only [Nat.cast_add, Nat.cast_mul]
   linear_combination (-1 : ℤ) * hi - h1 - (G : ℤ) * h2
 
-theorem mem_search_of {c : List ℤ} {H G L N pre : ℕ} {fams : Array Family} {dens : List ℕ}
-    (hG : 0 < G) (hL : 0 < L) (hfams : ∀ F ∈ fams, F.IsSound c G N) {p : ℤ × ℤ × ℤ} {b : ℕ}
-    (hb : b ∈ dens) (hz : p.2.2 = b) (ha : |p.1| ≤ H) (hg : Int.gcd p.1 p.2.2 = 1)
-    (hy : p.2.1 ^ 2 = binaryForm c p.1 p.2.2) :
-    p ∈ search c (BruteForce.degree c) H G L N pre fams dens := by
-  have hc : IsCandidate c p.1 b := ⟨hz ▸ hg, p.2.1, hz ▸ hy⟩
-  obtain ⟨i, hi⟩ : ∃ i : ℕ, (i : ℤ) = p.1 + H := ⟨(p.1 + H).toNat, by rw [abs_le] at ha; lia⟩
-  have hu : i / G < classCount (2 * H + 1) G (i % G) :=
-    lt_classCount hG (by rw [abs_le] at ha; lia [Nat.mod_add_div i G])
-  obtain ⟨t₀, len, hch, rfl, hlen⟩ := exists_mem_chunks hL hu
-  simp only [search, List.mem_flatMap, List.mem_range, Prod.exists]
-  refine ⟨i % G, Nat.mod_lt _ hG, _, len, hch, (mem_chunkPoints fun b t ht hc e he ↦
-    testBit_entry_row_of_mem_entries (fun F hF ↦ isSound_of_mem_filter hfams hF)
-      (le_of_mem_chunks hch).2.1 he ht hc).mpr ⟨⟨b, ?_, hz⟩, ⟨i / G % L, hlen,
-        eq_sub_add_mul_of_natCast_eq hi⟩, hg, hy⟩⟩
-  simp only [List.mem_filter, Array.all_eq_true_iff_forall_mem]
-  refine ⟨⟨hb, fun F hF ↦ ?_⟩, ?_⟩
-  · simpa using rows_ne_zero (isSound_of_mem_filter hfams hF).1 (by
-      have := (isSound_of_mem_filter hfams hF).2; lia) hc
-  · have := admitTable_spec hG hc
-    rwa [eq_sub_add_mul_of_natCast_eq (L := 1) hi, Nat.cast_add, Nat.cast_mul, add_sub_right_comm,
-      add_assoc, ← mul_add, Int.add_mul_emod_self_left] at this
-
-theorem mem_search {c : List ℤ} {H G L N pre : ℕ} {fams : Array Family} {dens : List ℕ}
-    (hG : 0 < G) (hL : 0 < L) (hfams : ∀ F ∈ fams, F.IsSound c G N) {p : ℤ × ℤ × ℤ} :
-    p ∈ search c (BruteForce.degree c) H G L N pre fams dens ↔
-      (∃ b ∈ dens, p.2.2 = b) ∧ |p.1| ≤ H ∧ Int.gcd p.1 p.2.2 = 1 ∧
-        p.2.1 ^ 2 = binaryForm c p.1 p.2.2 :=
-  ⟨of_mem_search hG, fun ⟨⟨_, hb, hz⟩, ha, hg, hy⟩ ↦ mem_search_of hG hL hfams hb hz ha hg hy⟩
-
 theorem eq_of_add_mul_eq {G ρ ρ' u u' : ℕ} (hρ : ρ < G) (hρ' : ρ' < G)
     (h : ρ + G * u = ρ' + G * u') : ρ = ρ' ∧ u = u' := by
   have h1 := congrArg (· % G) h
@@ -668,40 +587,118 @@ theorem eq_of_add_mul_eq {G ρ ρ' u u' : ℕ} (hρ : ρ < G) (hρ' : ρ' < G)
   subst h1
   exact ⟨rfl, Nat.eq_of_mul_eq_mul_left (n := G) (by lia) (by lia)⟩
 
-theorem exists_index_of_mem_chunkPoints {c : List ℤ} {G H ρ t₀ len : ℕ} {es : Array Entry}
-    {bs : List ℕ} {p : ℤ × ℤ × ℤ}
-    (hp : p ∈ chunkPoints c (BruteForce.degree c) G es (((ρ + G * t₀ : ℕ) : ℤ) - H) len bs) :
-    ∃ t < len, ∃ i : ℕ, (i : ℤ) = p.1 + H ∧ i = ρ + G * (t₀ + t) := by
-  obtain ⟨t, ht, hx⟩ := (of_mem_chunkPoints hp).2.1
-  exact ⟨t, ht, ρ + G * (t₀ + t), by rw [hx]; push_cast; ring, rfl⟩
-
 theorem eq_of_add_mul_add_eq {G L ρ k k' t t' : ℕ} (hG : 0 < G) (hL : 0 < L) (ht : t < L)
     (ht' : t' < L) (h : ρ + G * (k * L + t) = ρ + G * (k' * L + t')) : k = k' := by
   have := congrArg (· / L) (Nat.eq_of_mul_eq_mul_left hG (Nat.add_left_cancel h))
   simpa [Nat.mul_comm k L, Nat.mul_comm k' L, Nat.mul_add_div hL, Nat.div_eq_of_lt ht,
     Nat.div_eq_of_lt ht'] using this
 
-theorem nodup_search (c : List ℤ) (H G L N pre : ℕ) (fams : Array Family) {dens : List ℕ}
-    (hG : 0 < G) (hL : 0 < L) (hdens : dens.Nodup) :
-    (search c (BruteForce.degree c) H G L N pre fams dens).Nodup := by
-  rw [search]
-  refine List.nodup_flatMap.mpr ⟨fun ρ hρ ↦ ?_, List.nodup_range.pairwise_of_forall_ne
-    fun ρ hρ ρ' hρ' hne p hp hp' ↦ hne ?_⟩
-  · rw [chunks, List.flatMap_map]
-    refine List.nodup_flatMap.mpr ⟨fun k _ ↦ nodup_chunkPoints c hG _ _ _
-      ((hdens.filter _).filter _), List.nodup_range.pairwise_of_forall_ne
-        fun k _ k' _ hne p hp hp' ↦ hne ?_⟩
-    obtain ⟨t, ht, i, hi, rfl⟩ := exists_index_of_mem_chunkPoints hp
-    obtain ⟨t', ht', i', hi', hii⟩ := exists_index_of_mem_chunkPoints hp'
+/-! ### The slots -/
+
+theorem le_of_mem_slots {H G L r len : ℕ} {a₀ : ℤ} (h : (r, a₀, len) ∈ slots H G L) : len ≤ L := by
+  simp only [slots, List.mem_flatMap, List.mem_range, List.mem_map, Prod.exists,
+    Prod.mk.injEq] at h
+  obtain ⟨_, -, _, _, hch, -, -, rfl⟩ := h
+  exact (le_of_mem_chunks hch).2.1
+
+theorem abs_add_mul_le_of_mem_slots {H G L r len : ℕ} {a₀ : ℤ} (hG : 0 < G)
+    (h : (r, a₀, len) ∈ slots H G L) {t : ℕ} (ht : t < len) :
+    |a₀ + G * t| ≤ H := by
+  simp only [slots, List.mem_flatMap, List.mem_range, List.mem_map, Prod.exists,
+    Prod.mk.injEq] at h
+  obtain ⟨ρ, -, t₀, _, hch, -, rfl, rfl⟩ := h
+  have := add_mul_lt_of_lt_classCount (n := 2 * H + 1) (ρ := ρ) (u := t₀ + t) hG
+    (by lia [(le_of_mem_chunks hch).1])
+  rw [abs_le]
+  push_cast
+  constructor <;> lia
+
+/-- Every numerator `x` with `|x| ≤ H` lies in a slot, with the residue of `x` modulo `G`. -/
+theorem exists_mem_slots {H G L : ℕ} (hG : 0 < G) (hL : 0 < L) {x : ℤ} (hx : |x| ≤ H) :
+    ∃ a₀ len, ((x % G).toNat, a₀, len) ∈ slots H G L ∧ ∃ t < len, x = a₀ + G * t := by
+  obtain ⟨i, hi⟩ : ∃ i : ℕ, (i : ℤ) = x + H := ⟨(x + H).toNat, by rw [abs_le] at hx; lia⟩
+  have hu : i / G < classCount (2 * H + 1) G (i % G) :=
+    lt_classCount hG (by rw [abs_le] at hx; lia [Nat.mod_add_div i G])
+  obtain ⟨t₀, len, hch, rfl, hlen⟩ := exists_mem_chunks hL hu
+  refine ⟨_, len, ?_, i / G % L, hlen, eq_sub_add_mul_of_natCast_eq hi⟩
+  simp only [slots, List.mem_flatMap, List.mem_range, List.mem_map, Prod.exists, Prod.mk.injEq]
+  refine ⟨i % G, Nat.mod_lt _ hG, _, len, hch, ?_, rfl, rfl⟩
+  have := (Int.mod_modEq (i : ℤ) G).sub_right (H : ℤ)
+  rw [show (i : ℤ) - H = x by lia] at this
+  push_cast [Int.natCast_mod]
+  rw [this]
+
+/-- Two slots have no numerator in common. -/
+theorem pairwise_slots (H : ℕ) {G L : ℕ} (hG : 0 < G) (hL : 0 < L) :
+    (slots H G L).Pairwise fun (s s' : ℕ × ℤ × ℕ) ↦
+      ∀ t < s.2.2, ∀ t' < s'.2.2, s.2.1 + G * t ≠ s'.2.1 + G * t' := by
+  rw [slots, List.pairwise_flatMap]
+  refine ⟨fun ρ _ ↦ ?_, List.nodup_range.pairwise_of_forall_ne
+    fun ρ hρ ρ' hρ' hne s hs s' hs' t _ t' _ h ↦ hne ?_⟩
+  · rw [chunks, List.map_map, List.pairwise_map]
+    refine List.nodup_range.pairwise_of_forall_ne fun k _ k' _ hne t ht t' ht' h ↦ hne ?_
+    dsimp only [Function.comp_apply] at ht ht' h
     exact eq_of_add_mul_add_eq (ρ := ρ) hG hL (ht.trans_le (min_le_left _ _))
       (ht'.trans_le (min_le_left _ _)) (by lia)
-  · simp only [List.mem_flatMap, Prod.exists] at hp hp'
-    obtain ⟨t₀, len, -, hp⟩ := hp
-    obtain ⟨t₀', len', -, hp'⟩ := hp'
-    obtain ⟨t, -, i, hi, rfl⟩ := exists_index_of_mem_chunkPoints hp
-    obtain ⟨t', -, i', hi', hii⟩ := exists_index_of_mem_chunkPoints hp'
+  · simp only [List.mem_map, Prod.exists] at hs hs'
+    obtain ⟨t₀, len, -, rfl⟩ := hs
+    obtain ⟨t₀', len', -, rfl⟩ := hs'
     exact (eq_of_add_mul_eq (u := t₀ + t) (u' := t₀' + t') (List.mem_range.mp hρ)
       (List.mem_range.mp hρ') (by lia)).1
+
+/-! ### The search -/
+
+theorem of_mem_search {c : List ℤ} {H G L : ℕ} {fams : Array Family} {dens : List ℕ}
+    (hG : 0 < G) {p : ℤ × ℤ × ℤ} (h : p ∈ search c (BruteForce.degree c) H G L fams dens) :
+    (∃ b ∈ dens, p.2.2 = b) ∧ |p.1| ≤ H ∧ Int.gcd p.1 p.2.2 = 1 ∧
+      p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
+  simp only [search, List.mem_flatMap, getElem!_map_range _ (Nat.mod_lt _ hG), List.mem_filter,
+    List.mem_map, Prod.exists, Prod.mk.injEq] at h
+  obtain ⟨b, ⟨hb, -⟩, _, _, _, _, ⟨⟨r, a₀, len, hs, rfl, rfl, rfl, rfl⟩, -⟩, hp⟩ := h
+  obtain ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩ := of_mem_chunkPoints hp
+  exact ⟨⟨b, hb, hz⟩, hx ▸ abs_add_mul_le_of_mem_slots hG hs ht, hg, hy⟩
+
+theorem mem_search_of {c : List ℤ} {H G L : ℕ} {fams : Array Family} {dens : List ℕ}
+    (hG : 0 < G) (hL : 0 < L) (hfams : ∀ F ∈ fams, F.IsSound c G L) {p : ℤ × ℤ × ℤ} {b : ℕ}
+    (hb : b ∈ dens) (hz : p.2.2 = b) (ha : |p.1| ≤ H) (hg : Int.gcd p.1 p.2.2 = 1)
+    (hy : p.2.1 ^ 2 = binaryForm c p.1 p.2.2) :
+    p ∈ search c (BruteForce.degree c) H G L fams dens := by
+  have hc : IsCandidate c p.1 b := ⟨hz ▸ hg, p.2.1, hz ▸ hy⟩
+  have hF (F) (h : F ∈ fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M) : F.IsSound c G L :=
+    hfams F (Array.mem_filter.mp h).1
+  obtain ⟨a₀, len, hs, t, ht, hx⟩ := exists_mem_slots hG hL ha
+  simp only [search, List.mem_flatMap, getElem!_map_range _ (Nat.mod_lt _ hG), List.mem_filter,
+    List.mem_map, Prod.exists, Array.all_eq_true_iff_forall_mem, bne_iff_ne]
+  refine ⟨b, ⟨hb, fun F hF' ↦ (hF F hF').rows_ne_zero hc⟩, _, a₀, len, _,
+    ⟨⟨_, a₀, len, hs, rfl⟩, by simpa using admitTable_spec hG hc⟩,
+    (mem_chunkPoints fun t' ht' hc' i hi ↦ ?_).mpr ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩⟩
+  simp only [Array.size_map] at hi
+  simp only [getElem!_pos, Array.size_map, hi, Array.getElem_map]
+  exact (hF _ (Array.getElem_mem hi)).testBit_shiftRight
+    (ht'.trans_le (le_of_mem_slots hs)) hc'
+
+theorem mem_search {c : List ℤ} {H G L : ℕ} {fams : Array Family} {dens : List ℕ}
+    (hG : 0 < G) (hL : 0 < L) (hfams : ∀ F ∈ fams, F.IsSound c G L) {p : ℤ × ℤ × ℤ} :
+    p ∈ search c (BruteForce.degree c) H G L fams dens ↔
+      (∃ b ∈ dens, p.2.2 = b) ∧ |p.1| ≤ H ∧ Int.gcd p.1 p.2.2 = 1 ∧
+        p.2.1 ^ 2 = binaryForm c p.1 p.2.2 :=
+  ⟨of_mem_search hG, fun ⟨⟨_, hb, hz⟩, ha, hg, hy⟩ ↦ mem_search_of hG hL hfams hb hz ha hg hy⟩
+
+theorem nodup_search (c : List ℤ) (H : ℕ) {G L : ℕ} (fams : Array Family) {dens : List ℕ}
+    (hG : 0 < G) (hL : 0 < L) (hdens : dens.Nodup) :
+    (search c (BruteForce.degree c) H G L fams dens).Nodup := by
+  rw [search]
+  refine List.nodup_flatMap.mpr ⟨fun b _ ↦ ?_, (hdens.filter _).pairwise_of_forall_ne
+    fun b _ b' _ hne p hp hp' ↦ hne ?_⟩
+  · rw [getElem!_map_range _ (Nat.mod_lt _ hG)]
+    refine List.nodup_flatMap.mpr ⟨fun _ _ ↦ nodup_chunkPoints c hG .., ?_⟩
+    refine (List.pairwise_map.mpr ((pairwise_slots H hG hL).imp fun h p hp hp' ↦ ?_)).filter _
+    obtain ⟨t, ht, hx⟩ := (of_mem_chunkPoints hp).2.1
+    obtain ⟨t', ht', hx'⟩ := (of_mem_chunkPoints hp').2.1
+    exact h t ht t' ht' (hx.symm.trans hx')
+  · obtain ⟨_, -, hp⟩ := List.mem_flatMap.mp hp
+    obtain ⟨_, -, hp'⟩ := List.mem_flatMap.mp hp'
+    exact_mod_cast (of_mem_chunkPoints hp).1.symm.trans (of_mem_chunkPoints hp').1
 
 /-! ### The denominators -/
 
@@ -797,7 +794,7 @@ theorem eq_admitTable_of_mem_sortedGroups {tu : Tuning} {c : List ℤ} {d H B : 
 theorem isSound_of_mem_choose {tu : Tuning} {c : List ℤ} {H B : ℕ} {F : Family}
     (hF : F ∈ (choose tu c (BruteForce.degree c) H B).fams) :
     F.IsSound c (choose tu c (BruteForce.degree c) H B).G
-      (choose tu c (BruteForce.degree c) H B).N := by
+      (choose tu c (BruteForce.degree c) H B).L := by
   simp only [choose, List.mem_toArray, List.mem_filterMap] at hF ⊢
   obtain ⟨g, hg, hF⟩ := hF
   exact mkFamily_isSound (fun t ht ↦ eq_admitTable_of_mem_sortedGroups hg ht) hF
@@ -835,7 +832,7 @@ theorem mem_fastPoints_iff {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ} {tu : Tun
 theorem nodup_fastPoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Tuning) :
     (fastPoints c H bLow bHigh tu).Nodup := by
   rw [fastPoints]
-  refine List.Nodup.append ?_ (nodup_search _ _ _ _ _ _ _ (choose_G_pos ..) (choose_L_pos ..)
+  refine List.Nodup.append ?_ (nodup_search _ _ _ (choose_G_pos ..) (choose_L_pos ..)
     (nodup_denominators ..)) fun p hp hp' ↦ ?_
   · split_ifs
     · exact nodup_pointsOfDen _ _ _ (List.nodup_singleton 1)
