@@ -100,11 +100,11 @@ status:
     Sturm's theorem when the Sturm step is on), without duplicates, in the order of ratpoints; with
     the statements under RATPOINTS_NO_CHECK, the protocol of the delivery and the two theorems of
     the brute-force reference they are eleven of the thirteen statements of
-    comparator/challenges.json, which lake comparator --paranoid accepted on 2026-10-27; the other
+    comparator/challenges.json, which lake comparator --paranoid accepted on 2026-10-30; the other
     two say that the fast search of the program ratpoints-lean (Ratpoints.FastMask.fastPoints, not
     a model of the C code, with two primitives on bit masks in C whose Lean bodies are the
     reference definitions the proofs use) lists exactly the points of height at most H in a range
-    of denominators, each once (lake comparator accepted all thirteen on 2026-10-30). Proved but not certified: what
+    of denominators, each once. Proved but not certified: what
     ratpoints-model prints, that the Sturm step keeps every point under Sturm's theorem, and that
     the blocks of the run, sifted apart and delivered in their order, as the threads of ratpoints
     deliver them, give what the run delivers. Every line of code of the C files is recorded, with

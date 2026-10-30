@@ -56,12 +56,11 @@ does), the search `Ratpoints.findPoints`
 The brute-force reference `Ratpoints.bruteForce` lists exactly the points, each once, and so does
 the fast search `Ratpoints.FastMask.fastPoints` of `ratpoints-lean`, for every range of the
 denominators. These thirteen statements are certified by Comparator: `lake comparator --paranoid`
-accepted the eleven on the model and the brute force on 2026-10-27, `lake comparator` all thirteen
-on 2026-10-30 (`comparator/README.md`). Also proved, but not certified: what `ratpoints-model`
-prints (`Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok`); that the Sturm step keeps every point, under
-Sturm's theorem, so that with the exact check on its depth does not change the output
-(`Ratpoints.findPoints_sturm_neg_eq_ok`); and that the blocks of the loop over the denominators,
-sifted apart and delivered in their order, give what the run delivers
+accepted them on 2026-10-30 (`comparator/README.md`). Also proved, but not certified: what
+`ratpoints-model` prints (`Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok`); that the Sturm step keeps
+every point, under Sturm's theorem, so that with the exact check on its depth does not change the
+output (`Ratpoints.findPoints_sturm_neg_eq_ok`); and that the blocks of the loop over the
+denominators, sifted apart and delivered in their order, give what the run delivers
 (`Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun`). The threads of `ratpoints`, which the
 model leaves out, sift the blocks apart and deliver their points in the order of the blocks, so the
 model, which sifts the blocks in turn on one thread, gives the output of every number of threads,

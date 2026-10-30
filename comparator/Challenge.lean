@@ -22,10 +22,11 @@ public import Ratpoints.Model
 
 The main theorems of the project, stated with `sorry` for
 [leanprover/comparator](https://github.com/leanprover/comparator), over a verbatim restatement of
-the specification. The file may import only Mathlib and the model (`scripts/check_layout.py`
-checks this): the main theorems speak about the model's `findPoints` and `findPointsWith`, which
-are trusted in the sense that they are the code the executable runs, while the specification is
-reproduced here, so that a solution that changed it would be rejected.
+the specification. The file may import only Mathlib, the model and the fast search
+(`scripts/check_layout.py` checks this): the main theorems speak about the model's `findPoints` and
+`findPointsWith` and about `Ratpoints.FastMask.fastPoints`, which are trusted in the sense that they
+are the code the executables run, while the specification is reproduced here, so that a solution
+that changed it would be rejected.
 
 The file has thirteen statements, which `comparator/challenges.json` lists; `comparator/README.md`
 describes them and gives the date on which Comparator last accepted them. Two are about the

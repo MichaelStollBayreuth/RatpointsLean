@@ -6,11 +6,11 @@
 This chapter states what is proved about the search of the model, the counterpart of the library
 function \verb|find_points|: which points it finds, without duplicates and in which order, which
 inputs it refuses, what it delivers to a callback and without the exact check, and what the program
-\verb|ratpoints-model| prints. Comparator certifies nine of these statements and the two on the
-brute-force reference, eleven in all (Section~\ref{sec:comparator}). The proofs in outline
-(Section~\ref{sec:theoremsProofs}) reduce them to what Chapters~\ref{chap:setup}
-to~\ref{chap:output} prove part by part: that the test of the sieve lets every point through and
-that the parts compose to the search.
+\verb|ratpoints-model| prints. Comparator certifies nine of these statements, the two on the
+brute-force reference and the two on the fast search of Chapter~\ref{chap:overview}, thirteen in all
+(Section~\ref{sec:comparator}). The proofs in outline (Section~\ref{sec:theoremsProofs}) reduce them
+to what Chapters~\ref{chap:setup} to~\ref{chap:output} prove part by part: that the test of the
+sieve lets every point through and that the parts compose to the search.
 
 Throughout, $c$ is a coefficient list of degree~$d$ (Definition~\ref{def:binaryForm}), $H$ a natural
 number, $s$ the options of the sieve and~$o$ the options of a search (Definition~\ref{def:Options}).
@@ -556,23 +556,25 @@ Comparator, a checker for Lean proofs built into Lake, takes a challenge, a file
 theorems with \verb|sorry|, and a solution, a file that proves them, and checks the solution
 independently of the build of the repository. The files are in the folder \verb|comparator|: the
 challenge \verb|Challenge.lean|, the solution \verb|Solution.lean|, and \verb|challenges.json|,
-which lists the eleven statements and the permitted axioms; \verb|scripts/run-comparator.sh| runs
+which lists the thirteen statements and the permitted axioms; \verb|scripts/run-comparator.sh| runs
 the check.
 
-The challenge may import only Mathlib and the model, which the layout check enforces. It restates
-verbatim the definitions of the four files of the specification with their decidability instances
-(Chapter~\ref{chap:spec}), all but the finite set $\mathrm{points}(c, H)$
+The challenge may import only Mathlib, the model and the fast search, which the layout check
+enforces. It restates verbatim the definitions of the four files of the specification with their
+decidability instances (Chapter~\ref{chap:spec}), all but the finite set $\mathrm{points}(c, H)$
 (Section~\ref{sec:specBruteForce}), and imports exactly the Mathlib modules among the public imports
 of these files, so that the restated definitions elaborate to the same terms as there. It imports
 the whole model (\verb|Ratpoints.Model|), of which the statements mention the search with and
 without a callback and the brute-force reference; the options, the options of the sieve and the
 doubles of the search intervals; the outcome, the answer of a callback, the delivery and its
-reference; and the constants $\mathrm{maxDegree}$ and $\mathrm{maxDivisors}$. A definition of the
-model elaborates without Mathlib, to other instance terms, and is never restated: the model counts
-as the code that the executable runs, while the specification is reproduced, so that a library that
-specified something else would be rejected.
+reference; and the constants $\mathrm{maxDegree}$ and $\mathrm{maxDivisors}$. It imports the fast
+search (\verb|Ratpoints.Fast|) too, of which the statements mention
+\verb|Ratpoints.FastMask.fastPoints| and its parameters \verb|Ratpoints.Fast.Tuning|. A definition
+of the model or of the fast search elaborates without Mathlib, to other instance terms, and is never
+restated: they count as the code that the executables run, while the specification is reproduced, so
+that a library that specified something else would be rejected.
 
-The eleven statements are statements of this blueprint, each named as its theorem in the library
+Eleven of the statements are statements of this blueprint, each named as its theorem in the library
 with \verb|challenge_| in place of \verb|Ratpoints.| (the challenge spells out the maps of the
 search intervals to their values and bits, which the library abbreviates): the two statements of the
 brute-force reference (Theorem~\ref{thm:bruteForce}), the first statements of membership and of the
@@ -581,8 +583,10 @@ the two refusal theorems (Theorem~\ref{thm:refusals}), the three statements with
 (Theorem~\ref{thm:noCheck}) and the first statement of the protocol (Theorem~\ref{thm:protocol}).
 They hold for every coefficient list, height bound, options of a search and options of the sieve, so
 for every choice of the moduli and every correction that the search makes; Sturm's theorem enters as
-the hypothesis~$h_S$ of membership, the order and item~(2) without the exact check. The solution
-proves each statement by its theorem in the library.
+the hypothesis~$h_S$ of membership, the order and item~(2) without the exact check. The other two
+are the theorems of the fast search, \verb|Ratpoints.FastMask.mem_fastPoints_iff| and
+\verb|Ratpoints.FastMask.nodup_fastPoints| (Chapter~\ref{chap:overview}). The solution proves each
+statement by its theorem in the library.
 
 \verb|lake comparator| builds and exports both files in a sandbox, without loading the \verb|.olean|
 files of the project into its own process, and accepts the solution when each of its theorems states
@@ -593,8 +597,8 @@ definition that the statement reaches; when the proofs use only the permitted ax
 and when the kernel accepts them. With \verb|--paranoid| it checks the solution with six kernels:
 Lean's kernel in its default and in its paranoid mode, \verb|lean4lean|, \verb|nanoda|,
 \verb|con-leche| and \verb|con-ron| (the flag \verb|enable_nanoda| of \verb|challenges.json| does
-not switch \verb|nanoda| off under \verb|--paranoid|). On 2026-10-27,
-\verb|lake comparator --paranoid| accepted the eleven statements with all six.
+not switch \verb|nanoda| off under \verb|--paranoid|). On 2026-10-30,
+\verb|lake comparator --paranoid| accepted the thirteen statements with all six.
 
 What one has to read, then, is the challenge: the specification as restated there and, of the model,
 the types that the statements mention and the reference of the delivery, a fold of a few lines.

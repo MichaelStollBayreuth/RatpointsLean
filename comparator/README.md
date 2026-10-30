@@ -7,18 +7,18 @@ axioms (`propext`, `Quot.sound`, `Classical.choice`).
 
 ## What is checked
 
-- [`Challenge.lean`](Challenge.lean) may import only Mathlib and the model (`Ratpoints.Model`);
-  `scripts/check_layout.py` checks this. It restates the specification verbatim: of
-  `Ratpoints/Spec/Basic.lean`, `degree`, `binaryForm`, `binaryFormPoly` (the binary form over `ℚ`
-  that the refusal theorems speak about), `IsNormalizedPair` and `IsPoint` with their decidability
-  (`points`, the finite set of the points, stays out, since no statement mentions it); all of
-  `Ratpoints/Spec/Order.lean`, the order of the points (`searchedPoly`, `FactorsByTrialDivision`
-  with its decidability, `binaryDivisors`, `searchDenominators`, `pointsWithDen`,
-  `orderedPoints`); all of `Ratpoints/Spec/Region.lean`, the search region (`IsNaN`,
-  `doubleValue`, `AreSearchIntervals`, `IntervalsWF`, `InIntervals`, `InRegion`, `IsFullBox` with
-  their decidability, and `denominatorBound`); and `Ratpoints/Spec/Sturm.lean`, Sturm's theorem as
-  a proposition (`SturmTheorem`), which the statements with the Sturm step on assume. It states
-  the main theorems with `sorry`.
+- [`Challenge.lean`](Challenge.lean) may import only Mathlib, the model (`Ratpoints.Model`) and the
+  fast search (`Ratpoints.Fast`); `scripts/check_layout.py` checks this. It restates the
+  specification verbatim: of `Ratpoints/Spec/Basic.lean`, `degree`, `binaryForm`, `binaryFormPoly`
+  (the binary form over `ℚ` that the refusal theorems speak about), `IsNormalizedPair` and `IsPoint`
+  with their decidability (`points`, the finite set of the points, stays out, since no statement
+  mentions it); all of `Ratpoints/Spec/Order.lean`, the order of the points (`searchedPoly`,
+  `FactorsByTrialDivision` with its decidability, `binaryDivisors`, `searchDenominators`,
+  `pointsWithDen`, `orderedPoints`); all of `Ratpoints/Spec/Region.lean`, the search region
+  (`IsNaN`, `doubleValue`, `AreSearchIntervals`, `IntervalsWF`, `InIntervals`, `InRegion`,
+  `IsFullBox` with their decidability, and `denominatorBound`); and `Ratpoints/Spec/Sturm.lean`,
+  Sturm's theorem as a proposition (`SturmTheorem`), which the statements with the Sturm step on
+  assume. It states the main theorems with `sorry`.
 - [`Solution.lean`](Solution.lean) imports the library and proves the same statements by its
   theorems.
 
@@ -27,9 +27,11 @@ argument at its default, the channel that prints nothing) and the brute-force re
 `bruteForce`, which the challenge imports with `Options`, the doubles `Double` of its search
 intervals, `SieveOptions`, `maxDegree`, `maxDivisors`, the result `Outcome` of `findPointsWith`
 (whose fields `info` and `total` the protocol reads), and the callback's `Answer` and `Delivery`
-with the reference of the delivery `Delivery.deliver`. The model is trusted in the sense that it
-is the code the executable runs, and nothing else, and a definition of the model, which
-elaborates without Mathlib, is never restated. The specification, by contrast, is reproduced in
+with the reference of the delivery `Delivery.deliver`; the two on the fast search speak about
+`FastMask.fastPoints` and its parameters `Fast.Tuning`, which the challenge imports with the fast
+search. The model and the fast search are trusted in the sense that they are the code the
+executables run, and nothing else, and a definition of either, which elaborates without
+Mathlib, is never restated. The specification, by contrast, is reproduced in
 the challenge, so a solution whose library changed it is rejected. Of Mathlib, the challenge
 imports exactly the Mathlib modules among the public imports of the files of the specification,
 among them `Mathlib.Algebra.Squarefree.Basic` for `Squarefree`, `Mathlib.Data.Nat.Factors` for the
@@ -83,9 +85,8 @@ hypothesis on `s`, from which and from the curve the search chooses its moduli:
   the count of `Delivery.deliver` of the list of `findPoints` to the callback, its calls for the
   points in their order up to and including the first that stops the search.
 
-On 2026-10-27 `lake comparator --paranoid` accepted the eleven statements other than those on the
-fast search, with Lean's kernel and the five external checkers; on 2026-10-30 `lake comparator`
-accepted all thirteen with Lean's kernel.
+On 2026-10-30 `lake comparator --paranoid` accepted the thirteen statements, with Lean's kernel
+and the five external checkers.
 
 Comparator certifies these statements and their proofs; it does not certify that the executables
 `ratpoints-model` and `ratpoints-lean` run the model and the fast search, nor the link between the

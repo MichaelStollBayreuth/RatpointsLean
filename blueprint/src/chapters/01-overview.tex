@@ -243,12 +243,13 @@ apart and delivered in their order give what the run delivers. So the output of 
 sifts the blocks in turn on one thread, is that of \ratpoints{} with any number of threads, provided
 that its pool of threads behaves as its code says (Section~\ref{sec:theoremsBlocks}).
 
-Comparator certifies eleven statements: the two on the brute-force reference, membership, no
-duplicates, the two refusal statements, the order, the three statements without the exact check, and
-the protocol (Section~\ref{sec:comparator}). The others are proved in the same library, but one has
-to read their Lean statements to know what they say: the forms of membership with the permutation
-and the finite set of the points, the part of the order theorem on the depth of the Sturm step, the
-theorems on the program, and the block, lag and thread lemmas.
+Comparator certifies thirteen statements: the two on the brute-force reference, membership, no
+duplicates, the two refusal statements, the order, the three statements without the exact check, the
+protocol (Section~\ref{sec:comparator}), and the two on the fast search of \verb|ratpoints-lean|
+(below). The others are proved in the same library, but one has to read their Lean statements to
+know what they say: the forms of membership with the permutation and the finite set of the points,
+the part of the order theorem on the depth of the Sturm step, the theorems on the program, and the
+block, lag and thread lemmas.
 
 \section{How the proofs go}\label{sec:overviewProofs}
 
@@ -298,7 +299,7 @@ extended rationals \verb|WithBotTop|, and, in Sturm's theorem, the Sturm sequenc
 mention and the reference of the delivery (Section~\ref{sec:comparator}).
 
 \emph{The kernel and comparator.} Comparator, a checker for Lean proofs built into Lake, takes a
-challenge that restates the specification verbatim and states the eleven certified theorems with
+challenge that restates the specification verbatim and states the thirteen certified theorems with
 \verb|sorry|, and a solution that proves them by the theorems of the library. It accepts the
 solution only when each theorem states the same as in the challenge, the full bodies of the
 definitions that the statements reach included, the proofs use no axioms beyond \verb|propext|,
