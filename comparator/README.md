@@ -37,14 +37,18 @@ prime factors, `Mathlib.Order.WithBotTop` for the values of the doubles, and
 `Mathlib.Algebra.Polynomial.Sturm.Sequence` and `Mathlib.Data.List.SignVariations` for Sturm's
 theorem, so that the restated definitions elaborate to the same terms as there.
 
-## The eleven statements
+## The thirteen statements
 
-`challenges.json` lists eleven statements. They hold for every coefficient list `c`, height bound
+`challenges.json` lists thirteen statements. They hold for every coefficient list `c`, height bound
 `H`, options of the search `o : Options` and options of the sieve `s : SieveOptions`, with no
 hypothesis on `s`, from which and from the curve the search chooses its moduli:
 
 - the brute-force reference (`challenge_mem_bruteForce_iff`, `challenge_nodup_bruteForce`):
   `bruteForce c H` lists exactly the points of height at most `H` (`IsPoint`), each once;
+- the fast search of `ratpoints-lean` (`challenge_mem_fastPoints_iff`,
+  `challenge_nodup_fastPoints`): for all bounds `bLow`, `bHigh` of the denominators and every
+  setting `tu` of its parameters, `Fast.fastPoints c H bLow bHigh tu` lists exactly the points of
+  height at most `H` in the range of the denominators (`InRegion [] bLow bHigh`), each once;
 - membership (`challenge_mem_iff_isPoint_of_findPoints_eq_ok`): with the exact check on
   (`o.noCheck = false`) and assuming Sturm's theorem when the Sturm step is on
   (`0 ≤ o.sturm → SturmTheorem`), a triple lies in the list of `findPoints` exactly when it is a
@@ -79,14 +83,15 @@ hypothesis on `s`, from which and from the curve the search chooses its moduli:
   the count of `Delivery.deliver` of the list of `findPoints` to the callback, its calls for the
   points in their order up to and including the first that stops the search.
 
-On 2026-10-27 `lake comparator --paranoid` accepted all eleven statements, with Lean's kernel and
-the five external checkers.
+On 2026-10-27 `lake comparator --paranoid` accepted the eleven statements other than those on the
+fast search, with Lean's kernel and the five external checkers; on 2026-10-30 `lake comparator`
+accepted all thirteen with Lean's kernel.
 
-Comparator certifies these statements and their proofs; it does not certify that the executable
-`ratpoints-lean` runs the model, nor the link between the model and the C code, which is a record
-and a test (`correspondence/README.md`). The theorems on what the program prints, on the coverage
-of the Sturm step and on the blocks of the run are proved in the library but are not among the
-statements.
+Comparator certifies these statements and their proofs; it does not certify that the executables
+`ratpoints-model` and `ratpoints-lean` run the model and the fast search, nor the link between the
+model and the C code, which is a record and a test (`correspondence/README.md`). The theorems on
+what the program prints, on the coverage of the Sturm step and on the blocks of the run are proved
+in the library but are not among the statements.
 
 ## How Comparator checks them
 

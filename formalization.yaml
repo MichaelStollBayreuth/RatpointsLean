@@ -90,7 +90,7 @@ status:
     the set bits, the test for common factors on 64-bit longs and the exact check; the delivery of
     the points to the callback of the caller with its stops, the options RATPOINTS_NO_CHECK and
     RATPOINTS_NO_Y and the flags written back; the report of the library under RATPOINTS_VERBOSE;
-    and the command-line program ratpoints-lean, which reads its command line and prints the points
+    and the command-line program ratpoints-model, which reads its command line and prints the points
     and the report as the program of ratpoints does. The compile-time constants of the C code are
     definitions of the model, and no proof depends on their values beyond a few facts checked by
     decide. The contracts of the components are proved with the program logic of Lean core. The main
@@ -99,14 +99,17 @@ status:
     with the exact check on, exactly the points of height at most H in the search region (assuming
     Sturm's theorem when the Sturm step is on), without duplicates, in the order of ratpoints; with
     the statements under RATPOINTS_NO_CHECK, the protocol of the delivery and the two theorems of
-    the brute-force reference they are the eleven statements of comparator/challenges.json, which
-    lake comparator --paranoid accepted on 2026-10-27. Proved but not certified: what ratpoints-lean
-    prints, that the Sturm step keeps every point under Sturm's theorem, and that the blocks of the
-    run, sifted apart and delivered in their order, as the threads of ratpoints deliver them, give
-    what the run delivers. Every line of code of the C files is recorded, with the declarations that
-    model it or the reason for its exclusion, and CI checks the record against the C code at the
-    pinned commit; the differential tests compare ratpoints-lean with the C program, built on the
-    same machine (5397 comparisons in the default suites, 13 in the suite of the runs of test4.sh
+    the brute-force reference they are eleven of the thirteen statements of
+    comparator/challenges.json, which lake comparator --paranoid accepted on 2026-10-27; the other
+    two say that the fast search of the program ratpoints-lean (Ratpoints.Fast.fastPoints, not a
+    model of the C code) lists exactly the points of height at most H in a range of denominators,
+    each once (lake comparator accepted all thirteen on 2026-10-30). Proved but not certified: what
+    ratpoints-model prints, that the Sturm step keeps every point under Sturm's theorem, and that
+    the blocks of the run, sifted apart and delivered in their order, as the threads of ratpoints
+    deliver them, give what the run delivers. Every line of code of the C files is recorded, with
+    the declarations that model it or the reason for its exclusion, and CI checks the record against
+    the C code at the pinned commit; the differential tests compare ratpoints-model with the C
+    program, built on the same machine (5397 comparisons in the default suites, 13 in the suite of the runs of test4.sh
     above height 30000 and 92 in the suite of the searches in which ratpoints corrects its moduli,
     none failed).
   sorry_count: 0
@@ -255,6 +258,16 @@ alignment:
         Ratpoints.points); the brute-force reference Ratpoints.bruteForce lists exactly these
         points, each once (Ratpoints.mem_bruteForce_iff, Ratpoints.nodup_bruteForce), certified by
         comparator
+    - source: "a fast verified search for the points"
+      lean: "Ratpoints.Fast.mem_fastPoints_iff"
+      module: "Ratpoints.Proof.FastSieve"
+      status: "formalized"
+      note: >
+        the program ratpoints-lean runs Ratpoints.Fast.fastPoints, a sieve with bit masks in natural
+        numbers that is not a model of the C code; for every coefficient list, height bound, range
+        of the denominators and setting of its parameters it lists exactly the points of height at
+        most H in the range (Ratpoints.Fast.mem_fastPoints_iff), each once
+        (Ratpoints.Fast.nodup_fastPoints), both certified by comparator
     - source: "find_points returns each such point exactly once"
       lean: "Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok"
       module: "Ratpoints.Proof.Output"
