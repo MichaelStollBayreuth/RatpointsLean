@@ -30,9 +30,9 @@ reproduced here, so that a solution that changed it would be rejected.
 The file has thirteen statements, which `comparator/challenges.json` lists; `comparator/README.md`
 describes them and gives the date on which Comparator last accepted them. Two are about the
 brute-force reference: `Ratpoints.bruteForce` finds exactly the points (`Ratpoints.IsPoint`),
-without duplicates. Two are about the fast search `Ratpoints.Fast.fastPoints`, which the program
-`ratpoints-lean` runs: for every coefficient list, height bound, range of denominators and setting
-of its parameters it lists exactly the points of height at most `H` in the range
+without duplicates. Two are about the fast search `Ratpoints.FastMask.fastPoints`, which the
+program `ratpoints-lean` runs: for every coefficient list, height bound, range of denominators and
+setting of its parameters it lists exactly the points of height at most `H` in the range
 (`Ratpoints.InRegion` without search intervals), without duplicates. The other nine hold for every
 coefficient list `c`, height bound `H`, options of the search `o : Ratpoints.Options` and options of
 the sieve `s : Ratpoints.SieveOptions`, with no hypothesis on `s`, with which the search chooses its
@@ -68,7 +68,7 @@ moduli from the curve:
   callback for the points of the list in their order, up to and including the first that stops the
   search.
 
-`Ratpoints.bruteForce`, `Ratpoints.Fast.fastPoints`, `Ratpoints.Fast.Tuning`,
+`Ratpoints.bruteForce`, `Ratpoints.FastMask.fastPoints`, `Ratpoints.Fast.Tuning`,
 `Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Outcome`,
 `Ratpoints.Answer`, `Ratpoints.Delivery`, `Ratpoints.Delivery.deliver`, `Ratpoints.Options`,
 `Ratpoints.Double`, `Ratpoints.SieveOptions`, `Ratpoints.maxDegree` and `Ratpoints.maxDivisors` come
@@ -291,12 +291,12 @@ theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteFo
 
 theorem challenge_mem_fastPoints_iff (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ)
     (tu : Ratpoints.Fast.Tuning) (p : ℤ × ℤ × ℤ) :
-    p ∈ Ratpoints.Fast.fastPoints c H bLow bHigh tu ↔
+    p ∈ Ratpoints.FastMask.fastPoints c H bLow bHigh tu ↔
       Ratpoints.IsPoint c H p ∧ Ratpoints.InRegion [] bLow bHigh p :=
   sorry
 
 theorem challenge_nodup_fastPoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ)
-    (tu : Ratpoints.Fast.Tuning) : (Ratpoints.Fast.fastPoints c H bLow bHigh tu).Nodup :=
+    (tu : Ratpoints.Fast.Tuning) : (Ratpoints.FastMask.fastPoints c H bLow bHigh tu).Nodup :=
   sorry
 
 theorem challenge_mem_iff_isPoint_of_findPoints_eq_ok (c : List ℤ) (H : ℕ)

@@ -47,8 +47,8 @@ hypothesis on `s`, from which and from the curve the search chooses its moduli:
   `bruteForce c H` lists exactly the points of height at most `H` (`IsPoint`), each once;
 - the fast search of `ratpoints-lean` (`challenge_mem_fastPoints_iff`,
   `challenge_nodup_fastPoints`): for all bounds `bLow`, `bHigh` of the denominators and every
-  setting `tu` of its parameters, `Fast.fastPoints c H bLow bHigh tu` lists exactly the points of
-  height at most `H` in the range of the denominators (`InRegion [] bLow bHigh`), each once;
+  setting `tu` of its parameters, `FastMask.fastPoints c H bLow bHigh tu` lists exactly the points
+  of height at most `H` in the range of the denominators (`InRegion [] bLow bHigh`), each once;
 - membership (`challenge_mem_iff_isPoint_of_findPoints_eq_ok`): with the exact check on
   (`o.noCheck = false`) and assuming Sturm's theorem when the Sturm step is on
   (`0 ≤ o.sturm → SturmTheorem`), a triple lies in the list of `findPoints` exactly when it is a

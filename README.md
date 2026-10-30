@@ -54,7 +54,7 @@ does), the search `Ratpoints.findPoints`
   including the first call that stops the search.
 
 The brute-force reference `Ratpoints.bruteForce` lists exactly the points, each once, and so does
-the fast search `Ratpoints.Fast.fastPoints` of `ratpoints-lean`, for every range of the
+the fast search `Ratpoints.FastMask.fastPoints` of `ratpoints-lean`, for every range of the
 denominators. These thirteen statements are certified by Comparator: `lake comparator --paranoid`
 accepted the eleven on the model and the brute force on 2026-10-27, `lake comparator` all thirteen
 on 2026-10-30 (`comparator/README.md`). Also proved, but not certified: what `ratpoints-model`
@@ -72,7 +72,9 @@ provided that the pool of threads of `ratpoints` behaves as its code says.
 One has to trust the specification, which the challenge of Comparator restates verbatim,
 with the definitions of Lean core and Mathlib that it is written in;
 the reference of the delivery, of which the protocol speaks; the fact that the executables
-`ratpoints-model` and `ratpoints-lean` run the model and the fast search; Lean's kernel and
+`ratpoints-model` and `ratpoints-lean` run the model and the fast search, and for `ratpoints-lean`
+that the C code of the two primitives on bit masks (`Ratpoints/Fast/Mask.lean`) computes their Lean
+reference definitions, which `lake exe masktest` checks but no proof covers; Lean's kernel and
 Comparator; and, in the statements with the Sturm step on, Sturm's theorem. The search chooses
 its moduli by the cost model of `ratpoints`, in doubles, which the model computes as Lean's
 `Float`, with the `log` and `pow` of the C library of the platform, as `ratpoints` does; no proof
@@ -102,10 +104,11 @@ by `decide`, which its module docstring lists (`scripts/constants_check.py` chec
 | part | contents | depends on |
 |---|---|---|
 | `Ratpoints/Model` | the executable model as plain code, one definition per component of the C code; no Mathlib, no contracts, no experimental options | Lean core, `Std` |
+| `Ratpoints/Fast` | the fast search of `ratpoints-lean`, not a model of the C code, and the program; plain code like the model, except for the C code of two primitives on bit masks in `Ratpoints/Fast/Mask.lean` | Lean core, `Std`, the model |
 | `Ratpoints/Spec` | the specification: the binary form, the normalized points of height at most `H`, their order in the output of `ratpoints`, the value of a double of the C code from its bits, the search intervals that `ratpoints` accepts, the points in the search region and Sturm's theorem as a proposition | Mathlib |
 | `Ratpoints/Proof` | the contract of each component as a theorem, the main theorems, and the lemmas that Lean core lacks, on vectors, arrays, lists, ranges, natural numbers, integers, characters and strings (`Ratpoints/Proof/Containers.lean`) and on words (`Ratpoints/Proof/Bits.lean`), and the tactic `vc_simp` that the proofs by `vcgen` share (`Ratpoints/Proof/VCSimp.lean`) | Mathlib, the specification, the model, the candidates for Mathlib |
 | `Ratpoints/Mathlib` | statements of general interest, as candidates for Mathlib | Mathlib |
-| `comparator/` | the specification restated, and the main theorems with `sorry`, for [Comparator](https://github.com/leanprover/comparator); their proofs by the library | Mathlib, the model (the challenge); the library (the solution) |
+| `comparator/` | the specification restated, and the main theorems with `sorry`, for [Comparator](https://github.com/leanprover/comparator); their proofs by the library | Mathlib, the model and the fast search (the challenge); the library (the solution) |
 | `correspondence/` | the pin of the C code and the record of its correspondence with the model | — |
 | `blueprint/` | the blueprint: the specification, the main theorems with their proofs in outline, the components with their contracts, the link to the C code | — |
 
@@ -147,29 +150,35 @@ The blueprint and the API documentation are at <https://michaelstollbayreuth.git
 `ratpoints-lean 'a_0 a_1 ... a_n' H [-dl b] [-du b] [-q]` prints the points of height at most `H`
 on `y² = a_n xⁿ + ⋯ + a_0` (coefficients constant term first), one line `(x : y : z)` per point,
 the points at infinity included; `-dl` and `-du` bound the denominators from below and above, and
-`-q` is accepted and ignored. It runs the fast search `Ratpoints.Fast.fastPoints`
-(`Ratpoints/Model/FastSieve.lean`), which is not a model of the C code: it sieves with bit masks
-held in natural numbers, which Lean represents by GMP integers, so that one `&&&` ANDs thousands of
-candidates. The numerators are split into their classes modulo 16, a class searched for a
-denominator only where the residues allow a point; each class is sieved in chunks with the rows of
+`-q` is accepted and ignored. It runs the fast search `Ratpoints.FastMask.fastPoints`
+(`Ratpoints/Fast/Search.lean`), which is not a model of the C code. The numerators are split into
+their classes modulo 16, a class searched for a denominator only where the residues allow a point;
+each class is sieved in chunks, bit masks with one bit per numerator, ANDed with the rows of
 families of odd moduli, built once and shifted to each chunk; the candidates that survive go to the
 exact check of the brute force; for odd degree only the denominators `s k²` with `s` dividing the
-leading coefficient are searched. `Ratpoints.Fast.mem_fastPoints_iff` and
-`Ratpoints.Fast.nodup_fastPoints` (`Ratpoints/Proof/FastSieve.lean`) prove that the list holds
-exactly the points of height at most `H` with their denominator in the range, each once, in an
-order of its own, for every input and every setting of the parameters of the sieve; both are
-certified by Comparator. `scripts/fasttest.py` compares the points, as sets, with those of
-`ratpoints` on its test suites, in CI.
+leading coefficient are searched. The masks are byte arrays, and the two operations on them that
+take the time are primitives with a few lines of C each (`Ratpoints/Fast/Mask.lean`, in
+`@[extern c inline]`): the AND of a mask with a row shifted to the right, in place, 64 bits at a
+time, and the next set bit of a mask. Their Lean bodies are reference definitions, which the proofs
+use; `lake exe masktest` compares the C code with them on five million cases, in CI. The same sieve
+with the masks in natural numbers (GMP integers), `Ratpoints.Fast.fastPoints`
+(`Ratpoints/Fast/Sieve.lean`), has no C of its own and is about 2.5 times slower;
+`Ratpoints.FastMask.fastPoints_perm` proves that the two list the same points, and
+`Ratpoints.FastMask.mem_fastPoints_iff` and `Ratpoints.FastMask.nodup_fastPoints`
+(`Ratpoints/Proof/FastMask.lean`) that the list holds exactly the points of height at most `H`
+with their denominator in the range, each once, in an order of its own, for every input and every
+setting of the parameters of the sieve; both are certified by Comparator. `scripts/fasttest.py`
+compares the points, as sets, with those of `ratpoints` on its test suites, in CI.
 
 Running times against `ratpoints` (C) and the program of the model (`ratpoints-model`), on one
 core of an Intel Core i7-1355U (wall times, one process per curve):
 
 | curve | H | C | `ratpoints-model` | `ratpoints-lean` |
 | --- | ---: | ---: | ---: | ---: |
-| generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 1.6 s |
-| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.55 s | 48 s | 12 s |
-| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.35 s |
-| the 1206 curves of the three test suites | 16383 | 4.3 s | 162 s | 76 s |
+| generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 0.49 s |
+| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.55 s | 48 s | 5.0 s |
+| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.14 s |
+| the 1206 curves of the three test suites | 16383 | 4.3 s | 162 s | 31 s |
 
 `ratpoints-model 'a_0 a_1 ... a_n' H [options]` is the program of the faithful model; it has the
 command line of `ratpoints`. It reads the coefficients (constant term first), the height bound and
