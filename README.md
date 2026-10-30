@@ -160,14 +160,14 @@ certified by Comparator. `scripts/fasttest.py` compares the points, as sets, wit
 `ratpoints` on its test suites, in CI.
 
 Running times against `ratpoints` (C) and the program of the model (`ratpoints-model`), on one
-core of an Intel Core i7-1355U:
+core of an Intel Core i7-1355U (wall times, one process per curve):
 
 | curve | H | C | `ratpoints-model` | `ratpoints-lean` |
 | --- | ---: | ---: | ---: | ---: |
-| generic genus 2 (`testdata.h` 776) | 10^5 | 0.17 s | 22.7 s | 1.3 s |
-| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.44 s | 47 s | 11 s |
-| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.3 s |
-| the 1206 test curves | 16383 | 4.2 s | 149 s | 89 s |
+| generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 1.6 s |
+| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.55 s | 48 s | 12 s |
+| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.35 s |
+| the 1206 curves of the three test suites | 16383 | 4.3 s | 162 s | 76 s |
 
 `ratpoints-model 'a_0 a_1 ... a_n' H [options]` is the program of the faithful model; it has the
 command line of `ratpoints`. It reads the coefficients (constant term first), the height bound and

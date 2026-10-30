@@ -70,17 +70,30 @@ def scaledCoeffsMod (c : List Int) (d m r : Nat) : List Int :=
 /-- Whether `x` has no prime factor in common with `g`, quickly when `g = 1`. -/
 def coprimeWith (g x : Nat) : Bool := g == 1 || Nat.gcd x g == 1
 
+/-- The row `r` of `Ratpoints.Fast.admitTable c d m`, computed directly (`sq` is
+`Ratpoints.Fast.sqTable m`): entry `x` is `true` when `x`, `r` and `m` have no prime factor in
+common and `F(x, r)` is a square modulo `m`. -/
+def admitRow (c : List Int) (d m : Nat) (sq : Array Bool) (r : Nat) : Array Bool :=
+  let w := scaledCoeffsMod c d m r
+  let f : Int := if d % 2 = 1 then r else 1
+  let g := Nat.gcd r m
+  (List.range m).toArray.map fun x ↦
+    coprimeWith g x && sq[(hornerMod w x m * f % (m : Int)).toNat]!
+
+/-- An inverse of `r` modulo `m`, if there is one. -/
+def invMod (r m : Nat) : Option Nat := (List.range m).find? fun u ↦ r * u % m == 1 % m
+
 /-- The residues modulo `m` that allow a point `(a, y, b)` with `gcd(a, b) = 1` of the binary form
 of degree `d` of `c`: entry `x` of row `r` (for `r, x < m`) is `true` when `x`, `r` and `m` have no
-prime factor in common and `F(x, r)` is a square modulo `m`. -/
+prime factor in common and `F(x, r)` is a square modulo `m`. A row `r` prime to `m` is row `1`
+permuted: `F(x, r) = r ^ D F(x / r, 1)` with `D` even (`Ratpoints.Fast.admitRow`). -/
 def admitTable (c : List Int) (d m : Nat) : Array (Array Bool) :=
   let sq := sqTable m
+  let one := admitRow c d m sq 1
   (List.range m).toArray.map fun (r : Nat) ↦
-    let w := scaledCoeffsMod c d m r
-    let f : Int := if d % 2 = 1 then r else 1
-    let g := Nat.gcd r m
-    (List.range m).toArray.map fun x ↦
-      coprimeWith g x && sq[(hornerMod w x m * f % (m : Int)).toNat]!
+    match invMod r m with
+    | some u => (List.range m).toArray.map fun x ↦ one[x * u % m]!
+    | none => admitRow c d m sq r
 
 /-! ### Bit masks -/
 

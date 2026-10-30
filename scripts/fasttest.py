@@ -18,6 +18,7 @@ mismatches and the total times, and exits 1 if a run differs or fails.
 """
 import argparse
 import random
+import re
 import resource
 import subprocess
 import sys
@@ -29,6 +30,7 @@ from difftest import curves  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 MEMORY = 4 << 30
+POINT = re.compile(r'\(-?\d+ : -?\d+ : -?\d+\)')
 TIMEOUT = 600
 
 
@@ -40,7 +42,7 @@ def points(cmd):
     """The time, exit code and sorted point lines of the command `cmd`."""
     start = time.perf_counter()
     r = subprocess.run(cmd, capture_output=True, text=True, preexec_fn=cap, timeout=TIMEOUT)
-    lines = sorted(line for line in r.stdout.splitlines() if line.startswith('('))
+    lines = sorted(line for line in r.stdout.splitlines() if POINT.fullmatch(line))
     return time.perf_counter() - start, r.returncode, lines
 
 
