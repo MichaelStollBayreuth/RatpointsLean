@@ -8,7 +8,8 @@ Prints `FAIL <rule> <file>:<line>: <text>` for every violation and exits 1 if th
 - Imports. The model (`Ratpoints/Model`) imports only Lean core and `Std`; the specification
   (`Ratpoints/Spec`) only Mathlib, so that it can be read without the model; the candidates for
   Mathlib (`Ratpoints/Mathlib`) only Mathlib and its dependencies; `comparator/Challenge.lean`
-  only Mathlib and the model (it restates the specification); `Main.lean` only the model.
+  only Mathlib and the model (it restates the specification); `Main.lean` and `ModelMain.lean` only
+  the model.
 - Roots. The part roots `Ratpoints/Model.lean`, `Ratpoints/Spec.lean` and `Ratpoints/Proof.lean`
   import, directly or not, every module of their folder, so that `lake build RatpointsModel`
   builds the whole model and `scripts/Correspondence.lean` sees every declaration of it.
@@ -65,7 +66,7 @@ def part_of(path):
         return 'mathlib'
     if rel == 'comparator/Challenge.lean':
         return 'challenge'
-    if rel == 'Main.lean':
+    if rel in ('Main.lean', 'ModelMain.lean'):
         return 'main'
     return None
 

@@ -55,7 +55,7 @@ does), the search `Ratpoints.findPoints`
 
 The brute-force reference `Ratpoints.bruteForce` lists exactly the points, each once. These eleven
 statements are certified by Comparator: `lake comparator --paranoid` accepted them on 2026-10-27
-(`comparator/README.md`). Also proved, but not certified: what `ratpoints-lean` prints
+(`comparator/README.md`). Also proved, but not certified: what `ratpoints-model` prints
 (`Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok`); that the Sturm step keeps every point, under
 Sturm's theorem, so that with the exact check on its depth does not change the output
 (`Ratpoints.findPoints_sturm_neg_eq_ok`); and that the blocks of the loop over the denominators,
@@ -69,17 +69,18 @@ provided that the pool of threads of `ratpoints` behaves as its code says.
 
 One has to trust the specification, which the challenge of Comparator restates verbatim,
 with the definitions of Lean core and Mathlib that it is written in;
-the reference of the delivery, of which the protocol speaks; the fact that the executable
-`ratpoints-lean` runs the model; Lean's kernel and Comparator; and, in the statements with the
-Sturm step on, Sturm's theorem. The search chooses its moduli by the cost model of `ratpoints`, in
-doubles, which the model computes as Lean's `Float`, with the `log` and `pow` of the C library of
-the platform, as `ratpoints` does; no proof reads the value of a double, so the theorems hold for
-every choice of the moduli that the search makes.
+the reference of the delivery, of which the protocol speaks; the fact that the executables
+`ratpoints-model` and `ratpoints-lean` run the model and the fast search; Lean's kernel and
+Comparator; and, in the statements with the Sturm step on, Sturm's theorem. The search chooses
+its moduli by the cost model of `ratpoints`, in doubles, which the model computes as Lean's
+`Float`, with the `log` and `pow` of the C library of the platform, as `ratpoints` does; no proof
+reads the value of a double, so the theorems hold for every choice of the moduli that the search
+makes.
 
 Lean has no semantics of C, so the link between the model and the C code is not a proof. Every line
 of code of the C files is recorded, with the Lean declarations that model it or the reason why the
 model leaves it out, and `scripts/correspondence.py` checks the record against the C code at the
-pinned commit (`correspondence/README.md`). The differential tests run `ratpoints-lean` and the C
+pinned commit (`correspondence/README.md`). The differential tests run `ratpoints-model` and the C
 program on the same inputs and compare the outputs byte for byte, the points in their order, the
 exit statuses and the reports: 5397 comparisons in the default suites, 13 in the suite of the runs
 of `test4.sh` above height 30000 and 92 in the suite of the searches in which `ratpoints` corrects
@@ -113,13 +114,14 @@ tests depend on it alone.
 
 ```bash
 lake exe cache get
-lake build                                   # the model, the library and ratpoints-lean
+lake build                                   # the model, the library and both programs
 lake exe ratpoints-lean '-2 0 0 1' 130       # the points of height at most 130 on y² = x³ - 2
 python3 scripts/check_layout.py              # imports, the restrictions on the model, axioms
 python3 scripts/correspondence.py check --complete   # the record of the C code at the pin
-python3 scripts/difftest.py                  # ratpoints-lean against the C program
-python3 scripts/difftest.py --suites test4high   # the runs of test4.sh above height 30000
-python3 scripts/difftest.py --suites adapt       # searches where ratpoints corrects its moduli
+python3 scripts/difftest.py --lean .lake/build/bin/ratpoints-model   # the model's program against C
+python3 scripts/fasttest.py --c C --repo DIR # ratpoints-lean against the C program, as point sets
+python3 scripts/difftest.py --lean .lake/build/bin/ratpoints-model --suites test4high
+python3 scripts/difftest.py --lean .lake/build/bin/ratpoints-model --suites adapt
 python3 scripts/constants_check.py --workdir tmp/cc   # builds with other values of the constants
 ```
 
@@ -127,9 +129,9 @@ python3 scripts/constants_check.py --workdir tmp/cc   # builds with other values
 clone of `ratpoints` that contains the pinned commit, given by `--repo PATH` or the environment
 variable `RATPOINTS_REPO`; `scripts/difftest.py` also runs the C program built there (or the one
 that `--c PATH` or `RATPOINTS_BIN` names), which must be the default build at the pin, without a
-`tuning.mk`, which the harness refuses, on the same machine as `ratpoints-lean`, since the choice of
-the moduli computes with the `log` and `pow` of the C library of the platform. CI runs these checks
-and more (`.github/workflows/build-project.yml`). `scripts/run-comparator.sh --paranoid` runs
+`tuning.mk`, which the harness refuses, on the same machine as `ratpoints-model`, since the choice
+of the moduli computes with the `log` and `pow` of the C library of the platform. CI runs these
+checks and more (`.github/workflows/build-project.yml`). `scripts/run-comparator.sh --paranoid` runs
 Comparator, built into Lake as `lake comparator` (`comparator/README.md`).
 `scripts/constants_check.py` builds copies of the committed project with eleven other sets of
 values of the compile-time constants, one after the other, each without the `#guard` examples of
@@ -138,40 +140,65 @@ repository and runs on demand, not in CI.
 
 The blueprint and the API documentation are at <https://michaelstollbayreuth.github.io/RatpointsLean/>.
 
-## The program `ratpoints-lean`
+## The programs `ratpoints-lean` and `ratpoints-model`
 
-`ratpoints-lean 'a_0 a_1 ... a_n' H [options]` has the command line of `ratpoints`. It reads the
-coefficients (constant term first), the height bound and the options as `ratpoints` does, with its
-checks, messages and exit statuses, and prints the points of height at most `H` on
-`y² = a_n xⁿ + ⋯ + a_0` as `ratpoints` does, through the callback of its `main.c`: by default one
-line `(x : y : z)` per point, with the options of the output `-x -X -y -Y -z -Z -1 -i -I` and the
-formats and strings of `-f -fs -fm -fe`, and without `-q` the report that `ratpoints` prints around
-them, under `-v` with the report of the library between them; under `-x` (no exact check) it prints
-the pairs that pass its sieve, with the moduli that it chooses from the curve and corrects between
-the blocks of the run as `ratpoints` does, which are those that `ratpoints` prints on the same
-machine. It finds the points by the sieve on bit arrays of words in its three stages, the first in
-chunks of 16 bit arrays with the rows that the builders of `ratpoints` build, the numerators of each
-denominator packed by the stride of its class, with the moduli that it chooses from the curve and
-the options `-p -n -N -r -R -U -C -A -P -Q -W -F -j -J`; `-k` and `-K` forbid and allow the reversal
-of the polynomial, `-s` and `-S [depth]` switch the Sturm step off and on, which narrows the search
-intervals to those where the polynomial may be `≥ 0`; `-l` and `-u` give the search intervals, read
-as `ratpoints` reads them, the ends as the numbers they are and the doubles outward of them, and
-`-dl` and `-du` the range of the denominators; it accepts `-t`, the number of threads of
-`ratpoints`, checking its argument, but ignores it, sieving the blocks in turn on one thread, which
-gives the output of every number of threads if the pool of `ratpoints` behaves as its code says. It
-refuses a binary form that is not squarefree with error 8 as `ratpoints` does with the same options,
-and prints the points of the search region of its command line in the order of `ratpoints`.
+`ratpoints-lean 'a_0 a_1 ... a_n' H [-dl b] [-du b] [-q]` prints the points of height at most `H`
+on `y² = a_n xⁿ + ⋯ + a_0` (coefficients constant term first), one line `(x : y : z)` per point,
+the points at infinity included; `-dl` and `-du` bound the denominators from below and above, and
+`-q` is accepted and ignored. It runs the fast search `Ratpoints.Fast.fastPoints`
+(`Ratpoints/Model/FastSieve.lean`), which is not a model of the C code: it sieves with bit masks
+held in natural numbers, which Lean represents by GMP integers, so that one `&&&` ANDs thousands of
+candidates. The numerators are split into their classes modulo 16, a class searched for a
+denominator only where the residues allow a point; each class is sieved in chunks with the rows of
+families of odd moduli, built once and shifted to each chunk; the candidates that survive go to the
+exact check of the brute force; for odd degree only the denominators `s k²` with `s` dividing the
+leading coefficient are searched. `Ratpoints.Fast.mem_fastPoints_iff` and
+`Ratpoints.Fast.nodup_fastPoints` (`Ratpoints/Proof/FastSieve.lean`) prove that the list holds
+exactly the points of height at most `H` with their denominator in the range, each once, in an
+order of its own, for every input and every setting of the parameters of the sieve; both are
+certified by Comparator. `scripts/fasttest.py` compares the points, as sets, with those of
+`ratpoints` on its test suites, in CI.
 
-At large height bounds, `ratpoints-lean` runs about 100 times slower than `ratpoints`.
+Running times against `ratpoints` (C) and the program of the model (`ratpoints-model`), on one
+core of an Intel Core i7-1355U:
+
+| curve | H | C | `ratpoints-model` | `ratpoints-lean` |
+| --- | ---: | ---: | ---: | ---: |
+| generic genus 2 (`testdata.h` 776) | 10^5 | 0.17 s | 22.7 s | 1.3 s |
+| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.44 s | 47 s | 11 s |
+| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.3 s |
+| the 1206 test curves | 16383 | 4.2 s | 149 s | 89 s |
+
+`ratpoints-model 'a_0 a_1 ... a_n' H [options]` is the program of the faithful model; it has the
+command line of `ratpoints`. It reads the coefficients (constant term first), the height bound and
+the options as `ratpoints` does, with its checks, messages and exit statuses, and prints the points
+of height at most `H` on `y² = a_n xⁿ + ⋯ + a_0` as `ratpoints` does, through the callback of its
+`main.c`: by default one line `(x : y : z)` per point, with the options of the output
+`-x -X -y -Y -z -Z -1 -i -I` and the formats and strings of `-f -fs -fm -fe`, and without `-q` the
+report that `ratpoints` prints around them, under `-v` with the report of the library between them;
+under `-x` (no exact check) it prints the pairs that pass its sieve, with the moduli that it chooses
+from the curve and corrects between the blocks of the run as `ratpoints` does, which are those that
+`ratpoints` prints on the same machine. It finds the points by the sieve on bit arrays of words in
+its three stages, the first in chunks of 16 bit arrays with the rows that the builders of
+`ratpoints` build, the numerators of each denominator packed by the stride of its class, with the
+moduli that it chooses from the curve and the options `-p -n -N -r -R -U -C -A -P -Q -W -F -j -J`;
+`-k` and `-K` forbid and allow the reversal of the polynomial, `-s` and `-S [depth]` switch the
+Sturm step off and on, which narrows the search intervals to those where the polynomial may be
+`≥ 0`; `-l` and `-u` give the search intervals, read as `ratpoints` reads them, the ends as the
+numbers they are and the doubles outward of them, and `-dl` and `-du` the range of the denominators;
+it accepts `-t`, the number of threads of `ratpoints`, checking its argument, but ignores it,
+sieving the blocks in turn on one thread, which gives the output of every number of threads if the
+pool of `ratpoints` behaves as its code says. It refuses a binary form that is not squarefree with
+error 8 as `ratpoints` does with the same options, and prints the points of the search region of its
+command line in the order of `ratpoints`.
+
+At large height bounds, `ratpoints-model` runs about 100 times slower than `ratpoints`.
 This is mostly due to the bit arrays: the C code ANDs 256 bits with one vector instruction, while
 the model ANDs the four 64-bit words one by one into a new array of boxed words, allocating and
-freeing memory for every bit array. So, while `ratpoints-lean` can be used as a
-verified program for computing rational points on hyperelliptic curves (subject to what one has
-to trust on the Lean side, as listed above), it is not really designed
-for that purpose (designing a reasonably fast Lean implementation is a different project).
-Rather, the purpose of this project is to get as close as reasonably possible to certifying
-the correctness of the original `ratpoints` code, so that the C program offers both efficiency and
-a good level of trust.
+freeing memory for every bit array. The purpose of the model is to get as close as reasonably
+possible to certifying the correctness of the original `ratpoints` code, so that the C program
+offers both efficiency and a good level of trust; the verified program for computing rational
+points in Lean is `ratpoints-lean`.
 
 ## Licence
 

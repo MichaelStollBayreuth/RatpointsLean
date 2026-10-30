@@ -17,6 +17,8 @@ public import Ratpoints.Model.Costs
 public import Ratpoints.Model.Delivery
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Model.Double
+public import Ratpoints.Model.FastCli
+public import Ratpoints.Model.FastSieve
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
 public import Ratpoints.Model.Packing

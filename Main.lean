@@ -5,7 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
-import Ratpoints.Model.Cli
+import Ratpoints.Model.FastCli
 
 /-!
 # The executable `ratpoints-lean`
@@ -14,5 +14,5 @@ The root of the Lake target `ratpoints-lean`. It imports only the model, so that
 does not depend on Mathlib or on the proofs.
 -/
 
-/-- The command-line program `ratpoints-lean`, `Ratpoints.Cli.main`. -/
-public def main (args : List String) : IO UInt32 := Ratpoints.Cli.main args
+/-- The command-line program `ratpoints-lean`, `Ratpoints.FastCli.main`. -/
+public def main (args : List String) : IO UInt32 := Ratpoints.FastCli.main args

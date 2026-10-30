@@ -68,8 +68,8 @@ jobs:
       - name: Build the specification and the proofs
         run: ~/.elan/bin/lake build --wfail Ratpoints
 
-      - name: Build ratpoints-lean
-        run: ~/.elan/bin/lake build --wfail ratpoints-lean
+      - name: Build ratpoints-lean and ratpoints-model
+        run: ~/.elan/bin/lake build --wfail ratpoints-lean ratpoints-model
 
       - name: Build the comparator solution
         run: ~/.elan/bin/lake build --wfail Solution
@@ -98,7 +98,12 @@ jobs:
           sudo apt-get install -y -qq libgmp-dev
           make -C "$RUNNER_TEMP/ratpoints" ratpoints
 
-      - name: Compare ratpoints-lean with the C program (scripts/difftest.py)
+      - name: Compare ratpoints-model with the C program (scripts/difftest.py)
         run: >
           python3 scripts/difftest.py --repo "$RUNNER_TEMP/ratpoints"
+          --c "$RUNNER_TEMP/ratpoints/ratpoints" --lean .lake/build/bin/ratpoints-model
+
+      - name: Compare ratpoints-lean with the C program (scripts/fasttest.py)
+        run: >
+          python3 scripts/fasttest.py --repo "$RUNNER_TEMP/ratpoints"
           --c "$RUNNER_TEMP/ratpoints/ratpoints"

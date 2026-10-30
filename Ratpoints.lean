@@ -46,6 +46,8 @@ public import Ratpoints.Model.Costs
 public import Ratpoints.Model.Delivery
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Model.Double
+public import Ratpoints.Model.FastCli
+public import Ratpoints.Model.FastSieve
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
 public import Ratpoints.Model.Packing
@@ -77,6 +79,7 @@ public import Ratpoints.Proof.Delivery
 public import Ratpoints.Proof.Denominators
 public import Ratpoints.Proof.Divisors
 public import Ratpoints.Proof.Double
+public import Ratpoints.Proof.FastSieve
 public import Ratpoints.Proof.FindPoints
 public import Ratpoints.Proof.FirstStage
 public import Ratpoints.Proof.Forbidden
