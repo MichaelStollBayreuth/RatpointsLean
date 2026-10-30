@@ -79,7 +79,7 @@ checks the imports.
     loops, tables, bit arrays of 64-bit words and index arithmetic. It is plain code on Lean core
     and \verb|Std|, without Mathlib and without contracts (its only proofs are a few decided facts
     about its constants, the termination of one recursion and the bounds of some array accesses),
-    and forms a library of its own; the program \verb|ratpoints-lean| imports it alone and has the
+    and forms a library of its own; the program \verb|ratpoints-model| imports it alone and has the
     command line of \ratpoints{} (Chapters~\ref{chap:setup} to~\ref{chap:output}).
   \item The \emph{proofs} (\verb|Ratpoints/Proof|) show that the model meets the specification.
     Each component of the model has a contract, and the main theorems put the contracts together
@@ -90,7 +90,7 @@ checks the imports.
     declaration models which lines of C, kept in paragraphs \verb|C:| of the docstrings of the
     model and, for the pin, the excluded lines and the lock, in the folder \verb|correspondence|,
     checked against the C code at the pinned commit; and differential tests that run
-    \verb|ratpoints-lean| and the C program on the same inputs and compare what they print.
+    \verb|ratpoints-model| and the C program on the same inputs and compare what they print.
 \end{enumerate}
 The model does without Mathlib so that the executable and the differential tests depend neither on
 Mathlib nor on the proofs. The specification does without the model so that one can read what the
@@ -227,7 +227,7 @@ set, with~$0$ in place of each~$y$, is a sublist, so that the points come in the
 other pairs pass the sieve depends on the moduli and is not specified.
 
 \emph{What the program prints} (Theorem~\ref{thm:cliRun}). For a command line without \verb|-v|
-that it reads, \verb|ratpoints-lean| prints the head of its report, the points of the list of
+that it reads, \verb|ratpoints-model| prints the head of its report, the points of the list of
 $\mathrm{findPoints}$ that its callback keeps (under \verb|-1| the first), in their order and in the
 format of the command line, between the strings that the command line sets, and the end of the
 report (under \verb|-q| only the points and the strings). Without \verb|-x|, and assuming Sturm's
@@ -306,8 +306,19 @@ definitions that the statements reach included, the proofs use no axioms beyond 
 (Section~\ref{sec:comparator}). The project uses no tactic that adds an axiom, such as
 \verb|native_decide| or \verb|bv_decide|.
 
+\emph{The fast program.} The executable \verb|ratpoints-lean| does not run the model but a search
+of its own, \verb|Ratpoints.Fast.fastPoints| (\verb|Ratpoints/Model/FastSieve.lean|), built for
+speed in Lean: it sieves the numerators of each class modulo 16 in chunks of bit masks held in
+natural numbers, with the rows of families of odd moduli, and passes the survivors to the exact
+check of the brute force. Its two theorems, \verb|Ratpoints.Fast.mem_fastPoints_iff| and
+\verb|Ratpoints.Fast.nodup_fastPoints|, say that for every coefficient list, height bound, range of
+the denominators and setting of its parameters it lists exactly the points of height at most $H$
+with their denominator in the range, each once; comparator certifies them with the eleven
+statements on the model and the brute force. The rest of this blueprint is about the model, whose
+program is \verb|ratpoints-model|.
+
 \emph{The executable.} The statements are about the definitions of the model, and
-\verb|ratpoints-lean| is these definitions compiled by the compiler of Lean, with its runtime and
+\verb|ratpoints-model| is these definitions compiled by the compiler of Lean, with its runtime and
 the primitives of Lean core on machine words, arrays and floating-point numbers. That the executable
 runs the model is not certified. What is checked is that the model contains no \verb|partial|,
 \verb|unsafe|, \verb|implemented_by| or \verb|extern|, nor any experimental option, which could let

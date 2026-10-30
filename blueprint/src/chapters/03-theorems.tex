@@ -6,7 +6,7 @@
 This chapter states what is proved about the search of the model, the counterpart of the library
 function \verb|find_points|: which points it finds, without duplicates and in which order, which
 inputs it refuses, what it delivers to a callback and without the exact check, and what the program
-\verb|ratpoints-lean| prints. Comparator certifies nine of these statements and the two on the
+\verb|ratpoints-model| prints. Comparator certifies nine of these statements and the two on the
 brute-force reference, eleven in all (Section~\ref{sec:comparator}). The proofs in outline
 (Section~\ref{sec:theoremsProofs}) reduce them to what Chapters~\ref{chap:setup}
 to~\ref{chap:output} prove part by part: that the test of the sieve lets every point through and
@@ -279,7 +279,7 @@ and make the same corrections, which depend neither on the callback nor on the o
 
 \section{What the program prints}\label{sec:theoremsProgram}
 
-The program \verb|ratpoints-lean| runs the search with the callback of \verb|main.c|, which prints
+The program \verb|ratpoints-model| runs the search with the callback of \verb|main.c|, which prints
 the points (Chapter~\ref{chap:output}). For a command line that it reads as~$c$, $H$, $s$, $o$ and
 the settings of the output, it searches with the options~$s'$ of~$s$ with the array size that
 \verb|main.c| sets and the options~$o'$ of~$o$ with the search intervals of the command line joined
@@ -547,7 +547,7 @@ rows, published once built (\csource{init.c}{180}{180}, \csource{init.c}{241}{24
 \csource{init.c}{391}{391}, \csource{init.c}{443}{443}), so that they fit all the entries whenever a
 thread reads them (\csource{find_points.c}{3160}{3160}, \csource{find_points.c}{3533}{3535}); and
 the calling thread delivers the slots in the order of the blocks. The threads themselves stay
-outside the model (Chapter~\ref{chap:ccode}), and \verb|ratpoints-lean| accepts \verb|-t| and
+outside the model (Chapter~\ref{chap:ccode}), and \verb|ratpoints-model| accepts \verb|-t| and
 ignores it.
 
 \section{What comparator certifies}\label{sec:comparator}
@@ -598,7 +598,7 @@ not switch \verb|nanoda| off under \verb|--paranoid|). On 2026-10-27,
 
 What one has to read, then, is the challenge: the specification as restated there and, of the model,
 the types that the statements mention and the reference of the delivery, a fold of a few lines.
-Comparator does not certify that the executable \verb|ratpoints-lean|, which imports only the model
+Comparator does not certify that the executable \verb|ratpoints-model|, which imports only the model
 and is compiled by the compiler of Lean, runs the model: the layout check keeps \verb|partial|,
 \verb|unsafe|, \verb|implemented_by|, \verb|extern| and experimental options out of the model's own
 code (Section~\ref{sec:ccodeCI}), while the primitives of Lean core that the compiler implements

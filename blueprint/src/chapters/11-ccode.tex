@@ -5,7 +5,7 @@ the theorems speak about the model, which mirrors the C code component by compon
 loops, tables, bit arrays of 64-bit words and index arithmetic. This chapter describes what ties
 the model to the C code of release~3.1.1: the record of which declaration models which lines of C,
 and its checks; the lines that no declaration models; the departures of the model from the C code;
-the differential tests of the program \verb|ratpoints-lean| against the C program; the builds with
+the differential tests of the program \verb|ratpoints-model| against the C program; the builds with
 other values of the compile-time constants; and CI. The nodes of the chapters before this one cite
 the main ranges of their definitions; Appendix~\ref{chap:correspondence}, generated from the
 record, lists every range with its owners and their deviations, or its exclusion.
@@ -195,7 +195,7 @@ forbidden valuations drop the bound $m < 63$ of the C code, which never binds fo
 
 \section{The differential tests}\label{sec:ccodeTests}
 
-The script \verb|scripts/difftest.py| runs \verb|ratpoints-lean|, the model compiled by Lean
+The script \verb|scripts/difftest.py| runs \verb|ratpoints-model|, the model compiled by Lean
 (Chapter~\ref{chap:output}), on the test suites of \ratpoints{} and on further command lines, and
 compares it with the outputs that the suites record and with the C program at the pin on the same
 command line; the C program must be the default build, without the machine-dependent tuning that
@@ -211,7 +211,7 @@ model chooses and corrects its moduli as \ratpoints{} does, and, without a forma
 \verb|-v|, they also pass a check that does not depend on the moduli: normalized coprime pairs in
 the range of the height and in the search region, none repeated, and the points among them the
 same, in the same order, in both outputs. Exit statuses and messages are compared exactly, but for
-the banner and the usage; \verb|ratpoints-lean| must write nothing to its standard error (a panic
+the banner and the usage; \verb|ratpoints-model| must write nothing to its standard error (a panic
 of the Lean runtime ends it); and failed writes are compared too.
 
 The default suites search up to the height~$30000$, and above it in narrow search regions. Since the
@@ -253,7 +253,7 @@ suites make these comparisons, none of which fails:
 \end{tabular}
 \end{center}
 The last two suites are not run by default, nor the comparison of a build of the C program with a
-fixed length of the blocks (\verb|-DRP_BLOCK_LEN=3|) with \verb|ratpoints-lean| built with the same
+fixed length of the blocks (\verb|-DRP_BLOCK_LEN=3|) with \verb|ratpoints-model| built with the same
 length (\lname{Ratpoints.blockLen}), which tests the boundaries of the blocks. The \verb|#guard|
 examples of the model, which every build runs, compare components with values taken from the C
 program, gcc and glibc, none of which depends on the \verb|log| or \verb|pow| of the platform.
@@ -294,7 +294,7 @@ no \verb|partial|, \verb|unsafe|, \verb|implemented_by|, \verb|extern| or experi
 model, which would let the executable run code that the proofs do not see; and nowhere a tactic that
 adds an axiom, such as \verb|native_decide|), the style of the Lean code and the length of its
 lines, and the listing \verb|Ratpoints.lean| of the modules; builds, with every warning a failure,
-the model, the specification and the proofs, \verb|ratpoints-lean| and the solution of comparator,
+the model, the specification and the proofs, \verb|ratpoints-model| and the solution of comparator,
 and then the challenge, whose \verb|sorry|s warn by design; runs the tests of the scripts; checks
 the record with \verb|--complete| against \ratpoints{} at the pin; and builds the C program at the pin
 and runs the default suites of the differential tests against it. The build fails if a main theorem

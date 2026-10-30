@@ -5,7 +5,7 @@ that it finds to a function of its caller, the callback, which may count it, pri
 search. This chapter describes how the model does the same, with the callback, its weights and its
 stop, the options of the output \verb|RATPOINTS_NO_CHECK| and \verb|RATPOINTS_NO_Y|, what a search
 writes back and the report of the library under \verb|RATPOINTS_VERBOSE|; and the program
-\verb|ratpoints-lean|, which reads the command line of \ratpoints{} and prints what \ratpoints{} prints,
+\verb|ratpoints-model|, which reads the command line of \ratpoints{} and prints what \ratpoints{} prints,
 but for its banner. The reference of the delivery, with which the statements compare a search,
 belongs to the specification (Definition~\ref{def:deliver}); the theorems on what a search delivers
 and what the program prints are in Chapter~\ref{chap:theorems}; the components of the sieve that
@@ -234,17 +234,17 @@ theorems speak about that channel.
 
 \section{The program}\label{sec:outputProgram}
 
-The executable \verb|ratpoints-lean| has the command line of \ratpoints{}: the coefficients
+The executable \verb|ratpoints-model| has the command line of \ratpoints{}: the coefficients
 $c_0, \dots, c_n$ of $y^2 = c_n x^n + \dots + c_0$ as one argument, the height bound and the
 options. It reads them as \verb|main.c| does, with its checks, messages and exit statuses in its
-order, runs the search with the callback of \verb|main.c|, and prints what \ratpoints{} prints, but for
-the banner and the usage, which name \verb|ratpoints-lean|, so that the test scripts of the C
-repository can run it in place of ratpoints. Its root \verb|Main.lean| imports only the model, so
-that the program depends neither on Mathlib nor on the proofs. It acts on every option of \ratpoints{}
-but \verb|-t|, the number of threads, which it checks and ignores: the model sifts the blocks of
-the run in turn, and the thread lemma (Theorem~\ref{thm:threads}) shows that blocks sifted apart
-under hypotheses that the pool of \ratpoints{} meets by its code, and delivered in their order, give
-the same output.
+order, runs the search with the callback of \verb|main.c|, and prints what \ratpoints{} prints, but
+for the banner and the usage, which name \verb|ratpoints-lean| (the earlier name of the program), so
+that the test scripts of the C repository can run it in place of ratpoints. Its root
+\verb|ModelMain.lean| imports only the model, so that the program depends neither on Mathlib nor on
+the proofs. It acts on every option of \ratpoints{} but \verb|-t|, the number of threads, which it
+checks and ignores: the model sifts the blocks of the run in turn, and the thread lemma
+(Theorem~\ref{thm:threads}) shows that blocks sifted apart under hypotheses that the pool of
+\ratpoints{} meets by its code, and delivered in their order, give the same output.
 
 \begin{definition}[The command line]\label{def:cliInput}
   \uses{def:cliNumbers, def:Options, def:maxDegree}
@@ -383,7 +383,7 @@ library refuses (\verb|main.c| gives~$9$ for every code of the library but those
 and~10); by Theorem~\ref{thm:cliRun} no command line whose arguments are shorter than~$2^{56}$
 characters leads to error~$9$. Error~$10$, for lack of memory, has no counterpart. When the reader
 of its output is gone, \verb|SIGPIPE| ends \ratpoints{} and the shell reports the status
-$141 = 128 + 13$; the Lean runtime ignores that signal, and \verb|ratpoints-lean| exits quietly with
+$141 = 128 + 13$; the Lean runtime ignores that signal, and \verb|ratpoints-model| exits quietly with
 the status~$141$ when its write fails.
 
 \begin{remark}[Deviations]\label{rem:outputDeviations}
