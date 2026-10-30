@@ -162,7 +162,7 @@ take the time are primitives with a few lines of C each (`Ratpoints/Fast/Mask.le
 time, and the next set bit of a mask. Their Lean bodies are reference definitions, which the proofs
 use; `lake exe masktest` compares the C code with them on five million cases, in CI. The same sieve
 with the masks in natural numbers (GMP integers), `Ratpoints.Fast.fastPoints`
-(`Ratpoints/Fast/Sieve.lean`), has no C of its own and is about 2.5 times slower;
+(`Ratpoints/Fast/Sieve.lean`), has no C of its own and is about three times slower;
 `Ratpoints.FastMask.fastPoints_perm` proves that the two list the same points, and
 `Ratpoints.FastMask.mem_fastPoints_iff` and `Ratpoints.FastMask.nodup_fastPoints`
 (`Ratpoints/Proof/FastMask.lean`) that the list holds exactly the points of height at most `H`
@@ -175,10 +175,10 @@ core of an Intel Core i7-1355U (wall times, one process per curve):
 
 | curve | H | C | `ratpoints-model` | `ratpoints-lean` |
 | --- | ---: | ---: | ---: | ---: |
-| generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 0.49 s |
-| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.55 s | 48 s | 5.0 s |
-| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.14 s |
-| the 1206 curves of the three test suites | 16383 | 4.3 s | 162 s | 31 s |
+| generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 0.43 s |
+| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.55 s | 48 s | 2.0 s |
+| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.17 s |
+| the 1206 curves of the three test suites | 16383 | 4.3 s | 162 s | 24 s |
 
 `ratpoints-model 'a_0 a_1 ... a_n' H [options]` is the program of the faithful model; it has the
 command line of `ratpoints`. It reads the coefficients (constant term first), the height bound and
