@@ -168,6 +168,27 @@ theorem getElem!_map {α : Type u} {β : Type v} [Inhabited α] [Inhabited β] {
     (hf : f default = default) (xs : Array α) (i : Nat) : (xs.map f)[i]! = f xs[i]! := by
   grind
 
+theorem getElem!_ofFn {α : Type u} [Inhabited α] {n : Nat} (f : Fin n → α) {i : Nat} (hi : i < n) :
+    (ofFn f)[i]! = f ⟨i, hi⟩ := by
+  simp [getElem!_pos, hi]
+
+/-- Setting the entries `f y` to `true` for the `y` of a list keeps the entries that are `true`
+and makes those entries `true` (within the size). -/
+theorem getElem!_foldl_set!_eq_true {α : Type u} (f : α → Nat) (l : List α) {A : Array Bool}
+    {i : Nat} (hi : i < A.size) (h : A[i]! = true ∨ ∃ y ∈ l, f y = i) :
+    (l.foldl (fun A y ↦ A.set! (f y) true) A)[i]! = true := by
+  induction l generalizing A with
+  | nil => simpa using h
+  | cons y l ih =>
+    refine ih (by simpa using hi) ?_
+    rcases h with h | ⟨z, hz, rfl⟩
+    · by_cases hy : f y = i
+      · simp [hy, hi]
+      · left; simpa [Array.set!, getElem!_pos, hi, Array.getElem_setIfInBounds, hy] using h
+    · rcases List.mem_cons.mp hz with rfl | hz
+      · simp [hi]
+      · exact .inr ⟨z, hz, rfl⟩
+
 theorem getElem!_pop {α : Type u} [Inhabited α] {xs : Array α} {i : Nat} :
     xs.pop[i]! = if i < xs.size - 1 then xs[i]! else default := by
   grind

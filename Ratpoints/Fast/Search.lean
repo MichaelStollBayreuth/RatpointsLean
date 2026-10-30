@@ -53,13 +53,27 @@ def windowByte (q : ByteArray) (o : Nat) : UInt8 :=
   q[o]! ||| q[o + 1]! <<< 1 ||| q[o + 2]! <<< 2 ||| q[o + 3]! <<< 3 ||| q[o + 4]! <<< 4 |||
     q[o + 5]! <<< 5 ||| q[o + 6]! <<< 6 ||| q[o + 7]! <<< 7
 
+/-- The bytes `1` or `0` of the entries `T'[G * (k % m) % m]` for `k` from `k₀` to `m + 7`, pushed
+to `acc`. -/
+def patternBits (T' : Array Bool) (m G k : Nat) (acc : ByteArray) : ByteArray :=
+  if k < m + 8 then patternBits T' m G (k + 1) (acc.push (if T'[G * (k % m) % m]! then 1 else 0))
+  else acc
+termination_by m + 8 - k
+
+/-- The bytes `Ratpoints.FastMask.windowByte q o` for `i` from `i₀` to `m - 1`, with `o = 8 i % m`
+carried along, pushed to `acc`. -/
+def periodBytes (q : ByteArray) (m i o : Nat) (acc : ByteArray) : ByteArray :=
+  if i < m then periodBytes q m (i + 1) (if o + 8 < m then o + 8 else (o + 8) % m)
+    (acc.push (windowByte q o))
+  else acc
+termination_by m - i
+
 /-- The row of the modulus `m` for the residue `r` of the denominator, for the numerators
 `0, G, 2G, …`, as a mask of `nb` bytes: bit `j` is set when the residues `G j` and `r` modulo `m`
 allow a point (`T = Ratpoints.Fast.admitTable c d m`). -/
 def baseRow (T : Array (Array Bool)) (m G nb r : Nat) : ByteArray :=
-  let Tr := T[r]!
-  let q : ByteArray := ⟨Array.ofFn (n := m + 8) fun k ↦ if Tr[G * (k.val % m) % m]! then 1 else 0⟩
-  let period : ByteArray := ⟨Array.ofFn (n := m) fun i ↦ windowByte q (8 * i.val % m)⟩
+  let q := patternBits T[r]! m G 0 (ByteArray.emptyWithCapacity (m + 8))
+  let period := periodBytes q m 0 0 (ByteArray.emptyWithCapacity m)
   (repeatBytes period (Nat.log2 (nb / m) + 1)).extract 0 nb
 
 /-- A family of moduli with product `M`: an inverse `ginv` of the step modulo `M` and the rows
@@ -158,13 +172,7 @@ def choose (tu : Tuning) (c : List Int) (d H B : Nat) : Config :=
   let G := orDefault tu.G 16
   let cnt := (2 * H + 1 + G - 1) / G
   let L := max 1 (min (orDefault tu.L 8192) cnt)
-  let Mmax := orDefault tu.Mmax (max 15 (min 1500 (B / 16)))
-  let work := orDefault tu.work 256
-  let ms := candidateModuli.filter fun m ↦ m * m * work ≤ (2 * H + 1) * B
-  let tabs := ms.map fun m ↦ (m, admitTable c d m)
-  let scored := (groupModuli Mmax tabs).map fun g ↦
-    (g, g.foldl (fun s (m, T) ↦ s * density m T / 1000) 1000)
-  let sorted := (scored.mergeSort fun x y ↦ x.2 ≤ y.2).map (·.1)
+  let sorted := sortedGroups tu c d H B
   let N := L + sorted.foldl (fun n g ↦ max n (g.foldl (· * ·.1) 1)) 1
   { G, L, N, pre := orDefault tu.pre 1, fams := (sorted.filterMap (mkFamily G N)).toArray }
 

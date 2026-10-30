@@ -47,6 +47,10 @@ the candidates that the sieve leaves (`Ratpoints.FastMask.toNat_sieveFrom_ones`)
 @[simp]
 theorem ByteArray.size_mk (d : Array UInt8) : (⟨d⟩ : ByteArray).size = d.size := rfl
 
+@[simp]
+theorem ByteArray.size_emptyWithCapacity (c : ℕ) : (ByteArray.emptyWithCapacity c).size = 0 :=
+  rfl
+
 theorem Nat.testBit_of_le_one {x : ℕ} (hx : x ≤ 1) (n : ℕ) :
     x.testBit n = (decide (n = 0) && decide (x = 1)) := by
   interval_cases x
@@ -399,19 +403,85 @@ theorem testBit_windowByte {q : ByteArray} (hq : ∀ i : ℕ, q[i]!.toNat ≤ 1)
     Nat.testBit_mod_two_pow, Nat.testBit_shiftLeft, Nat.testBit_of_le_one (hq _)]
   interval_cases t <;> simp
 
-theorem testBit_windowByte_ofFn {m : ℕ} (f : ℕ → Bool) {o t : ℕ} (ho : o < m) (ht : t < 8) :
-    (windowByte ⟨Array.ofFn (n := m + 8) fun k ↦ if f k.val then 1 else 0⟩ o).toNat.testBit t =
-      f (o + t) := by
-  rw [testBit_windowByte (fun i ↦ ?_) o ht]
-  · rw [getElem!_pos _ _ (by simp; lia)]
-    simp only [ByteArray.getElem_eq_getElem_data, Array.getElem_ofFn]
-    cases f (o + t) <;> decide
-  · by_cases hi : i < m + 8
-    · rw [getElem!_pos _ _ (by simpa using hi)]
-      simp only [ByteArray.getElem_eq_getElem_data, Array.getElem_ofFn]
-      split_ifs <;> decide
-    · rw [getElem!_neg _ _ (by simpa using hi)]
-      decide
+theorem size_patternBits (T' : Array Bool) (m G k : ℕ) (acc : ByteArray) :
+    (patternBits T' m G k acc).size = acc.size + (m + 8 - k) := by
+  fun_induction patternBits T' m G k acc with
+  | case1 k acc hk ih => simp only [dite_eq_ite, ByteArray.size_push] at ih; lia
+  | case2 k acc hk => lia
+
+theorem getElem!_patternBits_of_lt (T' : Array Bool) (m G k : ℕ) (acc : ByteArray) {i : ℕ}
+    (hi : i < acc.size) : (patternBits T' m G k acc)[i]! = acc[i]! := by
+  fun_induction patternBits T' m G k acc with
+  | case1 k acc hk ih =>
+    simp only [dite_eq_ite, ByteArray.size_push] at ih
+    rw [ih (by lia), ByteArray.getElem!_push_lt _ _ _ hi]
+  | case2 k acc hk => rfl
+
+theorem getElem!_patternBits (T' : Array Bool) (m G k : ℕ) (acc : ByteArray) {j : ℕ}
+    (hk : k ≤ j) (hj : j < m + 8) :
+    (patternBits T' m G k acc)[acc.size + (j - k)]! = if T'[G * (j % m) % m]! then 1 else 0 := by
+  fun_induction patternBits T' m G k acc with
+  | case1 k acc hk' ih =>
+    simp only [dite_eq_ite, ByteArray.size_push] at ih
+    rcases Nat.lt_or_ge k j with h | h
+    · rw [← ih (by lia)]; congr 1; lia
+    · obtain rfl : k = j := by lia
+      simp only [Nat.sub_self, Nat.add_zero]
+      rw [getElem!_patternBits_of_lt _ _ _ _ _ (by simp [ByteArray.size_push]),
+        ByteArray.getElem!_push_eq]
+  | case2 k acc hk' => lia
+
+
+theorem size_periodBytes (q : ByteArray) (m i o : ℕ) (acc : ByteArray) :
+    (periodBytes q m i o acc).size = acc.size + (m - i) := by
+  fun_induction periodBytes q m i o acc with
+  | case1 i o acc hi ih => simp only [ByteArray.size_push] at ih; lia
+  | case2 i o acc hi => lia
+
+theorem getElem!_periodBytes_of_lt (q : ByteArray) (m i o : ℕ) (acc : ByteArray) {i' : ℕ}
+    (hi' : i' < acc.size) : (periodBytes q m i o acc)[i']! = acc[i']! := by
+  fun_induction periodBytes q m i o acc with
+  | case1 i o acc hi ih =>
+    simp only [dite_eq_ite, ByteArray.size_push] at ih
+    rw [ih (by lia), ByteArray.getElem!_push_lt _ _ _ hi']
+  | case2 i o acc hi => rfl
+
+theorem ite_add_eight_eq_mul_mod {m i o : ℕ} (ho : o = 8 * i % m) :
+    (if o + 8 < m then o + 8 else (o + 8) % m) = 8 * (i + 1) % m := by
+  have h : 8 * (i + 1) % m = (o + 8) % m := by rw [ho, Nat.mod_add_mod]; ring_nf
+  split_ifs with h8
+  · rw [h, Nat.mod_eq_of_lt h8]
+  · exact h.symm
+
+theorem getElem!_periodBytes (q : ByteArray) (m i o : ℕ) (acc : ByteArray) (ho : o = 8 * i % m)
+    {j : ℕ} (hi : i ≤ j) (hj : j < m) :
+    (periodBytes q m i o acc)[acc.size + (j - i)]! = windowByte q (8 * j % m) := by
+  fun_induction periodBytes q m i o acc with
+  | case1 i o acc hi' ih =>
+    simp only [dite_eq_ite, ByteArray.size_push] at ih
+    rcases Nat.lt_or_ge i j with h | h
+    · rw [← ih (ite_add_eight_eq_mul_mod ho) (by lia)]; congr 1; lia
+    · obtain rfl : i = j := by lia
+      simp only [Nat.sub_self, Nat.add_zero]
+      rw [getElem!_periodBytes_of_lt _ _ _ _ _ (by simp [ByteArray.size_push]),
+        ByteArray.getElem!_push_eq, ho]
+  | case2 i o acc hi' => lia
+
+
+theorem getElem!_patternBits_zero (T' : Array Bool) (m G c j : ℕ) :
+    (patternBits T' m G 0 (.emptyWithCapacity c))[j]! =
+      if j < m + 8 then (if T'[G * (j % m) % m]! then 1 else 0) else 0 := by
+  by_cases hj : j < m + 8
+  · simp only [hj, ↓reduceIte]
+    have := getElem!_patternBits T' m G 0 (.emptyWithCapacity c) (Nat.zero_le j) hj
+    rwa [ByteArray.size_emptyWithCapacity, Nat.zero_add, Nat.sub_zero] at this
+  · simp only [hj, ↓reduceIte]
+    exact getElem!_neg _ _ (by simp [size_patternBits]; lia)
+
+theorem toNat_getElem!_patternBits_le_one (T' : Array Bool) (m G c j : ℕ) :
+    (patternBits T' m G 0 (.emptyWithCapacity c))[j]!.toNat ≤ 1 := by
+  rw [getElem!_patternBits_zero]
+  split_ifs <;> decide
 
 private theorem mul_div_mod_mod_add_mod_mod (m j : ℕ) :
     (8 * (j / 8 % m) % m + j % 8) % m = j % m := by
@@ -421,12 +491,18 @@ private theorem mul_div_mod_mod_add_mod_mod (m j : ℕ) :
 theorem testBit_toNat_baseRow {T : Array (Array Bool)} {m G nb r j : ℕ} (hm : 0 < m)
     (hj : j < 8 * nb) : (toNat (baseRow T m G nb r)).testBit j = (T[r]!)[G * j % m]! := by
   have hn : nb ≤ m * 2 ^ (Nat.log2 (nb / m) + 1) := (Fast.le_mul_two_pow_doublings hm nb).le
-  rw [testBit_toNat, bit, baseRow, byte_extract_repeatBytes (by simpa using hn) (by lia)]
-  simp only [ByteArray.size_mk, Array.size_ofFn]
-  rw [byte_of_lt (by simpa using Nat.mod_lt _ hm)]
-  simp only [ByteArray.getElem_eq_getElem_data, Array.getElem_ofFn]
-  rw [testBit_windowByte_ofFn (fun k ↦ (T[r]!)[G * (k % m) % m]!) (Nat.mod_lt _ hm)
-    (Nat.mod_lt _ (by lia)), mul_div_mod_mod_add_mod_mod, Nat.mul_mod_mod]
+  have hi : j / 8 % m < m := Nat.mod_lt _ hm
+  rw [testBit_toNat, bit, baseRow]
+  have hp : (periodBytes (patternBits T[r]! m G 0 (.emptyWithCapacity (m + 8))) m 0 0
+      (.emptyWithCapacity m)).size = m := by simp [size_periodBytes]
+  rw [byte_extract_repeatBytes (by rw [hp]; exact hn) (by lia), hp,
+    byte_of_lt (by rw [hp]; exact hi), ← getElem!_pos,
+    show j / 8 % m = (ByteArray.emptyWithCapacity m).size + (j / 8 % m - 0) by simp,
+    getElem!_periodBytes _ m 0 0 _ rfl (Nat.zero_le _) hi,
+    testBit_windowByte (toNat_getElem!_patternBits_le_one _ _ _ _) _ (Nat.mod_lt _ (by lia)),
+    getElem!_patternBits_zero, ite_eq_left (by have := Nat.mod_lt (8 * (j / 8 % m)) hm; lia),
+    mul_div_mod_mod_add_mod_mod, Nat.mul_mod_mod]
+  split_ifs <;> simp_all
 
 /-! ### The families -/
 

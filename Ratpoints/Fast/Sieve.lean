@@ -49,9 +49,10 @@ open BruteForce
 
 /-! ### Residues that allow a point -/
 
-/-- The squares modulo `m`: entry `v` is `true` when `v = y * y % m` for some `y < m`. -/
+/-- The squares modulo `m`: entry `v` is `true` when `v = y * y % m` for some `y < m` (each
+`y * y % m` marked in turn). -/
 def sqTable (m : Nat) : Array Bool :=
-  Array.ofFn (n := m) fun v ↦ (List.range m).any fun y ↦ y * y % m == v.val
+  (List.range m).foldl (fun A y ↦ A.set! (y * y % m) true) (Array.replicate m false)
 
 /-- Horner's rule modulo `m`: the value `w₀ + x (w₁ + x (w₂ + ⋯))` reduced modulo `m` at each
 step. -/
@@ -82,20 +83,25 @@ def admitRow (c : List Int) (d m : Nat) (sq : Array Bool) (r : Nat) : Array Bool
   (List.range m).toArray.map fun x ↦
     coprimeWith g x && sq[(hornerMod w x m * f % (m : Int)).toNat]!
 
-/-- An inverse of `r` modulo `m`, if there is one. -/
-def invMod (r m : Nat) : Option Nat := (List.range m).find? fun u ↦ r * u % m == 1 % m
+/-- Candidates for the inverses modulo `m`, entry `i` by `inv i = -(m / i) inv (m % i)`: the
+inverses when `m` is prime, and checked where they are used. -/
+def invTable (m : Nat) : Array Nat :=
+  (List.range m).foldl (fun inv i ↦
+    inv.push (if i ≤ 1 then i else (m - m / i * inv[m % i]! % m) % m)) #[]
 
 /-- The residues modulo `m` that allow a point `(a, y, b)` with `gcd(a, b) = 1` of the binary form
 of degree `d` of `c`: entry `x` of row `r` (for `r, x < m`) is `true` when `x`, `r` and `m` have no
-prime factor in common and `F(x, r)` is a square modulo `m`. A row `r` prime to `m` is row `1`
-permuted: `F(x, r) = r ^ D F(x / r, 1)` with `D` even (`Ratpoints.Fast.admitRow`). -/
+prime factor in common and `F(x, r)` is a square modulo `m`. A row `r` with an inverse `u` modulo
+`m` (from `Ratpoints.Fast.invTable`) is row `1` permuted: `F(x, r) = r ^ D F(x u, 1)` with `D` even;
+the others come from `Ratpoints.Fast.admitRow`. -/
 def admitTable (c : List Int) (d m : Nat) : Array (Array Bool) :=
   let sq := sqTable m
   let one := admitRow c d m sq 1
-  (List.range m).toArray.map fun (r : Nat) ↦
-    match invMod r m with
-    | some u => (List.range m).toArray.map fun x ↦ one[x * u % m]!
-    | none => admitRow c d m sq r
+  let inv := invTable m
+  Array.ofFn (n := m) fun r ↦
+    let u := inv[r.val]!
+    if r.val * u % m == 1 % m then Array.ofFn (n := m) fun x ↦ one[x.val * u % m]!
+    else admitRow c d m sq r
 
 /-! ### Bit masks -/
 
@@ -249,7 +255,10 @@ def denominators (c : List Int) (d H : Nat) (bLow bHigh : Int) : List Nat :=
 /-- The fraction, in thousandths, of the pairs of residues modulo `m` that allow a point, from
 the table `T = Ratpoints.Fast.admitTable c d m`. -/
 def density (m : Nat) (T : Array (Array Bool)) : Nat :=
-  let n := T.foldl (fun n row ↦ row.foldl (fun n b ↦ if b then n + 1 else n) n) 0
+  let count (row : Array Bool) : Nat := row.foldl (fun n b ↦ if b then n + 1 else n) 0
+  let c₁ := count T[1 % m]!
+  -- a row prime to `m` is row `1` permuted
+  let n := (List.range m).foldl (fun n r ↦ n + if Nat.gcd r m == 1 then c₁ else count T[r]!) 0
   1000 * n / (m * m)
 
 /-- The pairs `(m, T)` grouped into families: in ascending order of `m`, each family taking moduli
@@ -282,9 +291,24 @@ def candidateModuli : List Nat :=
   [9, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
     101, 103, 107, 109, 113, 127]
 
+/-- The further moduli, for the searches in which many candidates are expected to survive the
+moduli of `Ratpoints.Fast.candidateModuli` (`Ratpoints.Fast.takeFurther`). -/
+def furtherModuli : List Nat :=
+  [131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229,
+    233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347,
+    349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457,
+    461, 463, 467, 479, 487, 491, 499, 503, 509]
+
+/-- The moduli `m` of `ms` taken in turn while `64 m ^ 2 ≤ κ E`, with `E` halved at each: a
+modulus removes about half of the `E` candidates expected to survive, which pays against the cost
+`m ^ 2` of its table when `E` is large. -/
+def takeFurther (κ : Nat) : List Nat → Nat → List Nat
+  | [], _ => []
+  | m :: ms, E => if 64 * m * m ≤ κ * E then m :: takeFurther κ ms (E / 2) else []
+
 /-- Settings of the choice of the parameters (for tuning): the step `G`, the largest chunk
-length, the largest product of a family, the number of families cut to each chunk, and the
-divisor of the work bound for the moduli; `0` for the default. -/
+length, the largest product of a family, the number of families cut to each chunk, the divisor of
+the work bound for the moduli and the weight of the further moduli; `0` for the default. -/
 structure Tuning where
   /-- The step. -/
   G : Nat := 0
@@ -296,9 +320,31 @@ structure Tuning where
   pre : Nat := 0
   /-- A modulus `m` is used when `m ^ 2 * work ≤ n B`. -/
   work : Nat := 0
+  /-- The weight `κ` of `Ratpoints.Fast.takeFurther`. -/
+  further : Nat := 0
 
 /-- `x`, or `dflt` when `x = 0`. -/
 def orDefault (x dflt : Nat) : Nat := if x = 0 then dflt else x
+
+/-- The moduli of the sieve with their tables, for the coefficients `c` of degree `d`, the height
+bound `H` and `B` denominators: those of `Ratpoints.Fast.candidateModuli` within the work bound,
+and the further moduli that the expected number of survivors pays for. -/
+def moduliTables (tu : Tuning) (c : List Int) (d H B : Nat) : List (Nat × Array (Array Bool)) :=
+  let work := orDefault tu.work 256
+  let tabs := (candidateModuli.filter fun m ↦ m * m * work ≤ (2 * H + 1) * B).map fun m ↦
+    (m, admitTable c d m)
+  let E := tabs.foldl (fun e (m, T) ↦ e * density m T / 1000) ((2 * H + 1) * B)
+  tabs ++ (takeFurther (orDefault tu.further 4096) furtherModuli E).map fun m ↦
+    (m, admitTable c d m)
+
+/-- The moduli of `Ratpoints.Fast.moduliTables` grouped into families
+(`Ratpoints.Fast.groupModuli`), the most selective first. -/
+def sortedGroups (tu : Tuning) (c : List Int) (d H B : Nat) :
+    List (List (Nat × Array (Array Bool))) :=
+  let Mmax := orDefault tu.Mmax (max 15 (min 1500 (B / 16)))
+  let scored := (groupModuli Mmax (moduliTables tu c d H B)).map fun g ↦
+    (g, g.foldl (fun s (m, T) ↦ s * density m T / 1000) 1000)
+  (scored.mergeSort fun x y ↦ x.2 ≤ y.2).map (·.1)
 
 /-- The parameters for the coefficients `c` of degree `d`, the height bound `H` and `B`
 denominators. -/
@@ -306,13 +352,7 @@ def choose (tu : Tuning) (c : List Int) (d H B : Nat) : Config :=
   let G := orDefault tu.G 16
   let cnt := (2 * H + 1 + G - 1) / G
   let L := max 1 (min (orDefault tu.L 8192) cnt)
-  let Mmax := orDefault tu.Mmax (max 15 (min 1500 (B / 16)))
-  let work := orDefault tu.work 256
-  let ms := candidateModuli.filter fun m ↦ m * m * work ≤ (2 * H + 1) * B
-  let tabs := ms.map fun m ↦ (m, admitTable c d m)
-  let scored := (groupModuli Mmax tabs).map fun g ↦
-    (g, g.foldl (fun s (m, T) ↦ s * density m T / 1000) 1000)
-  let sorted := (scored.mergeSort fun x y ↦ x.2 ≤ y.2).map (·.1)
+  let sorted := sortedGroups tu c d H B
   let N := L + sorted.foldl (fun n g ↦ max n (g.foldl (· * ·.1) 1)) 1
   { G, L, N, pre := orDefault tu.pre 1, fams := (sorted.filterMap (mkFamily G N)).toArray }
 

@@ -14,6 +14,7 @@ import Mathlib.Algebra.Order.BigOperators.GroupWithZero.List
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.LinearCombination
 import Ratpoints.Proof.BruteForce
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Divisors
 
 /-!
@@ -193,15 +194,13 @@ theorem binaryForm_mul_self (c : List ℤ) (u b : ℤ) :
 
 theorem sqTable_sq {m : ℕ} (hm : 0 < m) (y : ℤ) : (sqTable m)[(y ^ 2 % m).toNat]! = true := by
   have hm' : (0 : ℤ) < m := Int.natCast_pos.mpr hm
-  have hlt : (y ^ 2 % m).toNat < m := by
-    have := Int.emod_lt_of_pos (y ^ 2) hm'
-    lia
-  rw [getElem!_pos (sqTable m) _ (by simpa [sqTable] using hlt)]
-  simp only [sqTable, Array.getElem_ofFn, List.any_eq_true, List.mem_range, beq_iff_eq]
-  refine ⟨(y % m).toNat, by have := Int.emod_lt_of_pos y hm'; lia, ?_⟩
-  rw [← Int.natCast_inj]
-  push_cast [Int.toNat_of_nonneg (Int.emod_nonneg _ hm'.ne'), Int.natCast_mod]
-  rw [← Int.mul_emod, sq]
+  have hy : (y % m).toNat < m := by have := Int.emod_lt_of_pos y hm'; lia
+  have heq : (y % m).toNat * (y % m).toNat % m = (y ^ 2 % m).toNat := by
+    rw [← Int.natCast_inj]
+    push_cast [Int.toNat_of_nonneg (Int.emod_nonneg _ hm'.ne'), Int.natCast_mod]
+    rw [← Int.mul_emod, sq]
+  refine Array.getElem!_foldl_set!_eq_true _ _ (by simpa [← heq] using Nat.mod_lt _ hm)
+    (.inr ⟨_, List.mem_range.mpr hy, heq⟩)
 
 theorem coprimeWith_of_gcd_eq_one {a : ℤ} {b m : ℕ} (hm : 0 < m) (hab : Int.gcd a b = 1) :
     coprimeWith (Nat.gcd (b % m) m) (a % (m : ℤ)).toNat = true := by
@@ -279,12 +278,12 @@ theorem admitTable_spec {c : List ℤ} {m : ℕ} (hm : 0 < m) {a : ℤ} {b : ℕ
   have hxa : ((a % (m : ℤ)).toNat : ℤ) ≡ a [ZMOD m] := by
     rw [Int.toNat_of_nonneg (Int.emod_nonneg a hm'.ne')]
     exact Int.mod_modEq a m
-  rw [admitTable, getElem!_map_range _ (Nat.mod_lt _ hm)]
-  split
-  · rename_i u hu
-    rw [getElem!_map_range _ hx]
+  rw [admitTable, Array.getElem!_ofFn _ (Nat.mod_lt _ hm)]
+  dsimp only
+  split_ifs with hu
+  · rw [Array.getElem!_ofFn _ hx]
     exact getElem!_admitRow hm (Nat.mod_lt _ hm) (by simp [coprimeWith])
-      (binaryForm_mul_modEq_sq hy hxa (by simpa using List.find?_some hu))
+      (binaryForm_mul_modEq_sq hy hxa (by simpa using hu))
   · refine getElem!_admitRow (y := y) hm hx (coprimeWith_of_gcd_eq_one hm hab) ?_
     refine (binaryForm_modEq c hxa ?_).trans (by rw [hy])
     push_cast [Int.natCast_mod]
@@ -782,16 +781,26 @@ theorem choose_L_pos (tu : Tuning) (c : List ℤ) (d H B : ℕ) : 0 < (choose tu
   simp only [choose]
   lia
 
+theorem eq_admitTable_of_mem_moduliTables {tu : Tuning} {c : List ℤ} {d H B : ℕ}
+    {t : ℕ × Array (Array Bool)} (ht : t ∈ moduliTables tu c d H B) : t.2 = admitTable c d t.1 := by
+  simp only [moduliTables, List.mem_append, List.mem_map] at ht
+  rcases ht with ⟨m, -, rfl⟩ | ⟨m, -, rfl⟩ <;> rfl
+
+theorem eq_admitTable_of_mem_sortedGroups {tu : Tuning} {c : List ℤ} {d H B : ℕ}
+    {g : List (ℕ × Array (Array Bool))} (hg : g ∈ sortedGroups tu c d H B)
+    {t : ℕ × Array (Array Bool)} (ht : t ∈ g) : t.2 = admitTable c d t.1 := by
+  simp only [sortedGroups, List.mem_map, List.mem_mergeSort] at hg
+  obtain ⟨⟨g, s⟩, ⟨g', hg', hgs⟩, rfl⟩ := hg
+  obtain rfl : g' = g := congr(Prod.fst $hgs)
+  exact eq_admitTable_of_mem_moduliTables (mem_of_mem_groupModuli hg' ht)
+
 theorem isSound_of_mem_choose {tu : Tuning} {c : List ℤ} {H B : ℕ} {F : Family}
     (hF : F ∈ (choose tu c (BruteForce.degree c) H B).fams) :
     F.IsSound c (choose tu c (BruteForce.degree c) H B).G
       (choose tu c (BruteForce.degree c) H B).N := by
-  simp only [choose, List.mem_toArray, List.mem_filterMap, List.mem_map, List.mem_mergeSort] at hF ⊢
-  obtain ⟨g, ⟨x, hx, rfl⟩, hg⟩ := hF
-  obtain ⟨g, hg', rfl⟩ := hx
-  refine mkFamily_isSound (fun t ht ↦ ?_) hg
-  obtain ⟨m, -, rfl⟩ := List.mem_map.mp (mem_of_mem_groupModuli hg' ht)
-  rfl
+  simp only [choose, List.mem_toArray, List.mem_filterMap] at hF ⊢
+  obtain ⟨g, hg, hF⟩ := hF
+  exact mkFamily_isSound (fun t ht ↦ eq_admitTable_of_mem_sortedGroups hg ht) hF
 
 /-! ### The points -/
 
