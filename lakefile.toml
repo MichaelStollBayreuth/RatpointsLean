@@ -46,7 +46,8 @@ roots = ["Ratpoints.Model"]
 name = "Ratpoints"
 
 # The command-line program ratpoints-lean (`lake exe ratpoints-lean 'a_0 a_1 ... a_n' H`), on the
-# fast search `Ratpoints.Fast.fastPoints`. Its root `Main.lean` imports only the model.
+# fast search `Ratpoints.FastMask.fastPoints`. Its root `Main.lean` imports only the fast search
+# (`Ratpoints/Fast`) and the model.
 [[lean_exe]]
 name = "ratpoints-lean"
 root = "Main"
@@ -58,8 +59,8 @@ root = "Main"
 name = "ratpoints-model"
 root = "ModelMain"
 
-# The differential test of the C primitives of `Ratpoints.Mask` against their reference
-# definitions (`lake exe masktest`).
+# The differential test of the C code of the primitives of `Ratpoints.Mask` against their
+# reference definitions (`lake exe masktest`; CI runs it).
 [[lean_exe]]
 name = "masktest"
 root = "MaskTest"

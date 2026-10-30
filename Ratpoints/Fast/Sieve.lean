@@ -14,7 +14,9 @@ public import Ratpoints.Model.BruteForce
 `y ^ 2 = F(x, z)` whose denominator `z` lies in the range of `bLow` and `bHigh` (the points at
 infinity always), each once, in an order of its own. It is not a model of the C code: it sieves
 in the way that suits Lean, with bit masks held in natural numbers, which Lean represents by GMP
-integers, so that one `&&&` ANDs thousands of candidates without an allocation per word.
+integers, so that one `&&&` ANDs thousands of candidates without an allocation per word. The
+program `ratpoints-lean` runs `Ratpoints.FastMask.fastPoints`, the same sieve with the masks held
+in byte arrays, which lists the same points in another order.
 
 * The numerators `x = -H, …, H` are split into the classes of `x + H` modulo `G = 2 ^ e`; a class
   is searched for the denominator `b` only when the residues of `x` and `b` modulo `G` allow a

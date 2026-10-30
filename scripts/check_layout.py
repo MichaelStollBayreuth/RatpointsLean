@@ -5,17 +5,21 @@ usage: scripts/check_layout.py
 
 Prints `FAIL <rule> <file>:<line>: <text>` for every violation and exits 1 if there is one.
 
-- Imports. The model (`Ratpoints/Model`) imports only Lean core and `Std`; the specification
-  (`Ratpoints/Spec`) only Mathlib, so that it can be read without the model; the candidates for
-  Mathlib (`Ratpoints/Mathlib`) only Mathlib and its dependencies; `comparator/Challenge.lean`
-  only Mathlib and the model (it restates the specification); `Main.lean` and `ModelMain.lean` only
-  the model.
-- Roots. The part roots `Ratpoints/Model.lean`, `Ratpoints/Spec.lean` and `Ratpoints/Proof.lean`
-  import, directly or not, every module of their folder, so that `lake build RatpointsModel`
-  builds the whole model and `scripts/Correspondence.lean` sees every declaration of it.
-- The model is plain executable code that the proofs are about: no experimental options, and no
-  `partial`, `unsafe`, `implemented_by` or `extern`, which would let the executable run code that
-  the proofs do not see.
+- Imports. The model (`Ratpoints/Model`) imports only Lean core and `Std`; the fast search
+  (`Ratpoints/Fast`) only Lean core, `Std` and the model; the specification (`Ratpoints/Spec`)
+  only Mathlib, so that it can be read without the model; the candidates for Mathlib
+  (`Ratpoints/Mathlib`) only Mathlib and its dependencies; `comparator/Challenge.lean` only
+  Mathlib, the model and the fast search (it restates the specification); the roots of the
+  executables (`Main.lean`, `ModelMain.lean`, `MaskTest.lean`) only the model and the fast search.
+- Roots. The part roots `Ratpoints/Model.lean`, `Ratpoints/Fast.lean`, `Ratpoints/Spec.lean` and
+  `Ratpoints/Proof.lean` import, directly or not, every module of their folder, so that
+  `lake build RatpointsModel` builds the whole model and `scripts/Correspondence.lean` sees every
+  declaration of it.
+- The model and the fast search are plain executable code that the proofs are about: no
+  experimental options, and no `partial`, `unsafe`, `implemented_by` or `extern`, which would let
+  the executable run code that the proofs do not see; the one exception is `extern` in
+  `Ratpoints/Fast/Mask.lean`, the C code of the two primitives on bit masks, whose Lean bodies
+  are the reference definitions the proofs use.
 - Axioms: no `native_decide`, `decide +native`, `bv_decide`, `bv_check` or `ofReduceBool`
   anywhere, since each adds an axiom that comparator rejects.
 
@@ -35,11 +39,15 @@ IMPORT = re.compile(r'^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)')
 # starts with one of them followed by a dot.
 ALLOWED = {
     'model': ['Init', 'Std', 'Ratpoints.Model'],
+    'fast': ['Init', 'Std', 'Ratpoints.Model', 'Ratpoints.Fast'],
     'spec': ['Init', 'Std', 'Mathlib', 'Ratpoints.Spec'],
     'mathlib': ['Init', 'Std', 'Lean', 'Batteries', 'Qq', 'Aesop', 'Mathlib', 'Ratpoints.Mathlib'],
-    'challenge': ['Init', 'Std', 'Mathlib', 'Ratpoints.Model'],
-    'main': ['Init', 'Std', 'Ratpoints.Model'],
+    'challenge': ['Init', 'Std', 'Mathlib', 'Ratpoints.Model', 'Ratpoints.Fast'],
+    'main': ['Init', 'Std', 'Ratpoints.Model', 'Ratpoints.Fast'],
 }
+# The one file of the fast search that may use `extern`: the C code of its primitives.
+EXTERN_ALLOWED = 'Ratpoints/Fast/Mask.lean'
+EXECUTABLE_ROOTS = ('Main.lean', 'ModelMain.lean', 'MaskTest.lean')
 FORBIDDEN_EVERYWHERE = [
     ('axiom', r'\bnative_decide\b|\bdecide\s*\+native\b|\bbv_decide\b|\bbv_check\b|ofReduceBool'),
 ]
@@ -60,13 +68,15 @@ def part_of(path):
     rel = path.relative_to(ROOT).as_posix()
     if rel == 'Ratpoints/Model.lean' or rel.startswith('Ratpoints/Model/'):
         return 'model'
+    if rel == 'Ratpoints/Fast.lean' or rel.startswith('Ratpoints/Fast/'):
+        return 'fast'
     if rel == 'Ratpoints/Spec.lean' or rel.startswith('Ratpoints/Spec/'):
         return 'spec'
     if rel.startswith('Ratpoints/Mathlib/'):
         return 'mathlib'
     if rel == 'comparator/Challenge.lean':
         return 'challenge'
-    if rel in ('Main.lean', 'ModelMain.lean'):
+    if rel in EXECUTABLE_ROOTS:
         return 'main'
     return None
 
@@ -77,7 +87,8 @@ def allowed(mod, prefixes):
 
 def main():
     files = sorted([*ROOT.glob('Ratpoints/**/*.lean'), *ROOT.glob('comparator/*.lean')])
-    files += [p for p in (ROOT / 'Ratpoints.lean', ROOT / 'Main.lean') if p.exists()]
+    files += [p for p in (ROOT / 'Ratpoints.lean', *(ROOT / r for r in EXECUTABLE_ROOTS))
+              if p.exists()]
     fails = []
 
     def fail(rule, path, i, text):
@@ -95,11 +106,14 @@ def main():
                 imports[module_of(path)].append(m.group(1))
                 if part and not allowed(m.group(1), ALLOWED[part]):
                     fail(f'import-{part}', path, i, raw[i])
-            rules = FORBIDDEN_EVERYWHERE + (FORBIDDEN_IN_MODEL if part == 'model' else [])
+            rules = FORBIDDEN_EVERYWHERE
+            if part == 'model' or part == 'fast':
+                rules = rules + [r for r in FORBIDDEN_IN_MODEL if not (
+                    r[0] == 'extern' and path.relative_to(ROOT).as_posix() == EXTERN_ALLOWED)]
             for rule, pat in rules:
                 if re.search(pat, line):
                     fail(rule, path, i, raw[i])
-    for root in ('Ratpoints.Model', 'Ratpoints.Spec', 'Ratpoints.Proof'):
+    for root in ('Ratpoints.Model', 'Ratpoints.Fast', 'Ratpoints.Spec', 'Ratpoints.Proof'):
         seen, todo = set(), [root]
         while todo:
             mod = todo.pop()

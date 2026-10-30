@@ -68,8 +68,12 @@ jobs:
       - name: Build the specification and the proofs
         run: ~/.elan/bin/lake build --wfail Ratpoints
 
-      - name: Build ratpoints-lean and ratpoints-model
-        run: ~/.elan/bin/lake build --wfail ratpoints-lean ratpoints-model
+      - name: Build ratpoints-lean, ratpoints-model and masktest
+        run: ~/.elan/bin/lake build --wfail ratpoints-lean ratpoints-model masktest
+
+      # The C code of the two primitives of `Ratpoints.Mask` against their Lean reference definitions.
+      - name: Test the primitives of the fast search (masktest)
+        run: .lake/build/bin/masktest
 
       - name: Build the comparator solution
         run: ~/.elan/bin/lake build --wfail Solution

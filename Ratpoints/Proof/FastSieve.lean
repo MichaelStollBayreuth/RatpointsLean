@@ -6,7 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Data.Int.ModEq
-public import Ratpoints.Model.FastSieve
+public import Ratpoints.Fast.Sieve
 public import Ratpoints.Spec.Basic
 public import Ratpoints.Spec.Region
 

@@ -26,6 +26,10 @@ GOOD = {
     'comparator/Challenge.lean': 'module\npublic import Mathlib.Data.Int.GCD\n'
                                  'public import Ratpoints.Model\n',
     'comparator/Solution.lean': 'module\npublic import Ratpoints\n',
+    'Ratpoints/Fast.lean': 'module\npublic import Ratpoints.Fast.Mask\n'
+                           'public import Ratpoints.Fast.B\n',
+    'Ratpoints/Fast/Mask.lean': 'module\n@[extern c inline "#1"] def f (n : Nat) : Nat := n\n',
+    'Ratpoints/Fast/B.lean': 'module\npublic import Ratpoints.Model.A\n',
 }
 
 
@@ -69,6 +73,21 @@ class Layout(unittest.TestCase):
         self.assertEqual(code, 1)
         for rule in ('experimental', 'partial', 'unsafe', 'implemented_by', 'extern'):
             self.assertIn(f'FAIL {rule} Ratpoints/Model/A.lean', out)
+
+    def test_fast_restrictions(self):
+        code, out = self.run_with({
+            'Ratpoints/Fast/B.lean': 'module\nimport Mathlib.Tactic\n'
+                                     '@[extern "c_g"] def g : Nat := 0\n'
+                                     'partial def h : Nat → Nat := id\n',
+            'Ratpoints/Fast/C.lean': 'module\n',
+            'ModelMain.lean': 'import Lean\n'})
+        self.assertEqual(code, 1)
+        self.assertIn('FAIL import-fast Ratpoints/Fast/B.lean:2', out)
+        self.assertIn('FAIL extern Ratpoints/Fast/B.lean:3', out)
+        self.assertIn('FAIL partial Ratpoints/Fast/B.lean:4', out)
+        self.assertIn('FAIL root Ratpoints/Fast.lean', out)
+        self.assertIn('FAIL import-main ModelMain.lean:1', out)
+        self.assertNotIn('Ratpoints/Fast/Mask.lean', out)
 
     def test_axioms_everywhere(self):
         code, out = self.run_with({

@@ -5,16 +5,16 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Model.FastSieve
+public import Ratpoints.Fast.Search
 
 /-!
 # The command-line program on the fast search
 
 `ratpoints-lean 'a₀ a₁ … aₙ' H [-dl b] [-du b] [-q]` prints the points of height at most `H` on
-`y ^ 2 = a₀ zᴰ + a₁ x zᴰ⁻¹ + ⋯ + aₙ xⁿ zᴰ⁻ⁿ` that `Ratpoints.Fast.fastPoints` lists, one per line
-as `(x : y : z)`, the points at infinity included; `-dl` and `-du` bound the denominators from
-below and above, and `-q` is accepted and ignored. On an argument that it cannot read it prints a
-message on the standard error and exits with status 1.
+`y ^ 2 = a₀ zᴰ + a₁ x zᴰ⁻¹ + ⋯ + aₙ xⁿ zᴰ⁻ⁿ` that `Ratpoints.FastMask.fastPoints` lists, one
+per line as `(x : y : z)`, the points at infinity included; `-dl` and `-du` bound the denominators
+from below and above, and `-q` is accepted and ignored. On an argument that it cannot read it
+prints a message on the standard error and exits with status 1.
 
 ## Main definitions
 
@@ -69,7 +69,7 @@ def readArgs : List String → Except String Args
 /-- The line of a point. -/
 def pointLine (p : Int × Int × Int) : String := s!"({p.1} : {p.2.1} : {p.2.2})"
 
-/-- The program: the points of `Ratpoints.Fast.fastPoints`, one per line. -/
+/-- The program: the points of `Ratpoints.FastMask.fastPoints`, one per line. -/
 def main (args : List String) : IO UInt32 := do
   match readArgs args with
   | .error e =>
@@ -77,7 +77,7 @@ def main (args : List String) : IO UInt32 := do
     return 1
   | .ok a =>
     let out ← IO.getStdout
-    for p in Fast.fastPoints a.coeffs a.H a.bLow a.bHigh do
+    for p in FastMask.fastPoints a.coeffs a.H a.bLow a.bHigh do
       out.putStrLn (pointLine p)
     return 0
 

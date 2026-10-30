@@ -14,6 +14,7 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Data.List.SignVariations
 public import Mathlib.Data.Nat.Factors
 public import Mathlib.Order.WithBotTop
+public import Ratpoints.Fast
 public import Ratpoints.Model
 
 /-!

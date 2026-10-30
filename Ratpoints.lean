@@ -1,5 +1,10 @@
 module  -- shake: keep-all --deprecated_module: ignore
 
+public import Ratpoints.Fast
+public import Ratpoints.Fast.Cli
+public import Ratpoints.Fast.Mask
+public import Ratpoints.Fast.Search
+public import Ratpoints.Fast.Sieve
 public import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Ratpoints.Mathlib.Algebra.Group.Even
 public import Ratpoints.Mathlib.Algebra.Order.Field.Basic
@@ -46,8 +51,6 @@ public import Ratpoints.Model.Costs
 public import Ratpoints.Model.Delivery
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Model.Double
-public import Ratpoints.Model.FastCli
-public import Ratpoints.Model.FastSieve
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
 public import Ratpoints.Model.Packing

@@ -6,15 +6,21 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Fast.Mask
-public import Ratpoints.Model.FastSieve
+public import Ratpoints.Fast.Sieve
 
 /-!
-# The fast search on byte-array masks (prototype)
+# The fast search on byte-array masks
 
 `Ratpoints.FastMask.fastPoints` is `Ratpoints.Fast.fastPoints` with the bit masks and the rows of
 the families held in byte arrays (`Ratpoints.Mask`) instead of natural numbers: the AND of a
 chunk with a row is one call of the primitive `Ratpoints.Mask.andShr`, in place, without the
-copies and allocations of an AND of two GMP integers.
+copies and allocations of an AND of two GMP integers, and the survivors come from the primitive
+`Ratpoints.Mask.nextSet`. The parameters, the families, the chunks and the exact check are those
+of `Ratpoints.Fast.fastPoints`; only the order of the points in a chunk may differ.
+
+## Main definitions
+
+* `Ratpoints.FastMask.fastPoints`: the points, by the sieve on byte-array masks.
 -/
 
 @[expose] public section
