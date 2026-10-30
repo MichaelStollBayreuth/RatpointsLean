@@ -82,6 +82,7 @@ public import Ratpoints.Proof.Delivery
 public import Ratpoints.Proof.Denominators
 public import Ratpoints.Proof.Divisors
 public import Ratpoints.Proof.Double
+public import Ratpoints.Proof.FastMask
 public import Ratpoints.Proof.FastSieve
 public import Ratpoints.Proof.FindPoints
 public import Ratpoints.Proof.FirstStage
