@@ -58,6 +58,12 @@ root = "Main"
 name = "ratpoints-model"
 root = "ModelMain"
 
+# The differential test of the C primitives of `Ratpoints.Mask` against their reference
+# definitions (`lake exe masktest`).
+[[lean_exe]]
+name = "masktest"
+root = "MaskTest"
+
 # Comparator (https://github.com/leanprover/comparator) verification harness. Not part of
 # `defaultTargets`, so a plain `lake build` ignores it (and never builds the deliberate `sorry`s
 # in `comparator/Challenge.lean`). See comparator/README.md.
