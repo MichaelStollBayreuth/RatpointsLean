@@ -24,10 +24,10 @@ theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteFo
   Ratpoints.nodup_bruteForce c H
 
 theorem challenge_mem_fastPoints_iff (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ)
-    (tu : Ratpoints.Fast.Tuning) (p : ℤ × ℤ × ℤ) :
+    (tu : Ratpoints.Fast.Tuning) (hS : Ratpoints.SturmTheorem) (p : ℤ × ℤ × ℤ) :
     p ∈ Ratpoints.FastMask.fastPoints c H bLow bHigh tu ↔
       Ratpoints.IsPoint c H p ∧ Ratpoints.InRegion [] bLow bHigh p :=
-  Ratpoints.FastMask.mem_fastPoints_iff
+  Ratpoints.FastMask.mem_fastPoints_iff hS
 
 theorem challenge_nodup_fastPoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ)
     (tu : Ratpoints.Fast.Tuning) : (Ratpoints.FastMask.fastPoints c H bLow bHigh tu).Nodup :=

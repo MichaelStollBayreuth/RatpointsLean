@@ -2,9 +2,11 @@
 
 [![Website](https://img.shields.io/badge/Website-ready-green)](https://michaelstollbayreuth.github.io/RatpointsLean/)
 [![Blueprint](https://img.shields.io/badge/Blueprint-complete-green)](https://michaelstollbayreuth.github.io/RatpointsLean/blueprint/)
-[![Blueprint PDF](https://img.shields.io/badge/Blueprint-PDF-blue)](https://michaelstollbayreuth.github.io/RatpointsLean/blueprint.pdf)
+[![Blueprint
+PDF](https://img.shields.io/badge/Blueprint-PDF-blue)](https://michaelstollbayreuth.github.io/RatpointsLean/blueprint.pdf)
 [![Documentation](https://img.shields.io/badge/Documentation-API-green)](https://michaelstollbayreuth.github.io/RatpointsLean/docs/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-lightblue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License: Apache
+2.0](https://img.shields.io/badge/License-Apache_2.0-lightblue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 A Lean 4 model of [`ratpoints`](https://github.com/MichaelStollBayreuth/ratpoints), the C program
 that finds the rational points of bounded height on the curves `y² = F(x, z)`, where `F` is a binary
@@ -53,14 +55,15 @@ does), the search `Ratpoints.findPoints`
   `findPoints` to the callback (`Ratpoints.Delivery.deliver`, a fold of a few lines), up to and
   including the first call that stops the search.
 
-The brute-force reference `Ratpoints.bruteForce` lists exactly the points, each once, and so does
-the fast search `Ratpoints.FastMask.fastPoints` of `ratpoints-lean`, for every range of the
-denominators. These thirteen statements are certified by Comparator: `lake comparator --paranoid`
-accepted them on 2026-10-30 (`comparator/README.md`). Also proved, but not certified: what
-`ratpoints-model` prints (`Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok`); that the Sturm step keeps
-every point, under Sturm's theorem, so that with the exact check on its depth does not change the
-output (`Ratpoints.findPoints_sturm_neg_eq_ok`); and that the blocks of the loop over the
-denominators, sifted apart and delivered in their order, give what the run delivers
+The brute-force reference `Ratpoints.bruteForce` lists exactly the points, each once; the fast
+search `Ratpoints.FastMask.fastPoints` of `ratpoints-lean` lists, for every range of the
+denominators, only points, each once, and all of them assuming Sturm's theorem. These thirteen
+statements are certified by Comparator: `lake comparator --paranoid` accepted them on 2026-10-31
+(`comparator/README.md`). Also proved, but not certified: what `ratpoints-model` prints
+(`Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok`); that the Sturm step keeps every point, under
+Sturm's theorem, so that with the exact check on its depth does not change the output
+(`Ratpoints.findPoints_sturm_neg_eq_ok`); and that the blocks of the loop over the denominators,
+sifted apart and delivered in their order, give what the run delivers
 (`Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun`). The threads of `ratpoints`, which the
 model leaves out, sift the blocks apart and deliver their points in the order of the blocks, so the
 model, which sifts the blocks in turn on one thread, gives the output of every number of threads,
@@ -74,7 +77,8 @@ the reference of the delivery, of which the protocol speaks; the fact that the e
 `ratpoints-model` and `ratpoints-lean` run the model and the fast search, and for `ratpoints-lean`
 that the C code of the two primitives on bit masks (`Ratpoints/Fast/Mask.lean`) computes their Lean
 reference definitions, which `lake exe masktest` checks but no proof covers; Lean's kernel and
-Comparator; and, in the statements with the Sturm step on, Sturm's theorem. The search chooses
+Comparator; and, in the statements with the Sturm step on and in the membership statement of the
+fast search, Sturm's theorem. The search chooses
 its moduli by the cost model of `ratpoints`, in doubles, which the model computes as Lean's
 `Float`, with the `log` and `pow` of the C library of the platform, as `ratpoints` does; no proof
 reads the value of a double, so the theorems hold for every choice of the moduli that the search
@@ -142,7 +146,8 @@ values of the compile-time constants, one after the other, each without the `#gu
 the model, and reports whether the library still builds; it uses the built packages of the
 repository and runs on demand, not in CI.
 
-The blueprint and the API documentation are at <https://michaelstollbayreuth.github.io/RatpointsLean/>.
+The blueprint and the API documentation are at
+<https://michaelstollbayreuth.github.io/RatpointsLean/>.
 
 ## The programs `ratpoints-lean` and `ratpoints-model`
 
@@ -153,22 +158,29 @@ is accepted and ignored. It runs the fast search `Ratpoints.FastMask.fastPoints`
 (`Ratpoints/Fast/Search.lean`), which is not a model of the C code. The numerators are split into
 their classes modulo 16, a class searched for a denominator only where the residues allow a point;
 each class is sieved in chunks, bit masks with one bit per numerator, ANDed with the rows of
-families of odd moduli, built once and shifted to each chunk by whole bytes; the denominators are
-the outer loop, so that the rows of a denominator serve all its chunks in turn; the candidates that
-survive go to the exact check of the brute force; for odd degree only the denominators `s k²` with
-`s` dividing the leading coefficient are searched. The masks are byte arrays, and the two operations
-on them that take the time are primitives with a few lines of C each (`Ratpoints/Fast/Mask.lean`, in
-`@[extern c inline]`): the AND of a mask with a row shifted to the right, in place, 64 bits at a
-time, and the next set bit of a mask. Their Lean bodies are reference definitions, which the proofs
-use; `lake exe masktest` compares the C code with them on five million cases, in CI. The same sieve
-with the masks in natural numbers (GMP integers), `Ratpoints.Fast.fastPoints`
-(`Ratpoints/Fast/Sieve.lean`), has no C of its own and is four to fourteen times slower;
-`Ratpoints.FastMask.fastPoints_perm` proves that the two list the same points, and
-`Ratpoints.FastMask.mem_fastPoints_iff` and `Ratpoints.FastMask.nodup_fastPoints`
+families of odd moduli, taken while the expected number of survivors pays for their tables, built
+once and shifted to each chunk by whole bytes; the denominators are the outer loop, so that the rows
+of a denominator serve all its chunks in turn; the candidates that survive go to the exact check of
+the brute force. For odd degree only the denominators `s k²` with `s` dividing the leading
+coefficient are searched; for even degree no denominator with an odd divisor `p` for which the
+Jacobi symbol of the leading coefficient is `-1`, since it carries no point. For a denominator `b`
+only the numerators from the first to the last `a` with `a / b` in the intervals that the Sturm step
+of `ratpoints` keeps (the model's `Ratpoints.Sturm.computeSturm`) are searched, each chunk cut to
+the 64-bit words that hold them; outside these intervals `F(a, b) < 0`, by Sturm's theorem. The
+masks are byte arrays, and the two operations on them that take the time are primitives with a few
+lines of C each (`Ratpoints/Fast/Mask.lean`, in `@[extern c inline]`): the AND of a mask with a row
+shifted to the right, in place, 64 bits at a time, and the next set bit of a mask. Their Lean bodies
+are reference definitions, which the proofs use; `lake exe masktest` compares the C code with them
+on five million cases, in CI. The same sieve with the masks in natural numbers (GMP integers),
+`Ratpoints.Fast.fastPoints` (`Ratpoints/Fast/Sieve.lean`), has no C of its own and is five to
+fourteen times slower; `Ratpoints.FastMask.fastPoints_perm` proves that the two list the same
+points, and `Ratpoints.FastMask.mem_fastPoints_iff` and `Ratpoints.FastMask.nodup_fastPoints`
 (`Ratpoints/Proof/FastMask.lean`) that the list holds exactly the points of height at most `H` with
-their denominator in the range, each once, in an order of its own, for every input and every setting
-of the parameters of the sieve; both are certified by Comparator. `scripts/fasttest.py` compares the
-points, as sets, with those of `ratpoints` on its test suites, in CI.
+their denominator in the range, assuming Sturm's theorem (only such points without it,
+`Ratpoints.FastMask.isPoint_and_inRegion_of_mem_fastPoints`), each once, in an order of its own, for
+every input and every setting of the parameters of the sieve; both are certified by Comparator.
+`scripts/fasttest.py` compares the points, as sets, with those of `ratpoints` on its test suites, in
+CI.
 
 Running times against `ratpoints` (C) and the program of the model (`ratpoints-model`), on one
 core of an Intel Core i7-1355U (wall times, one process per curve):
@@ -176,9 +188,9 @@ core of an Intel Core i7-1355U (wall times, one process per curve):
 | curve | H | C | `ratpoints-model` | `ratpoints-lean` |
 | --- | ---: | ---: | ---: | ---: |
 | generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 0.33 s |
-| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.55 s | 48 s | 1.5 s |
-| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.10 s |
-| the 1206 curves of the three test suites | 16383 | 4.3 s | 162 s | 20 s |
+| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.44 s | 48 s | 1.2 s |
+| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.05 s |
+| the 1206 curves of the three test suites | 16383 | 4.2 s | 162 s | 16 s |
 
 `ratpoints-model 'a_0 a_1 ... a_n' H [options]` is the program of the faithful model; it has the
 command line of `ratpoints`. It reads the coefficients (constant term first), the height bound and

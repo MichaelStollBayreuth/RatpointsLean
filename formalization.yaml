@@ -100,10 +100,11 @@ status:
     Sturm's theorem when the Sturm step is on), without duplicates, in the order of ratpoints; with
     the statements under RATPOINTS_NO_CHECK, the protocol of the delivery and the two theorems of
     the brute-force reference they are eleven of the thirteen statements of
-    comparator/challenges.json, which lake comparator --paranoid accepted on 2026-10-30; the other
+    comparator/challenges.json, which lake comparator --paranoid accepted on 2026-10-31; the other
     two say that the fast search of the program ratpoints-lean (Ratpoints.FastMask.fastPoints, not
     a model of the C code, with two primitives on bit masks in C whose Lean bodies are the
-    reference definitions the proofs use) lists exactly the points of height at most H in a range
+    reference definitions the proofs use) lists, assuming Sturm's theorem, exactly the points of
+    height at most H in a range
     of denominators, each once. Proved but not certified: what
     ratpoints-model prints, that the Sturm step keeps every point under Sturm's theorem, and that
     the blocks of the run, sifted apart and delivered in their order, as the threads of ratpoints
@@ -275,9 +276,12 @@ alignment:
       status: "formalized"
       note: >
         the program ratpoints-lean runs Ratpoints.FastMask.fastPoints, a sieve with bit masks in
-        byte arrays that is not a model of the C code; for every coefficient list, height bound,
+        byte arrays that is not a model of the C code, which searches only the numerators in the
+        intervals that the Sturm step of ratpoints keeps and skips the denominators that a Jacobi
+        symbol of the leading coefficient rules out; for every coefficient list, height bound,
         range of the denominators and setting of its parameters it lists exactly the points of
-        height at most H in the range (Ratpoints.FastMask.mem_fastPoints_iff), each once
+        height at most H in the range, assuming Sturm's theorem
+        (Ratpoints.FastMask.mem_fastPoints_iff; only such points without it), each once
         (Ratpoints.FastMask.nodup_fastPoints), both certified by comparator; the AND of a mask with
         a shifted row and the next set bit are C code (@[extern c inline]) whose Lean bodies, the
         reference definitions, are what the proofs see; lake exe masktest compares the two

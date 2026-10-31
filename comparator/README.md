@@ -18,7 +18,7 @@ axioms (`propext`, `Quot.sound`, `Classical.choice`).
   (`IsNaN`, `doubleValue`, `AreSearchIntervals`, `IntervalsWF`, `InIntervals`, `InRegion`,
   `IsFullBox` with their decidability, and `denominatorBound`); and `Ratpoints/Spec/Sturm.lean`,
   Sturm's theorem as a proposition (`SturmTheorem`), which the statements with the Sturm step on
-  assume. It states the main theorems with `sorry`.
+  and the membership statement of the fast search assume. It states the main theorems with `sorry`.
 - [`Solution.lean`](Solution.lean) imports the library and proves the same statements by its
   theorems.
 
@@ -50,7 +50,9 @@ hypothesis on `s`, from which and from the curve the search chooses its moduli:
 - the fast search of `ratpoints-lean` (`challenge_mem_fastPoints_iff`,
   `challenge_nodup_fastPoints`): for all bounds `bLow`, `bHigh` of the denominators and every
   setting `tu` of its parameters, `FastMask.fastPoints c H bLow bHigh tu` lists exactly the points
-  of height at most `H` in the range of the denominators (`InRegion [] bLow bHigh`), each once;
+  of height at most `H` in the range of the denominators (`InRegion [] bLow bHigh`), assuming
+  Sturm's theorem (`SturmTheorem`), on which the numerators it searches for each denominator rest,
+  and, with no hypothesis, each of them once;
 - membership (`challenge_mem_iff_isPoint_of_findPoints_eq_ok`): with the exact check on
   (`o.noCheck = false`) and assuming Sturm's theorem when the Sturm step is on
   (`0 ≤ o.sturm → SturmTheorem`), a triple lies in the list of `findPoints` exactly when it is a
@@ -85,7 +87,7 @@ hypothesis on `s`, from which and from the curve the search chooses its moduli:
   the count of `Delivery.deliver` of the list of `findPoints` to the callback, its calls for the
   points in their order up to and including the first that stops the search.
 
-On 2026-10-30 `lake comparator --paranoid` accepted the thirteen statements, with Lean's kernel
+On 2026-10-31 `lake comparator --paranoid` accepted the thirteen statements, with Lean's kernel
 and the five external checkers.
 
 Comparator certifies these statements and their proofs; it does not certify that the executables

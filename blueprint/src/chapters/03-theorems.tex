@@ -584,8 +584,8 @@ the two refusal theorems (Theorem~\ref{thm:refusals}), the three statements with
 They hold for every coefficient list, height bound, options of a search and options of the sieve, so
 for every choice of the moduli and every correction that the search makes; Sturm's theorem enters as
 the hypothesis~$h_S$ of membership, the order and item~(2) without the exact check. The other two
-are the theorems of the fast search, \verb|Ratpoints.FastMask.mem_fastPoints_iff| and
-\verb|Ratpoints.FastMask.nodup_fastPoints| (Chapter~\ref{chap:overview}). The solution proves each
+are the theorems of the fast search, \verb|Ratpoints.FastMask.mem_fastPoints_iff|, which assumes
+Sturm's theorem too, and \verb|Ratpoints.FastMask.nodup_fastPoints| (Chapter~\ref{chap:overview}). The solution proves each
 statement by its theorem in the library.
 
 \verb|lake comparator| builds and exports both files in a sandbox, without loading the \verb|.olean|
@@ -597,7 +597,7 @@ definition that the statement reaches; when the proofs use only the permitted ax
 and when the kernel accepts them. With \verb|--paranoid| it checks the solution with six kernels:
 Lean's kernel in its default and in its paranoid mode, \verb|lean4lean|, \verb|nanoda|,
 \verb|con-leche| and \verb|con-ron| (the flag \verb|enable_nanoda| of \verb|challenges.json| does
-not switch \verb|nanoda| off under \verb|--paranoid|). On 2026-10-30,
+not switch \verb|nanoda| off under \verb|--paranoid|). On 2026-10-31,
 \verb|lake comparator --paranoid| accepted the thirteen statements with all six.
 
 What one has to read, then, is the challenge: the specification as restated there and, of the model,

@@ -9,39 +9,68 @@ public import Mathlib.Data.Int.ModEq
 public import Ratpoints.Fast.Sieve
 public import Ratpoints.Spec.Basic
 public import Ratpoints.Spec.Region
+public import Ratpoints.Spec.Sturm
 
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.List
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.LinearCombination
+import Ratpoints.Mathlib.Algebra.Order.Field.Basic
 import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Divisors
+import Ratpoints.Proof.Jacobi
+import Ratpoints.Proof.Rounding
+import Ratpoints.Proof.SturmCoverage
 
 /-!
 # The fast search finds exactly the points
 
-`Ratpoints.Fast.fastPoints c H bLow bHigh tu` lists the normalized points of height at most `H`
-on `y ^ 2 = F(x, z)` whose denominator is `0` or lies in the range of `bLow` and `bHigh`, each
-once, for every setting `tu` of its parameters (`Ratpoints.Fast.mem_fastPoints_iff`,
-`Ratpoints.Fast.nodup_fastPoints`).
+`Ratpoints.Fast.fastPoints c H bLow bHigh tu` lists only normalized points of height at most `H` on
+`y ^ 2 = F(x, z)` whose denominator is `0` or lies in the range of `bLow` and `bHigh`
+(`Ratpoints.Fast.isPoint_and_inRegion_of_mem_fastPoints`), each once
+(`Ratpoints.Fast.nodup_fastPoints`), and, assuming Sturm's theorem, all of them
+(`Ratpoints.Fast.mem_fastPoints_of_isPoint`, `Ratpoints.Fast.mem_fastPoints_iff`), for every
+setting `tu` of its parameters.
 
 The sieve is a sound filter: a point `(a, y, b)` makes `(a, b)` a candidate
 (`Ratpoints.Fast.IsCandidate`), and the residues of a candidate modulo every `m` pass the table
 `Ratpoints.Fast.admitTable` (`Ratpoints.Fast.admitTable_spec`), so the bit of `a` survives in the
 row of every family (`Ratpoints.Fast.Family.IsSound`, `Ratpoints.Fast.mkFamily_isSound`), in that
-row shifted to the start of each chunk (`Ratpoints.Fast.Family.IsSound.testBit_shiftRight`) and in
-the sieve (`Ratpoints.Fast.testBit_sieve`); `Ratpoints.Fast.setBits` lists the bits that survive
+row shifted to the start of each chunk and moved to the part of the chunk that is searched
+(`Ratpoints.Fast.Family.IsSound.testBit_shiftRight`) and in the sieve
+(`Ratpoints.Fast.testBit_sieve`); `Ratpoints.Fast.setBits` lists the bits that survive
 (`Ratpoints.Fast.mem_setBits`), and the exact check of `Ratpoints.BruteForce.pointsOfDen` keeps the
 points among them. The slots, the chunks of the classes modulo `G`, cover each numerator once
-(`Ratpoints.Fast.exists_mem_slots`, `Ratpoints.Fast.pairwise_slots`), so the search lists the
-points of its denominators, each once (`Ratpoints.Fast.mem_search`, `Ratpoints.Fast.nodup_search`),
-and for odd degree the denominators that the search leaves out carry no point
-(`Ratpoints.Fast.mem_denominators_of_isCandidate`, from
-`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`).
+(`Ratpoints.Fast.exists_mem_slots`, `Ratpoints.Fast.pairwise_slots`), and the part of a chunk holds
+the numerators of the chunk within the bounds of the region (`Ratpoints.Fast.exists_part_eq_some`,
+`Ratpoints.Fast.add_le_and_dvd_of_part_eq_some`), so the search of a part
+(`Ratpoints.Fast.of_mem_partPoints`, `Ratpoints.Fast.mem_partPoints`), of a denominator
+(`Ratpoints.Fast.of_mem_denPoints`, `Ratpoints.Fast.mem_denPoints_of`,
+`Ratpoints.Fast.nodup_denPoints`) and the whole search list the points of its denominators with
+their numerators within the bounds, each once (`Ratpoints.Fast.of_mem_search`,
+`Ratpoints.Fast.mem_search_of`, `Ratpoints.Fast.nodup_search`).
+
+Assuming Sturm's theorem, the bounds of the region hold the numerator `a` of every point
+(`Ratpoints.Fast.exists_bounds_region`): one of the intervals that the Sturm step keeps holds
+`a / b` (`Ratpoints.Fast.exists_mem_sturmIntervals`, from `Ratpoints.Sturm.covers_computeSturm`),
+and the bounds that `Ratpoints.Fast.endFrac` makes of the ends of the interval
+(`Ratpoints.Fast.div_le_of_endFrac_eq_some`, `Ratpoints.Fast.le_div_of_endFrac_eq_some`) bound `a`
+(`Ratpoints.Fast.fst_numRange_le`, `Ratpoints.Fast.le_snd_numRange`,
+`Ratpoints.Fast.exists_bounds_of_mem`). The denominators that the search leaves out carry no point
+(`Ratpoints.Fast.mem_denominators_of_isCandidate`): for odd degree they are not of the form
+`s k ^ 2` with `s` dividing the leading coefficient
+(`Ratpoints.Fast.any_filter_range'_of_isCandidate`, from
+`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`), and for even degree they are multiples
+of an odd `p` with the symbol `-1` of `Ratpoints.Sieve.jacobi`
+(`Ratpoints.Fast.exists_dvd_of_getElem!_forbiddenDens`,
+`Ratpoints.Fast.getElem!_forbiddenDens_eq_false`), which is `1` on every divisor of the
+denominator of a point (`Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq_of_dvd`).
 
 ## Main statements
 
-* `Ratpoints.Fast.mem_fastPoints_iff`: the list holds exactly the points of the region.
+* `Ratpoints.Fast.isPoint_and_inRegion_of_mem_fastPoints`: the list holds only points of the region.
+* `Ratpoints.Fast.mem_fastPoints_iff`: assuming Sturm's theorem, it holds exactly the points of the
+  region.
 * `Ratpoints.Fast.nodup_fastPoints`: each of them once.
 -/
 
@@ -445,15 +474,17 @@ theorem Family.IsSound.dvd_sub_shift {c : List ℤ} {G L : ℕ} {F : Family}
   rw [mul_add, mul_left_comm]
   exact Int.modEq_add_fac_self.trans hs
 
-/-- The row of `b`, shifted to the chunk that starts at `a₀`, keeps the bit `t < L` of every
-candidate `(a₀ + G t, b)`. -/
+/-- The row of `b`, shifted to the chunk that starts at `a₀` and moved by `o`, keeps the bit `t` of
+every candidate `(a₀ + G (o + t), b)` with `o + t < L`. -/
 theorem Family.IsSound.testBit_shiftRight {c : List ℤ} {G L : ℕ} {F : Family}
-    (hF : F.IsSound c G L) {a₀ : ℤ} {b t : ℕ} (ht : t < L) (hc : IsCandidate c (a₀ + G * t) b) :
-    (F.rows[b % F.M]! >>> F.shift a₀).testBit t = true := by
+    (hF : F.IsSound c G L) {a₀ : ℤ} {b o t : ℕ} (ht : o + t < L)
+    (hc : IsCandidate c (a₀ + G * (o + t)) b) :
+    (F.rows[b % F.M]! >>> (F.shift a₀ + o)).testBit t = true := by
   rw [Nat.testBit_shiftRight]
   refine hF.testBit _ b _ (by lia [F.shift_lt hF.pos a₀]) hc ?_
   have := hF.dvd_sub_shift a₀
-  rwa [show a₀ + G * t - G * (F.shift a₀ + t : ℕ) = a₀ - G * F.shift a₀ by push_cast; ring]
+  rwa [show a₀ + G * (o + t) - G * (F.shift a₀ + o + t : ℕ) = a₀ - G * F.shift a₀ by
+    push_cast; ring]
 
 theorem Family.IsSound.rows_ne_zero {c : List ℤ} {G L : ℕ} {F : Family} (hF : F.IsSound c G L)
     {a : ℤ} {b : ℕ} (hc : IsCandidate c a b) :
@@ -487,20 +518,21 @@ theorem testBit_of_testBit_foldl_sieve {α : Type*} {g : α → ℕ} {l : List �
     · rw [Nat.testBit_and, Bool.and_eq_true] at this
       exact this.1
 
-theorem testBit_sieve {rs sh : Array ℕ} {mask t : ℕ} (hmask : mask.testBit t = true)
-    (h : ∀ i < rs.size, (rs[i]! >>> sh[i]!).testBit t = true) :
-    (sieve rs sh mask).testBit t = true :=
-  testBit_foldl_sieve (fun i ↦ rs[i]! >>> sh[i]!) _ hmask fun i hi ↦ h i (List.mem_range.mp hi)
+theorem testBit_sieve {rs sh : Array ℕ} {o mask t : ℕ} (hmask : mask.testBit t = true)
+    (h : ∀ i < rs.size, (rs[i]! >>> (sh[i]! + o)).testBit t = true) :
+    (sieve rs sh o mask).testBit t = true :=
+  testBit_foldl_sieve (fun i ↦ rs[i]! >>> (sh[i]! + o)) _ hmask fun i hi ↦
+    h i (List.mem_range.mp hi)
 
-theorem testBit_of_testBit_sieve {rs sh : Array ℕ} {mask t : ℕ}
-    (h : (sieve rs sh mask).testBit t = true) :
+theorem testBit_of_testBit_sieve {rs sh : Array ℕ} {o mask t : ℕ}
+    (h : (sieve rs sh o mask).testBit t = true) :
     mask.testBit t = true :=
   testBit_of_testBit_foldl_sieve h
 
 /-! ### The points of a chunk -/
 
-theorem of_mem_chunkPoints {c : List ℤ} {G : ℕ} {rs sh : Array ℕ} {a₀ : ℤ} {len b : ℕ}
-    {p : ℤ × ℤ × ℤ} (h : p ∈ chunkPoints c (BruteForce.degree c) G rs sh a₀ len b) :
+theorem of_mem_chunkPoints {c : List ℤ} {G : ℕ} {rs sh : Array ℕ} {o : ℕ} {a₀ : ℤ} {len b : ℕ}
+    {p : ℤ × ℤ × ℤ} (h : p ∈ chunkPoints c (BruteForce.degree c) G rs sh o a₀ len b) :
     p.2.2 = b ∧ (∃ t < len, p.1 = a₀ + G * t) ∧ Int.gcd p.1 p.2.2 = 1 ∧
       p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
   simp only [chunkPoints] at h
@@ -513,29 +545,61 @@ theorem of_mem_chunkPoints {c : List ℤ} {G : ℕ} {rs sh : Array ℕ} {a₀ : 
   rw [Nat.testBit_two_pow_sub_one, decide_eq_true_eq] at this
   exact ⟨hz, ⟨t, this, hx.symm⟩, hz ▸ hg, hz ▸ hy⟩
 
-theorem mem_chunkPoints {c : List ℤ} {G : ℕ} {rs sh : Array ℕ} {a₀ : ℤ} {len b : ℕ}
+theorem mem_chunkPoints {c : List ℤ} {G : ℕ} {rs sh : Array ℕ} {o : ℕ} {a₀ : ℤ} {len b : ℕ}
     (hrs : ∀ t < len, IsCandidate c (a₀ + G * t) b →
-      ∀ i < rs.size, (rs[i]! >>> sh[i]!).testBit t = true) {p : ℤ × ℤ × ℤ} :
-    p ∈ chunkPoints c (BruteForce.degree c) G rs sh a₀ len b ↔
+      ∀ i < rs.size, (rs[i]! >>> (sh[i]! + o)).testBit t = true) {p : ℤ × ℤ × ℤ} :
+    p ∈ chunkPoints c (BruteForce.degree c) G rs sh o a₀ len b ↔
       p.2.2 = b ∧ (∃ t < len, p.1 = a₀ + G * t) ∧ Int.gcd p.1 p.2.2 = 1 ∧
         p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
   refine ⟨of_mem_chunkPoints, fun ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩ ↦ ?_⟩
-  have hbit := testBit_sieve (rs := rs) (sh := sh) (mask := 2 ^ len - 1)
+  have hbit := testBit_sieve (rs := rs) (sh := sh) (o := o) (mask := 2 ^ len - 1)
     (by simp [Nat.testBit_two_pow_sub_one, ht]) (hrs t ht ⟨hx ▸ hz ▸ hg, p.2.1, hx ▸ hz ▸ hy⟩)
-  have h0 : sieve rs sh (2 ^ len - 1) ≠ 0 := fun h ↦ by simp [h] at hbit
+  have h0 : sieve rs sh o (2 ^ len - 1) ≠ 0 := fun h ↦ by simp [h] at hbit
   simp only [chunkPoints, beq_iff_eq, h0, ↓reduceIte]
   rw [mem_pointsOfDen_iff, horner_scaledCoeffs_mul]
   exact ⟨List.mem_map.mpr ⟨t, mem_setBits.mpr hbit, hx.symm⟩, hz, hz ▸ hg, hz ▸ hy⟩
 
-theorem nodup_chunkPoints (c : List ℤ) {G : ℕ} (hG : 0 < G) (rs sh : Array ℕ) (a₀ : ℤ)
+theorem nodup_chunkPoints (c : List ℤ) {G : ℕ} (hG : 0 < G) (rs sh : Array ℕ) (o : ℕ) (a₀ : ℤ)
     (len b : ℕ) :
-    (chunkPoints c (BruteForce.degree c) G rs sh a₀ len b).Nodup := by
+    (chunkPoints c (BruteForce.degree c) G rs sh o a₀ len b).Nodup := by
   simp only [chunkPoints]
   split_ifs
   · exact List.nodup_nil
   · refine nodup_pointsOfDen _ _ _ ((nodup_setBits _).map fun t t' h ↦ ?_)
     have : (G : ℤ) * t = G * t' := by simpa using h
     exact_mod_cast mul_left_cancel₀ (by lia : (G : ℤ) ≠ 0) this
+
+/-! ### The parts of the chunks -/
+
+/-- The part of a chunk lies in the chunk, starts at a multiple of `64` and ends at the end of the
+chunk or at a multiple of `64`. -/
+theorem add_le_and_dvd_of_part_eq_some {G : ℕ} {lo hi a₀ : ℤ} {len t₁ len₁ : ℕ}
+    (h : part G lo hi a₀ len = some (t₁, len₁)) :
+    t₁ + len₁ ≤ len ∧ 64 ∣ t₁ ∧ (t₁ + len₁ = len ∨ 64 ∣ t₁ + len₁) := by
+  simp only [part] at h
+  generalize (lo - a₀ + G - 1) / (G : ℤ) = u at h
+  generalize (hi - a₀) / (G : ℤ) = v at h
+  split_ifs at h <;> obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj h)
+  · have h1 : (max 0 u).toNat ≤ (min (len - 1 : ℤ) v).toNat := by lia
+    have h2 : (min (len - 1 : ℤ) v).toNat < len := by lia
+    generalize (max 0 u).toNat = T₁ at *
+    generalize (min (len - 1 : ℤ) v).toNat = T₂ at *
+    refine ⟨by lia, Nat.dvd_mul_right 64 _, ?_⟩
+    rcases le_total len (64 * (T₂ / 64 + 1)) with h | h
+    · exact .inl (by rw [min_eq_left h]; lia)
+    · exact .inr (by rw [min_eq_right h, Nat.add_sub_cancel' (by lia)]; exact Nat.dvd_mul_right ..)
+  · exact ⟨by lia, dvd_zero 64, .inl (zero_add len)⟩
+
+/-- Every numerator of the chunk from `lo` to `hi` lies in the part of the chunk. -/
+theorem exists_part_eq_some {G : ℕ} (hG : 0 < G) {lo hi a₀ : ℤ} {len t : ℕ} (ht : t < len)
+    (hlo : lo ≤ a₀ + G * t) (hhi : a₀ + G * t ≤ hi) :
+    ∃ t₁ len₁, part G lo hi a₀ len = some (t₁, len₁) ∧ t₁ ≤ t ∧ t < t₁ + len₁ := by
+  have h1 : (lo - a₀ + G - 1) / (G : ℤ) < t + 1 := (Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia)
+  have h2 : (t : ℤ) ≤ (hi - a₀) / G := (Int.le_ediv_iff_mul_le (by lia)).mpr (by lia)
+  simp only [part]
+  generalize (lo - a₀ + G - 1) / (G : ℤ) = u at h1 ⊢
+  generalize (hi - a₀) / (G : ℤ) = v at h2 ⊢
+  split_ifs <;> first | exact ⟨_, _, rfl, by lia, by lia⟩ | lia
 
 /-! ### Chunks and classes -/
 
@@ -646,104 +710,405 @@ theorem pairwise_slots (H : ℕ) {G L : ℕ} (hG : 0 < G) (hL : 0 < L) :
     exact (eq_of_add_mul_eq (u := t₀ + t) (u' := t₀' + t') (List.mem_range.mp hρ)
       (List.mem_range.mp hρ') (by lia)).1
 
+/-! ### The region -/
+
+/-- The bound `n / q` that `Ratpoints.Fast.endFrac` makes of a lower end `x` lies below every `v`
+with `|v| ≤ H` above the value of `x`: it is that value when it lies in `[-H, H]`, `-(H + 1)` when
+it lies below, and `H + 1` only when it lies above `H`, where no such `v` is. -/
+theorem div_le_of_endFrac_eq_some {H : ℕ} {x : Double} {n : ℤ} {q : ℕ}
+    (h : endFrac H x = some (n, q)) {v : ℚ} (hv : |v| ≤ H)
+    (hx : doubleValue x.bits ≤ (v : WithBotTop ℚ)) : (n : ℚ) / q ≤ v := by
+  rw [abs_le] at hv
+  rcases hd : x.toDyadic with ⟨m, e⟩
+  simp only [endFrac, hd] at h
+  split_ifs at h with hf _ _ _ hs <;> obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj h)
+  · rwa [Double.doubleValue_eq_of_toDyadic_eq hf hd, WithBotTop.coe_le_coe,
+      ← intCast_ediv_gcd_div_natCast_div_gcd] at hx
+  · push_cast
+    linarith
+  · rw [Double.doubleValue_eq_of_toDyadic_eq hf hd, WithBotTop.coe_le_coe,
+      div_le_iff₀ (by positivity)] at hx
+    have : (m * 2 ^ e.toNat : ℤ) ≤ (H : ℤ) * ((2 ^ (-e).toNat : ℕ) : ℤ) :=
+      mod_cast hx.trans (mul_le_mul_of_nonneg_right hv.2 (by positivity))
+    lia
+  · push_cast
+    linarith
+  · rw [Double.doubleValue_bits, ite_eq_left (by simpa [Double.isFinite] using hf),
+      ite_eq_right hs] at hx
+    simp at hx
+
+/-- The bound `n / q` that `Ratpoints.Fast.endFrac` makes of an upper end `x` lies above every `v`
+with `|v| ≤ H` below the value of `x`: it is that value when it lies in `[-H, H]`, `H + 1` when it
+lies above, and `-(H + 1)` only when it lies below `-H`, where no such `v` is. -/
+theorem le_div_of_endFrac_eq_some {H : ℕ} {x : Double} {n : ℤ} {q : ℕ}
+    (h : endFrac H x = some (n, q)) {v : ℚ} (hv : |v| ≤ H)
+    (hx : (v : WithBotTop ℚ) ≤ doubleValue x.bits) : v ≤ (n : ℚ) / q := by
+  rw [abs_le] at hv
+  rcases hd : x.toDyadic with ⟨m, e⟩
+  simp only [endFrac, hd] at h
+  split_ifs at h with hf _ _ _ hs <;> obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj h)
+  · rwa [Double.doubleValue_eq_of_toDyadic_eq hf hd, WithBotTop.coe_le_coe,
+      ← intCast_ediv_gcd_div_natCast_div_gcd] at hx
+  · rw [Double.doubleValue_eq_of_toDyadic_eq hf hd, WithBotTop.coe_le_coe,
+      le_div_iff₀ (by positivity)] at hx
+    have : -(H : ℤ) * ((2 ^ (-e).toNat : ℕ) : ℤ) ≤ (m * 2 ^ e.toNat : ℤ) :=
+      mod_cast (mul_le_mul_of_nonneg_right hv.1 (by positivity)).trans hx
+    lia
+  · push_cast
+    linarith
+  · rw [Double.doubleValue_bits, ite_eq_left (by simpa [Double.isFinite] using hf),
+      ite_eq_left hs] at hx
+    simp at hx
+  · push_cast
+    linarith
+
+/-- The denominator of the bound that `Ratpoints.Fast.endFrac` makes of an end is positive: a power
+of `2` divided by a divisor of it, or `1`. -/
+theorem pos_of_endFrac_eq_some {H : ℕ} {x : Double} {n : ℤ} {q : ℕ}
+    (h : endFrac H x = some (n, q)) : 0 < q := by
+  rcases hd : x.toDyadic with ⟨m, e⟩
+  simp only [endFrac, hd] at h
+  split_ifs at h <;> obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj h)
+  · exact Nat.div_pos (Nat.le_of_dvd (Nat.two_pow_pos _) (Nat.gcd_dvd_right _ _))
+      (Nat.gcd_pos_of_pos_right _ (Nat.two_pow_pos _))
+  all_goals exact Nat.one_pos
+
+/-- The first numerator of the range of an interval lies below every `a` with `|a| ≤ H` and `a / b`
+above the lower end of the interval. -/
+theorem fst_numRange_le {H b : ℕ} (hb : 0 < b) {a : ℤ} (ha : |a| ≤ H) {l : Double}
+    (hl : doubleValue l.bits ≤ (((a : ℚ) / b : ℚ) : WithBotTop ℚ)) (e : Option (ℤ × ℕ)) :
+    (numRange H b (endFrac H l, e)).1 ≤ a := by
+  rcases he : endFrac H l with _ | ⟨n, q⟩ <;> simp only [numRange]
+  · lia [abs_le.mp ha]
+  have hab := abs_intCast_div_natCast_le (α := ℚ) ha b
+  have hv := div_le_of_endFrac_eq_some he hab hl
+  have hq : (0 : ℚ) < q := mod_cast pos_of_endFrac_eq_some he
+  split_ifs with h1 h2
+  · exact max_le (by lia [abs_le.mp ha]) (Int.neg_ediv_neg_le_of_div_le hb hv)
+  · have : (H : ℚ) < n / q := (lt_div_iff₀ hq).mpr (mod_cast (by lia))
+    linarith [le_abs_self ((a : ℚ) / b)]
+  · lia [abs_le.mp ha]
+
+/-- The last numerator of the range of an interval lies above every `a` with `|a| ≤ H` and `a / b`
+below the upper end of the interval. -/
+theorem le_snd_numRange {H b : ℕ} (hb : 0 < b) {a : ℤ} (ha : |a| ≤ H) {u : Double}
+    (hu : (((a : ℚ) / b : ℚ) : WithBotTop ℚ) ≤ doubleValue u.bits) (e : Option (ℤ × ℕ)) :
+    a ≤ (numRange H b (e, endFrac H u)).2 := by
+  rcases he : endFrac H u with _ | ⟨n, q⟩ <;> simp only [numRange]
+  · lia [abs_le.mp ha]
+  have hab := abs_intCast_div_natCast_le (α := ℚ) ha b
+  have hv := le_div_of_endFrac_eq_some he hab hu
+  have hq : (0 : ℚ) < q := mod_cast pos_of_endFrac_eq_some he
+  split_ifs with h1 h2
+  · exact le_min (by lia [abs_le.mp ha]) (Int.le_ediv_of_div_le hb hv)
+  · lia [abs_le.mp ha]
+  · have : (n : ℚ) / q < -H := (div_lt_iff₀ hq).mpr (mod_cast (by lia))
+    linarith [neg_abs_le ((a : ℚ) / b)]
+
+/-- The hull of the ranges of the intervals holds every numerator of the range of one of them. -/
+theorem exists_bounds_of_mem {H b : ℕ} {a : ℤ} {ivs : Array (Option (ℤ × ℕ) × Option (ℤ × ℕ))}
+    {iv : Option (ℤ × ℕ) × Option (ℤ × ℕ)} (hiv : iv ∈ ivs) (h1 : (numRange H b iv).1 ≤ a)
+    (h2 : a ≤ (numRange H b iv).2) :
+    ∃ lo hi, bounds H b (some ivs) = some (lo, hi) ∧ lo ≤ a ∧ a ≤ hi := by
+  obtain ⟨k, hk, rfl⟩ := Array.mem_iff_getElem.mp hiv
+  rw [bounds]
+  refine Array.foldl_induction (motive := fun i acc ↦ k < i →
+    ∃ lo hi, acc = some (lo, hi) ∧ lo ≤ a ∧ a ≤ hi) (by simp) (fun i acc ih hki ↦ ?_) hk
+  simp only [Fin.getElem_fin]
+  rcases Nat.lt_succ_iff_lt_or_eq.mp hki with hki | hki
+  · obtain ⟨lo, hi, rfl, h3, h4⟩ := ih hki
+    split_ifs
+    · exact ⟨_, _, rfl, by lia, by lia⟩
+    · exact ⟨_, _, rfl, h3, h4⟩
+  · obtain rfl : k = i.1 := hki
+    simp only [h1.trans h2, ↓reduceIte]
+    rcases acc with _ | ⟨lo, hi⟩
+    · exact ⟨_, _, rfl, h1, h2⟩
+    · exact ⟨_, _, rfl, by lia, by lia⟩
+
+/-- Assuming Sturm's theorem, the intervals of the Sturm step on the whole line hold every `a / b`
+with `|a| ≤ H`, `b > 0` and `F(a, b) ≥ 0` (`Ratpoints.Sturm.covers_computeSturm`). -/
+theorem exists_mem_sturmIntervals (hS : SturmTheorem) {c : List ℤ} {H depth : ℕ}
+    {ivs : Array (Double × Double)} (h : sturmIntervals c (degree c) H depth = some ivs) {a : ℤ}
+    {b : ℕ} (hb : 0 < b) (ha : |a| ≤ H) (hF : 0 ≤ binaryForm c a b) :
+    ∃ iv ∈ ivs, doubleValue iv.1.bits ≤ (((a : ℚ) / b : ℚ) : WithBotTop ℚ) ∧
+      (((a : ℚ) / b : ℚ) : WithBotTop ℚ) ≤ doubleValue iv.2.bits := by
+  simp only [sturmIntervals] at h
+  split_ifs at h with hc
+  obtain ⟨hd, hd57, hH, hdep⟩ := hc
+  have hab : |(a : ℚ) / b| ≤ 2 ^ 63 := (abs_intCast_div_natCast_le ha b).trans (mod_cast hH.le)
+  obtain ⟨_, hi, hl, hu⟩ := Sturm.covers_computeSturm hS hd (getD_degree_ne_zero_of_pos hd) hd57
+    hdep (by decide) h (Sturm.eval_chainPoly_nonneg hb hF) (by simpa using hab)
+    ⟨_, List.mem_singleton_self _, by simp [Double.doubleValue_huge, Double.doubleValue_huge_neg]⟩
+  obtain ⟨iv, hiv, rfl⟩ := List.mem_map.mp hi
+  exact ⟨iv, Array.mem_toList_iff.mp hiv, hl, hu⟩
+
+/-- Assuming Sturm's theorem, the numerators of the denominator `b > 0` that the search takes
+(`Ratpoints.Fast.bounds`) include every `a` with `|a| ≤ H` and `F(a, b) ≥ 0`. -/
+theorem exists_bounds_region (hS : SturmTheorem) {c : List ℤ} {H depth b : ℕ} (hb : 0 < b)
+    {a : ℤ} (ha : |a| ≤ H) (hF : 0 ≤ binaryForm c a b) :
+    ∃ lo hi, bounds H b (region c (degree c) H depth) = some (lo, hi) ∧ lo ≤ a ∧ a ≤ hi := by
+  rcases h : sturmIntervals c (degree c) H depth with _ | ivs
+  · simp only [region, h, Option.map_none, bounds]
+    exact ⟨_, _, rfl, by lia [abs_le.mp ha]⟩
+  · obtain ⟨iv, hiv, hl, hu⟩ := exists_mem_sturmIntervals hS h hb ha hF
+    simp only [region, h, Option.map_some]
+    exact exists_bounds_of_mem (Array.mem_map_of_mem hiv) (fst_numRange_le hb ha hl _)
+      (le_snd_numRange hb ha hu _)
+
 /-! ### The search -/
 
-theorem of_mem_search {c : List ℤ} {H G L : ℕ} {fams : Array Family} {dens : List ℕ}
-    (hG : 0 < G) {p : ℤ × ℤ × ℤ} (h : p ∈ search c (BruteForce.degree c) H G L fams dens) :
+/-- The rows of sound families for the denominator `b`, shifted to the chunk that starts at `a₀` and
+moved by `o`, keep the bit `t` of every candidate `(a₀ + G (o + t), b)` with `o + t < L`. -/
+theorem testBit_rows_shiftRight {c : List ℤ} {G L : ℕ} {fams : Array Family}
+    (hfams : ∀ F ∈ fams, F.IsSound c G L) {a₀ : ℤ} {b o t : ℕ} (ht : o + t < L)
+    (hc : IsCandidate c (a₀ + G * (o + t)) b) {i : ℕ}
+    (hi : i < (fams.map fun F ↦ F.rows[b % F.M]!).size) :
+    ((fams.map fun F ↦ F.rows[b % F.M]!)[i]! >>>
+      ((fams.map (Family.shift · a₀))[i]! + o)).testBit t = true := by
+  simp only [Array.size_map] at hi
+  simp only [getElem!_pos, Array.size_map, hi, Array.getElem_map]
+  exact (hfams _ (Array.getElem_mem hi)).testBit_shiftRight ht hc
+
+theorem of_mem_partPoints {c : List ℤ} {G : ℕ} {rs sh : Array ℕ} {lo hi a₀ : ℤ} {len b : ℕ}
+    {p : ℤ × ℤ × ℤ} (h : p ∈ partPoints c (BruteForce.degree c) G rs sh lo hi a₀ len b) :
+    p.2.2 = b ∧ (∃ t < len, p.1 = a₀ + G * t) ∧ Int.gcd p.1 p.2.2 = 1 ∧
+      p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
+  simp only [partPoints] at h
+  split at h
+  · simp at h
+  · rename_i t₁ len₁ hpart
+    obtain ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩ := of_mem_chunkPoints h
+    refine ⟨hz, ⟨t₁ + t, by lia [(add_le_and_dvd_of_part_eq_some hpart).1], ?_⟩, hg, hy⟩
+    rw [hx]
+    push_cast
+    ring
+
+/-- A point of the chunk with its numerator from `lo` to `hi` lies in the part of the chunk. -/
+theorem mem_partPoints {c : List ℤ} {G L : ℕ} (hG : 0 < G) {fams : Array Family}
+    (hfams : ∀ F ∈ fams, F.IsSound c G L) {lo hi a₀ : ℤ} {len b t : ℕ} (hlen : len ≤ L)
+    (ht : t < len) {p : ℤ × ℤ × ℤ} (hx : p.1 = a₀ + G * t) (hlo : lo ≤ p.1) (hhi : p.1 ≤ hi)
+    (hz : p.2.2 = b) (hg : Int.gcd p.1 p.2.2 = 1) (hy : p.2.1 ^ 2 = binaryForm c p.1 p.2.2) :
+    p ∈ partPoints c (BruteForce.degree c) G (fams.map fun F ↦ F.rows[b % F.M]!)
+      (fams.map (Family.shift · a₀)) lo hi a₀ len b := by
+  obtain ⟨t₁, len₁, hpart, h1, h2⟩ := exists_part_eq_some hG ht (hx ▸ hlo) (hx ▸ hhi)
+  have hle := (add_le_and_dvd_of_part_eq_some hpart).1
+  simp only [partPoints, hpart]
+  refine (mem_chunkPoints fun t' ht' hc' i hi ↦ testBit_rows_shiftRight hfams (by lia) ?_ hi).mpr
+    ⟨hz, ⟨t - t₁, by lia, ?_⟩, hg, hy⟩
+  · rwa [show a₀ + ((G * t₁ : ℕ) : ℤ) + G * t' = a₀ + G * (t₁ + t') by push_cast; ring] at hc'
+  · rw [hx]
+    push_cast [Nat.cast_sub h1]
+    ring
+
+theorem nodup_partPoints (c : List ℤ) {G : ℕ} (hG : 0 < G) (rs sh : Array ℕ) (lo hi a₀ : ℤ)
+    (len b : ℕ) : (partPoints c (BruteForce.degree c) G rs sh lo hi a₀ len b).Nodup := by
+  rw [partPoints]
+  split
+  · exact List.nodup_nil
+  · exact nodup_chunkPoints c hG ..
+
+theorem of_mem_denPoints {c : List ℤ} {H G : ℕ} {fams : Array Family}
+    {reg : Option (Array (Option (ℤ × ℕ) × Option (ℤ × ℕ)))} {sl : List (ℕ × ℤ × ℕ × Array ℕ)}
+    {b : ℕ} {p : ℤ × ℤ × ℤ} (h : p ∈ denPoints c (BruteForce.degree c) H G fams reg sl b) :
+    p.2.2 = b ∧ (∃ s ∈ sl, ∃ t < s.2.2.1, p.1 = s.2.1 + G * t) ∧ Int.gcd p.1 p.2.2 = 1 ∧
+      p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
+  simp only [denPoints] at h
+  split at h
+  · simp at h
+  split_ifs at h
+  all_goals obtain ⟨⟨r, a₀, len, sh⟩, hs, hp⟩ := List.mem_flatMap.mp h
+  · obtain ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩ := of_mem_chunkPoints hp
+    exact ⟨hz, ⟨_, hs, t, ht, hx⟩, hg, hy⟩
+  · obtain ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩ := of_mem_partPoints hp
+    exact ⟨hz, ⟨_, hs, t, ht, hx⟩, hg, hy⟩
+
+/-- A point of a chunk of `sl` with its numerator within the bounds of the region lies in the
+search of its denominator. -/
+theorem mem_denPoints_of {c : List ℤ} {H G L : ℕ} (hG : 0 < G) {fams : Array Family}
+    (hfams : ∀ F ∈ fams, F.IsSound c G L)
+    {reg : Option (Array (Option (ℤ × ℕ) × Option (ℤ × ℕ)))} {sl : List (ℕ × ℤ × ℕ × Array ℕ)}
+    {r len t b : ℕ} {a₀ : ℤ} (hs : (r, a₀, len, fams.map (Family.shift · a₀)) ∈ sl)
+    (hlen : len ≤ L) (ht : t < len) {p : ℤ × ℤ × ℤ} (hx : p.1 = a₀ + G * t) (hz : p.2.2 = b)
+    (hg : Int.gcd p.1 p.2.2 = 1) (hy : p.2.1 ^ 2 = binaryForm c p.1 p.2.2) {lo hi : ℤ}
+    (hbd : bounds H b reg = some (lo, hi)) (hlo : lo ≤ p.1) (hhi : p.1 ≤ hi) :
+    p ∈ denPoints c (BruteForce.degree c) H G fams reg sl b := by
+  simp only [denPoints, hbd]
+  split_ifs
+  all_goals refine List.mem_flatMap.mpr ⟨_, hs, ?_⟩
+  · exact (mem_chunkPoints fun t' ht' hc' i hi ↦ testBit_rows_shiftRight hfams (by lia)
+      (by simpa using hc') hi).mpr ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩
+  · exact mem_partPoints hG hfams hlen ht hx hlo hhi hz hg hy
+
+/-- The points of chunks without a numerator in common, chunk by chunk, each once, when the points
+of each chunk are without duplicates and lie in the chunk. -/
+theorem nodup_flatMap_of_pairwise {α β : Type*} {G : ℕ} {l : List (α × ℤ × ℕ × β)}
+    (hl : l.Pairwise fun (s s' : α × ℤ × ℕ × β) ↦
+      ∀ t < s.2.2.1, ∀ t' < s'.2.2.1, s.2.1 + G * t ≠ s'.2.1 + G * t')
+    {g : α × ℤ × ℕ × β → List (ℤ × ℤ × ℤ)} (hg : ∀ s ∈ l, (g s).Nodup)
+    (hs : ∀ s ∈ l, ∀ p ∈ g s, ∃ t < s.2.2.1, p.1 = s.2.1 + G * t) : (l.flatMap g).Nodup := by
+  refine List.nodup_flatMap.mpr ⟨hg, hl.imp_of_mem fun hx hy h p hp hp' ↦ ?_⟩
+  obtain ⟨t, ht, hx⟩ := hs _ hx p hp
+  obtain ⟨t', ht', hx'⟩ := hs _ hy p hp'
+  exact h t ht t' ht' (hx.symm.trans hx')
+
+theorem nodup_denPoints (c : List ℤ) (H : ℕ) {G : ℕ} (hG : 0 < G) (fams : Array Family)
+    (reg : Option (Array (Option (ℤ × ℕ) × Option (ℤ × ℕ)))) {sl : List (ℕ × ℤ × ℕ × Array ℕ)}
+    (hsl : sl.Pairwise fun (s s' : ℕ × ℤ × ℕ × Array ℕ) ↦
+      ∀ t < s.2.2.1, ∀ t' < s'.2.2.1, s.2.1 + G * t ≠ s'.2.1 + G * t')
+    (b : ℕ) : (denPoints c (BruteForce.degree c) H G fams reg sl b).Nodup := by
+  rw [denPoints]
+  split
+  · exact List.nodup_nil
+  split_ifs
+  · exact nodup_flatMap_of_pairwise hsl (fun _ _ ↦ nodup_chunkPoints c hG ..)
+      fun _ _ _ hp ↦ (of_mem_chunkPoints hp).2.1
+  · exact nodup_flatMap_of_pairwise hsl (fun _ _ ↦ nodup_partPoints c hG ..)
+      fun _ _ _ hp ↦ (of_mem_partPoints hp).2.1
+
+theorem of_mem_search {c : List ℤ} {H G L : ℕ} {fams : Array Family}
+    {reg : Option (Array (Option (ℤ × ℕ) × Option (ℤ × ℕ)))} {dens : List ℕ} (hG : 0 < G)
+    {p : ℤ × ℤ × ℤ} (h : p ∈ search c (BruteForce.degree c) H G L fams reg dens) :
     (∃ b ∈ dens, p.2.2 = b) ∧ |p.1| ≤ H ∧ Int.gcd p.1 p.2.2 = 1 ∧
       p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
-  simp only [search, List.mem_flatMap, getElem!_map_range _ (Nat.mod_lt _ hG), List.mem_filter,
-    List.mem_map, Prod.exists, Prod.mk.injEq] at h
-  obtain ⟨b, ⟨hb, -⟩, _, _, _, _, ⟨⟨r, a₀, len, hs, rfl, rfl, rfl, rfl⟩, -⟩, hp⟩ := h
-  obtain ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩ := of_mem_chunkPoints hp
+  simp only [search, List.mem_flatMap, List.mem_filter] at h
+  obtain ⟨b, ⟨hb, -⟩, hp⟩ := h
+  obtain ⟨hz, ⟨s, hs, t, ht, hx⟩, hg, hy⟩ := of_mem_denPoints hp
+  simp only [getElem!_map_range _ (Nat.mod_lt _ hG), List.mem_filter, List.mem_map] at hs
+  obtain ⟨⟨⟨r, a₀, len⟩, hs, rfl⟩, -⟩ := hs
   exact ⟨⟨b, hb, hz⟩, hx ▸ abs_add_mul_le_of_mem_slots hG hs ht, hg, hy⟩
 
-theorem mem_search_of {c : List ℤ} {H G L : ℕ} {fams : Array Family} {dens : List ℕ}
+theorem mem_search_of {c : List ℤ} {H G L : ℕ} {fams : Array Family}
+    {reg : Option (Array (Option (ℤ × ℕ) × Option (ℤ × ℕ)))} {dens : List ℕ}
     (hG : 0 < G) (hL : 0 < L) (hfams : ∀ F ∈ fams, F.IsSound c G L) {p : ℤ × ℤ × ℤ} {b : ℕ}
     (hb : b ∈ dens) (hz : p.2.2 = b) (ha : |p.1| ≤ H) (hg : Int.gcd p.1 p.2.2 = 1)
-    (hy : p.2.1 ^ 2 = binaryForm c p.1 p.2.2) :
-    p ∈ search c (BruteForce.degree c) H G L fams dens := by
+    (hy : p.2.1 ^ 2 = binaryForm c p.1 p.2.2) {lo hi : ℤ} (hbd : bounds H b reg = some (lo, hi))
+    (hlo : lo ≤ p.1) (hhi : p.1 ≤ hi) :
+    p ∈ search c (BruteForce.degree c) H G L fams reg dens := by
   have hc : IsCandidate c p.1 b := ⟨hz ▸ hg, p.2.1, hz ▸ hy⟩
   have hF (F) (h : F ∈ fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M) : F.IsSound c G L :=
     hfams F (Array.mem_filter.mp h).1
   obtain ⟨a₀, len, hs, t, ht, hx⟩ := exists_mem_slots hG hL ha
-  simp only [search, List.mem_flatMap, getElem!_map_range _ (Nat.mod_lt _ hG), List.mem_filter,
-    List.mem_map, Prod.exists, Array.all_eq_true_iff_forall_mem, bne_iff_ne]
-  refine ⟨b, ⟨hb, fun F hF' ↦ (hF F hF').rows_ne_zero hc⟩, _, a₀, len, _,
-    ⟨⟨_, a₀, len, hs, rfl⟩, by simpa using admitTable_spec hG hc⟩,
-    (mem_chunkPoints fun t' ht' hc' i hi ↦ ?_).mpr ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩⟩
-  simp only [Array.size_map] at hi
-  simp only [getElem!_pos, Array.size_map, hi, Array.getElem_map]
-  exact (hF _ (Array.getElem_mem hi)).testBit_shiftRight
-    (ht'.trans_le (le_of_mem_slots hs)) hc'
+  simp only [search, List.mem_flatMap, List.mem_filter, Array.all_eq_true_iff_forall_mem,
+    bne_iff_ne]
+  refine ⟨b, ⟨hb, fun F hF' ↦ (hF F hF').rows_ne_zero hc⟩, mem_denPoints_of hG hF
+    (r := (p.1 % G).toNat) ?_ (le_of_mem_slots hs) ht hx hz hg hy hbd hlo hhi⟩
+  rw [getElem!_map_range _ (Nat.mod_lt _ hG)]
+  exact List.mem_filter.mpr ⟨List.mem_map.mpr ⟨_, hs, rfl⟩, by simpa using admitTable_spec hG hc⟩
 
-theorem mem_search {c : List ℤ} {H G L : ℕ} {fams : Array Family} {dens : List ℕ}
-    (hG : 0 < G) (hL : 0 < L) (hfams : ∀ F ∈ fams, F.IsSound c G L) {p : ℤ × ℤ × ℤ} :
-    p ∈ search c (BruteForce.degree c) H G L fams dens ↔
-      (∃ b ∈ dens, p.2.2 = b) ∧ |p.1| ≤ H ∧ Int.gcd p.1 p.2.2 = 1 ∧
-        p.2.1 ^ 2 = binaryForm c p.1 p.2.2 :=
-  ⟨of_mem_search hG, fun ⟨⟨_, hb, hz⟩, ha, hg, hy⟩ ↦ mem_search_of hG hL hfams hb hz ha hg hy⟩
-
-theorem nodup_search (c : List ℤ) (H : ℕ) {G L : ℕ} (fams : Array Family) {dens : List ℕ}
+theorem nodup_search (c : List ℤ) (H : ℕ) {G L : ℕ} (fams : Array Family)
+    (reg : Option (Array (Option (ℤ × ℕ) × Option (ℤ × ℕ)))) {dens : List ℕ}
     (hG : 0 < G) (hL : 0 < L) (hdens : dens.Nodup) :
-    (search c (BruteForce.degree c) H G L fams dens).Nodup := by
+    (search c (BruteForce.degree c) H G L fams reg dens).Nodup := by
   rw [search]
-  refine List.nodup_flatMap.mpr ⟨fun b _ ↦ ?_, (hdens.filter _).pairwise_of_forall_ne
-    fun b _ b' _ hne p hp hp' ↦ hne ?_⟩
+  refine List.nodup_flatMap.mpr ⟨fun b _ ↦ nodup_denPoints c H hG _ reg ?_ b,
+    (hdens.filter _).pairwise_of_forall_ne fun b _ b' _ hne p hp hp' ↦ hne ?_⟩
   · rw [getElem!_map_range _ (Nat.mod_lt _ hG)]
-    refine List.nodup_flatMap.mpr ⟨fun _ _ ↦ nodup_chunkPoints c hG .., ?_⟩
-    refine (List.pairwise_map.mpr ((pairwise_slots H hG hL).imp fun h p hp hp' ↦ ?_)).filter _
-    obtain ⟨t, ht, hx⟩ := (of_mem_chunkPoints hp).2.1
-    obtain ⟨t', ht', hx'⟩ := (of_mem_chunkPoints hp').2.1
-    exact h t ht t' ht' (hx.symm.trans hx')
-  · obtain ⟨_, -, hp⟩ := List.mem_flatMap.mp hp
-    obtain ⟨_, -, hp'⟩ := List.mem_flatMap.mp hp'
-    exact_mod_cast (of_mem_chunkPoints hp).1.symm.trans (of_mem_chunkPoints hp').1
+    exact List.Pairwise.filter _ (List.pairwise_map.mpr ((pairwise_slots H hG hL).imp fun h ↦ h))
+  · exact_mod_cast (of_mem_denPoints hp).1.symm.trans (of_mem_denPoints hp').1
 
 /-! ### The denominators -/
 
 theorem isSquare_mul_self (k : ℕ) : isSquare (k * k) = true := by
   simp [isSquare, Nat.sqrt_eq]
 
-theorem mem_denominators_iff {c : List ℤ} {d H : ℕ} {bLow bHigh : ℤ} {b : ℕ} :
-    b ∈ denominators c d H bLow bHigh ↔
-      b ∈ List.range' (max 1 bLow.toNat)
-        ((if bHigh < 1 then H else min H bHigh.toNat) + 1 - max 1 bLow.toNat) ∧
-      (d % 2 = 1 → ((List.range' 1 (if bHigh < 1 then H else min H bHigh.toNat)).filter
-        fun s ↦ (c.getD d 0).natAbs % s == 0).any fun s ↦ b % s == 0 && isSquare (b / s)) := by
-  by_cases hd : d % 2 = 1 <;> simp only [denominators, hd, ↓reduceIte, List.mem_filter,
-    forall_const, IsEmpty.forall_iff, and_true]
+theorem of_getElem!_markMultiples {a : Array Bool} {n j hi b : ℕ}
+    (h : (markMultiples a n j hi)[b]! = true) : a[b]! = true ∨ ∃ k, b = j + n * k := by
+  fun_induction markMultiples a n j hi with
+  | case1 a j hj ih =>
+    rcases ih h with h' | ⟨k, rfl⟩
+    · by_cases hjb : j = b
+      · exact .inr ⟨0, by lia⟩
+      · exact .inl (by rwa [Array.getElem!_set!_ne _ _ _ _ hjb] at h')
+    · exact .inr ⟨k + 1, by ring⟩
+  | case2 a j hj => exact .inl h
+
+/-- The invariant of the fold of `Ratpoints.Fast.forbiddenDens`, which marks the multiples of `p`
+when `Ratpoints.Sieve.jacobi p lc = -1`; that `p` is an odd prime, as the sieve of Eratosthenes
+makes it, is not needed. -/
+theorem exists_dvd_of_getElem!_forbiddenDens {lc : ℤ} {hi b : ℕ}
+    (h : (forbiddenDens lc hi)[b]! = true) :
+    ∃ p, p ≠ 0 ∧ p ∣ b ∧ Id.run (Sieve.jacobi p lc) = -1 := by
+  rw [forbiddenDens] at h
+  refine List.foldlRecOn (motive := fun s : Array Bool × Array Bool ↦ ∀ b, s.2[b]! = true →
+    ∃ p, p ≠ 0 ∧ p ∣ b ∧ Id.run (Sieve.jacobi p lc) = -1) _ _
+    (fun b hb ↦ absurd hb (by grind [Bool.default_bool])) (fun s ih p hp b hb ↦ ?_) b h
+  dsimp only at hb
+  split_ifs at hb with h1 h2
+  · exact ih b hb
+  · rcases of_getElem!_markMultiples hb with hb | ⟨k, rfl⟩
+    · exact ih b hb
+    · obtain ⟨i, -, rfl⟩ := List.mem_range'.mp hp
+      exact ⟨_, by lia, ⟨k + 1, by ring⟩, beq_iff_eq.mp h2⟩
+  · exact ih b hb
+
+/-- `Ratpoints.Fast.forbiddenDens` marks no denominator of a point of a curve of even degree: a
+marked one has a divisor `p` with `Ratpoints.Sieve.jacobi p c_d = -1`, where the symbol is `1` on
+every divisor of the denominator of a point
+(`Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq_of_dvd`). -/
+theorem getElem!_forbiddenDens_eq_false {c : List ℤ} (hd : degree c % 2 = 0) {a : ℤ} {b : ℕ}
+    (hc : IsCandidate c a b) (hi : ℕ) : (forbiddenDens (c.getD (degree c) 0) hi)[b]! = false := by
+  refine Bool.eq_false_iff.mpr fun h ↦ ?_
+  obtain ⟨p, hp, hpb, hJ⟩ := exists_dvd_of_getElem!_forbiddenDens h
+  obtain ⟨hab, y, hy⟩ := hc
+  exact absurd (hJ.symm.trans (Sieve.run_jacobi_eq_one_of_sq_eq_of_dvd hd hp hpb hab hy))
+    (by decide)
+
+theorem mem_range'_of_mem_denominators {c : List ℤ} {d H : ℕ} {bLow bHigh : ℤ} {b : ℕ}
+    (h : b ∈ denominators c d H bLow bHigh) :
+    b ∈ List.range' (max 1 bLow.toNat)
+      ((if bHigh < 1 then H else min H bHigh.toNat) + 1 - max 1 bLow.toNat) := by
+  simp only [denominators] at h
+  generalize (if bHigh < 1 then H else min H bHigh.toNat) = hi at h ⊢
+  split_ifs at h <;> first | exact (List.mem_filter.mp h).1 | exact h
 
 theorem mem_denominators {c : List ℤ} {d H : ℕ} {bLow bHigh : ℤ} {b : ℕ}
     (h : b ∈ denominators c d H bLow bHigh) :
     1 ≤ b ∧ b ≤ H ∧ bLow ≤ b ∧ (bHigh < 1 ∨ (b : ℤ) ≤ bHigh) := by
-  have h' := (mem_denominators_iff.mp h).1
+  have h' := mem_range'_of_mem_denominators h
   rw [List.mem_range'_1] at h'
   split_ifs at h' <;> lia
 
-theorem mem_denominators_of_isCandidate {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ} {a : ℤ} {b : ℕ}
-    (h1 : 1 ≤ b) (h2 : b ≤ H) (h3 : bLow ≤ b) (h4 : bHigh < 1 ∨ (b : ℤ) ≤ bHigh)
-    (hc : IsCandidate c a b) : b ∈ denominators c (BruteForce.degree c) H bLow bHigh := by
-  refine mem_denominators_iff.mpr ⟨by rw [List.mem_range'_1]; split_ifs <;> lia, fun hd ↦ ?_⟩
+/-- For odd degree, the denominator `b` of a candidate is `s k ^ 2` with `s` dividing the leading
+coefficient (`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`). -/
+theorem any_filter_range'_of_isCandidate {c : List ℤ} (hd : degree c % 2 = 1) {a : ℤ} {b n : ℕ}
+    (hb : 1 ≤ b) (hbn : b ≤ n) (hc : IsCandidate c a b) :
+    ((List.range' 1 n).filter fun s ↦ (c.getD (degree c) 0).natAbs % s == 0).any
+      (fun s ↦ b % s == 0 && isSquare (b / s)) = true := by
   obtain ⟨hab, y, hy⟩ := hc
   obtain ⟨s, k, -, hs, rfl⟩ := exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd hd hab hy
-  have hs0 : 0 < s := Nat.pos_of_ne_zero fun h ↦ by simp [h] at h1
-  have hk0 : 0 < k := Nat.pos_of_ne_zero fun h ↦ by simp [h] at h1
+  have hs0 : 0 < s := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hb
+  have hk0 : 0 < k := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hb
   have hsb : s ≤ s * k * k :=
     (Nat.le_mul_of_pos_right s hk0).trans (Nat.le_mul_of_pos_right _ hk0)
   simp only [List.any_eq_true, List.mem_filter, List.mem_range'_1, Bool.and_eq_true, beq_iff_eq]
-  refine ⟨s, ⟨⟨hs0, ?_⟩, Nat.mod_eq_zero_of_dvd hs⟩, ?_, ?_⟩
-  · split_ifs <;> lia
+  refine ⟨s, ⟨⟨hs0, by lia⟩, Nat.mod_eq_zero_of_dvd hs⟩, ?_, ?_⟩
   · rw [mul_assoc]
     exact Nat.mul_mod_right s (k * k)
   · rw [mul_assoc, Nat.mul_div_cancel_left _ hs0]
     exact isSquare_mul_self k
 
+theorem mem_denominators_of_isCandidate {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ} {a : ℤ} {b : ℕ}
+    (h1 : 1 ≤ b) (h2 : b ≤ H) (h3 : bLow ≤ b) (h4 : bHigh < 1 ∨ (b : ℤ) ≤ bHigh)
+    (hc : IsCandidate c a b) : b ∈ denominators c (BruteForce.degree c) H bLow bHigh := by
+  have hr : b ∈ List.range' (max 1 bLow.toNat)
+      ((if bHigh < 1 then H else min H bHigh.toNat) + 1 - max 1 bLow.toNat) := by
+    rw [List.mem_range'_1]
+    split_ifs <;> lia
+  simp only [denominators]
+  generalize (if bHigh < 1 then H else min H bHigh.toNat) = hi at hr ⊢
+  have hbhi : b ≤ hi := by lia [List.mem_range'_1.mp hr]
+  split_ifs with hd
+  · exact List.mem_filter.mpr ⟨hr, any_filter_range'_of_isCandidate hd h1 hbhi hc⟩
+  · exact hr
+  · exact List.mem_filter.mpr ⟨hr, (Bool.not_eq_true' _).mpr
+      (getElem!_forbiddenDens_eq_false (Nat.mod_two_ne_one.mp hd) hc hi)⟩
+
 theorem nodup_denominators (c : List ℤ) (d H : ℕ) (bLow bHigh : ℤ) :
     (denominators c d H bLow bHigh).Nodup := by
-  by_cases hd : d % 2 = 1 <;> simp only [denominators, hd, ↓reduceIte]
-  · exact (List.nodup_range' ..).filter _
-  · exact List.nodup_range' ..
+  simp only [denominators]
+  generalize (if bHigh < 1 then H else min H bHigh.toNat) = hi
+  split_ifs <;> first | exact (List.nodup_range' ..).filter _ | exact List.nodup_range' ..
 
 /-! ### The parameters -/
 
@@ -778,10 +1143,19 @@ theorem choose_L_pos (tu : Tuning) (c : List ℤ) (d H B : ℕ) : 0 < (choose tu
   simp only [choose]
   lia
 
+theorem eq_admitTable_of_mem_takeModuli {c : List ℤ} {d κ : ℕ} {ms : List ℕ} {E : ℕ}
+    {t : ℕ × Array (Array Bool)} (ht : t ∈ takeModuli c d κ ms E) : t.2 = admitTable c d t.1 := by
+  induction ms generalizing E with
+  | nil => simp [takeModuli] at ht
+  | cons m ms ih =>
+    rw [takeModuli] at ht
+    split_ifs at ht
+    · exact (List.mem_cons.mp ht).elim (· ▸ rfl) ih
+    · simp at ht
+
 theorem eq_admitTable_of_mem_moduliTables {tu : Tuning} {c : List ℤ} {d H B : ℕ}
-    {t : ℕ × Array (Array Bool)} (ht : t ∈ moduliTables tu c d H B) : t.2 = admitTable c d t.1 := by
-  simp only [moduliTables, List.mem_append, List.mem_map] at ht
-  rcases ht with ⟨m, -, rfl⟩ | ⟨m, -, rfl⟩ <;> rfl
+    {t : ℕ × Array (Array Bool)} (ht : t ∈ moduliTables tu c d H B) : t.2 = admitTable c d t.1 :=
+  eq_admitTable_of_mem_takeModuli ht
 
 theorem eq_admitTable_of_mem_sortedGroups {tu : Tuning} {c : List ℤ} {d H B : ℕ}
     {g : List (ℕ × Array (Array Bool))} (hg : g ∈ sortedGroups tu c d H B)
@@ -801,38 +1175,59 @@ theorem isSound_of_mem_choose {tu : Tuning} {c : List ℤ} {H B : ℕ} {F : Fami
 
 /-! ### The points -/
 
-/-- **The fast search lists exactly the points** of height at most `H` with their denominator in
-the range of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and
-every setting of the parameters. -/
-theorem mem_fastPoints_iff {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ} {tu : Tuning}
-    {p : ℤ × ℤ × ℤ} :
-    p ∈ fastPoints c H bLow bHigh tu ↔ IsPoint c H p ∧ InRegion [] bLow bHigh p := by
+/-- **The fast search lists only points** of height at most `H` with their denominator in the range
+of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and every setting
+of the parameters. -/
+theorem isPoint_and_inRegion_of_mem_fastPoints {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
+    {tu : Tuning} {p : ℤ × ℤ × ℤ} (h : p ∈ fastPoints c H bLow bHigh tu) :
+    IsPoint c H p ∧ InRegion [] bLow bHigh p := by
   obtain ⟨x, y, z⟩ := p
   simp only [fastPoints, List.mem_append, List.mem_ite_nil_right, mem_pointsOfDen_iff,
-    horner_scaledCoeffs_mul, List.mem_singleton]
-  rw [mem_search (choose_G_pos ..) (choose_L_pos ..) fun F hF ↦ isSound_of_mem_choose hF]
+    horner_scaledCoeffs_mul, List.mem_singleton] at h
   simp only [IsPoint, IsNormalizedPair, InRegion]
-  constructor
-  · rintro (⟨hH, rfl, rfl, hg, hy⟩ | ⟨⟨b, hb, rfl⟩, hx, hg, hy⟩)
-    · exact ⟨⟨hy, hg, .inr ⟨rfl, rfl⟩, by simpa using hH, by simp⟩, .inl rfl⟩
-    · obtain ⟨h1, h2, h3, h4⟩ := mem_denominators hb
-      exact ⟨⟨hy, hg, .inl (by lia), hx, by lia⟩, .inr ⟨h3, h4, .inl trivial⟩⟩
-  · rintro ⟨⟨hy, hg, hz | ⟨rfl, rfl⟩, hx, hzH⟩, hr⟩
-    · obtain ⟨b, rfl⟩ : ∃ b : ℕ, z = b := ⟨z.toNat, by lia⟩
-      have hr' : bLow ≤ b ∧ (bHigh < 1 ∨ (b : ℤ) ≤ bHigh) := by
-        rcases hr with h | ⟨h3, h4, -⟩
-        · simp at h
-          lia
-        · exact ⟨h3, h4⟩
-      exact .inr ⟨⟨b, mem_denominators_of_isCandidate (by lia) (by lia) hr'.1 hr'.2
-        ⟨hg, y, hy⟩, rfl⟩, hx, hg, hy⟩
-    · exact .inl ⟨by simpa using hx, rfl, rfl, hg, hy⟩
+  rcases h with ⟨hH, rfl, rfl, hg, hy⟩ | h
+  · exact ⟨⟨hy, hg, .inr ⟨rfl, rfl⟩, by simpa using hH, by simp⟩, .inl rfl⟩
+  · obtain ⟨⟨b, hb, rfl⟩, hx, hg, hy⟩ := of_mem_search (choose_G_pos ..) h
+    obtain ⟨h1, h2, h3, h4⟩ := mem_denominators hb
+    exact ⟨⟨hy, hg, .inl (by lia), hx, by lia⟩, .inr ⟨h3, h4, .inl trivial⟩⟩
+
+/-- **The fast search lists every point** of height at most `H` with its denominator in the range
+of `bLow` and `bHigh`, assuming Sturm's theorem, on which the region of the search rests
+(`Ratpoints.Fast.exists_bounds_region`). -/
+theorem mem_fastPoints_of_isPoint (hS : SturmTheorem) {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
+    {tu : Tuning} {p : ℤ × ℤ × ℤ} (hp : IsPoint c H p) (hr : InRegion [] bLow bHigh p) :
+    p ∈ fastPoints c H bLow bHigh tu := by
+  obtain ⟨x, y, z⟩ := p
+  obtain ⟨hy, hg, hz | ⟨rfl, rfl⟩, hx, hzH⟩ := hp
+  · obtain ⟨b, rfl⟩ : ∃ b : ℕ, z = b := ⟨z.toNat, by lia⟩
+    obtain ⟨h3, h4⟩ : bLow ≤ b ∧ (bHigh < 1 ∨ (b : ℤ) ≤ bHigh) := by
+      rcases hr with h | ⟨h3, h4, -⟩
+      · simp at h
+        lia
+      · exact ⟨h3, h4⟩
+    obtain ⟨lo, hi, hbd, hlo, hhi⟩ := exists_bounds_region hS (depth := orDefault tu.sturm 10)
+      (by lia) hx (hy ▸ sq_nonneg y)
+    exact List.mem_append_right _ (mem_search_of (choose_G_pos ..) (choose_L_pos ..)
+      (fun F hF ↦ isSound_of_mem_choose hF) (mem_denominators_of_isCandidate (by lia) (by lia)
+        h3 h4 ⟨hg, y, hy⟩) rfl hx hg hy hbd hlo hhi)
+  · refine List.mem_append_left _ ?_
+    simp only [show 1 ≤ H by simpa using hx, ↓reduceIte]
+    exact mem_pointsOfDen_iff.mpr
+      ⟨List.mem_singleton_self _, rfl, hg, by rwa [horner_scaledCoeffs_mul]⟩
+
+/-- **The fast search lists exactly the points** of height at most `H` with their denominator in
+the range of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and
+every setting of the parameters, assuming Sturm's theorem. -/
+theorem mem_fastPoints_iff {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ} {tu : Tuning}
+    {p : ℤ × ℤ × ℤ} (hS : SturmTheorem) :
+    p ∈ fastPoints c H bLow bHigh tu ↔ IsPoint c H p ∧ InRegion [] bLow bHigh p :=
+  ⟨isPoint_and_inRegion_of_mem_fastPoints, fun ⟨hp, hr⟩ ↦ mem_fastPoints_of_isPoint hS hp hr⟩
 
 /-- **The fast search lists each point once.** -/
 theorem nodup_fastPoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Tuning) :
     (fastPoints c H bLow bHigh tu).Nodup := by
   rw [fastPoints]
-  refine List.Nodup.append ?_ (nodup_search _ _ _ (choose_G_pos ..) (choose_L_pos ..)
+  refine List.Nodup.append ?_ (nodup_search _ _ _ _ (choose_G_pos ..) (choose_L_pos ..)
     (nodup_denominators ..)) fun p hp hp' ↦ ?_
   · split_ifs
     · exact nodup_pointsOfDen _ _ _ (List.nodup_singleton 1)
@@ -841,8 +1236,7 @@ theorem nodup_fastPoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Tunin
       split_ifs at hp
       · exact (mem_pointsOfDen_iff.mp hp).2.1
       · simp at hp
-    obtain ⟨⟨b, hb, hz⟩, -⟩ := (mem_search (choose_G_pos ..) (choose_L_pos ..)
-      fun F hF ↦ isSound_of_mem_choose hF).mp hp'
+    obtain ⟨⟨b, hb, hz⟩, -⟩ := of_mem_search (choose_G_pos ..) hp'
     have := (mem_denominators hb).1
     lia
 

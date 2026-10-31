@@ -9,6 +9,7 @@ public import Ratpoints.Fast.Search
 public import Ratpoints.Proof.FastSieve
 public import Ratpoints.Spec.Basic
 public import Ratpoints.Spec.Region
+public import Ratpoints.Spec.Sturm
 
 import Mathlib.Data.List.Perm.Basic
 import Mathlib.Tactic.IntervalCases
@@ -18,8 +19,10 @@ import Ratpoints.Proof.Containers
 # The fast search on byte-array masks finds exactly the points
 
 `Ratpoints.FastMask.fastPoints` lists the same points as `Ratpoints.Fast.fastPoints`, in another
-order (`Ratpoints.FastMask.fastPoints_perm`), so it lists exactly the points of the region, each
-once (`Ratpoints.FastMask.mem_fastPoints_iff`, `Ratpoints.FastMask.nodup_fastPoints`).
+order (`Ratpoints.FastMask.fastPoints_perm`), so it lists only points of the region
+(`Ratpoints.FastMask.isPoint_and_inRegion_of_mem_fastPoints`), each once
+(`Ratpoints.FastMask.nodup_fastPoints`), and, assuming Sturm's theorem, all of them
+(`Ratpoints.FastMask.mem_fastPoints_iff`).
 
 A mask is read as the natural number `Ratpoints.Mask.toNat`, whose bit `j` is bit `j` of the mask
 (`Ratpoints.Mask.testBit_toNat`). The reference definitions of the two primitives then do what the
@@ -32,12 +35,19 @@ the set bits in ascending order where `Ratpoints.Fast.setBits` lists them in des
 families of the two searches agree once their rows are read as numbers
 (`Ratpoints.FastMask.map_toFast_mkFamily`), and so do the parameters, the denominators whose rows
 are not `0` (`Ratpoints.FastMask.all_map_isZero_eq`) and the candidates that the sieve leaves in a
-chunk (`Ratpoints.FastMask.toNat_sieveFrom_ones`).
+chunk (`Ratpoints.FastMask.toNat_sieveFrom_of_toNat_eq`) or in a part of it, whose mask is cut from
+that of the chunk (`Ratpoints.Mask.toNat_extract_ones`, `Ratpoints.FastMask.partPoints_perm`); the
+exact check with the data made once per denominator is that of the brute force
+(`Ratpoints.FastMask.pointsOfDenWith_eq_pointsOfDen`), so the two searches agree denominator by
+denominator (`Ratpoints.FastMask.denPoints_perm`).
 
 ## Main statements
 
 * `Ratpoints.FastMask.fastPoints_perm`: the two searches list the same points.
-* `Ratpoints.FastMask.mem_fastPoints_iff`: the list holds exactly the points of the region.
+* `Ratpoints.FastMask.isPoint_and_inRegion_of_mem_fastPoints`: the list holds only points of the
+  region.
+* `Ratpoints.FastMask.mem_fastPoints_iff`: assuming Sturm's theorem, it holds exactly the points of
+  the region.
 * `Ratpoints.FastMask.nodup_fastPoints`: each of them once.
 -/
 
@@ -311,16 +321,32 @@ theorem byte_append (a b : ByteArray) (i : ℕ) :
     · rw [byte_of_lt (by lia), byte_of_lt (by lia), ByteArray.getElem_append_right (by lia)]
     · rw [byte_of_le (by lia), byte_of_le (by lia)]
 
-theorem byte_extract_zero (a : ByteArray) (n i : ℕ) :
-    byte (a.extract 0 n) i = if i < n then byte a i else 0 := by
-  have hs := ByteArray.size_extract (a := a) (b := 0) (e := n)
-  by_cases h : i < min n a.size
+theorem byte_extract (a : ByteArray) (s e i : ℕ) :
+    byte (a.extract s e) i = if s + i < e then byte a (s + i) else 0 := by
+  have hs := ByteArray.size_extract (a := a) (b := s) (e := e)
+  by_cases h : i < min e a.size - s
   · rw [byte_of_lt (by lia), byte_of_lt (by lia), ByteArray.getElem_extract, ite_eq_left (by lia)]
-    simp only [Nat.zero_add]
   · rw [byte_of_le (by lia)]
     split_ifs
     · rw [byte_of_le (by lia)]
     · rfl
+
+theorem bit_extract (a : ByteArray) (s e j : ℕ) :
+    bit (a.extract s e) j = (decide (s + j / 8 < e) && bit a (8 * s + j)) := by
+  rw [bit, byte_extract, bit, show (8 * s + j) / 8 = s + j / 8 by lia,
+    show (8 * s + j) % 8 = j % 8 by lia]
+  split_ifs with h <;> simp [h]
+
+/-- The bits `t₁, …, t₁ + len₁ - 1` of the mask of `len` bits, all set, from the byte of `t₁` to
+the end of the 64-bit word of the last of them, are all set, and no other bit is when they end at
+the end of the mask or of a word. -/
+theorem toNat_extract_ones {len t₁ len₁ : ℕ} (h8 : 8 ∣ t₁) (hle : t₁ + len₁ ≤ len)
+    (hend : t₁ + len₁ = len ∨ 64 ∣ t₁ + len₁) :
+    toNat ((ones len).extract (t₁ / 8) (8 * ((t₁ + len₁ + 63) / 64))) = 2 ^ len₁ - 1 :=
+  Nat.eq_of_testBit_eq fun j ↦ by
+    rw [testBit_toNat, bit_extract, bit_ones, Nat.testBit_two_pow_sub_one, ← Bool.decide_and,
+      decide_eq_decide]
+    lia
 
 end Mask
 
@@ -400,7 +426,7 @@ theorem byte_repeatBytes (a : ByteArray) (k i : ℕ) :
 
 theorem byte_extract_repeatBytes {a : ByteArray} {k n i : ℕ} (hn : n ≤ a.size * 2 ^ k)
     (hi : i < n) : byte ((repeatBytes a k).extract 0 n) i = byte a (i % a.size) := by
-  rw [byte_extract_zero, ite_eq_left hi, byte_repeatBytes, ite_eq_left (by lia)]
+  rw [byte_extract, ite_eq_left (by lia), Nat.zero_add, byte_repeatBytes, ite_eq_left (by lia)]
 
 /-- Bit `t` of `Ratpoints.FastMask.windowByte q o` is the byte `q[o + t]`, when each byte of `q` is
 `0` or `1`. -/
@@ -579,11 +605,11 @@ theorem map_toFast_fams_choose (tu : Fast.Tuning) (c : List ℤ) (d H B : ℕ) :
 
 /-- The sieve on masks, from position `i` on, with the zero tests of the search on natural numbers
 dropped: an AND with `0` stays `0`. -/
-theorem toNat_sieveFrom (rs : Array ByteArray) (sh : Array ℕ) (acc : ByteArray) (i : ℕ) :
-    toNat (sieveFrom rs sh acc i) =
-      ((List.range rs.size).drop i).foldl (fun n j ↦ n &&& toNat rs[j]! >>> sh[j]!)
+theorem toNat_sieveFrom (rs : Array ByteArray) (sh : Array ℕ) (o : ℕ) (acc : ByteArray) (i : ℕ) :
+    toNat (sieveFrom rs sh o acc i) =
+      ((List.range rs.size).drop i).foldl (fun n j ↦ n &&& toNat rs[j]! >>> (sh[j]! + o))
         (toNat acc) := by
-  fun_induction sieveFrom rs sh acc i with
+  fun_induction sieveFrom rs sh o acc i with
   | case1 acc i h acc' h0 =>
     rw [List.drop_eq_getElem_cons (by simpa using h), List.foldl_cons, List.getElem_range,
       getElem!_pos rs i h, ← toNat_andShr]
@@ -594,9 +620,9 @@ theorem toNat_sieveFrom (rs : Array ByteArray) (sh : Array ℕ) (acc : ByteArray
       List.getElem_range, getElem!_pos rs i h, ← toNat_andShr]
   | case3 acc i h => rw [List.drop_eq_nil_of_le (by simpa using h), List.foldl_nil]
 
-theorem sieve_map_toNat (rs : Array ByteArray) (sh : Array ℕ) (mask : ℕ) :
-    Fast.sieve (rs.map toNat) sh mask =
-      (List.range rs.size).foldl (fun n i ↦ n &&& toNat rs[i]! >>> sh[i]!) mask := by
+theorem sieve_map_toNat (rs : Array ByteArray) (sh : Array ℕ) (o mask : ℕ) :
+    Fast.sieve (rs.map toNat) sh o mask =
+      (List.range rs.size).foldl (fun n i ↦ n &&& toNat rs[i]! >>> (sh[i]! + o)) mask := by
   rw [Fast.sieve, Array.size_map]
   congr 1
   funext n i
@@ -605,9 +631,10 @@ theorem sieve_map_toNat (rs : Array ByteArray) (sh : Array ℕ) (mask : ℕ) :
   · rw [beq_iff_eq.mp h, Nat.zero_and]
   · rfl
 
-theorem toNat_sieveFrom_ones (rs : Array ByteArray) (sh : Array ℕ) (len : ℕ) :
-    toNat (sieveFrom rs sh (ones len) 0) = Fast.sieve (rs.map toNat) sh (2 ^ len - 1) := by
-  rw [toNat_sieveFrom, List.drop_zero, toNat_ones, sieve_map_toNat]
+theorem toNat_sieveFrom_of_toNat_eq (rs : Array ByteArray) (sh : Array ℕ) (o : ℕ)
+    {mask : ByteArray} {len : ℕ} (h : toNat mask = 2 ^ len - 1) :
+    toNat (sieveFrom rs sh o mask 0) = Fast.sieve (rs.map toNat) sh o (2 ^ len - 1) := by
+  rw [toNat_sieveFrom, List.drop_zero, h, sieve_map_toNat]
 
 /-! ### The points -/
 
@@ -616,22 +643,91 @@ theorem hornerRec_eq_horner (w : List ℤ) (x : ℤ) : hornerRec w x = BruteForc
   | nil => rfl
   | cons a w ih => rw [hornerRec, ih, BruteForce.horner, BruteForce.horner, List.foldr_cons]
 
-theorem pointsOfDen_eq_pointsOfDen : FastMask.pointsOfDen = BruteForce.pointsOfDen := by
-  funext c d z xs
-  simp only [pointsOfDen, BruteForce.pointsOfDen, hornerRec_eq_horner]
+theorem pointsOfDenWith_eq_pointsOfDen (c : List ℤ) (d : ℕ) (z : ℤ) :
+    pointsOfDenWith (BruteForce.scaledCoeffs c d z) (if d % 2 = 1 then z else 1) z =
+      BruteForce.pointsOfDen c d z := by
+  funext xs
+  simp only [pointsOfDenWith, BruteForce.pointsOfDen, hornerRec_eq_horner]
 
-theorem chunkPoints_perm (c : List ℤ) (d G : ℕ) (rs : Array ByteArray) (sh : Array ℕ) (a₀ : ℤ)
-    (len b : ℕ) :
-    (chunkPoints c d G rs sh a₀ (ones len) b).Perm
-      (Fast.chunkPoints c d G (rs.map toNat) sh a₀ len b) := by
-  rw [chunkPoints, Fast.chunkPoints, pointsOfDen_eq_pointsOfDen, ← toNat_sieveFrom_ones]
-  generalize sieveFrom rs sh (ones len) 0 = acc
+theorem pointsOfDen_eq_pointsOfDen : FastMask.pointsOfDen = BruteForce.pointsOfDen := by
+  funext c d z
+  exact pointsOfDenWith_eq_pointsOfDen c d z
+
+/-- The two searches list the same points of a chunk, up to order, when the mask has exactly its
+`len` lowest bits set and the exact check gets the scaled coefficients of `b` and its factor. -/
+theorem chunkPoints_perm {c : List ℤ} {d : ℕ} (G : ℕ) {w : Thunk (List ℤ)} {f : ℤ} {b : ℕ}
+    (hw : w.get = BruteForce.scaledCoeffs c d b) (hf : f = if d % 2 = 1 then (b : ℤ) else 1)
+    (rs : Array ByteArray) (sh : Array ℕ) (o : ℕ) (a₀ : ℤ) {mask : ByteArray} {len : ℕ}
+    (hmask : toNat mask = 2 ^ len - 1) :
+    (chunkPoints G w f rs sh o a₀ mask b).Perm
+      (Fast.chunkPoints c d G (rs.map toNat) sh o a₀ len b) := by
+  rw [chunkPoints, Fast.chunkPoints, hw, hf, pointsOfDenWith_eq_pointsOfDen,
+    ← toNat_sieveFrom_of_toNat_eq rs sh o hmask]
+  generalize sieveFrom rs sh o mask 0 = acc
   rw [ite_eq_right_iff.mpr fun h ↦ ?_, ite_eq_right_iff.mpr fun h ↦ ?_]
   · exact ((setBits_perm acc).map _).flatMap_right _
   · rw [beq_iff_eq.mp h, Fast.setBits_zero]
     rfl
   · rw [setBits, beq_iff_eq.mp h]
     rfl
+
+/-- The two searches list the same points of the part of a chunk, up to order: the part that is the
+whole chunk with the mask of the chunk, another with the bytes of the mask that hold its bits
+(`Ratpoints.Mask.toNat_extract_ones`). -/
+theorem partPoints_perm {c : List ℤ} {d : ℕ} (G : ℕ) {w : Thunk (List ℤ)} {f : ℤ} {b : ℕ}
+    (hw : w.get = BruteForce.scaledCoeffs c d b) (hf : f = if d % 2 = 1 then (b : ℤ) else 1)
+    (rs : Array ByteArray) (sh : Array ℕ) (lo hi a₀ : ℤ) (len : ℕ) :
+    (partPoints G w f rs sh lo hi a₀ len (ones len) b).Perm
+      (Fast.partPoints c d G (rs.map toNat) sh lo hi a₀ len b) := by
+  rw [partPoints, Fast.partPoints]
+  rcases hpt : Fast.part G lo hi a₀ len with _ | ⟨t₁, len₁⟩
+  · rfl
+  dsimp only
+  obtain ⟨hle, h64, hend⟩ := Fast.add_le_and_dvd_of_part_eq_some hpt
+  by_cases h0 : (t₁ == 0 && len₁ == len) = true
+  · obtain ⟨rfl, rfl⟩ : t₁ = 0 ∧ len₁ = len := by simpa using h0
+    simpa using chunkPoints_perm G hw hf rs sh 0 a₀ (toNat_ones _)
+  · simp only [h0, Bool.false_eq_true, ↓reduceIte]
+    exact chunkPoints_perm G hw hf rs sh _ _ (toNat_extract_ones (by lia) hle hend)
+
+/-- The two searches list the same points of the denominator `b` in the chunks `l`, up to order,
+each chunk with its mask of `len` bits, all set, and the shifts of the families to it. -/
+theorem denPoints_perm (c : List ℤ) (d H G : ℕ) (fams : Array Family)
+    (reg : Option (Array (Option (ℤ × ℕ) × Option (ℤ × ℕ)))) (l : List (ℕ × ℤ × ℕ)) (b : ℕ) :
+    (denPoints c d H G fams reg
+        (l.map fun s ↦ (s.1, s.2.1, s.2.2, ones s.2.2, fams.map (Family.shift · s.2.1))) b).Perm
+      (Fast.denPoints c d H G (fams.map Family.toFast) reg
+        (l.map fun s ↦ (s.1, s.2.1, s.2.2, (fams.map Family.toFast).map (·.shift s.2.1))) b) := by
+  have hrs : (fams.map fun F ↦ toNat F.rows[b % F.M]!) =
+      (fams.map fun F ↦ F.rows[b % F.M]!).map toNat := by
+    rw [Array.map_map]
+    rfl
+  rw [denPoints, Fast.denPoints]
+  rcases Fast.bounds H b reg with _ | ⟨lo, hi⟩
+  · rfl
+  simp only [List.flatMap_map, Array.map_map, Function.comp_def, Family.toFast_M,
+    Family.toFast_rows, Family.shift_toFast, Array.getElem!_map toNat_empty]
+  simp only [hrs]
+  by_cases hf : (lo == -(H : ℤ) && hi == (H : ℤ)) = true
+  · simp only [hf, ↓reduceIte]
+    exact List.Perm.flatMap_left _ fun s _ ↦ chunkPoints_perm G rfl rfl _ _ _ _ (toNat_ones _)
+  · simp only [hf, Bool.false_eq_true, ↓reduceIte]
+    exact List.Perm.flatMap_left _ fun s _ ↦ partPoints_perm G rfl rfl ..
+
+/-- The families of the search on masks that have a row for each residue of a positive product,
+as families of the search on natural numbers. -/
+theorem filter_map_toFast (fams : Array Family) :
+    (fams.map Family.toFast).filter (fun F ↦ F.rows.size == F.M && 0 < F.M) =
+      (fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M).map Family.toFast := by
+  rw [Array.filter_map]
+  simp only [Function.comp_def, Family.toFast_M, Family.toFast_rows, Array.size_map]
+  rfl
+
+theorem mod_lt_size_rows_of_mem_filter {fams : Array Family} {F : Family}
+    (h : F ∈ fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M) (b : ℕ) :
+    b % F.M < F.rows.size := by
+  obtain ⟨h1, h2⟩ : F.rows.size = F.M ∧ 0 < F.M := by simpa using (Array.mem_filter.mp h).2
+  exact (Nat.mod_lt b h2).trans_eq h1.symm
 
 /-- The zero tests of the rows through the table of the search on masks are those of the search on
 natural numbers, for families with a row for the residue of `b`. -/
@@ -643,29 +739,15 @@ theorem all_map_isZero_eq {fams : Array Family} {b : ℕ} (h : ∀ F ∈ fams, b
   refine forall₂_congr fun F hF ↦ ?_
   simp [getElem!_pos, h F hF, isZero_eq_beq]
 
-theorem search_perm (c : List ℤ) (d H G L : ℕ) (fams : Array Family) (dens : List ℕ) :
-    (search c d H G L fams dens).Perm
-      (Fast.search c d H G L (fams.map Family.toFast) dens) := by
-  have hrs (b : ℕ) (xs : Array Family) : (xs.map fun F ↦ toNat F.rows[b % F.M]!) =
-      (xs.map fun F ↦ F.rows[b % F.M]!).map toNat := by
-    rw [Array.map_map]
-    rfl
-  have hlt (b : ℕ) (F) (h : F ∈ fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M) :
-      b % F.M < F.rows.size := by
-    obtain ⟨h1, h2⟩ : F.rows.size = F.M ∧ 0 < F.M := by simpa using (Array.mem_filter.mp h).2
-    exact (Nat.mod_lt _ h2).trans_eq h1.symm
-  have hp : ((fun F : Fast.Family ↦ F.rows.size == F.M && decide (0 < F.M)) ∘ Family.toFast) =
-      fun F ↦ F.rows.size == F.M && decide (0 < F.M) := by
-    funext F
-    simp only [Function.comp_apply, Family.toFast_M, Family.toFast_rows, Array.size_map]
-    rfl
-  rw [search, Fast.search, Array.filter_map, hp]
-  simp only [Array.map_map, Function.comp_def, Family.toFast_M, Family.toFast_rows,
-    Family.shift_toFast, Array.getElem!_map toNat_empty, List.filter_map,
-    Array.getElem!_map_list_map, List.flatMap_map]
-  simp only [hrs]
-  rw [List.filter_congr fun b _ ↦ all_map_isZero_eq (hlt b)]
-  exact List.Perm.flatMap_left _ fun b _ ↦ List.Perm.flatMap_left _ fun a _ ↦ chunkPoints_perm ..
+theorem search_perm (c : List ℤ) (d H G L : ℕ) (fams : Array Family)
+    (reg : Option (Array (Option (ℤ × ℕ) × Option (ℤ × ℕ)))) (dens : List ℕ) :
+    (search c d H G L fams reg dens).Perm
+      (Fast.search c d H G L (fams.map Family.toFast) reg dens) := by
+  rw [search, Fast.search, filter_map_toFast]
+  simp only [List.filter_map, Array.getElem!_map_list_map]
+  rw [List.filter_congr fun b _ ↦
+    all_map_isZero_eq fun F hF ↦ mod_lt_size_rows_of_mem_filter hF b]
+  exact List.Perm.flatMap_left _ fun b _ ↦ denPoints_perm ..
 
 /-- **The search on byte-array masks lists the same points as the search on natural numbers**,
 `Ratpoints.Fast.fastPoints`, in another order, for every coefficient list, every height bound,
@@ -675,13 +757,21 @@ theorem fastPoints_perm (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Fast.T
   rw [fastPoints, Fast.fastPoints, pointsOfDen_eq_pointsOfDen, ← map_toFast_fams_choose]
   exact (search_perm ..).append_left _
 
+/-- **The fast search lists only points** of height at most `H` with their denominator in the range
+of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and every setting
+of the parameters. -/
+theorem isPoint_and_inRegion_of_mem_fastPoints {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
+    {tu : Fast.Tuning} {p : ℤ × ℤ × ℤ} (h : p ∈ fastPoints c H bLow bHigh tu) :
+    IsPoint c H p ∧ InRegion [] bLow bHigh p :=
+  Fast.isPoint_and_inRegion_of_mem_fastPoints ((fastPoints_perm ..).mem_iff.mp h)
+
 /-- **The fast search lists exactly the points** of height at most `H` with their denominator in
 the range of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and
-every setting of the parameters. -/
+every setting of the parameters, assuming Sturm's theorem. -/
 theorem mem_fastPoints_iff {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ} {tu : Fast.Tuning}
-    {p : ℤ × ℤ × ℤ} :
+    {p : ℤ × ℤ × ℤ} (hS : SturmTheorem) :
     p ∈ fastPoints c H bLow bHigh tu ↔ IsPoint c H p ∧ InRegion [] bLow bHigh p :=
-  (fastPoints_perm ..).mem_iff.trans Fast.mem_fastPoints_iff
+  (fastPoints_perm ..).mem_iff.trans (Fast.mem_fastPoints_iff hS)
 
 /-- **The fast search lists each point once.** -/
 theorem nodup_fastPoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Fast.Tuning) :

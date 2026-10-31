@@ -140,7 +140,8 @@ changes of a remainder chain agree at its ends and~$f$ is negative just inside i
 lost rests on Sturm's theorem, which Mathlib does not have, although it has the Sturm sequence and
 the sign changes of a list. The specification states the theorem as a proposition, for every
 squarefree real polynomial and every interval $(a, b]$ (Definition~\ref{def:sturmTheorem}), and the
-statements that need it take it as a hypothesis, and only when the Sturm step is on.
+statements that need it take it as a hypothesis: those on the model only when the Sturm step is on,
+and the membership statement of the fast search.
 
 \emph{The order.} The list $\mathrm{orderedPoints}$ (Definition~\ref{def:orderedPoints}) gives the
 points in the order in which \ratpoints{} finds them: for the polynomial that \ratpoints{} searches, the
@@ -311,7 +312,9 @@ definitions that the statements reach included, the proofs use no axioms beyond 
 of its own, \verb|Ratpoints.FastMask.fastPoints| (\verb|Ratpoints/Fast/Search.lean|), built for
 speed in Lean: it sieves the numerators of each class modulo 16 in chunks of bit masks held in byte
 arrays, with the rows of families of odd moduli, and passes the survivors to the exact check of the
-brute force. The AND of a mask with a shifted row and the next set bit of a mask are primitives in
+brute force. For each denominator it searches only the numerators in the intervals that the Sturm
+step of the model keeps, and for even degree it skips the denominators with an odd divisor at which
+the Jacobi symbol of the leading coefficient is $-1$. The AND of a mask with a shifted row and the next set bit of a mask are primitives in
 C (\verb|Ratpoints/Fast/Mask.lean|), a few lines each; their Lean bodies are the reference
 definitions that the proofs see, and \verb|lake exe masktest| compares the C code with them. The
 same sieve on natural numbers, \verb|Ratpoints.Fast.fastPoints| (\verb|Ratpoints/Fast/Sieve.lean|),
@@ -319,7 +322,7 @@ lists the same points (\verb|Ratpoints.FastMask.fastPoints_perm|). The two theor
 search, \verb|Ratpoints.FastMask.mem_fastPoints_iff| and \verb|Ratpoints.FastMask.nodup_fastPoints|,
 say that for every coefficient list, height bound, range of the denominators and setting of its
 parameters it lists exactly the points of height at most $H$ with their denominator in the range,
-each once; comparator certifies them with the eleven statements on the model and the brute
+assuming Sturm's theorem (only such points without it), each once; comparator certifies them with the eleven statements on the model and the brute
 force. The rest of this blueprint is about the model, whose
 program is \verb|ratpoints-model|.
 
@@ -335,7 +338,8 @@ and, where \ratpoints{} is ended by \verb|SIGPIPE| when the reader of its output
 the status~$141$ that the shell reports for that (Chapter~\ref{chap:output}).
 
 \emph{Sturm's theorem.} Membership, the order and the statement that every point appears without
-the exact check assume Sturm's theorem when the Sturm step is on. It is a hypothesis, not an axiom:
+the exact check assume Sturm's theorem when the Sturm step is on, and so does the membership
+statement of the fast search, whose numerators rest on the Sturm step. It is a hypothesis, not an axiom:
 these statements hold outright with the step off, and with the step on they say something because
 the theorem, stated with Mathlib's Sturm sequence and sign variations, is true, the one mathematical
 fact taken on trust; a proof of it, in Mathlib or here, would discharge the hypothesis without

@@ -46,9 +46,11 @@ denominator of every point through, and so does the test by tables, which comput
   `(lcf / b*)`.
 * `Ratpoints.Sieve.jacobiSym_eq_one_of_sq_eq_binaryForm`: the symbol of `c_d` over a divisor of the
   denominator of a point of a curve of even degree prime to `c_d` is `1`, and so is `(c_d / b*)`
-  (`Ratpoints.Sieve.jacobiSym_coprimePart_eq_one_of_sq_eq`).
+  (`Ratpoints.Sieve.jacobiSym_coprimePart_eq_one_of_sq_eq`), also for a divisor `p` of the
+  denominator in place of `b` (`Ratpoints.Sieve.jacobiSym_coprimePart_eq_one_of_sq_eq_of_dvd`).
 * `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`: the binary algorithm gives `1` on the denominator of
-  every point of a curve of even degree.
+  every point of a curve of even degree, and on every nonzero divisor of it
+  (`Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq_of_dvd`).
 
 ## Implementation notes
 
@@ -501,21 +503,35 @@ theorem jacobiSym_eq_one_of_sq_eq_binaryForm {c : List ℤ} {a y : ℤ} {b b' : 
   exact ZMod.nonsquare_iff_jacobiSym_eq_neg_one.mp hJ <|
     isSquare_getD_degree_of_sq_eq_binaryForm hab (Nat.mod_eq_zero_of_dvd (hqb'.trans hb')) hd hy
 
+/-- The symbol `(c_d / p*)` of the largest divisor `p*` prime to `2 c_d` of a divisor `p` of the
+denominator `b` of a point is `1`, for even degree. -/
+theorem jacobiSym_coprimePart_eq_one_of_sq_eq_of_dvd {c : List ℤ} (hd : degree c % 2 = 0)
+    {a y : ℤ} {b p : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) (hpb : p ∣ b) :
+    J(c.getD (degree c) 0 | p.coprimePart (2 * (c.getD (degree c) 0).natAbs)) = 1 :=
+  jacobiSym_eq_one_of_sq_eq_binaryForm hab hd hy ((Nat.coprimePart_dvd _ _).trans hpb)
+    ((Nat.coprime_coprimePart p _).coprime_dvd_right (dvd_mul_left _ 2)).symm
+
 /-- The symbol `(c_d / b*)` of the largest divisor `b*` of the denominator `b` of a point prime to
 `2 c_d` is `1`, for even degree. -/
 theorem jacobiSym_coprimePart_eq_one_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {a y : ℤ}
     {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     J(c.getD (degree c) 0 | b.coprimePart (2 * (c.getD (degree c) 0).natAbs)) = 1 :=
-  jacobiSym_eq_one_of_sq_eq_binaryForm hab hd hy (Nat.coprimePart_dvd _ _)
-    ((Nat.coprime_coprimePart b _).coprime_dvd_right (dvd_mul_left _ 2)).symm
+  jacobiSym_coprimePart_eq_one_of_sq_eq_of_dvd hd hab hy dvd_rfl
+
+/-- The binary algorithm gives the symbol `1` on every nonzero divisor `p` of the denominator `b`
+of a point of a curve of even degree: it computes the Jacobi symbol `(c_d / p*)`, and modulo a
+prime `q ∣ p` with `q ∤ c_d`, `c_d` is the square of `y / a ^ (d / 2)`. -/
+theorem run_jacobi_eq_one_of_sq_eq_of_dvd {c : List ℤ} (hd : degree c % 2 = 0) {a y : ℤ}
+    {b p : ℕ} (hp : p ≠ 0) (hpb : p ∣ b) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
+    Id.run (jacobi p (c.getD (degree c) 0)) = 1 :=
+  (run_jacobi hp _).trans (jacobiSym_coprimePart_eq_one_of_sq_eq_of_dvd hd hab hy hpb)
 
 /-- The binary algorithm gives the symbol `1` on the denominator `b` of every point of a curve of
-even degree: it computes the Jacobi symbol `(c_d / b*)`, and modulo a prime `q ∣ b` with `q ∤ c_d`,
-`c_d` is the square of `y / a ^ (d / 2)`. -/
+even degree (`Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq_of_dvd` for `p = b`). -/
 theorem run_jacobi_eq_one_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ}
     (hb : b ≠ 0) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     Id.run (jacobi b (c.getD (degree c) 0)) = 1 :=
-  (run_jacobi hb _).trans (jacobiSym_coprimePart_eq_one_of_sq_eq hd hab hy)
+  run_jacobi_eq_one_of_sq_eq_of_dvd hd hb dvd_rfl hab hy
 
 end Sieve
 

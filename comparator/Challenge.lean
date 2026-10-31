@@ -34,10 +34,12 @@ brute-force reference: `Ratpoints.bruteForce` finds exactly the points (`Ratpoin
 without duplicates. Two are about the fast search `Ratpoints.FastMask.fastPoints`, which the
 program `ratpoints-lean` runs: for every coefficient list, height bound, range of denominators and
 setting of its parameters it lists exactly the points of height at most `H` in the range
-(`Ratpoints.InRegion` without search intervals), without duplicates. The other nine hold for every
-coefficient list `c`, height bound `H`, options of the search `o : Ratpoints.Options` and options of
-the sieve `s : Ratpoints.SieveOptions`, with no hypothesis on `s`, with which the search chooses its
-moduli from the curve:
+(`Ratpoints.InRegion` without search intervals), assuming Sturm's theorem
+(`Ratpoints.SturmTheorem`), on which the numerators that it searches for each denominator rest,
+and, with no hypothesis, lists each of them once. The other nine hold for every coefficient list
+`c`, height bound `H`, options of the search `o : Ratpoints.Options` and options of the sieve
+`s : Ratpoints.SieveOptions`, with no hypothesis on `s`, with which the search chooses its moduli
+from the curve:
 
 * membership: with the exact check on (`o.noCheck = false`) and assuming Sturm's theorem
   (`Ratpoints.SturmTheorem`) when the Sturm step is on, the list of `Ratpoints.findPoints` holds
@@ -290,8 +292,11 @@ theorem challenge_mem_bruteForce_iff (c : List ℤ) (H : ℕ) (p : ℤ × ℤ ×
 theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteForce c H).Nodup :=
   sorry
 
+/-- `Ratpoints.FastMask.fastPoints` lists exactly the points of height at most `H` with their
+denominator in the range, assuming Sturm's theorem (`Ratpoints.SturmTheorem`), on which the
+numerators that it searches for each denominator rest. -/
 theorem challenge_mem_fastPoints_iff (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ)
-    (tu : Ratpoints.Fast.Tuning) (p : ℤ × ℤ × ℤ) :
+    (tu : Ratpoints.Fast.Tuning) (hS : Ratpoints.SturmTheorem) (p : ℤ × ℤ × ℤ) :
     p ∈ Ratpoints.FastMask.fastPoints c H bLow bHigh tu ↔
       Ratpoints.IsPoint c H p ∧ Ratpoints.InRegion [] bLow bHigh p :=
   sorry

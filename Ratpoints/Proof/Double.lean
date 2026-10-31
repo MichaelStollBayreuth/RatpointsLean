@@ -10,6 +10,7 @@ public import Ratpoints.Model.Double
 public import Ratpoints.Spec.Region
 
 import Mathlib.Algebra.Order.Floor.Semifield
+import Ratpoints.Mathlib.Algebra.Order.Field.Basic
 import Ratpoints.Mathlib.Order.WithBotTop
 
 /-!
@@ -162,6 +163,14 @@ theorem doubleValue_bits (x : Double) : doubleValue x.bits =
 theorem doubleValue_eq_toRat {x : Double} (hx : x.isFinite = true) :
     doubleValue x.bits = (x.toRat : WithBotTop ℚ) := by
   rw [doubleValue_bits, ite_eq_right (by simpa [isFinite] using hx)]
+
+/-- The value of a finite double `x` with `Ratpoints.Double.toDyadic x = (m, e)` as the fraction of
+`m 2 ^ max e 0` and `2 ^ max (-e) 0`. -/
+theorem doubleValue_eq_of_toDyadic_eq {x : Double} (hf : x.isFinite = true) {m e : ℤ}
+    (hd : x.toDyadic = (m, e)) :
+    doubleValue x.bits = ((((m * 2 ^ e.toNat : ℤ) : ℚ) / ((2 ^ (-e).toNat : ℕ) : ℚ) : ℚ) :
+      WithBotTop ℚ) := by
+  rw [doubleValue_eq_toRat hf, intCast_mul_two_pow_div_two_pow, toRat_eq, hd]
 
 /-! ### The order of the values -/
 
