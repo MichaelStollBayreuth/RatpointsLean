@@ -189,7 +189,7 @@ denominators (as `Ratpoints.Fast.choose`). -/
 def choose (tu : Tuning) (c : List Int) (d H B : Nat) : Config :=
   let G := orDefault tu.G 16
   let cnt := (2 * H + 1 + G - 1) / G
-  let L := max 1 (min (orDefault tu.L 8192) cnt)
+  let L := max 1 (min (orDefault tu.L 8192) (64 * ((cnt + 63) / 64)))
   { G, L, fams := ((sortedGroups tu c d H B).filterMap (mkFamily G L)).toArray }
 
 /-- The points of height at most `H` with their denominator in the range of `bLow` and `bHigh`,

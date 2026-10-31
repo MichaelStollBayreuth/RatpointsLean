@@ -540,11 +540,14 @@ def sortedGroups (tu : Tuning) (c : List Int) (d H B : Nat) :
   (scored.mergeSort fun x y ↦ x.2 ≤ y.2).map (·.1)
 
 /-- The parameters for the coefficients `c` of degree `d`, the height bound `H` and `B`
-denominators. -/
+denominators. The chunk length is `tu.L` (by default `8192`), but at most the number of numerators
+of a class rounded up to a multiple of `64`: by default a multiple of `64`, so that the rows of the
+families are long enough at every shift for the fast path of `Ratpoints.Mask.andRows` in
+`Ratpoints.FastMask.choose`, which makes the same choice. -/
 def choose (tu : Tuning) (c : List Int) (d H B : Nat) : Config :=
   let G := orDefault tu.G 16
   let cnt := (2 * H + 1 + G - 1) / G
-  let L := max 1 (min (orDefault tu.L 8192) cnt)
+  let L := max 1 (min (orDefault tu.L 8192) (64 * ((cnt + 63) / 64)))
   { G, L, fams := ((sortedGroups tu c d H B).filterMap (mkFamily G L)).toArray }
 
 /-! ### The search -/
