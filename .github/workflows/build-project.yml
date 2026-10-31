@@ -71,7 +71,7 @@ jobs:
       - name: Build ratpoints-lean, ratpoints-model and masktest
         run: ~/.elan/bin/lake build --wfail ratpoints-lean ratpoints-model masktest
 
-      # The C code of the two primitives of `Ratpoints.Mask` against their Lean reference definitions.
+      # The C code of the primitives of `Ratpoints.Mask` against their Lean reference definitions.
       - name: Test the primitives of the fast search (masktest)
         run: .lake/build/bin/masktest
 

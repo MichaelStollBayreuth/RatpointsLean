@@ -6,7 +6,8 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.BruteForce
-public import Ratpoints.Model.Denominators
+public import Ratpoints.Model.Candidate
+public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sturm
 
 /-!
@@ -21,6 +22,11 @@ represents by GMP integers, so that one `&&&` ANDs thousands of candidates witho
 per word. The program `ratpoints-lean` runs `Ratpoints.FastMask.fastPoints`, the same sieve with
 the masks held in byte arrays, which lists the same points in another order.
 
+* Without a range of the denominators (`bLow ≤ 1`, and `bHigh < 1` or `H ≤ bHigh`) the coefficients
+  are reversed where the reversal check of `ratpoints` reverses them (`Ratpoints.Fast.reversed`, on
+  `Ratpoints.Setup.reversal`: the binary form with `x` and `z` exchanged); the search
+  `Ratpoints.Fast.sievePoints` then runs on them over the whole box, and its points are mapped back
+  by `Ratpoints.Sieve.swapPoint`.
 * The numerators `x = -H, …, H` are split into the classes of `x + H` modulo `G = 2 ^ e`; a class
   is searched for the denominator `b` only when the residues of `x` and `b` modulo `G` allow a
   point (`Ratpoints.Fast.admitTable`).
@@ -48,6 +54,7 @@ The choice of `G`, `L` and the families affects the speed only: the proofs hold 
 ## Main definitions
 
 * `Ratpoints.Fast.fastPoints`: the points, by the sieve.
+* `Ratpoints.Fast.sievePoints`: the search without the reversal.
 -/
 
 @[expose] public section
@@ -81,8 +88,14 @@ def powMod (r m : Nat) : Nat → Nat
 def scaledCoeffsMod (c : List Int) (d m r : Nat) : List Int :=
   (List.range (d + 1)).map fun k ↦ c.getD k 0 % (m : Int) * (powMod r m (d - k) : Int)
 
+/-- `Nat.gcd a b` by Euclid's algorithm in Lean, which on small numbers is much faster than the
+runtime's `Nat.gcd`: that one goes through GMP. -/
+def natGcd (a b : Nat) : Nat := if b = 0 then a else natGcd b (a % b)
+termination_by b
+decreasing_by exact Nat.mod_lt _ (Nat.pos_of_ne_zero ‹_›)
+
 /-- Whether `x` has no prime factor in common with `g`, quickly when `g = 1`. -/
-def coprimeWith (g x : Nat) : Bool := g == 1 || Nat.gcd x g == 1
+def coprimeWith (g x : Nat) : Bool := g == 1 || natGcd x g == 1
 
 /-- The row `r` of `Ratpoints.Fast.admitTable c d m`, computed directly (`sq` is
 `Ratpoints.Fast.sqTable m`): entry `x` is `true` when `x`, `r` and `m` have no prime factor in
@@ -90,7 +103,7 @@ common and `F(x, r)` is a square modulo `m`. -/
 def admitRow (c : List Int) (d m : Nat) (sq : Array Bool) (r : Nat) : Array Bool :=
   let w := scaledCoeffsMod c d m r
   let f : Int := if d % 2 = 1 then r else 1
-  let g := Nat.gcd r m
+  let g := natGcd r m
   (List.range m).toArray.map fun x ↦
     coprimeWith g x && sq[(hornerMod w x m * f % (m : Int)).toNat]!
 
@@ -100,19 +113,37 @@ def invTable (m : Nat) : Array Nat :=
   (List.range m).foldl (fun inv i ↦
     inv.push (if i ≤ 1 then i else (m - m / i * inv[m % i]! % m) % m)) #[]
 
+/-- The row `one` permuted: entry `x < m` is `one[x * u % m]`, the index stepped by `u` (for
+`u < m`), without a division. -/
+def permRow (one : Array Bool) (m u : Nat) : Array Bool := go 0 0 (Array.emptyWithCapacity m)
+where
+  /-- `acc` with the entries `one[i]` pushed for `x` up to `m - 1`, the index `i` stepped by `u`
+  modulo `m`. -/
+  go (x i : Nat) (acc : Array Bool) : Array Bool :=
+    if x < m then go (x + 1) (if i + u < m then i + u else i + u - m) (acc.push one[i]!) else acc
+  termination_by m - x
+
 /-- The residues modulo `m` that allow a point `(a, y, b)` with `gcd(a, b) = 1` of the binary form
 of degree `d` of `c`: entry `x` of row `r` (for `r, x < m`) is `true` when `x`, `r` and `m` have no
-prime factor in common and `F(x, r)` is a square modulo `m`. A row `r` with an inverse `u` modulo
-`m` (from `Ratpoints.Fast.invTable`) is row `1` permuted: `F(x, r) = r ^ D F(x u, 1)` with `D` even;
-the others come from `Ratpoints.Fast.admitRow`. -/
+prime factor in common and `F(x, r)` is a square modulo `m`. A row `r` with an inverse `u < m`
+modulo `m` (from `Ratpoints.Fast.invTable`) is row `1` permuted (`Ratpoints.Fast.permRow`):
+`F(x, r) = r ^ D F(x u, 1)` with `D` even; the others come from `Ratpoints.Fast.admitRow`. -/
 def admitTable (c : List Int) (d m : Nat) : Array (Array Bool) :=
   let sq := sqTable m
   let one := admitRow c d m sq 1
   let inv := invTable m
-  Array.ofFn (n := m) fun r ↦
-    let u := inv[r.val]!
-    if r.val * u % m == 1 % m then Array.ofFn (n := m) fun x ↦ one[x.val * u % m]!
-    else admitRow c d m sq r
+  go sq one inv 0 (Array.emptyWithCapacity m)
+where
+  /-- `acc` with the rows `r` to `m - 1` of `Ratpoints.Fast.admitTable` pushed. -/
+  go (sq one : Array Bool) (inv : Array Nat) (r : Nat) (acc : Array (Array Bool)) :
+      Array (Array Bool) :=
+    if r < m then
+      let u := inv[r]!
+      go sq one inv (r + 1)
+        (acc.push (if r * u % m == 1 % m && u < m then permRow one m u
+          else admitRow c d m sq r))
+    else acc
+  termination_by m - r
 
 /-! ### Bit masks -/
 
@@ -308,16 +339,18 @@ def partPoints (c : List Int) (d G : Nat) (rs sh : Array Nat) (lo hi a₀ : Int)
 
 /-- The points with the denominator `b` in the chunks `sl`, each given by its residue modulo `G`,
 its first numerator `a₀`, its length and the shifts of the families `fams` to `a₀`, by the sieve
-with the rows of `b` and the region `reg`: the chunks whole when the numerators of `b` in the region
+with the rows of `b` and the region `reg`: none when the row of `b` of some family is `0`, which
+clears every chunk; else the chunks whole when the numerators of `b` in the region
 (`Ratpoints.Fast.bounds`) are all of `-H, …, H`, else their parts that hold these numerators
 (`Ratpoints.Fast.partPoints`). -/
 def denPoints (c : List Int) (d H G : Nat) (fams : Array Family)
     (reg : Option (Array (Option (Int × Nat) × Option (Int × Nat))))
     (sl : List (Nat × Int × Nat × Array Nat)) (b : Nat) : List (Int × Int × Int) :=
+  let rs := fams.map fun F ↦ F.rows[b % F.M]!
+  if rs.any (· == 0) then [] else
   match bounds H b reg with
   | none => []
   | some (lo, hi) =>
-    let rs := fams.map fun F ↦ F.rows[b % F.M]!
     if lo == -(H : Int) && hi == (H : Int) then
       sl.flatMap fun (_, a₀, len, sh) ↦ chunkPoints c d G rs sh 0 a₀ len b
     else sl.flatMap fun (_, a₀, len, sh) ↦ partPoints c d G rs sh lo hi a₀ len b
@@ -331,10 +364,10 @@ def search (c : List Int) (d H G L : Nat) (fams : Array Family)
     (reg : Option (Array (Option (Int × Nat) × Option (Int × Nat)))) (dens : List Nat) :
     List (Int × Int × Int) :=
   let fams := fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M
-  let dens := dens.filter fun b ↦ fams.all fun F ↦ F.rows[b % F.M]! != 0
   let TG := admitTable c d G
   let sl := (slots H G L).map fun (r, a₀, len) ↦ (r, a₀, len, fams.map (Family.shift · a₀))
   let byRes := (List.range G).toArray.map fun g ↦ sl.filter fun (r, _) ↦ TG[g]![r]!
+  let dens := dens.filter fun b ↦ !byRes[b % G]!.isEmpty
   dens.flatMap fun b ↦ denPoints c d H G fams reg byRes[b % G]! b
 
 /-! ### The denominators -/
@@ -342,42 +375,79 @@ def search (c : List Int) (d H G L : Nat) (fams : Array Family)
 /-- Whether `k` is a square. -/
 def isSquare (k : Nat) : Bool := k.sqrt * k.sqrt == k
 
-/-- `a` with the entries `j, j + n, j + 2 n, …` up to `hi` set to `true`. -/
-def markMultiples (a : Array Bool) (n j hi : Nat) : Array Bool :=
-  if j ≤ hi ∧ 0 < n then markMultiples (a.set! j true) n (j + n) hi else a
+/-- The Jacobi symbol `(a / n)` times `s` for odd `n`, by Euclid's algorithm in at most `fuel`
+steps: the factors `2` of `a` are taken out with the sign of `(2 / n)`, and for odd `a` the
+symbol becomes `(n % a / a)` with the sign of the reciprocity. The value is `0` when `a` and `n`
+have a common factor, and also when the steps run out, which they do not for `n < 2 ^ 64` and
+`fuel = 256`; only the value `-1` is used (`Ratpoints.Fast.forbiddenDens`). -/
+def jacobiNatAux : Nat → Nat → Nat → Int → Int
+  | 0, _, _, _ => 0
+  | fuel + 1, a, n, s =>
+    if a == 0 then (if n == 1 then s else 0)
+    else if a % 2 == 0 then
+      jacobiNatAux fuel (a / 2) n (if n % 8 == 3 || n % 8 == 5 then -s else s)
+    else jacobiNatAux fuel (n % a) a (if a % 4 == 3 && n % 4 == 3 then -s else s)
+
+/-- The Jacobi symbol `(a / n)` for odd `n` (`Ratpoints.Fast.jacobiNatAux`), or `0`. -/
+def jacobiNat (a n : Nat) : Int := jacobiNatAux 256 (a % n) n 1
+
+/-- `a` with the bytes `j, j + n, j + 2 n, …` up to `hi` set to `1`. -/
+def markMultiples (a : ByteArray) (n j hi : Nat) : ByteArray :=
+  if j ≤ hi ∧ 0 < n then markMultiples (a.set! j 1) n (j + n) hi else a
 termination_by hi + 1 - j
 
-/-- The denominators up to `hi` that no point of a curve of even degree with the leading
-coefficient `lc` can have, marked `true`: the multiples of an odd `p` with `(lc / p*) = -1`, `p*`
-the largest divisor of `p` prime to `2 lc` (`Ratpoints.Sieve.jacobi`), `p` running over the odd
-primes up to `hi`, found by the sieve of Eratosthenes along the way (which `p` are tried affects the
-speed only). -/
-def forbiddenDens (lc : Int) (hi : Nat) : Array Bool :=
-  let step (s : Array Bool × Array Bool) (p : Nat) : Array Bool × Array Bool :=
-    if s.1[p]! then s
+/-- The loop of `Ratpoints.Fast.forbiddenDens` over the odd numbers from `p` to `hi`, with the odd
+composites marked in `comp` and the forbidden denominators in `forb` so far: an unmarked `p` is a
+prime, whose odd multiples from `p ^ 2` on are marked composite, and whose multiples are marked
+forbidden when `(lc / p) = -1`. -/
+def forbiddenDensFrom (lc : Int) (hi : Nat) (comp forb : ByteArray) (p : Nat) : ByteArray :=
+  if p ≤ hi then
+    if comp[p]! != 0 then forbiddenDensFrom lc hi comp forb (p + 2)
     else
-      let comp := markMultiples s.1 (2 * p) (p * p) hi
-      if Id.run (Sieve.jacobi p lc) == -1 then (comp, markMultiples s.2 p p hi) else (comp, s.2)
-  ((List.range' 3 ((hi - 1) / 2) 2).foldl step
-    (Array.replicate (hi + 1) false, Array.replicate (hi + 1) false)).2
+      let comp := markMultiples comp (2 * p) (p * p) hi
+      let r := (lc % (p : Int)).toNat
+      let forb := if r != 0 && jacobiNat r p == -1 then markMultiples forb p p hi else forb
+      forbiddenDensFrom lc hi comp forb (p + 2)
+  else forb
+termination_by hi + 1 - p
+
+/-- The denominators up to `hi` that no point of a curve of even degree with the leading
+coefficient `lc` can have, marked `1`: the multiples of an odd `p` with `(lc / p) = -1`
+(`Ratpoints.Fast.jacobiNat`), `p` running over the odd primes up to `hi`, found by the sieve of
+Eratosthenes along the way (which `p` are tried affects the speed only). -/
+def forbiddenDens (lc : Int) (hi : Nat) : ByteArray :=
+  let z : ByteArray := ⟨Array.replicate (hi + 1) 0⟩
+  forbiddenDensFrom lc hi z z 3
+
+/-- The numbers `b` from `max lo 1` to `n` with `m[b] = v`, in ascending order, before `acc`. -/
+def collectMarked (m : ByteArray) (v : UInt8) (lo : Nat) : Nat → List Nat → List Nat
+  | 0, acc => acc
+  | b + 1, acc =>
+    if b + 1 < lo then acc
+    else collectMarked m v lo b (if m[b + 1]! == v then (b + 1) :: acc else acc)
+
+/-- `a` with the bytes `s j ^ 2 ≤ hi` for `j` from `k` on (and `j ≤ hi`) set to `1`. -/
+def markSquares (a : ByteArray) (s k hi : Nat) : ByteArray :=
+  if k ≤ hi ∧ s * k * k ≤ hi then markSquares (a.set! (s * k * k) 1) s (k + 1) hi else a
+termination_by hi + 1 - k
+
+/-- The numbers `s k ^ 2 ≤ hi` with `s` dividing `n` and `k ≥ 1`, marked `1` (for `n ≥ 1`). -/
+def squareDens (n hi : Nat) : ByteArray :=
+  (List.range' 1 (min n hi)).foldl (fun a s ↦ if n % s == 0 then markSquares a s 1 hi else a)
+    ⟨Array.replicate (hi + 1) 0⟩
 
 /-- The denominators of the search, for the degree `d`, the height bound `H` and the range of
 `bLow` and `bHigh`: those `b` with `max 1 bLow ≤ b ≤ H`, and `b ≤ bHigh` unless `bHigh < 1`; for
-odd `d` only those of the form `s k ^ 2` with `s` dividing the leading coefficient, for even `d`
-those that `Ratpoints.Fast.forbiddenDens` does not mark (all of them when the leading coefficient
-is a positive square, which `Ratpoints.Fast.forbiddenDens` would not mark). -/
+odd `d` only those of the form `s k ^ 2` with `s` dividing the leading coefficient
+(`Ratpoints.Fast.squareDens`), for even `d` those that `Ratpoints.Fast.forbiddenDens` does not mark
+(all of them when the leading coefficient is a positive square, which
+`Ratpoints.Fast.forbiddenDens` would not mark); in ascending order. -/
 def denominators (c : List Int) (d H : Nat) (bLow bHigh : Int) : List Nat :=
   let lo := max 1 bLow.toNat
   let hi := if bHigh < 1 then H else min H bHigh.toNat
-  let bs := List.range' lo (hi + 1 - lo)
-  if d % 2 = 1 then
-    let n := (c.getD d 0).natAbs
-    let divs := (List.range' 1 hi).filter fun s ↦ n % s == 0
-    bs.filter fun b ↦ divs.any fun s ↦ b % s == 0 && isSquare (b / s)
-  else if 0 < c.getD d 0 && isSquare (c.getD d 0).toNat then bs
-  else
-    let forb := forbiddenDens (c.getD d 0) hi
-    bs.filter fun b ↦ !forb[b]!
+  if d % 2 = 1 then collectMarked (squareDens (c.getD d 0).natAbs hi) 1 lo hi []
+  else if 0 < c.getD d 0 && isSquare (c.getD d 0).toNat then List.range' lo (hi + 1 - lo)
+  else collectMarked (forbiddenDens (c.getD d 0) hi) 0 lo hi []
 
 /-! ### The choice of the parameters -/
 
@@ -387,7 +457,7 @@ def density (m : Nat) (T : Array (Array Bool)) : Nat :=
   let count (row : Array Bool) : Nat := row.foldl (fun n b ↦ if b then n + 1 else n) 0
   let c₁ := count T[1 % m]!
   -- a row prime to `m` is row `1` permuted
-  let n := (List.range m).foldl (fun n r ↦ n + if Nat.gcd r m == 1 then c₁ else count T[r]!) 0
+  let n := (List.range m).foldl (fun n r ↦ n + if natGcd r m == 1 then c₁ else count T[r]!) 0
   1000 * n / (m * m)
 
 /-- The pairs `(m, T)` grouped into families: in ascending order of `m`, each family taking moduli
@@ -483,13 +553,37 @@ def choose (tu : Tuning) (c : List Int) (d H B : Nat) : Config :=
 or lies in the range of `bLow` and `bHigh` (`bLow ≤ z`, and `z ≤ bHigh` unless `bHigh < 1`), each
 once: the points at infinity, then those that the sieve finds (only such points in any case, and
 all of them assuming Sturm's theorem, on which the region of the numerators rests). -/
-def fastPoints (c : List Int) (H : Nat) (bLow bHigh : Int) (tu : Tuning := {}) :
+def sievePoints (c : List Int) (H : Nat) (bLow bHigh : Int) (tu : Tuning := {}) :
     List (Int × Int × Int) :=
   let d := BruteForce.degree c
   let dens := denominators c d H bLow bHigh
   let cfg := choose tu c d H dens.length
   (if 1 ≤ H then pointsOfDen c d 0 [1] else []) ++
     search c d H cfg.G cfg.L cfg.fams (region c d H (orDefault tu.sturm 10)) dens
+
+/-- The coefficients to search with and whether they are reversed: the reversed coefficients when
+the reversal check of `ratpoints` (`Ratpoints.Setup.reversal`) reverses them and no range of the
+denominators restricts the search (`bLow ≤ 1`, and `bHigh < 1` or `H ≤ bHigh`); otherwise, the
+refusal of the check included, `c` itself. -/
+def reversed (c : List Int) (H : Nat) (bLow bHigh : Int) : List Int × Bool :=
+  if bLow ≤ 1 ∧ (bHigh < 1 ∨ (H : Int) ≤ bHigh) then
+    match Setup.reversal true c (BruteForce.degree c) with
+    | .ok (c', _, true) => (c', true)
+    | _ => (c, false)
+  else (c, false)
+
+/-- The normalized points of height at most `H` on `y ^ 2 = F(x, z)` whose denominator `z` is `0`
+or lies in the range of `bLow` and `bHigh` (`bLow ≤ z`, and `z ≤ bHigh` unless `bHigh < 1`), each
+once: those of `Ratpoints.Fast.sievePoints`, on the coefficients reversed as `ratpoints` reverses
+them when no range of the denominators is given (`Ratpoints.Fast.reversed`; the binary form with
+`x` and `z` exchanged), with the points mapped back by `Ratpoints.Sieve.swapPoint` (only such
+points in any case, and all of them assuming Sturm's theorem, on which the region of the
+numerators rests). -/
+def fastPoints (c : List Int) (H : Nat) (bLow bHigh : Int) (tu : Tuning := {}) :
+    List (Int × Int × Int) :=
+  match reversed c H bLow bHigh with
+  | (c', true) => (sievePoints c' H 1 0 tu).map Sieve.swapPoint
+  | _ => sievePoints c H bLow bHigh tu
 
 end Fast
 

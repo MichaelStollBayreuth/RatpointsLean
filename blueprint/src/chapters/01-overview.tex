@@ -308,23 +308,25 @@ definitions that the statements reach included, the proofs use no axioms beyond 
 (Section~\ref{sec:comparator}). The project uses no tactic that adds an axiom, such as
 \verb|native_decide| or \verb|bv_decide|.
 
-\emph{The fast program.} The executable \verb|ratpoints-lean| does not run the model but a search
-of its own, \verb|Ratpoints.FastMask.fastPoints| (\verb|Ratpoints/Fast/Search.lean|), built for
-speed in Lean: it sieves the numerators of each class modulo 16 in chunks of bit masks held in byte
+\emph{The fast program.} The executable \verb|ratpoints-lean| does not run the model but a search of
+its own, \verb|Ratpoints.FastMask.fastPoints| (\verb|Ratpoints/Fast/Search.lean|), built for speed
+in Lean: it sieves the numerators of each class modulo 16 in chunks of bit masks held in byte
 arrays, with the rows of families of odd moduli, and passes the survivors to the exact check of the
-brute force. For each denominator it searches only the numerators in the intervals that the Sturm
-step of the model keeps, and for even degree it skips the denominators with an odd divisor at which
-the Jacobi symbol of the leading coefficient is $-1$. The AND of a mask with a shifted row and the next set bit of a mask are primitives in
-C (\verb|Ratpoints/Fast/Mask.lean|), a few lines each; their Lean bodies are the reference
+brute force. Without a range of the denominators it reverses the polynomial where \ratpoints{} does
+(the model's reversal check) and maps the points back. For each denominator it searches only the
+numerators in the intervals that the Sturm step of the model keeps, and for even degree it skips the
+denominators with an odd divisor at which the Jacobi symbol of the leading coefficient is $-1$. The
+AND of a mask with a shifted row, the AND of a mask with a list of shifted rows and the next set bit
+of a mask are primitives in C (\verb|Ratpoints/Fast/Mask.lean|); their Lean bodies are the reference
 definitions that the proofs see, and \verb|lake exe masktest| compares the C code with them. The
 same sieve on natural numbers, \verb|Ratpoints.Fast.fastPoints| (\verb|Ratpoints/Fast/Sieve.lean|),
 lists the same points (\verb|Ratpoints.FastMask.fastPoints_perm|). The two theorems of the fast
 search, \verb|Ratpoints.FastMask.mem_fastPoints_iff| and \verb|Ratpoints.FastMask.nodup_fastPoints|,
 say that for every coefficient list, height bound, range of the denominators and setting of its
 parameters it lists exactly the points of height at most $H$ with their denominator in the range,
-assuming Sturm's theorem (only such points without it), each once; comparator certifies them with the eleven statements on the model and the brute
-force. The rest of this blueprint is about the model, whose
-program is \verb|ratpoints-model|.
+assuming Sturm's theorem (only such points without it), each once; comparator certifies them with
+the eleven statements on the model and the brute force. The rest of this blueprint is about the
+model, whose program is \verb|ratpoints-model|.
 
 \emph{The executable.} The statements are about the definitions of the model, and
 \verb|ratpoints-model| is these definitions compiled by the compiler of Lean, with its runtime and

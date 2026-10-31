@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Rat.Floor
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Proof.BitRange
+public import Ratpoints.Spec.Basic
 public import Ratpoints.Spec.Region
 
 import Ratpoints.Mathlib.Data.List.Chain
@@ -63,6 +64,13 @@ theorem inRegion_of_isFullBox {D : List (WithBotTop ℚ × WithBotTop ℚ)} {bLo
   rcases eq_or_lt_of_le hz with h0 | h0
   · exact .inl h0.symm
   · exact .inr ⟨by lia, by lia, .inl hD⟩
+
+/-- A normalized pair `(x, z)` of height at most `H` lies, with any `y`, in the search region of the
+whole box. -/
+theorem IsNormalizedPair.inRegion_of_isFullBox {H : ℕ} {p : ℤ × ℤ × ℤ}
+    (hn : IsNormalizedPair H p.1 p.2.2) {D : List (WithBotTop ℚ × WithBotTop ℚ)} {bLow bHigh : ℤ}
+    (hb : IsFullBox D bLow bHigh H) : InRegion D bLow bHigh p :=
+  Ratpoints.inRegion_of_isFullBox hb (hn.2.1.elim (·.le) (·.1.ge)) hn.2.2.2
 
 theorem IsFullBox.map {α β : Type*} {dom : List α} {bLow bHigh : ℤ} {H : ℕ}
     (h : IsFullBox dom bLow bHigh H) (f : α → β) : IsFullBox (dom.map f) bLow bHigh H :=

@@ -25,21 +25,24 @@ order (`Ratpoints.FastMask.fastPoints_perm`), so it lists only points of the reg
 (`Ratpoints.FastMask.mem_fastPoints_iff`).
 
 A mask is read as the natural number `Ratpoints.Mask.toNat`, whose bit `j` is bit `j` of the mask
-(`Ratpoints.Mask.testBit_toNat`). The reference definitions of the two primitives then do what the
+(`Ratpoints.Mask.testBit_toNat`). The reference definitions of the three primitives then do what the
 search on natural numbers does: `Ratpoints.Mask.andShr` is the AND with a row shifted to the right
-(`Ratpoints.Mask.toNat_andShr`), and `Ratpoints.Mask.setBits`, on `Ratpoints.Mask.nextSet`, lists
-the set bits in ascending order where `Ratpoints.Fast.setBits` lists them in descending order
-(`Ratpoints.Mask.setBits_perm`). The periodic rows of `Ratpoints.FastMask.baseRow` and
-`Ratpoints.Fast.baseRow` agree on the bits that a family keeps
-(`Ratpoints.FastMask.testBit_toNat_baseRow`, `Ratpoints.Fast.testBit_baseRow_of_lt`), so the
-families of the two searches agree once their rows are read as numbers
-(`Ratpoints.FastMask.map_toFast_mkFamily`), and so do the parameters, the denominators whose rows
-are not `0` (`Ratpoints.FastMask.all_map_isZero_eq`) and the candidates that the sieve leaves in a
-chunk (`Ratpoints.FastMask.toNat_sieveFrom_of_toNat_eq`) or in a part of it, whose mask is cut from
-that of the chunk (`Ratpoints.Mask.toNat_extract_ones`, `Ratpoints.FastMask.partPoints_perm`); the
-exact check with the data made once per denominator is that of the brute force
-(`Ratpoints.FastMask.pointsOfDenWith_eq_pointsOfDen`), so the two searches agree denominator by
-denominator (`Ratpoints.FastMask.denPoints_perm`).
+(`Ratpoints.Mask.toNat_andShr`), `Ratpoints.Mask.andRows` the AND with all the shifted rows of a
+denominator (`Ratpoints.Mask.toNat_andRowsFrom`), which on the mask of a chunk is the sieve of the
+search on natural numbers (`Ratpoints.Mask.toNat_andRows_of_toNat_eq`), and
+`Ratpoints.Mask.setBits`, on `Ratpoints.Mask.nextSet`, lists the set bits in ascending order where
+`Ratpoints.Fast.setBits` lists them in descending order (`Ratpoints.Mask.setBits_perm`). The
+periodic rows of `Ratpoints.FastMask.baseRow` and `Ratpoints.Fast.baseRow` agree on the bits that a
+family keeps (`Ratpoints.FastMask.testBit_toNat_baseRow`, `Ratpoints.Fast.testBit_baseRow_of_lt`),
+so the families of the two searches agree once their rows are read as numbers
+(`Ratpoints.FastMask.map_toFast_mkFamily`), and so do the parameters, the zero tests of the rows of
+a denominator (`Ratpoints.Mask.any_isZero`) and the candidates that the sieve leaves in a chunk or
+in a part of it, whose mask is cut from that of the chunk (`Ratpoints.Mask.toNat_extract_ones`,
+`Ratpoints.FastMask.partPoints_perm`); the exact check with the data made once per denominator is
+that of the brute force (`Ratpoints.FastMask.pointsOfDenWith_eq_pointsOfDen`), so the two searches
+agree denominator by denominator (`Ratpoints.FastMask.denPoints_perm`) and on the whole
+(`Ratpoints.FastMask.search_perm`, `Ratpoints.FastMask.sievePoints_perm`), also when the
+coefficients are reversed, which both decide alike (`Ratpoints.Fast.reversed`).
 
 ## Main statements
 
@@ -54,13 +57,6 @@ denominator (`Ratpoints.FastMask.denPoints_perm`).
 @[expose] public section
 
 /-! ### Bytes and bits -/
-
-@[simp]
-theorem ByteArray.size_mk (d : Array UInt8) : (⟨d⟩ : ByteArray).size = d.size := rfl
-
-@[simp]
-theorem ByteArray.size_emptyWithCapacity (c : ℕ) : (ByteArray.emptyWithCapacity c).size = 0 :=
-  rfl
 
 theorem Nat.testBit_of_le_one {x : ℕ} (hx : x ≤ 1) (n : ℕ) :
     x.testBit n = (decide (n = 0) && decide (x = 1)) := by
@@ -226,6 +222,9 @@ theorem isZero_eq_beq (a : ByteArray) : isZero a = (toNat a == 0) := by
   rw [isZero, nextSet, beq_iff_eq, toNat_eq_zero_iff, Bool.or_eq_true, beq_iff_eq, beq_iff_eq,
     nextSetSpec_zero_eq_iff]
   exact or_iff_right_of_imp fun h j hj ↦ by lia
+
+theorem any_isZero (rs : Array ByteArray) : rs.any isZero = (rs.map toNat).any (· == 0) := by
+  simp [isZero_eq_beq]
 
 theorem le_nextSetSpec (a : ByteArray) {j : ℕ} (h : nextSetSpec a j < 8 * a.size) :
     j ≤ nextSetSpec a j := by
@@ -399,7 +398,50 @@ theorem foldl_and_zero {α : Type*} (g : α → ℕ) (l : List α) :
 theorem setBits_zero : setBits 0 = [] :=
   List.eq_nil_iff_forall_not_mem.mpr fun t ht ↦ by simpa using mem_setBits.mp ht
 
+/-- The sieve on rows read as numbers (`Ratpoints.Mask.toNat`), without its zero tests: an AND with
+`0` stays `0`. -/
+theorem sieve_map_toNat (rs : Array ByteArray) (sh : Array ℕ) (o mask : ℕ) :
+    sieve (rs.map Mask.toNat) sh o mask =
+      (List.range rs.size).foldl (fun n i ↦ n &&& Mask.toNat rs[i]! >>> (sh[i]! + o)) mask := by
+  rw [sieve, Array.size_map]
+  congr 1
+  funext n i
+  rw [Array.getElem!_map Mask.toNat_empty]
+  split_ifs with h
+  · rw [beq_iff_eq.mp h, Nat.zero_and]
+  · rfl
+
 end Fast
+
+/-! ### The AND with several rows -/
+
+namespace Mask
+
+/-- The reference definition of `Ratpoints.Mask.andRows`, from position `i` on, is the AND with
+the shifted rows from `i` on; its zero tests drop nothing, an AND with `0` staying `0`. -/
+theorem toNat_andRowsFrom (rs : Array ByteArray) (sh : Array ℕ) (o : ℕ) (acc : ByteArray) (i : ℕ) :
+    toNat (andRowsFrom rs sh o acc i) =
+      ((List.range rs.size).drop i).foldl (fun n j ↦ n &&& toNat rs[j]! >>> (sh[j]! + o))
+        (toNat acc) := by
+  fun_induction andRowsFrom rs sh o acc i with
+  | case1 acc i h acc' h0 =>
+    rw [List.drop_eq_getElem_cons (by simpa using h), List.foldl_cons, List.getElem_range,
+      getElem!_pos rs i h, ← toNat_andShr]
+    change toNat acc' = List.foldl _ (toNat acc') _
+    rw [toNat_of_size_eq_zero (beq_iff_eq.mp h0), Fast.foldl_and_zero]
+  | case2 acc i h acc' h0 ih =>
+    rw [ih, List.drop_eq_getElem_cons (i := i) (by simpa using h), List.foldl_cons,
+      List.getElem_range, getElem!_pos rs i h, ← toNat_andShr]
+  | case3 acc i h => rw [List.drop_eq_nil_of_le (by simpa using h), List.foldl_nil]
+
+/-- The primitive `Ratpoints.Mask.andRows` (by its reference definition) on a mask with exactly
+its `len` lowest bits set is the sieve of the search on natural numbers. -/
+theorem toNat_andRows_of_toNat_eq (rs : Array ByteArray) (sh : Array ℕ) (o : ℕ)
+    {mask : ByteArray} {len : ℕ} (h : toNat mask = 2 ^ len - 1) :
+    toNat (andRows mask rs sh o) = Fast.sieve (rs.map toNat) sh o (2 ^ len - 1) := by
+  rw [andRows, toNat_andRowsFrom, List.drop_zero, h, Fast.sieve_map_toNat]
+
+end Mask
 
 /-! ### The rows -/
 
@@ -436,34 +478,35 @@ theorem testBit_windowByte {q : ByteArray} (hq : ∀ i : ℕ, q[i]!.toNat ≤ 1)
     Nat.testBit_mod_two_pow, Nat.testBit_shiftLeft, Nat.testBit_of_le_one (hq _)]
   interval_cases t <;> simp
 
-theorem size_patternBits (T' : Array Bool) (m G k : ℕ) (acc : ByteArray) :
-    (patternBits T' m G k acc).size = acc.size + (m + 8 - k) := by
-  fun_induction patternBits T' m G k acc with
-  | case1 k acc hk ih => simp only [dite_eq_ite, ByteArray.size_push] at ih; lia
-  | case2 k acc hk => lia
+theorem size_patternBits (T' : Array Bool) (m g k i : ℕ) (acc : ByteArray) :
+    (patternBits T' m g k i acc).size = acc.size + (m + 8 - k) := by
+  fun_induction patternBits T' m g k i acc with
+  | case1 k i acc hk ih => simp only [ByteArray.size_push] at ih; lia
+  | case2 k i acc hk => lia
 
-theorem getElem!_patternBits_of_lt (T' : Array Bool) (m G k : ℕ) (acc : ByteArray) {i : ℕ}
-    (hi : i < acc.size) : (patternBits T' m G k acc)[i]! = acc[i]! := by
-  fun_induction patternBits T' m G k acc with
-  | case1 k acc hk ih =>
+theorem getElem!_patternBits_of_lt (T' : Array Bool) (m g k i : ℕ) (acc : ByteArray) {i' : ℕ}
+    (hi' : i' < acc.size) : (patternBits T' m g k i acc)[i']! = acc[i']! := by
+  fun_induction patternBits T' m g k i acc with
+  | case1 k i acc hk ih =>
     simp only [dite_eq_ite, ByteArray.size_push] at ih
-    rw [ih (by lia), ByteArray.getElem!_push_lt _ _ _ hi]
-  | case2 k acc hk => rfl
+    rw [ih (by lia), ByteArray.getElem!_push_lt _ _ _ hi']
+  | case2 k i acc hk => rfl
 
-theorem getElem!_patternBits (T' : Array Bool) (m G k : ℕ) (acc : ByteArray) {j : ℕ}
-    (hk : k ≤ j) (hj : j < m + 8) :
-    (patternBits T' m G k acc)[acc.size + (j - k)]! = if T'[G * (j % m) % m]! then 1 else 0 := by
-  fun_induction patternBits T' m G k acc with
-  | case1 k acc hk' ih =>
+/-- The bytes that `Ratpoints.FastMask.patternBits` pushes, for the index `i = k g` modulo `m`
+stepped by `g < m`. -/
+theorem getElem!_patternBits (T' : Array Bool) {m g : ℕ} (hg : g < m) (k i : ℕ) (acc : ByteArray)
+    (hi : i = k * g % m) {j : ℕ} (hk : k ≤ j) (hj : j < m + 8) :
+    (patternBits T' m g k i acc)[acc.size + (j - k)]! = T'[j * g % m]!.toUInt8 := by
+  fun_induction patternBits T' m g k i acc with
+  | case1 k i acc hk' ih =>
     simp only [dite_eq_ite, ByteArray.size_push] at ih
     rcases Nat.lt_or_ge k j with h | h
-    · rw [← ih (by lia)]; congr 1; lia
+    · rw [← ih (Fast.ite_add_lt_eq_mul_mod hi hg) (by lia)]; congr 1; lia
     · obtain rfl : k = j := by lia
       simp only [Nat.sub_self, Nat.add_zero]
-      rw [getElem!_patternBits_of_lt _ _ _ _ _ (by simp [ByteArray.size_push]),
-        ByteArray.getElem!_push_eq]
-  | case2 k acc hk' => lia
-
+      rw [getElem!_patternBits_of_lt _ _ _ _ _ _ (by simp [ByteArray.size_push]),
+        ByteArray.getElem!_push_eq, hi]
+  | case2 k i acc hk' => lia
 
 theorem size_periodBytes (q : ByteArray) (m i o : ℕ) (acc : ByteArray) :
     (periodBytes q m i o acc).size = acc.size + (m - i) := by
@@ -501,41 +544,43 @@ theorem getElem!_periodBytes (q : ByteArray) (m i o : ℕ) (acc : ByteArray) (ho
   | case2 i o acc hi' => lia
 
 
-theorem getElem!_patternBits_zero (T' : Array Bool) (m G c j : ℕ) :
-    (patternBits T' m G 0 (.emptyWithCapacity c))[j]! =
-      if j < m + 8 then (if T'[G * (j % m) % m]! then 1 else 0) else 0 := by
-  by_cases hj : j < m + 8
-  · simp only [hj, ↓reduceIte]
-    have := getElem!_patternBits T' m G 0 (.emptyWithCapacity c) (Nat.zero_le j) hj
+theorem getElem!_patternBits_zero (T' : Array Bool) {m g : ℕ} (hg : g < m) (c j : ℕ) :
+    (patternBits T' m g 0 0 (.emptyWithCapacity c))[j]! =
+      if j < m + 8 then T'[j * g % m]!.toUInt8 else 0 := by
+  split_ifs with hj
+  · have := getElem!_patternBits T' hg 0 0 (.emptyWithCapacity c) (by simp) (Nat.zero_le j) hj
     rwa [ByteArray.size_emptyWithCapacity, Nat.zero_add, Nat.sub_zero] at this
-  · simp only [hj, ↓reduceIte]
-    exact getElem!_neg _ _ (by simp [size_patternBits]; lia)
+  · exact getElem!_neg _ _ (by simp [size_patternBits]; lia)
 
-theorem toNat_getElem!_patternBits_le_one (T' : Array Bool) (m G c j : ℕ) :
-    (patternBits T' m G 0 (.emptyWithCapacity c))[j]!.toNat ≤ 1 := by
-  rw [getElem!_patternBits_zero]
-  split_ifs <;> decide
+theorem toNat_getElem!_patternBits_le_one (T' : Array Bool) {m g : ℕ} (hg : g < m) (c j : ℕ) :
+    (patternBits T' m g 0 0 (.emptyWithCapacity c))[j]!.toNat ≤ 1 := by
+  rw [getElem!_patternBits_zero T' hg]
+  split_ifs
+  · cases T'[j * g % m]! <;> decide
+  · decide
 
-private theorem mul_div_mod_mod_add_mod_mod (m j : ℕ) :
-    (8 * (j / 8 % m) % m + j % 8) % m = j % m := by
-  rw [Nat.mul_mod_mod, Nat.mod_add_mod, Nat.div_add_mod]
+private theorem mul_div_mod_mod_add_mod_mul_mod (m G j : ℕ) :
+    (8 * (j / 8 % m) % m + j % 8) * (G % m) % m = G * j % m := by
+  rw [Nat.mul_mod_mod, ← Nat.mod_mul_mod, Nat.mul_mod_mod, Nat.mod_add_mod, Nat.div_add_mod,
+    Nat.mod_mul_mod, mul_comm]
 
 /-- The bits of the row of a modulus: the bits below `8 nb` of the periodic byte pattern. -/
 theorem testBit_toNat_baseRow {T : Array (Array Bool)} {m G nb r j : ℕ} (hm : 0 < m)
     (hj : j < 8 * nb) : (toNat (baseRow T m G nb r)).testBit j = (T[r]!)[G * j % m]! := by
   have hn : nb ≤ m * 2 ^ (Nat.log2 (nb / m) + 1) := (Fast.le_mul_two_pow_doublings hm nb).le
   have hi : j / 8 % m < m := Nat.mod_lt _ hm
+  have hg : G % m < m := Nat.mod_lt _ hm
   rw [testBit_toNat, bit, baseRow]
-  have hp : (periodBytes (patternBits T[r]! m G 0 (.emptyWithCapacity (m + 8))) m 0 0
+  have hp : (periodBytes (patternBits T[r]! m (G % m) 0 0 (.emptyWithCapacity (m + 8))) m 0 0
       (.emptyWithCapacity m)).size = m := by simp [size_periodBytes]
   rw [byte_extract_repeatBytes (by rw [hp]; exact hn) (by lia), hp,
     byte_of_lt (by rw [hp]; exact hi), ← getElem!_pos,
     show j / 8 % m = (ByteArray.emptyWithCapacity m).size + (j / 8 % m - 0) by simp,
     getElem!_periodBytes _ m 0 0 _ rfl (Nat.zero_le _) hi,
-    testBit_windowByte (toNat_getElem!_patternBits_le_one _ _ _ _) _ (Nat.mod_lt _ (by lia)),
-    getElem!_patternBits_zero, ite_eq_left (by have := Nat.mod_lt (8 * (j / 8 % m)) hm; lia),
-    mul_div_mod_mod_add_mod_mod, Nat.mul_mod_mod]
-  split_ifs <;> simp_all
+    testBit_windowByte (toNat_getElem!_patternBits_le_one _ hg _) _ (Nat.mod_lt _ (by lia)),
+    getElem!_patternBits_zero _ hg, ite_eq_left (by lia [Nat.mod_lt (8 * (j / 8 % m)) hm]),
+    mul_div_mod_mod_add_mod_mul_mod]
+  cases (T[r]!)[G * j % m]! <;> rfl
 
 /-! ### The families -/
 
@@ -601,41 +646,6 @@ theorem map_toFast_fams_choose (tu : Fast.Tuning) (c : List ℤ) (d H B : ℕ) :
     (choose tu c d H B).fams.map Family.toFast = (Fast.choose tu c d H B).fams := by
   simp only [choose, Fast.choose, List.map_toArray, List.map_filterMap, map_toFast_mkFamily]
 
-/-! ### The sieve -/
-
-/-- The sieve on masks, from position `i` on, with the zero tests of the search on natural numbers
-dropped: an AND with `0` stays `0`. -/
-theorem toNat_sieveFrom (rs : Array ByteArray) (sh : Array ℕ) (o : ℕ) (acc : ByteArray) (i : ℕ) :
-    toNat (sieveFrom rs sh o acc i) =
-      ((List.range rs.size).drop i).foldl (fun n j ↦ n &&& toNat rs[j]! >>> (sh[j]! + o))
-        (toNat acc) := by
-  fun_induction sieveFrom rs sh o acc i with
-  | case1 acc i h acc' h0 =>
-    rw [List.drop_eq_getElem_cons (by simpa using h), List.foldl_cons, List.getElem_range,
-      getElem!_pos rs i h, ← toNat_andShr]
-    change toNat acc' = List.foldl _ (toNat acc') _
-    rw [toNat_of_size_eq_zero (beq_iff_eq.mp h0), Fast.foldl_and_zero]
-  | case2 acc i h acc' h0 ih =>
-    rw [ih, List.drop_eq_getElem_cons (i := i) (by simpa using h), List.foldl_cons,
-      List.getElem_range, getElem!_pos rs i h, ← toNat_andShr]
-  | case3 acc i h => rw [List.drop_eq_nil_of_le (by simpa using h), List.foldl_nil]
-
-theorem sieve_map_toNat (rs : Array ByteArray) (sh : Array ℕ) (o mask : ℕ) :
-    Fast.sieve (rs.map toNat) sh o mask =
-      (List.range rs.size).foldl (fun n i ↦ n &&& toNat rs[i]! >>> (sh[i]! + o)) mask := by
-  rw [Fast.sieve, Array.size_map]
-  congr 1
-  funext n i
-  rw [Array.getElem!_map toNat_empty]
-  split_ifs with h
-  · rw [beq_iff_eq.mp h, Nat.zero_and]
-  · rfl
-
-theorem toNat_sieveFrom_of_toNat_eq (rs : Array ByteArray) (sh : Array ℕ) (o : ℕ)
-    {mask : ByteArray} {len : ℕ} (h : toNat mask = 2 ^ len - 1) :
-    toNat (sieveFrom rs sh o mask 0) = Fast.sieve (rs.map toNat) sh o (2 ^ len - 1) := by
-  rw [toNat_sieveFrom, List.drop_zero, h, sieve_map_toNat]
-
 /-! ### The points -/
 
 theorem hornerRec_eq_horner (w : List ℤ) (x : ℤ) : hornerRec w x = BruteForce.horner w x := by
@@ -647,7 +657,8 @@ theorem pointsOfDenWith_eq_pointsOfDen (c : List ℤ) (d : ℕ) (z : ℤ) :
     pointsOfDenWith (BruteForce.scaledCoeffs c d z) (if d % 2 = 1 then z else 1) z =
       BruteForce.pointsOfDen c d z := by
   funext xs
-  simp only [pointsOfDenWith, BruteForce.pointsOfDen, hornerRec_eq_horner]
+  simp [pointsOfDenWith, BruteForce.pointsOfDen, hornerRec_eq_horner, Fast.natGcd_eq,
+    Int.gcd_eq_natAbs_gcd_natAbs]
 
 theorem pointsOfDen_eq_pointsOfDen : FastMask.pointsOfDen = BruteForce.pointsOfDen := by
   funext c d z
@@ -662,8 +673,8 @@ theorem chunkPoints_perm {c : List ℤ} {d : ℕ} (G : ℕ) {w : Thunk (List ℤ
     (chunkPoints G w f rs sh o a₀ mask b).Perm
       (Fast.chunkPoints c d G (rs.map toNat) sh o a₀ len b) := by
   rw [chunkPoints, Fast.chunkPoints, hw, hf, pointsOfDenWith_eq_pointsOfDen,
-    ← toNat_sieveFrom_of_toNat_eq rs sh o hmask]
-  generalize sieveFrom rs sh o mask 0 = acc
+    ← toNat_andRows_of_toNat_eq rs sh o hmask]
+  generalize andRows mask rs sh o = acc
   rw [ite_eq_right_iff.mpr fun h ↦ ?_, ite_eq_right_iff.mpr fun h ↦ ?_]
   · exact ((setBits_perm acc).map _).flatMap_right _
   · rw [beq_iff_eq.mp h, Fast.setBits_zero]
@@ -699,15 +710,17 @@ theorem denPoints_perm (c : List ℤ) (d H G : ℕ) (fams : Array Family)
       (Fast.denPoints c d H G (fams.map Family.toFast) reg
         (l.map fun s ↦ (s.1, s.2.1, s.2.2, (fams.map Family.toFast).map (·.shift s.2.1))) b) := by
   have hrs : (fams.map fun F ↦ toNat F.rows[b % F.M]!) =
-      (fams.map fun F ↦ F.rows[b % F.M]!).map toNat := by
-    rw [Array.map_map]
-    rfl
+      (fams.map fun F ↦ F.rows[b % F.M]!).map toNat := by simp [Function.comp_def]
   rw [denPoints, Fast.denPoints]
+  simp only [List.flatMap_map, Array.map_map, Function.comp_def, Family.toFast_M,
+    Family.toFast_rows, Family.shift_toFast, Array.getElem!_map toNat_empty, any_isZero]
+  simp only [hrs]
+  generalize ((fams.map fun F ↦ F.rows[b % F.M]!).map toNat).any (· == 0) = z
+  cases z
+  case true => rfl
   rcases Fast.bounds H b reg with _ | ⟨lo, hi⟩
   · rfl
-  simp only [List.flatMap_map, Array.map_map, Function.comp_def, Family.toFast_M,
-    Family.toFast_rows, Family.shift_toFast, Array.getElem!_map toNat_empty]
-  simp only [hrs]
+  dsimp only
   by_cases hf : (lo == -(H : ℤ) && hi == (H : ℤ)) = true
   · simp only [hf, ↓reduceIte]
     exact List.Perm.flatMap_left _ fun s _ ↦ chunkPoints_perm G rfl rfl _ _ _ _ (toNat_ones _)
@@ -723,39 +736,29 @@ theorem filter_map_toFast (fams : Array Family) :
   simp only [Function.comp_def, Family.toFast_M, Family.toFast_rows, Array.size_map]
   rfl
 
-theorem mod_lt_size_rows_of_mem_filter {fams : Array Family} {F : Family}
-    (h : F ∈ fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M) (b : ℕ) :
-    b % F.M < F.rows.size := by
-  obtain ⟨h1, h2⟩ : F.rows.size = F.M ∧ 0 < F.M := by simpa using (Array.mem_filter.mp h).2
-  exact (Nat.mod_lt b h2).trans_eq h1.symm
-
-/-- The zero tests of the rows through the table of the search on masks are those of the search on
-natural numbers, for families with a row for the residue of `b`. -/
-theorem all_map_isZero_eq {fams : Array Family} {b : ℕ} (h : ∀ F ∈ fams, b % F.M < F.rows.size) :
-    ((fams.map fun F ↦ (F.M, F.rows.map isZero)).all fun x ↦ !x.2[b % x.1]!) =
-      (fams.map Family.toFast).all fun F ↦ F.rows[b % F.M]! != 0 := by
-  rw [Bool.eq_iff_iff]
-  simp only [Array.all_map, Array.all_eq_true_iff_forall_mem]
-  refine forall₂_congr fun F hF ↦ ?_
-  simp [getElem!_pos, h F hF, isZero_eq_beq]
-
 theorem search_perm (c : List ℤ) (d H G L : ℕ) (fams : Array Family)
     (reg : Option (Array (Option (ℤ × ℕ) × Option (ℤ × ℕ)))) (dens : List ℕ) :
     (search c d H G L fams reg dens).Perm
       (Fast.search c d H G L (fams.map Family.toFast) reg dens) := by
   rw [search, Fast.search, filter_map_toFast]
-  simp only [List.filter_map, Array.getElem!_map_list_map]
-  rw [List.filter_congr fun b _ ↦
-    all_map_isZero_eq fun F hF ↦ mod_lt_size_rows_of_mem_filter hF b]
+  simp only [List.filter_map, Array.getElem!_map_list_map, List.isEmpty_map]
   exact List.Perm.flatMap_left _ fun b _ ↦ denPoints_perm ..
+
+/-- The searches without the reversal list the same points. -/
+theorem sievePoints_perm (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Fast.Tuning) :
+    (sievePoints c H bLow bHigh tu).Perm (Fast.sievePoints c H bLow bHigh tu) := by
+  rw [sievePoints, Fast.sievePoints, pointsOfDen_eq_pointsOfDen, ← map_toFast_fams_choose]
+  exact (search_perm ..).append_left _
 
 /-- **The search on byte-array masks lists the same points as the search on natural numbers**,
 `Ratpoints.Fast.fastPoints`, in another order, for every coefficient list, every height bound,
 every range and every setting of the parameters. -/
 theorem fastPoints_perm (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Fast.Tuning) :
     (fastPoints c H bLow bHigh tu).Perm (Fast.fastPoints c H bLow bHigh tu) := by
-  rw [fastPoints, Fast.fastPoints, pointsOfDen_eq_pointsOfDen, ← map_toFast_fams_choose]
-  exact (search_perm ..).append_left _
+  rw [fastPoints, Fast.fastPoints]
+  rcases Fast.reversed c H bLow bHigh with ⟨c', _ | _⟩
+  · exact sievePoints_perm ..
+  · exact (sievePoints_perm ..).map _
 
 /-- **The fast search lists only points** of height at most `H` with their denominator in the range
 of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and every setting

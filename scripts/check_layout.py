@@ -18,7 +18,7 @@ Prints `FAIL <rule> <file>:<line>: <text>` for every violation and exits 1 if th
 - The model and the fast search are plain executable code that the proofs are about: no
   experimental options, and no `partial`, `unsafe`, `implemented_by` or `extern`, which would let
   the executable run code that the proofs do not see; the one exception is `extern` in
-  `Ratpoints/Fast/Mask.lean`, the C code of the two primitives on bit masks, whose Lean bodies
+  `Ratpoints/Fast/Mask.lean`, the C code of the three primitives on bit masks, whose Lean bodies
   are the reference definitions the proofs use.
 - Axioms: no `native_decide`, `decide +native`, `bv_decide`, `bv_check` or `ofReduceBool`
   anywhere, since each adds an axiom that comparator rejects.

@@ -14,11 +14,12 @@ Lemmas that Lean core lacks, under their names in the namespaces of core, on vec
 after `Vector.set!` and after a fold of it, of `Vector.ofFn f` and of the array of a vector), arrays
 (the entries after `Array.set!`, `Array.push`, `Array.pop`, `Array.map`, a concatenation and
 `Array.eraseIdxIfInBounds`, the cursor of a loop over an array, an array that extends another, the
-entries of an array whose list extends that of another), lists (filters and `List.flatMap` over
-ranges, a list read by its indices, tests by the entries, prefixes, the cursors of loops over two
-lists), ranges (the cursor of a loop over `[a:m]`), natural numbers and integers (residues and
-quotients, Barrett's estimate, the remainder and the quotient by a reciprocal, the steps of the
-binary algorithm for the gcd), `Except` and strings. The lemmas on 64-bit words are in
+entries of an array whose list extends that of another), byte arrays (the size of a byte array made
+from an array, the bytes after `ByteArray.set!`), lists (filters and `List.flatMap` over ranges, a
+list read by its indices, tests by the entries, prefixes, the cursors of loops over two lists),
+ranges (the cursor of a loop over `[a:m]`), natural numbers and integers (residues and quotients,
+Barrett's estimate, the remainder and the quotient by a reciprocal, the steps of the binary
+algorithm for the gcd), `Except` and strings. The lemmas on 64-bit words are in
 `Ratpoints.Proof.Bits`.
 
 ## Main definitions
@@ -351,6 +352,33 @@ theorem getElem_eraseIdxIfInBounds_of_lt {α : Type u} {xs : Array α} {n i : Na
   simp only [eraseIdxIfInBounds_eq, hn, ↓reduceDIte, getElem_eraseIdx, hi]
 
 end Array
+
+/-! ### Byte arrays -/
+
+namespace ByteArray
+
+@[simp]
+theorem size_mk (d : Array UInt8) : (⟨d⟩ : ByteArray).size = d.size := rfl
+
+@[simp]
+theorem size_emptyWithCapacity (c : Nat) : (emptyWithCapacity c).size = 0 :=
+  rfl
+
+theorem getElem!_mk_replicate_zero (n b : Nat) : (⟨Array.replicate n 0⟩ : ByteArray)[b]! = 0 := by
+  by_cases h : b < n
+  · rw [getElem!_pos _ _ (by simpa using h), getElem_eq_getElem_data]
+    simp
+  · rw [getElem!_neg _ _ (by simpa using h)]
+    rfl
+
+theorem getElem!_set!_of_getElem!_eq {a : ByteArray} {i j : Nat} {v : UInt8} (hj : j < a.size)
+    (h : a[j]! = v) : (a.set! i v)[j]! = v := by
+  by_cases hij : i = j
+  · subst hij
+    exact getElem!_set!_self _ _ _ hj
+  · rw [getElem!_set!_ne _ _ _ _ hij, h]
+
+end ByteArray
 
 /-! ### Lists -/
 
@@ -803,6 +831,12 @@ theorem ite_mod_add_one_eq_add_one_mod {w p : Nat} (hp : 0 < p) :
   split <;> rename_i he
   · rw [he, Nat.mod_self]
   · rw [Nat.mod_eq_of_lt (a := w % p + 1) (by lia)]
+
+/-- The sum of two residues modulo `m` by one conditional subtraction. -/
+theorem ite_add_lt_eq_add_mod {m i u : Nat} (hi : i < m) (hu : u < m) :
+    (if i + u < m then i + u else i + u - m) = (i + u) % m := by
+  rw [mod_eq_ite_of_lt_two_mul (by lia)]
+  split <;> split <;> lia
 
 /-- The bits of `x &&& k` for `k < 2 ^ n` are those of the residue of `x` modulo `2 ^ n`. -/
 theorem and_eq_mod_two_pow_and {x k n : Nat} (hk : k < 2 ^ n) : x &&& k = x % 2 ^ n &&& k := by

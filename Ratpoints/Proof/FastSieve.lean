@@ -18,6 +18,7 @@ import Ratpoints.Mathlib.Algebra.Order.Field.Basic
 import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Divisors
+import Ratpoints.Proof.FastDenominators
 import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.Rounding
 import Ratpoints.Proof.SturmCoverage
@@ -34,11 +35,12 @@ setting `tu` of its parameters.
 
 The sieve is a sound filter: a point `(a, y, b)` makes `(a, b)` a candidate
 (`Ratpoints.Fast.IsCandidate`), and the residues of a candidate modulo every `m` pass the table
-`Ratpoints.Fast.admitTable` (`Ratpoints.Fast.admitTable_spec`), so the bit of `a` survives in the
-row of every family (`Ratpoints.Fast.Family.IsSound`, `Ratpoints.Fast.mkFamily_isSound`), in that
-row shifted to the start of each chunk and moved to the part of the chunk that is searched
-(`Ratpoints.Fast.Family.IsSound.testBit_shiftRight`) and in the sieve
-(`Ratpoints.Fast.testBit_sieve`); `Ratpoints.Fast.setBits` lists the bits that survive
+`Ratpoints.Fast.admitTable` (`Ratpoints.Fast.admitTable_spec`; a row prime to `m` is row `1`
+permuted, `Ratpoints.Fast.getElem!_admitTable`, `Ratpoints.Fast.getElem!_permRow`), so the bit of
+`a` survives in the row of every family (`Ratpoints.Fast.Family.IsSound`,
+`Ratpoints.Fast.mkFamily_isSound`), in that row shifted to the start of each chunk and moved to the
+part of the chunk that is searched (`Ratpoints.Fast.Family.IsSound.testBit_shiftRight`) and in the
+sieve (`Ratpoints.Fast.testBit_sieve`); `Ratpoints.Fast.setBits` lists the bits that survive
 (`Ratpoints.Fast.mem_setBits`), and the exact check of `Ratpoints.BruteForce.pointsOfDen` keeps the
 points among them. The slots, the chunks of the classes modulo `G`, cover each numerator once
 (`Ratpoints.Fast.exists_mem_slots`, `Ratpoints.Fast.pairwise_slots`), and the part of a chunk holds
@@ -48,7 +50,8 @@ the numerators of the chunk within the bounds of the region (`Ratpoints.Fast.exi
 (`Ratpoints.Fast.of_mem_denPoints`, `Ratpoints.Fast.mem_denPoints_of`,
 `Ratpoints.Fast.nodup_denPoints`) and the whole search list the points of its denominators with
 their numerators within the bounds, each once (`Ratpoints.Fast.of_mem_search`,
-`Ratpoints.Fast.mem_search_of`, `Ratpoints.Fast.nodup_search`).
+`Ratpoints.Fast.mem_search_of`, `Ratpoints.Fast.nodup_search`); a denominator for which a family has
+the row `0` carries no candidate (`Ratpoints.Fast.any_rows_eq_false`).
 
 Assuming Sturm's theorem, the bounds of the region hold the numerator `a` of every point
 (`Ratpoints.Fast.exists_bounds_region`): one of the intervals that the Sturm step keeps holds
@@ -57,14 +60,23 @@ and the bounds that `Ratpoints.Fast.endFrac` makes of the ends of the interval
 (`Ratpoints.Fast.div_le_of_endFrac_eq_some`, `Ratpoints.Fast.le_div_of_endFrac_eq_some`) bound `a`
 (`Ratpoints.Fast.fst_numRange_le`, `Ratpoints.Fast.le_snd_numRange`,
 `Ratpoints.Fast.exists_bounds_of_mem`). The denominators that the search leaves out carry no point
-(`Ratpoints.Fast.mem_denominators_of_isCandidate`): for odd degree they are not of the form
-`s k ^ 2` with `s` dividing the leading coefficient
-(`Ratpoints.Fast.any_filter_range'_of_isCandidate`, from
-`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`), and for even degree they are multiples
-of an odd `p` with the symbol `-1` of `Ratpoints.Sieve.jacobi`
-(`Ratpoints.Fast.exists_dvd_of_getElem!_forbiddenDens`,
-`Ratpoints.Fast.getElem!_forbiddenDens_eq_false`), which is `1` on every divisor of the
-denominator of a point (`Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq_of_dvd`).
+(`Ratpoints.Fast.mem_denominators_of_isCandidate`): for odd degree it takes those of the form
+`s k ^ 2` with `s` dividing the leading coefficient, which `Ratpoints.Fast.squareDens` marks
+(`Ratpoints.Fast.getElem!_squareDens_of_isCandidate`, from
+`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`), and for even degree it leaves out those
+that `Ratpoints.Fast.forbiddenDens` marks, multiples of an odd `q` with `J(c_d | q) = -1`
+(`Ratpoints.Fast.exists_dvd_of_getElem!_forbiddenDens_ne_zero`), while the symbol is `1` on every
+divisor of the denominator of a point prime to `c_d`
+(`Ratpoints.Sieve.jacobiSym_eq_one_of_sq_eq_binaryForm`,
+`Ratpoints.Fast.getElem!_forbiddenDens_eq_zero`).
+
+When no range of the denominators is given, `Ratpoints.Fast.fastPoints` runs
+`Ratpoints.Fast.sievePoints` on the coefficients that `Ratpoints.Fast.reversed` hands on: when it
+reverses them, the region is the whole box and the binary form is that of `c` with `x` and `z`
+exchanged (`Ratpoints.Fast.isFullBox_and_binaryForm_eq_of_reversed_eq`), so that
+`Ratpoints.Sieve.swapPoint` maps the points of the reversed list one to one onto those of `c`
+(`Ratpoints.Sieve.isPoint_swapPoint`, `Ratpoints.Sieve.swapPoint_inj`), which all lie in the whole
+box (`Ratpoints.IsNormalizedPair.inRegion_of_isFullBox`).
 
 ## Main statements
 
@@ -233,9 +245,14 @@ theorem sqTable_sq {m : ℕ} (hm : 0 < m) (y : ℤ) : (sqTable m)[(y ^ 2 % m).to
   refine Array.getElem!_foldl_set!_eq_true _ _ (by simpa [← heq] using Nat.mod_lt _ hm)
     (.inr ⟨_, List.mem_range.mpr hy, heq⟩)
 
+theorem natGcd_eq (a b : ℕ) : natGcd a b = Nat.gcd a b := by
+  fun_induction natGcd a b with
+  | case1 => simp
+  | case2 _ _ _ ih => rw [ih, Nat.gcd_comm, ← Nat.gcd_rec, Nat.gcd_comm]
+
 theorem coprimeWith_of_gcd_eq_one {a : ℤ} {b m : ℕ} (hm : 0 < m) (hab : Int.gcd a b = 1) :
     coprimeWith (Nat.gcd (b % m) m) (a % (m : ℤ)).toNat = true := by
-  simp only [coprimeWith, Bool.or_eq_true, beq_iff_eq]
+  simp only [coprimeWith, natGcd_eq, Bool.or_eq_true, beq_iff_eq]
   right
   set g := Nat.gcd (a % (m : ℤ)).toNat (Nat.gcd (b % m) m)
   have h1 : g ∣ (a % (m : ℤ)).toNat := Nat.gcd_dvd_left _ _
@@ -265,7 +282,7 @@ theorem sqTable_of_modEq {m : ℕ} (hm : 0 < m) {v y : ℤ} (h : v ≡ y ^ 2 [ZM
 theorem getElem!_admitRow {c : List ℤ} {m r x : ℕ} (hm : 0 < m) (hx : x < m)
     (hg : coprimeWith (Nat.gcd r m) x = true) {y : ℤ} (hy : binaryForm c x r ≡ y ^ 2 [ZMOD m]) :
     (admitRow c (BruteForce.degree c) m (sqTable m) r)[x]! = true := by
-  rw [admitRow, getElem!_map_range _ hx, hg, Bool.true_and]
+  rw [admitRow, getElem!_map_range _ hx, natGcd_eq, hg, Bool.true_and]
   exact sqTable_of_modEq hm ((hornerMod_scaledCoeffsMod_modEq c m r x).trans hy)
 
 theorem intCast_mul_modEq_one {b u m : ℕ} (h : b % m * u % m = 1 % m) :
@@ -300,6 +317,51 @@ theorem binaryForm_mul_modEq_sq {c : List ℤ} {m : ℕ} {a y : ℤ} {b u x : �
     _ = (y * u ^ ((degree c + degree c % 2) / 2)) ^ 2 := by
         rw [← hy, mul_pow, ← pow_mul, mul_comm _ 2, ← hD]
 
+/-- The loop of `Ratpoints.Fast.admitTable` appends the rows from `r` on to `acc`. -/
+theorem admitTable.go_eq_append (c : List ℤ) (d m : ℕ) (sq one : Array Bool) (inv : Array ℕ)
+    (r : ℕ) (acc : Array (Array Bool)) :
+    admitTable.go c d m sq one inv r acc = acc ++ ((List.range' r (m - r)).map fun r ↦
+      if r * inv[r]! % m == 1 % m && inv[r]! < m then permRow one m inv[r]!
+      else admitRow c d m sq r).toArray := by
+  fun_induction admitTable.go c d m sq one inv r acc with
+  | case1 r _ hr u ih =>
+    rw [dite_eq_ite] at ih
+    rw [ih, show m - r = m - (r + 1) + 1 by lia, List.range'_succ]
+    simp [u]
+  | case2 r _ hr => simp [show m - r = 0 by lia]
+
+/-- The index `i = x u` modulo `m`, stepped by `u < m` with one conditional subtraction, is
+`(x + 1) u` modulo `m`. -/
+theorem ite_add_lt_eq_mul_mod {m u x i : ℕ} (hi : i = x * u % m) (hu : u < m) :
+    (if i + u < m then i + u else i + u - m) = (x + 1) * u % m := by
+  rw [Nat.ite_add_lt_eq_add_mod (hi ▸ Nat.mod_lt _ (by lia)) hu, hi, Nat.mod_add_mod, Nat.succ_mul]
+
+/-- The loop of `Ratpoints.Fast.permRow` appends the entries from `x` on to `acc`, for the index
+`i = x u` modulo `m`. -/
+theorem permRow.go_eq_append (one : Array Bool) {m u : ℕ} (hu : u < m) (x i : ℕ)
+    (acc : Array Bool) (hi : i = x * u % m) :
+    permRow.go one m u x i acc =
+      acc ++ ((List.range' x (m - x)).map fun x ↦ one[x * u % m]!).toArray := by
+  fun_induction permRow.go one m u x i acc with
+  | case1 x i _ hx ih =>
+    simp only [dite_eq_ite] at ih
+    rw [ih (ite_add_lt_eq_mul_mod hi hu), show m - x = m - (x + 1) + 1 by lia, List.range'_succ]
+    simp [hi]
+  | case2 x _ _ hx => simp [show m - x = 0 by lia]
+
+theorem getElem!_permRow (one : Array Bool) {m u x : ℕ} (hu : u < m) (hx : x < m) :
+    (permRow one m u)[x]! = one[x * u % m]! := by
+  rw [permRow, permRow.go_eq_append one hu 0 0 _ (by simp)]
+  simp [hx]
+
+theorem getElem!_admitTable (c : List ℤ) (d : ℕ) {m r : ℕ} (hr : r < m) :
+    (admitTable c d m)[r]! =
+      if r * (invTable m)[r]! % m == 1 % m && (invTable m)[r]! < m then
+        permRow (admitRow c d m (sqTable m) 1) m (invTable m)[r]!
+      else admitRow c d m (sqTable m) r := by
+  rw [admitTable, admitTable.go_eq_append]
+  simp [hr]
+
 theorem admitTable_spec {c : List ℤ} {m : ℕ} (hm : 0 < m) {a : ℤ} {b : ℕ}
     (h : IsCandidate c a b) :
     ((admitTable c (BruteForce.degree c) m)[b % m]!)[(a % (m : ℤ)).toNat]! = true := by
@@ -309,12 +371,12 @@ theorem admitTable_spec {c : List ℤ} {m : ℕ} (hm : 0 < m) {a : ℤ} {b : ℕ
   have hxa : ((a % (m : ℤ)).toNat : ℤ) ≡ a [ZMOD m] := by
     rw [Int.toNat_of_nonneg (Int.emod_nonneg a hm'.ne')]
     exact Int.mod_modEq a m
-  rw [admitTable, Array.getElem!_ofFn _ (Nat.mod_lt _ hm)]
-  dsimp only
+  rw [getElem!_admitTable _ _ (Nat.mod_lt _ hm)]
   split_ifs with hu
-  · rw [Array.getElem!_ofFn _ hx]
+  · simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hu
+    rw [getElem!_permRow _ hu.2 hx]
     exact getElem!_admitRow hm (Nat.mod_lt _ hm) (by simp [coprimeWith])
-      (binaryForm_mul_modEq_sq hy hxa (by simpa using hu))
+      (binaryForm_mul_modEq_sq hy hxa (by simpa using hu.1))
   · refine getElem!_admitRow (y := y) hm hx (coprimeWith_of_gcd_eq_one hm hab) ?_
     refine (binaryForm_modEq c hxa ?_).trans (by rw [hy])
     push_cast [Int.natCast_mod]
@@ -914,6 +976,8 @@ theorem of_mem_denPoints {c : List ℤ} {H G : ℕ} {fams : Array Family}
     p.2.2 = b ∧ (∃ s ∈ sl, ∃ t < s.2.2.1, p.1 = s.2.1 + G * t) ∧ Int.gcd p.1 p.2.2 = 1 ∧
       p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
   simp only [denPoints] at h
+  split_ifs at h
+  · simp at h
   split at h
   · simp at h
   split_ifs at h
@@ -922,6 +986,16 @@ theorem of_mem_denPoints {c : List ℤ} {H G : ℕ} {fams : Array Family}
     exact ⟨hz, ⟨_, hs, t, ht, hx⟩, hg, hy⟩
   · obtain ⟨hz, ⟨t, ht, hx⟩, hg, hy⟩ := of_mem_partPoints hp
     exact ⟨hz, ⟨_, hs, t, ht, hx⟩, hg, hy⟩
+
+/-- No row of sound families is `0` for the denominator of a candidate
+(`Ratpoints.Fast.Family.IsSound.rows_ne_zero`). -/
+theorem any_rows_eq_false {c : List ℤ} {G L : ℕ} {fams : Array Family}
+    (hfams : ∀ F ∈ fams, F.IsSound c G L) {a : ℤ} {b : ℕ} (hc : IsCandidate c a b) :
+    (fams.map fun F ↦ F.rows[b % F.M]!).any (· == 0) = false := by
+  refine Bool.eq_false_iff.mpr fun h ↦ ?_
+  obtain ⟨_, hx, h0⟩ := Array.any_eq_true'.mp h
+  obtain ⟨F, hF, rfl⟩ := Array.mem_map.mp hx
+  exact (hfams F hF).rows_ne_zero hc (beq_iff_eq.mp h0)
 
 /-- A point of a chunk of `sl` with its numerator within the bounds of the region lies in the
 search of its denominator. -/
@@ -933,7 +1007,8 @@ theorem mem_denPoints_of {c : List ℤ} {H G L : ℕ} (hG : 0 < G) {fams : Array
     (hg : Int.gcd p.1 p.2.2 = 1) (hy : p.2.1 ^ 2 = binaryForm c p.1 p.2.2) {lo hi : ℤ}
     (hbd : bounds H b reg = some (lo, hi)) (hlo : lo ≤ p.1) (hhi : p.1 ≤ hi) :
     p ∈ denPoints c (BruteForce.degree c) H G fams reg sl b := by
-  simp only [denPoints, hbd]
+  simp only [denPoints, any_rows_eq_false hfams ⟨hz ▸ hg, p.2.1, hz ▸ hy⟩, Bool.false_eq_true,
+    ↓reduceIte, hbd]
   split_ifs
   all_goals refine List.mem_flatMap.mpr ⟨_, hs, ?_⟩
   · exact (mem_chunkPoints fun t' ht' hc' i hi ↦ testBit_rows_shiftRight hfams (by lia)
@@ -958,6 +1033,8 @@ theorem nodup_denPoints (c : List ℤ) (H : ℕ) {G : ℕ} (hG : 0 < G) (fams : 
       ∀ t < s.2.2.1, ∀ t' < s'.2.2.1, s.2.1 + G * t ≠ s'.2.1 + G * t')
     (b : ℕ) : (denPoints c (BruteForce.degree c) H G fams reg sl b).Nodup := by
   rw [denPoints]
+  split_ifs
+  · exact List.nodup_nil
   split
   · exact List.nodup_nil
   split_ifs
@@ -989,10 +1066,11 @@ theorem mem_search_of {c : List ℤ} {H G L : ℕ} {fams : Array Family}
   have hF (F) (h : F ∈ fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M) : F.IsSound c G L :=
     hfams F (Array.mem_filter.mp h).1
   obtain ⟨a₀, len, hs, t, ht, hx⟩ := exists_mem_slots hG hL ha
-  simp only [search, List.mem_flatMap, List.mem_filter, Array.all_eq_true_iff_forall_mem,
-    bne_iff_ne]
-  refine ⟨b, ⟨hb, fun F hF' ↦ (hF F hF').rows_ne_zero hc⟩, mem_denPoints_of hG hF
-    (r := (p.1 % G).toNat) ?_ (le_of_mem_slots hs) ht hx hz hg hy hbd hlo hhi⟩
+  simp only [search, List.mem_flatMap, List.mem_filter]
+  refine ⟨b, and_assoc.mpr ⟨hb, (and_iff_right_of_imp fun hp ↦ ?_).mpr (mem_denPoints_of hG hF
+    (r := (p.1 % G).toNat) ?_ (le_of_mem_slots hs) ht hx hz hg hy hbd hlo hhi)⟩⟩
+  · obtain ⟨-, ⟨s, hs', -⟩, -⟩ := of_mem_denPoints hp
+    simpa using List.ne_nil_of_mem hs'
   rw [getElem!_map_range _ (Nat.mod_lt _ hG)]
   exact List.mem_filter.mpr ⟨List.mem_map.mpr ⟨_, hs, rfl⟩, by simpa using admitTable_spec hG hc⟩
 
@@ -1009,84 +1087,45 @@ theorem nodup_search (c : List ℤ) (H : ℕ) {G L : ℕ} (fams : Array Family)
 
 /-! ### The denominators -/
 
-theorem isSquare_mul_self (k : ℕ) : isSquare (k * k) = true := by
-  simp [isSquare, Nat.sqrt_eq]
-
-theorem of_getElem!_markMultiples {a : Array Bool} {n j hi b : ℕ}
-    (h : (markMultiples a n j hi)[b]! = true) : a[b]! = true ∨ ∃ k, b = j + n * k := by
-  fun_induction markMultiples a n j hi with
-  | case1 a j hj ih =>
-    rcases ih h with h' | ⟨k, rfl⟩
-    · by_cases hjb : j = b
-      · exact .inr ⟨0, by lia⟩
-      · exact .inl (by rwa [Array.getElem!_set!_ne _ _ _ _ hjb] at h')
-    · exact .inr ⟨k + 1, by ring⟩
-  | case2 a j hj => exact .inl h
-
-/-- The invariant of the fold of `Ratpoints.Fast.forbiddenDens`, which marks the multiples of `p`
-when `Ratpoints.Sieve.jacobi p lc = -1`; that `p` is an odd prime, as the sieve of Eratosthenes
-makes it, is not needed. -/
-theorem exists_dvd_of_getElem!_forbiddenDens {lc : ℤ} {hi b : ℕ}
-    (h : (forbiddenDens lc hi)[b]! = true) :
-    ∃ p, p ≠ 0 ∧ p ∣ b ∧ Id.run (Sieve.jacobi p lc) = -1 := by
-  rw [forbiddenDens] at h
-  refine List.foldlRecOn (motive := fun s : Array Bool × Array Bool ↦ ∀ b, s.2[b]! = true →
-    ∃ p, p ≠ 0 ∧ p ∣ b ∧ Id.run (Sieve.jacobi p lc) = -1) _ _
-    (fun b hb ↦ absurd hb (by grind [Bool.default_bool])) (fun s ih p hp b hb ↦ ?_) b h
-  dsimp only at hb
-  split_ifs at hb with h1 h2
-  · exact ih b hb
-  · rcases of_getElem!_markMultiples hb with hb | ⟨k, rfl⟩
-    · exact ih b hb
-    · obtain ⟨i, -, rfl⟩ := List.mem_range'.mp hp
-      exact ⟨_, by lia, ⟨k + 1, by ring⟩, beq_iff_eq.mp h2⟩
-  · exact ih b hb
-
-/-- `Ratpoints.Fast.forbiddenDens` marks no denominator of a point of a curve of even degree: a
-marked one has a divisor `p` with `Ratpoints.Sieve.jacobi p c_d = -1`, where the symbol is `1` on
-every divisor of the denominator of a point
-(`Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq_of_dvd`). -/
-theorem getElem!_forbiddenDens_eq_false {c : List ℤ} (hd : degree c % 2 = 0) {a : ℤ} {b : ℕ}
-    (hc : IsCandidate c a b) (hi : ℕ) : (forbiddenDens (c.getD (degree c) 0) hi)[b]! = false := by
-  refine Bool.eq_false_iff.mpr fun h ↦ ?_
-  obtain ⟨p, hp, hpb, hJ⟩ := exists_dvd_of_getElem!_forbiddenDens h
+theorem getElem!_forbiddenDens_eq_zero {c : List ℤ} (hd : degree c % 2 = 0) {a : ℤ} {b : ℕ}
+    (hc : IsCandidate c a b) (hi : ℕ) : (forbiddenDens (c.getD (degree c) 0) hi)[b]! = 0 := by
+  by_contra h
+  obtain ⟨q, hq, hqb, hJ⟩ := exists_dvd_of_getElem!_forbiddenDens_ne_zero h
   obtain ⟨hab, y, hy⟩ := hc
-  exact absurd (hJ.symm.trans (Sieve.run_jacobi_eq_one_of_sq_eq_of_dvd hd hp hpb hab hy))
-    (by decide)
+  have hg : Int.gcd (c.getD (degree c) 0) q = 1 := by
+    by_contra hg
+    rw [jacobiSym.eq_zero_iff.mpr ⟨by lia, hg⟩] at hJ
+    exact absurd hJ (by decide)
+  rw [Sieve.jacobiSym_eq_one_of_sq_eq_binaryForm hab hd hy hqb hg] at hJ
+  exact absurd hJ (by decide)
 
-theorem mem_range'_of_mem_denominators {c : List ℤ} {d H : ℕ} {bLow bHigh : ℤ} {b : ℕ}
-    (h : b ∈ denominators c d H bLow bHigh) :
-    b ∈ List.range' (max 1 bLow.toNat)
-      ((if bHigh < 1 then H else min H bHigh.toNat) + 1 - max 1 bLow.toNat) := by
-  simp only [denominators] at h
-  generalize (if bHigh < 1 then H else min H bHigh.toNat) = hi at h ⊢
-  split_ifs at h <;> first | exact (List.mem_filter.mp h).1 | exact h
+/-- For odd degree, the denominator `b` of a candidate is `s k ^ 2` with `s` dividing the leading
+coefficient (`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`), which
+`Ratpoints.Fast.squareDens` marks. -/
+theorem getElem!_squareDens_of_isCandidate {c : List ℤ} (hd : degree c % 2 = 1) {a : ℤ}
+    {b hi : ℕ} (hb : 1 ≤ b) (hbhi : b ≤ hi) (hc : IsCandidate c a b) :
+    (squareDens (c.getD (degree c) 0).natAbs hi)[b]! = 1 := by
+  obtain ⟨hab, y, hy⟩ := hc
+  obtain ⟨s, k, -, hs, rfl⟩ := exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd hd hab hy
+  have hk : 0 < k := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hb
+  exact getElem!_squareDens (Int.natAbs_ne_zero.mpr (getD_degree_ne_zero_of_pos (by lia))) hs hk
+    hbhi
+
+/-- The denominators of the search lie in the range of `bLow`, `bHigh` and `H`, in ascending
+order. -/
+theorem denominators_sublist (c : List ℤ) (d H : ℕ) (bLow bHigh : ℤ) :
+    (denominators c d H bLow bHigh).Sublist (List.range' (max 1 bLow.toNat)
+      ((if bHigh < 1 then H else min H bHigh.toNat) + 1 - max 1 bLow.toNat)) := by
+  simp only [denominators]
+  generalize (if bHigh < 1 then H else min H bHigh.toNat) = hi
+  split_ifs <;> first | exact collectMarked_sublist _ _ (le_max_left _ _) _ | exact .refl _
 
 theorem mem_denominators {c : List ℤ} {d H : ℕ} {bLow bHigh : ℤ} {b : ℕ}
     (h : b ∈ denominators c d H bLow bHigh) :
     1 ≤ b ∧ b ≤ H ∧ bLow ≤ b ∧ (bHigh < 1 ∨ (b : ℤ) ≤ bHigh) := by
-  have h' := mem_range'_of_mem_denominators h
+  have h' := (denominators_sublist ..).subset h
   rw [List.mem_range'_1] at h'
   split_ifs at h' <;> lia
-
-/-- For odd degree, the denominator `b` of a candidate is `s k ^ 2` with `s` dividing the leading
-coefficient (`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`). -/
-theorem any_filter_range'_of_isCandidate {c : List ℤ} (hd : degree c % 2 = 1) {a : ℤ} {b n : ℕ}
-    (hb : 1 ≤ b) (hbn : b ≤ n) (hc : IsCandidate c a b) :
-    ((List.range' 1 n).filter fun s ↦ (c.getD (degree c) 0).natAbs % s == 0).any
-      (fun s ↦ b % s == 0 && isSquare (b / s)) = true := by
-  obtain ⟨hab, y, hy⟩ := hc
-  obtain ⟨s, k, -, hs, rfl⟩ := exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd hd hab hy
-  have hs0 : 0 < s := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hb
-  have hk0 : 0 < k := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hb
-  have hsb : s ≤ s * k * k :=
-    (Nat.le_mul_of_pos_right s hk0).trans (Nat.le_mul_of_pos_right _ hk0)
-  simp only [List.any_eq_true, List.mem_filter, List.mem_range'_1, Bool.and_eq_true, beq_iff_eq]
-  refine ⟨s, ⟨⟨hs0, by lia⟩, Nat.mod_eq_zero_of_dvd hs⟩, ?_, ?_⟩
-  · rw [mul_assoc]
-    exact Nat.mul_mod_right s (k * k)
-  · rw [mul_assoc, Nat.mul_div_cancel_left _ hs0]
-    exact isSquare_mul_self k
 
 theorem mem_denominators_of_isCandidate {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ} {a : ℤ} {b : ℕ}
     (h1 : 1 ≤ b) (h2 : b ≤ H) (h3 : bLow ≤ b) (h4 : bHigh < 1 ∨ (b : ℤ) ≤ bHigh)
@@ -1099,16 +1138,15 @@ theorem mem_denominators_of_isCandidate {c : List ℤ} {H : ℕ} {bLow bHigh : �
   generalize (if bHigh < 1 then H else min H bHigh.toNat) = hi at hr ⊢
   have hbhi : b ≤ hi := by lia [List.mem_range'_1.mp hr]
   split_ifs with hd
-  · exact List.mem_filter.mpr ⟨hr, any_filter_range'_of_isCandidate hd h1 hbhi hc⟩
+  · exact (mem_collectMarked_iff (le_max_left _ _)).mpr
+      ⟨hr, getElem!_squareDens_of_isCandidate hd h1 hbhi hc⟩
   · exact hr
-  · exact List.mem_filter.mpr ⟨hr, (Bool.not_eq_true' _).mpr
-      (getElem!_forbiddenDens_eq_false (Nat.mod_two_ne_one.mp hd) hc hi)⟩
+  · exact (mem_collectMarked_iff (le_max_left _ _)).mpr
+      ⟨hr, getElem!_forbiddenDens_eq_zero (Nat.mod_two_ne_one.mp hd) hc hi⟩
 
 theorem nodup_denominators (c : List ℤ) (d H : ℕ) (bLow bHigh : ℤ) :
-    (denominators c d H bLow bHigh).Nodup := by
-  simp only [denominators]
-  generalize (if bHigh < 1 then H else min H bHigh.toNat) = hi
-  split_ifs <;> first | exact (List.nodup_range' ..).filter _ | exact List.nodup_range' ..
+    (denominators c d H bLow bHigh).Nodup :=
+  (List.nodup_range' ..).sublist (denominators_sublist ..)
 
 /-! ### The parameters -/
 
@@ -1175,14 +1213,11 @@ theorem isSound_of_mem_choose {tu : Tuning} {c : List ℤ} {H B : ℕ} {F : Fami
 
 /-! ### The points -/
 
-/-- **The fast search lists only points** of height at most `H` with their denominator in the range
-of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and every setting
-of the parameters. -/
-theorem isPoint_and_inRegion_of_mem_fastPoints {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
-    {tu : Tuning} {p : ℤ × ℤ × ℤ} (h : p ∈ fastPoints c H bLow bHigh tu) :
+theorem isPoint_and_inRegion_of_mem_sievePoints {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
+    {tu : Tuning} {p : ℤ × ℤ × ℤ} (h : p ∈ sievePoints c H bLow bHigh tu) :
     IsPoint c H p ∧ InRegion [] bLow bHigh p := by
   obtain ⟨x, y, z⟩ := p
-  simp only [fastPoints, List.mem_append, List.mem_ite_nil_right, mem_pointsOfDen_iff,
+  simp only [sievePoints, List.mem_append, List.mem_ite_nil_right, mem_pointsOfDen_iff,
     horner_scaledCoeffs_mul, List.mem_singleton] at h
   simp only [IsPoint, IsNormalizedPair, InRegion]
   rcases h with ⟨hH, rfl, rfl, hg, hy⟩ | h
@@ -1191,12 +1226,11 @@ theorem isPoint_and_inRegion_of_mem_fastPoints {c : List ℤ} {H : ℕ} {bLow bH
     obtain ⟨h1, h2, h3, h4⟩ := mem_denominators hb
     exact ⟨⟨hy, hg, .inl (by lia), hx, by lia⟩, .inr ⟨h3, h4, .inl trivial⟩⟩
 
-/-- **The fast search lists every point** of height at most `H` with its denominator in the range
-of `bLow` and `bHigh`, assuming Sturm's theorem, on which the region of the search rests
-(`Ratpoints.Fast.exists_bounds_region`). -/
-theorem mem_fastPoints_of_isPoint (hS : SturmTheorem) {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
+/-- The search without the reversal lists every point of the region, assuming Sturm's theorem, on
+which the region of the numerators rests (`Ratpoints.Fast.exists_bounds_region`). -/
+theorem mem_sievePoints_of_isPoint (hS : SturmTheorem) {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
     {tu : Tuning} {p : ℤ × ℤ × ℤ} (hp : IsPoint c H p) (hr : InRegion [] bLow bHigh p) :
-    p ∈ fastPoints c H bLow bHigh tu := by
+    p ∈ sievePoints c H bLow bHigh tu := by
   obtain ⟨x, y, z⟩ := p
   obtain ⟨hy, hg, hz | ⟨rfl, rfl⟩, hx, hzH⟩ := hp
   · obtain ⟨b, rfl⟩ : ∃ b : ℕ, z = b := ⟨z.toNat, by lia⟩
@@ -1215,18 +1249,9 @@ theorem mem_fastPoints_of_isPoint (hS : SturmTheorem) {c : List ℤ} {H : ℕ} {
     exact mem_pointsOfDen_iff.mpr
       ⟨List.mem_singleton_self _, rfl, hg, by rwa [horner_scaledCoeffs_mul]⟩
 
-/-- **The fast search lists exactly the points** of height at most `H` with their denominator in
-the range of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and
-every setting of the parameters, assuming Sturm's theorem. -/
-theorem mem_fastPoints_iff {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ} {tu : Tuning}
-    {p : ℤ × ℤ × ℤ} (hS : SturmTheorem) :
-    p ∈ fastPoints c H bLow bHigh tu ↔ IsPoint c H p ∧ InRegion [] bLow bHigh p :=
-  ⟨isPoint_and_inRegion_of_mem_fastPoints, fun ⟨hp, hr⟩ ↦ mem_fastPoints_of_isPoint hS hp hr⟩
-
-/-- **The fast search lists each point once.** -/
-theorem nodup_fastPoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Tuning) :
-    (fastPoints c H bLow bHigh tu).Nodup := by
-  rw [fastPoints]
+theorem nodup_sievePoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Tuning) :
+    (sievePoints c H bLow bHigh tu).Nodup := by
+  rw [sievePoints]
   refine List.Nodup.append ?_ (nodup_search _ _ _ _ (choose_G_pos ..) (choose_L_pos ..)
     (nodup_denominators ..)) fun p hp hp' ↦ ?_
   · split_ifs
@@ -1239,6 +1264,72 @@ theorem nodup_fastPoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Tunin
     obtain ⟨⟨b, hb, hz⟩, -⟩ := of_mem_search (choose_G_pos ..) hp'
     have := (mem_denominators hb).1
     lia
+
+/-- `Ratpoints.Fast.reversed` reverses only for the whole box, and then the binary form of the
+reversed list is that of `c` with `x` and `z` exchanged
+(`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`). -/
+theorem isFullBox_and_binaryForm_eq_of_reversed_eq {c c' : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
+    (h : reversed c H bLow bHigh = (c', true)) :
+    IsFullBox ([] : List (WithBotTop ℚ × WithBotTop ℚ)) bLow bHigh H ∧
+      ∀ x z, binaryForm c' x z = binaryForm c z x := by
+  simp only [reversed] at h
+  split_ifs at h with hb
+  · split at h
+    · obtain rfl := congr(Prod.fst $h)
+      exact ⟨⟨rfl, hb⟩, Setup.binaryForm_eq_of_reversal_eq_ok ‹_›⟩
+    · simp at h
+  · simp at h
+
+/-- **The fast search lists only points** of height at most `H` with their denominator in the range
+of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and every setting
+of the parameters: when the coefficients are reversed, the search of the reversed list lists only
+points, which `Ratpoints.Sieve.swapPoint` maps to points (`Ratpoints.Sieve.isPoint_swapPoint`), of
+the whole box. -/
+theorem isPoint_and_inRegion_of_mem_fastPoints {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
+    {tu : Tuning} {p : ℤ × ℤ × ℤ} (h : p ∈ fastPoints c H bLow bHigh tu) :
+    IsPoint c H p ∧ InRegion [] bLow bHigh p := by
+  rw [fastPoints] at h
+  split at h
+  · obtain ⟨hb, hsw⟩ := isFullBox_and_binaryForm_eq_of_reversed_eq ‹_›
+    obtain ⟨q, hq, rfl⟩ := List.mem_map.mp h
+    have hp := Sieve.isPoint_swapPoint hsw (isPoint_and_inRegion_of_mem_sievePoints hq).1
+    exact ⟨hp, hp.2.inRegion_of_isFullBox hb⟩
+  · exact isPoint_and_inRegion_of_mem_sievePoints h
+
+/-- **The fast search lists every point** of height at most `H` with its denominator in the range
+of `bLow` and `bHigh`, assuming Sturm's theorem, on which the region of the search rests
+(`Ratpoints.Fast.exists_bounds_region`): when the coefficients are reversed, the point mapped by
+`Ratpoints.Sieve.swapPoint` is a point of the reversed list, of the whole box. -/
+theorem mem_fastPoints_of_isPoint (hS : SturmTheorem) {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ}
+    {tu : Tuning} {p : ℤ × ℤ × ℤ} (hp : IsPoint c H p) (hr : InRegion [] bLow bHigh p) :
+    p ∈ fastPoints c H bLow bHigh tu := by
+  rw [fastPoints]
+  split
+  · obtain ⟨-, hsw⟩ := isFullBox_and_binaryForm_eq_of_reversed_eq ‹_›
+    have hq := Sieve.isPoint_swapPoint (fun x z ↦ (hsw z x).symm) hp
+    exact List.mem_map.mpr ⟨_, mem_sievePoints_of_isPoint hS hq
+      (hq.2.inRegion_of_isFullBox ⟨rfl, le_rfl, .inl one_pos⟩), Sieve.swapPoint_swapPoint hp.2.2.1⟩
+  · exact mem_sievePoints_of_isPoint hS hp hr
+
+/-- **The fast search lists exactly the points** of height at most `H` with their denominator in
+the range of `bLow` and `bHigh`, for every coefficient list, every height bound, every range and
+every setting of the parameters, assuming Sturm's theorem. -/
+theorem mem_fastPoints_iff {c : List ℤ} {H : ℕ} {bLow bHigh : ℤ} {tu : Tuning}
+    {p : ℤ × ℤ × ℤ} (hS : SturmTheorem) :
+    p ∈ fastPoints c H bLow bHigh tu ↔ IsPoint c H p ∧ InRegion [] bLow bHigh p :=
+  ⟨isPoint_and_inRegion_of_mem_fastPoints, fun ⟨hp, hr⟩ ↦ mem_fastPoints_of_isPoint hS hp hr⟩
+
+/-- **The fast search lists each point once**: when the coefficients are reversed,
+`Ratpoints.Sieve.swapPoint` is injective on the points of the reversed list
+(`Ratpoints.Sieve.swapPoint_inj`). -/
+theorem nodup_fastPoints (c : List ℤ) (H : ℕ) (bLow bHigh : ℤ) (tu : Tuning) :
+    (fastPoints c H bLow bHigh tu).Nodup := by
+  rw [fastPoints]
+  split
+  · refine (nodup_sievePoints ..).map_on fun q hq q' hq' ↦ (Sieve.swapPoint_inj ?_ ?_).mp
+    exacts [(isPoint_and_inRegion_of_mem_sievePoints hq).1.2.2.1,
+      (isPoint_and_inRegion_of_mem_sievePoints hq').1.2.2.1]
+  · exact nodup_sievePoints ..
 
 end Ratpoints.Fast
 

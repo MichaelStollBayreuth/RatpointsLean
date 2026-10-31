@@ -13,10 +13,10 @@ public import Ratpoints.Fast.Sieve
 /-!
 # The fast search
 
-A search for the points that is not a model of the C code, built for speed in Lean, and the
-program `ratpoints-lean` on it. It is plain executable code on Lean core and `Std` and the brute
-force of the model, except for the two primitives of `Ratpoints.Mask`, whose C code
-(`@[extern c inline]`) works on 64-bit words; their Lean bodies are the reference definitions
+A search for the points that is not a model of the C code, built for speed in Lean, and the program
+`ratpoints-lean` on it. It is plain executable code on Lean core and `Std` and the brute force of
+the model, except for the three primitives of `Ratpoints.Mask`, whose C code (`@[extern c inline]`)
+works on 64-bit words, 16-byte vectors and bytes; their Lean bodies are the reference definitions
 that the proofs use (`scripts/check_layout.py` allows `extern` only there).
 
 * `Ratpoints.Fast.fastPoints` (`Ratpoints.Fast.Sieve`): the sieve with the bit masks held in

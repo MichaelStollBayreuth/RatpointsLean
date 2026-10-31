@@ -806,7 +806,7 @@ theorem isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H
         (o.le_toNat_bHigh_normalize_iff hn.2.2.2).mp h2, ?_⟩
       exact (searchRegion_subset hi.intervalsWF hreg _ h3).imp List.map_eq_nil_iff.mpr id
   · have hb := isFullBox_of_reversal_normalize_eq_ok hi.reversal_eq
-    exact inRegion_of_isFullBox (hb.map _) (by rcases hn.2.1 with h0 | h0 <;> lia) hn.2.2.2
+    exact hn.inRegion_of_isFullBox (hb.map _)
 
 /-- Under `RATPOINTS_NO_CHECK`, for every value of the options of the sieve, the list `L'` that
 `Ratpoints.findPoints` returns for the same input with `RATPOINTS_NO_CHECK` cleared and

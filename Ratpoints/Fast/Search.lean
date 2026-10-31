@@ -12,17 +12,17 @@ public import Ratpoints.Fast.Sieve
 # The fast search on byte-array masks
 
 `Ratpoints.FastMask.fastPoints` is `Ratpoints.Fast.fastPoints` with the bit masks and the rows of
-the families held in byte arrays (`Ratpoints.Mask`) instead of natural numbers: the AND of a chunk
-with a row is one call of the primitive `Ratpoints.Mask.andShr`, in place, without the copies and
-allocations of an AND of two GMP integers, and the survivors come from the primitive
-`Ratpoints.Mask.nextSet`. The parameters, the families, the chunks, the order of the loops and the
-exact check are those of `Ratpoints.Fast.fastPoints`; only the order of the points in a chunk may
-differ. The shifts of the rows are multiples of `8` when the products of the moduli are odd, as
-they are for every even step (`Ratpoints.Fast.Family.shift`), so that `Ratpoints.Mask.andShr`
-reads whole bytes, and the rows of a denominator serve all its chunks in turn. The data of the
-exact check is made once per denominator, when a chunk first leaves candidates
-(`Ratpoints.FastMask.pointsOfDenWith`), and the mask of a part of a chunk is cut from that of the
-chunk, in whole 64-bit words.
+the families held in byte arrays (`Ratpoints.Mask`) instead of natural numbers: the ANDs of a chunk
+with the rows of a denominator are one call of the primitive `Ratpoints.Mask.andRows`, in place,
+without the copies and allocations of an AND of two GMP integers, and the survivors come from the
+primitive `Ratpoints.Mask.nextSet`. The reversal, the parameters, the families, the chunks, the
+order of the loops and the exact check are those of `Ratpoints.Fast.fastPoints`; only the order of
+the points in a chunk may differ. The shifts of the rows are multiples of `8` when the products of
+the moduli are odd, as they are for every even step (`Ratpoints.Fast.Family.shift`), so that
+`Ratpoints.Mask.andRows` reads whole bytes, and the rows of a denominator serve all its chunks in
+turn. The data of the exact check is made once per denominator, when a chunk first leaves
+candidates (`Ratpoints.FastMask.pointsOfDenWith`), and the mask of a part of a chunk is cut from
+that of the chunk, in whole 64-bit words.
 
 ## Main definitions
 
@@ -50,9 +50,10 @@ def hornerRec : List Int → Int → Int
 
 /-- The exact check of `Ratpoints.BruteForce.pointsOfDen` for the denominator `z`, with the scaled
 coefficients `w` of `z` and the factor `f` (`z` for odd degree, else `1`) made beforehand, and
-`Ratpoints.FastMask.hornerRec`. -/
+`Ratpoints.FastMask.hornerRec`, and the gcd by `Ratpoints.Fast.natGcd`. -/
 def pointsOfDenWith (w : List Int) (f z : Int) (xs : List Int) : List (Int × Int × Int) :=
-  xs.flatMap fun x ↦ if Int.gcd x z = 1 then pointsAbove x z (hornerRec w x * f) else []
+  xs.flatMap fun x ↦ if natGcd x.natAbs z.natAbs = 1 then pointsAbove x z (hornerRec w x * f)
+    else []
 
 /-- `Ratpoints.BruteForce.pointsOfDen` with `Ratpoints.FastMask.hornerRec`. -/
 def pointsOfDen (c : List Int) (d : Nat) (z : Int) (xs : List Int) : List (Int × Int × Int) :=
@@ -63,10 +64,11 @@ def windowByte (q : ByteArray) (o : Nat) : UInt8 :=
   q[o]! ||| q[o + 1]! <<< 1 ||| q[o + 2]! <<< 2 ||| q[o + 3]! <<< 3 ||| q[o + 4]! <<< 4 |||
     q[o + 5]! <<< 5 ||| q[o + 6]! <<< 6 ||| q[o + 7]! <<< 7
 
-/-- The bytes `1` or `0` of the entries `T'[G * (k % m) % m]` for `k` from `k₀` to `m + 7`, pushed
-to `acc`. -/
-def patternBits (T' : Array Bool) (m G k : Nat) (acc : ByteArray) : ByteArray :=
-  if k < m + 8 then patternBits T' m G (k + 1) (acc.push (if T'[G * (k % m) % m]! then 1 else 0))
+/-- The bytes `1` or `0` of the entries `T'[j g % m]` for `j` from `k` to `m + 7`, pushed to `acc`,
+where `i = k g % m` is the index of the first of them, stepped by `g < m` without a division. -/
+def patternBits (T' : Array Bool) (m g k i : Nat) (acc : ByteArray) : ByteArray :=
+  if k < m + 8 then
+    patternBits T' m g (k + 1) (if i + g < m then i + g else i + g - m) (acc.push T'[i]!.toUInt8)
   else acc
 termination_by m + 8 - k
 
@@ -82,7 +84,7 @@ termination_by m - i
 `0, G, 2G, …`, as a mask of `nb` bytes: bit `j` is set when the residues `G j` and `r` modulo `m`
 allow a point (`T = Ratpoints.Fast.admitTable c d m`). -/
 def baseRow (T : Array (Array Bool)) (m G nb r : Nat) : ByteArray :=
-  let q := patternBits T[r]! m G 0 (ByteArray.emptyWithCapacity (m + 8))
+  let q := patternBits T[r]! m (G % m) 0 0 (ByteArray.emptyWithCapacity (m + 8))
   let period := periodBytes q m 0 0 (ByteArray.emptyWithCapacity m)
   (repeatBytes period (Nat.log2 (nb / m) + 1)).extract 0 nb
 
@@ -118,23 +120,13 @@ def Family.shift (F : Family) (a₀ : Int) : Nat :=
   let s := (a₀ * F.ginv % (F.M : Int)).toNat
   s + F.M * ((8 - s % 8) * F.M % 8)
 
-/-- The candidates of a chunk: `acc` ANDed with the rows `rs[i]` shifted by `sh[i] + o` from
-position `i` on, until nothing is left. -/
-def sieveFrom (rs : Array ByteArray) (sh : Array Nat) (o : Nat) (acc : ByteArray) (i : Nat) :
-    ByteArray :=
-  if h : i < rs.size then
-    let acc := Mask.andShr acc rs[i] (sh[i]! + o)
-    if acc.size == 0 then acc else sieveFrom rs sh o acc (i + 1)
-  else acc
-termination_by rs.size - i
-
 /-- The points with the denominator `b` in the chunk of the numerators `a₀, a₀ + G, …` with the
 mask `mask` (one bit per numerator), by the sieve with the rows `rs` of `b` and the shifts `sh`
-moved by `o`, and the exact check with the scaled coefficients `w` of `b` and the factor `f`
-(`Ratpoints.FastMask.pointsOfDenWith`), made when first needed. -/
+moved by `o` (`Ratpoints.Mask.andRows`), and the exact check with the scaled coefficients `w` of
+`b` and the factor `f` (`Ratpoints.FastMask.pointsOfDenWith`), made when first needed. -/
 def chunkPoints (G : Nat) (w : Thunk (List Int)) (f : Int) (rs : Array ByteArray) (sh : Array Nat)
     (o : Nat) (a₀ : Int) (mask : ByteArray) (b : Nat) : List (Int × Int × Int) :=
-  let acc := sieveFrom rs sh o mask 0
+  let acc := Mask.andRows mask rs sh o
   if acc.size == 0 then []
   else pointsOfDenWith w.get f b ((Mask.setBits acc).map fun t ↦ a₀ + (G * t : Nat))
 
@@ -153,15 +145,16 @@ def partPoints (G : Nat) (w : Thunk (List Int)) (f : Int) (rs : Array ByteArray)
       (mask.extract (t₁ / 8) (8 * ((t₁ + len₁ + 63) / 64))) b
 
 /-- The points with the denominator `b` in the chunks `sl`, each with its mask (as
-`Ratpoints.Fast.denPoints`); the scaled coefficients of `b` for the exact check are made once,
-when first needed. -/
+`Ratpoints.Fast.denPoints`: none when a row of `b` is zero); the scaled coefficients of `b` for the
+exact check are made once, when first needed. -/
 def denPoints (c : List Int) (d H G : Nat) (fams : Array Family)
     (reg : Option (Array (Option (Int × Nat) × Option (Int × Nat))))
     (sl : List (Nat × Int × Nat × ByteArray × Array Nat)) (b : Nat) : List (Int × Int × Int) :=
+  let rs := fams.map fun F ↦ F.rows[b % F.M]!
+  if rs.any Mask.isZero then [] else
   match bounds H b reg with
   | none => []
   | some (lo, hi) =>
-    let rs := fams.map fun F ↦ F.rows[b % F.M]!
     let w := Thunk.mk fun _ ↦ scaledCoeffs c d b
     let f : Int := if d % 2 = 1 then b else 1
     if lo == -(H : Int) && hi == (H : Int) then
@@ -169,18 +162,17 @@ def denPoints (c : List Int) (d H G : Nat) (fams : Array Family)
     else sl.flatMap fun (_, a₀, len, mask, sh) ↦ partPoints G w f rs sh lo hi a₀ len mask b
 
 /-- The points with the denominators `dens`, by the sieve with the region `reg` (as
-`Ratpoints.Fast.search`); the rows that are `0` are found once per family, and each chunk carries
-its mask of `len` bits, all set, padded to whole 64-bit words. -/
+`Ratpoints.Fast.search`); each chunk carries its mask of `len` bits, all set, padded to whole
+64-bit words. -/
 def search (c : List Int) (d H G L : Nat) (fams : Array Family)
     (reg : Option (Array (Option (Int × Nat) × Option (Int × Nat)))) (dens : List Nat) :
     List (Int × Int × Int) :=
   let fams := fams.filter fun F ↦ F.rows.size == F.M && 0 < F.M
-  let zs := fams.map fun F ↦ (F.M, F.rows.map Mask.isZero)
-  let dens := dens.filter fun b ↦ zs.all fun (M, z) ↦ !z[b % M]!
   let TG := admitTable c d G
   let sl := (slots H G L).map fun (r, a₀, len) ↦
     (r, a₀, len, Mask.ones len, fams.map (Family.shift · a₀))
   let byRes := (List.range G).toArray.map fun g ↦ sl.filter fun (r, _) ↦ TG[g]![r]!
+  let dens := dens.filter fun b ↦ !byRes[b % G]!.isEmpty
   dens.flatMap fun b ↦ denPoints c d H G fams reg byRes[b % G]! b
 
 /-- The parameters of the search: step, chunk length, families. -/
@@ -200,16 +192,25 @@ def choose (tu : Tuning) (c : List Int) (d H B : Nat) : Config :=
   let L := max 1 (min (orDefault tu.L 8192) cnt)
   { G, L, fams := ((sortedGroups tu c d H B).filterMap (mkFamily G L)).toArray }
 
-/-- The points of height at most `H` with their denominator in the range of `bLow` and
-`bHigh`, each once (as `Ratpoints.Fast.fastPoints`: only such points in any case, and all of them
-assuming Sturm's theorem). -/
-def fastPoints (c : List Int) (H : Nat) (bLow bHigh : Int) (tu : Tuning := {}) :
+/-- The points of height at most `H` with their denominator in the range of `bLow` and `bHigh`,
+each once, of the sieve on `c` itself (as `Ratpoints.Fast.sievePoints`). -/
+def sievePoints (c : List Int) (H : Nat) (bLow bHigh : Int) (tu : Tuning := {}) :
     List (Int × Int × Int) :=
   let d := BruteForce.degree c
   let dens := denominators c d H bLow bHigh
   let cfg := choose tu c d H dens.length
   (if 1 ≤ H then FastMask.pointsOfDen c d 0 [1] else []) ++
     search c d H cfg.G cfg.L cfg.fams (region c d H (orDefault tu.sturm 10)) dens
+
+/-- The points of height at most `H` with their denominator in the range of `bLow` and
+`bHigh`, each once (as `Ratpoints.Fast.fastPoints`, with the reversal of `ratpoints`
+(`Ratpoints.Fast.reversed`): only such points in any case, and all of them assuming Sturm's
+theorem). -/
+def fastPoints (c : List Int) (H : Nat) (bLow bHigh : Int) (tu : Tuning := {}) :
+    List (Int × Int × Int) :=
+  match reversed c H bLow bHigh with
+  | (c', true) => (sievePoints c' H 1 0 tu).map Sieve.swapPoint
+  | _ => sievePoints c H bLow bHigh tu
 
 end FastMask
 
