@@ -10,17 +10,14 @@ import Ratpoints.Fast.Mask
 /-!
 # Differential test of the primitives of `Ratpoints.Mask`
 
-Compares the C code of `Ratpoints.Mask.andShr`, `Ratpoints.Mask.andRows` and
-`Ratpoints.Mask.nextSet` with their reference definitions `Ratpoints.Mask.andShrSpec`,
-`Ratpoints.Mask.andRowsFrom` and `Ratpoints.Mask.nextSetSpec`, compiled from Lean (the reference
-`Ratpoints.Mask.andRowsFrom` runs the C code of `Ratpoints.Mask.andShr`, which the first part of
-the test checks): `andShr` and `nextSet` on random masks of every size up to 48 bytes (dense,
-sparse and empty), every shift up to past the end of the row and shifts beyond `2 ^ 64`; `andRows`
-on random masks of up to 1031 bytes with up to 70 rows (more than the 64 of its fast path), rows
-long enough for the mask and shorter ones, shifts that are multiples of `8` and others, shifts
-beyond `2 ^ 63`, offsets beyond `2 ^ 64`, a shift and an offset below `2 ^ 63` whose sum is not,
-and fewer shifts than rows (the missing ones `0`); each with `acc` shared, whose bytes must stay
-as they were, and not shared.
+Compares the C code of `Ratpoints.Mask.andRows` and `Ratpoints.Mask.nextSet` with their reference
+definitions `Ratpoints.Mask.andRowsFrom` and `Ratpoints.Mask.nextSetSpec`, compiled from Lean:
+`nextSet` on random masks of every size up to 48 bytes (dense, sparse and empty), from every
+position up to past the end and from positions beyond `2 ^ 63`; `andRows` on random masks of up to
+2048 bytes with up to 70 rows (more than the 64 of its fast path), rows long enough for the mask
+and shorter ones, shifts that are multiples of `8` and others, shifts beyond `2 ^ 63`, offsets
+beyond `2 ^ 64`, a shift and an offset below `2 ^ 63` whose sum is not, and fewer shifts than rows
+(the missing ones `0`), with `acc` shared, whose bytes must stay as they were, and not shared.
 -/
 
 open Ratpoints
@@ -45,32 +42,16 @@ leave `a` alone with `a.toList` taken before it, and the compiler would merge tw
 pure value into one, taken before the call. -/
 @[noinline] def bytesAfter (a : ByteArray) : List UInt8 := a.toList
 
-/-- The test: the number of cases and of failures. -/
+/-- The test of `Ratpoints.Mask.nextSet`: the number of cases and of failures. -/
 def run (rounds : Nat) : IO (Nat × Nat) := do
   let mut s : UInt64 := 2026
   let mut cases := 0
   let mut bad := 0
   for r in [0:rounds] do
     let n := r % 49
-    let m := (r / 49) % 49
-    let p := [8, 7, 4, 1, 0][(r / 2401) % 5]!
+    let p := [8, 7, 4, 1, 0][(r / 49) % 5]!
     let (acc, s₁) := randBytes s n p
-    let (row, s₂) := randBytes s₁ m 8
-    s := s₂
-    for sh in (List.range (8 * m + 20)) ++ [2 ^ 62, 2 ^ 63, 2 ^ 64 + 3, 2 ^ 70] do
-      cases := cases + 1
-      let want := Mask.andShrSpec acc row sh
-      -- shared: `acc` is used again below, so the C code must copy it and leave its bytes alone
-      let before := acc.toList
-      let got := Mask.andShr acc row sh
-      if got.data != want.data || bytesAfter acc != before then
-        bad := bad + 1
-        IO.println s!"andShr shared: n={n} m={m} s={sh}"
-      -- not shared: a fresh copy, worked on in place
-      let got' := Mask.andShr (ByteArray.mk acc.data.reverse.reverse) row sh
-      if got'.data != want.data then
-        bad := bad + 1
-        IO.println s!"andShr exclusive: n={n} m={m} s={sh}"
+    s := s₁
     for j in (List.range (8 * n + 20)) ++ [2 ^ 63, 2 ^ 64 + 1] do
       cases := cases + 1
       if Mask.nextSet acc j != Mask.nextSetSpec acc j then
@@ -85,8 +66,8 @@ def runRows (rounds : Nat) : IO (Nat × Nat) := do
   let mut bad := 0
   for r in [0:rounds] do
     s := lcg s
-    let n := [0, 1, 7, 8, 9, 64, 127, 128, 129, 255, 256, 300, 384, 400, 1024,
-      1031][(s >>> 33).toNat % 16]!
+    let n := [0, 1, 7, 8, 9, 64, 127, 128, 129, 255, 256, 300, 384, 400, 1024, 1031,
+      2048][(s >>> 33).toNat % 17]!
     s := lcg s
     let f := [0, 1, 2, 3, 4, 5, 8, 15, 16, 17, 33, 64, 65, 70][(s >>> 33).toNat % 14]!
     s := lcg s
@@ -119,11 +100,13 @@ def runRows (rounds : Nat) : IO (Nat × Nat) := do
     -- `sh[i]!` is `0` past the end of `sh` (after a panic message): the reference runs on `sh`
     -- padded with zeros
     let want := Mask.andRowsFrom rs (sh ++ Array.replicate (rs.size - sh.size) 0) o acc 0
+    -- shared: `acc` is used again below, so the C code must copy it and leave its bytes alone
     let before := acc.toList
     let got := Mask.andRows acc rs sh o
     if got.data != want.data || bytesAfter acc != before then
       bad := bad + 1
       IO.println s!"andRows shared: round={r} n={n} f={f} o={o}"
+    -- not shared: a fresh copy, worked on in place
     let got' := Mask.andRows (ByteArray.mk acc.data.reverse.reverse) rs sh o
     if got'.data != want.data then
       bad := bad + 1
@@ -131,8 +114,7 @@ def runRows (rounds : Nat) : IO (Nat × Nat) := do
   return (cases, bad)
 
 /-- Runs the test with the number of rounds of the first argument (default `12005`) for
-`Ratpoints.Mask.andShr` and `Ratpoints.Mask.nextSet`, and four times as many for
-`Ratpoints.Mask.andRows`. -/
+`Ratpoints.Mask.nextSet`, and four times as many for `Ratpoints.Mask.andRows`. -/
 public def main (args : List String) : IO UInt32 := do
   let rounds := (args.headD "12005").toNat?.getD 12005
   let (cases, bad) ← run rounds

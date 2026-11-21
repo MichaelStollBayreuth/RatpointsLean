@@ -102,10 +102,9 @@ status:
     the brute-force reference they are eleven of the thirteen statements of
     comparator/challenges.json, which lake comparator --paranoid accepted on 2026-11-21; the other
     two say that the fast search of the program ratpoints-lean (Ratpoints.FastMask.fastPoints, not
-    a model of the C code, with three primitives on bit masks in C whose Lean bodies are the
+    a model of the C code, with two primitives on bit masks in C whose Lean bodies are the
     reference definitions the proofs use) lists, assuming Sturm's theorem, exactly the points of
-    height at most H in a range
-    of denominators, each once. Proved but not certified: what
+    height at most H in a range of denominators, each once. Proved but not certified: what
     ratpoints-model prints, that the Sturm step keeps every point under Sturm's theorem, and that
     the blocks of the run, sifted apart and delivered in their order, as the threads of ratpoints
     deliver them, give what the run delivers. Every line of code of the C files is recorded, with
@@ -188,7 +187,7 @@ status:
 automation:
   methods:
     - method: "agent"
-      models: ["claude-opus-5-5"]
+      models: ["claude-opus-5-5", "claude-fable-5-2", "claude-sonnet-5-5"]
       framework: "Claude Code"
       tool_setup: >
         Interactive agent sessions directed by the author, with the conventions of the author's Lean
@@ -283,9 +282,9 @@ alignment:
         parameters it lists exactly the points of height at most H in the range, assuming Sturm's
         theorem (Ratpoints.FastMask.mem_fastPoints_iff; only such points without it), each once
         (Ratpoints.FastMask.nodup_fastPoints), both certified by comparator; the AND of a mask with
-        a shifted row, the AND of a mask with a list of shifted rows and the next set bit are C code
-        (@[extern c inline]) whose Lean bodies, the reference definitions, are what the proofs see;
-        lake exe masktest compares the two
+        a list of shifted rows and the next set bit are C code (@[extern c inline]) whose Lean
+        bodies, the reference definitions, are what the proofs see; lake exe masktest compares the
+        two
     - source: "find_points returns each such point exactly once"
       lean: "Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok"
       module: "Ratpoints.Proof.Output"

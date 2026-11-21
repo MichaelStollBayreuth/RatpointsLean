@@ -14,13 +14,13 @@ Lemmas that Lean core lacks, under their names in the namespaces of core, on vec
 after `Vector.set!` and after a fold of it, of `Vector.ofFn f` and of the array of a vector), arrays
 (the entries after `Array.set!`, `Array.push`, `Array.pop`, `Array.map`, a concatenation and
 `Array.eraseIdxIfInBounds`, the cursor of a loop over an array, an array that extends another, the
-entries of an array whose list extends that of another), byte arrays (the size of a byte array made
-from an array, the bytes after `ByteArray.set!`), lists (filters and `List.flatMap` over ranges, a
-list read by its indices, tests by the entries, prefixes, the cursors of loops over two lists),
-ranges (the cursor of a loop over `[a:m]`), natural numbers and integers (residues and quotients,
-Barrett's estimate, the remainder and the quotient by a reciprocal, the steps of the binary
-algorithm for the gcd), `Except` and strings. The lemmas on 64-bit words are in
-`Ratpoints.Proof.Bits`.
+entries of an array whose list extends that of another), byte arrays (the size and the bytes of a
+byte array made from an array, the bytes after `ByteArray.set!`, `ByteArray.get!` as `a[i]!`),
+lists (filters and `List.flatMap` over ranges, a list read by its indices, tests by the entries,
+prefixes, the cursors of loops over two lists), ranges (the cursor of a loop over `[a:m]`), natural
+numbers and integers (residues and quotients, Barrett's estimate, the remainder and the quotient by
+a reciprocal, the steps of the binary algorithm for the gcd), `Except` and strings. The lemmas on
+64-bit words are in `Ratpoints.Proof.Bits`.
 
 ## Main definitions
 
@@ -96,6 +96,11 @@ theorem getElem!_toVector {α : Type u} [Inhabited α] {xs : Array α} (i : Nat)
 theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : Nat} (hj : j < n) :
     ((Array.range n).map f)[j]! = f j := by
   simp [hj]
+
+theorem getElem!_map_toArray_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : Nat}
+    (hj : j < n) : ((List.range n).toArray.map f)[j]! = f j := by
+  rw [List.toArray_range]
+  exact getElem!_map_range f hj
 
 /-- The list of an array from a position `n` within it on: its entry `n`, then the rest. -/
 theorem drop_toList_eq_getElem!_cons {α : Type u} [Inhabited α] {xs : Array α} {n : Nat}
@@ -363,6 +368,22 @@ theorem size_mk (d : Array UInt8) : (⟨d⟩ : ByteArray).size = d.size := rfl
 @[simp]
 theorem size_emptyWithCapacity (c : Nat) : (emptyWithCapacity c).size = 0 :=
   rfl
+
+theorem getElem!_mk (xs : Array UInt8) (i : Nat) : (⟨xs⟩ : ByteArray)[i]! = xs[i]! := by
+  by_cases h : i < xs.size
+  · rw [getElem!_pos (⟨xs⟩ : ByteArray) i h, getElem!_pos xs i h]
+    rfl
+  · rw [getElem!_neg (⟨xs⟩ : ByteArray) i h, getElem!_neg xs i h]
+
+/-- `ByteArray.get!`, which the compiled code calls, is the access `a[i]!` of the lemmas. -/
+@[simp]
+theorem get!_eq_getElem! (a : ByteArray) (i : Nat) : a.get! i = a[i]! := by
+  obtain ⟨bs⟩ := a
+  by_cases h : i < bs.size
+  · rw [getElem!_pos (⟨bs⟩ : ByteArray) i h]
+    exact getElem!_pos bs i h
+  · rw [getElem!_neg (⟨bs⟩ : ByteArray) i h]
+    exact getElem!_neg bs i h
 
 theorem getElem!_mk_replicate_zero (n b : Nat) : (⟨Array.replicate n 0⟩ : ByteArray)[b]! = 0 := by
   by_cases h : b < n

@@ -117,6 +117,20 @@ theorem mem_pointsOfDen_iff {c : List ℤ} {d : ℕ} {z : ℤ} {xs : List ℤ} {
     simp only [hg, ↓reduceIte]
     exact mem_pointsAbove_iff.mpr ⟨rfl, rfl, hy⟩
 
+theorem fst_eq_of_mem_pointsOfDen_singleton {c : List ℤ} {d : ℕ} {z x : ℤ} {p : ℤ × ℤ × ℤ}
+    (h : p ∈ pointsOfDen c d z [x]) : p.1 = x :=
+  List.mem_singleton.mp (mem_pointsOfDen_iff.mp h).1
+
+theorem snd_snd_eq_of_mem_pointsOfDen {c : List ℤ} {d : ℕ} {z : ℤ} {xs : List ℤ}
+    {p : ℤ × ℤ × ℤ} (h : p ∈ pointsOfDen c d z xs) : p.2.2 = z :=
+  (mem_pointsOfDen_iff.mp h).2.1
+
+theorem mem_pointsOfDen_singleton_iff {c : List ℤ} {z x : ℤ} {p : ℤ × ℤ × ℤ} :
+    p ∈ pointsOfDen c (degree c) z [x] ↔
+      p.1 = x ∧ p.2.2 = z ∧ Int.gcd p.1 p.2.2 = 1 ∧ p.2.1 ^ 2 = binaryForm c p.1 p.2.2 := by
+  rw [mem_pointsOfDen_iff, List.mem_singleton, horner_scaledCoeffs_mul]
+  constructor <;> rintro ⟨hx, rfl, hg, hy⟩ <;> exact ⟨hx, rfl, hg, hy⟩
+
 theorem exists_sq_eq_of_pointsOfDen_ne_nil {c : List ℤ} {b : ℕ} {xs : List ℤ}
     (h : pointsOfDen c (degree c) b xs ≠ []) :
     ∃ a ∈ xs, ∃ y : ℤ, Int.gcd a b = 1 ∧ y ^ 2 = binaryForm c a b := by

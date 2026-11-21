@@ -75,7 +75,7 @@ One has to trust the specification, which the challenge of Comparator restates v
 with the definitions of Lean core and Mathlib that it is written in;
 the reference of the delivery, of which the protocol speaks; the fact that the executables
 `ratpoints-model` and `ratpoints-lean` run the model and the fast search, and for `ratpoints-lean`
-that the C code of the three primitives on bit masks (`Ratpoints/Fast/Mask.lean`) computes their
+that the C code of the two primitives on bit masks (`Ratpoints/Fast/Mask.lean`) computes their
 Lean reference definitions on a 64-bit platform, which `lake exe masktest` checks but no proof
 covers; Lean's kernel and Comparator; and, in the statements with the Sturm step on and in the
 membership statement of the fast search, Sturm's theorem. The search chooses
@@ -107,7 +107,7 @@ by `decide`, which its module docstring lists (`scripts/constants_check.py` chec
 | part | contents | depends on |
 |---|---|---|
 | `Ratpoints/Model` | the executable model as plain code, one definition per component of the C code; no Mathlib, no contracts, no experimental options | Lean core, `Std` |
-| `Ratpoints/Fast` | the fast search of `ratpoints-lean`, not a model of the C code, and the program; plain code like the model, except for the C code of three primitives on bit masks in `Ratpoints/Fast/Mask.lean` | Lean core, `Std`, the model |
+| `Ratpoints/Fast` | the fast search of `ratpoints-lean`, not a model of the C code, and the program; plain code like the model, except for the C code of two primitives on bit masks in `Ratpoints/Fast/Mask.lean` | Lean core, `Std`, the model |
 | `Ratpoints/Spec` | the specification: the binary form, the normalized points of height at most `H`, their order in the output of `ratpoints`, the value of a double of the C code from its bits, the search intervals that `ratpoints` accepts, the points in the search region and Sturm's theorem as a proposition | Mathlib |
 | `Ratpoints/Proof` | the contract of each component as a theorem, the main theorems, and the lemmas that Lean core lacks, on vectors, arrays, lists, ranges, natural numbers, integers, characters and strings (`Ratpoints/Proof/Containers.lean`) and on words (`Ratpoints/Proof/Bits.lean`), and the tactic `vc_simp` that the proofs by `vcgen` share (`Ratpoints/Proof/VCSimp.lean`) | Mathlib, the specification, the model, the candidates for Mathlib |
 | `Ratpoints/Mathlib` | statements of general interest, as candidates for Mathlib | Mathlib |
@@ -158,44 +158,68 @@ is accepted and ignored. It runs the fast search `Ratpoints.FastMask.fastPoints`
 (`Ratpoints/Fast/Search.lean`), which is not a model of the C code. Without a range of the
 denominators it reverses the polynomial where `ratpoints` does (the model's
 `Ratpoints.Setup.reversal`: `x` and `z` exchanged, for instance when the leading coefficient is a
-square and the constant term is not) and maps the points back. The numerators are split into
-their classes modulo 16, a class searched for a denominator only where the residues allow a point;
-each class is sieved in chunks, bit masks with one bit per numerator, ANDed with the rows of
-families of odd moduli, taken while the expected number of survivors pays for their tables, built
-once and shifted to each chunk by whole bytes; the denominators are the outer loop, so that the rows
-of a denominator serve all its chunks in turn; the candidates that survive go to the exact check of
-the brute force. For odd degree only the denominators `s k²` with `s` dividing the leading
-coefficient are searched; for even degree no denominator with an odd divisor `p` for which the
-Jacobi symbol of the leading coefficient is `-1`, since it carries no point. For a denominator `b`
-only the numerators from the first to the last `a` with `a / b` in the intervals that the Sturm step
-of `ratpoints` keeps (the model's `Ratpoints.Sturm.computeSturm`) are searched, each chunk cut to
-the 64-bit words that hold them; outside these intervals `F(a, b) < 0`, by Sturm's theorem. The
-masks are byte arrays, and the operations on them that take the time are three primitives in C
-(`Ratpoints/Fast/Mask.lean`, in `@[extern c inline]`): the AND of a mask with a row shifted to the
-right, in place, 64 bits at a time; the AND of a chunk with all the shifted rows of a denominator,
-which works through the chunk in blocks of 128 bytes held in registers, every row ANDed into a
-block before the next block, as the first stage of `ratpoints` does; and the next set bit of a
+square and the constant term is not) and maps the points back.
+
+The denominators are the outer loop. For odd degree only the denominators `s k²` with `s` dividing
+the leading coefficient are searched; for even degree no denominator with an odd divisor `p` for
+which the Jacobi symbol of the leading coefficient is `-1`, since it carries no point. For a
+denominator `b` only the numerators from the first to the last `a` with `a / b` in the intervals
+that the Sturm step of `ratpoints` keeps (the model's `Ratpoints.Sturm.computeSturm`) are searched;
+outside these intervals `F(a, b) < 0`, by Sturm's theorem.
+
+The numerators are split into their classes modulo a step, which is 16 or, where that halves the
+number of masks, a smaller power of 2; a class is searched for a denominator only where the
+residues modulo the step allow a point. Each class is sieved in chunks, bit masks with one bit per
+numerator, in whole blocks of 128 bytes unless the class is short, and of a chunk only the blocks
+with numerators to search are sieved. The sieve has two stages. The first works on whole masks. A
+family of odd moduli has a row for each residue of the denominator, in which the bit of a
+numerator is set when the two residues allow a point modulo every modulus of the family; the rows
+are built once and reach each chunk by a shift by whole bytes. The row of the first family is
+copied into the mask, whose buffer all chunks use in turn, and the rows of the other families are
+ANDed to it. The second stage takes the candidates that survive one by one: it looks them up in
+the tables of further moduli, drops those whose numerator and denominator have a common factor, and
+gives the others to the exact check of the brute force. The table of a modulus `m` takes space
+linear in `m`: since `F` is homogeneous, the residues of the denominator that are prime to `m`
+share one row. Which moduli get a table, how they form families and how many families the first
+stage takes follows from estimates of the costs: a modulus is taken, and a family goes to the first
+stage, while the candidates that it removes pay for it.
+
+The masks are byte arrays, and the two operations on them that take the time are primitives in C
+(`Ratpoints/Fast/Mask.lean`, in `@[extern c inline]`): the AND of a mask with rows shifted to the
+right, which works through the mask in blocks of 128 bytes held in registers, every row ANDed into
+a block before the next block, as the first stage of `ratpoints` does; and the next set bit of a
 mask. Their Lean bodies are reference definitions, which the proofs use; `lake exe masktest`
-compares the C code with them on five million cases, in CI. The same sieve with the masks in natural
-numbers (GMP integers), `Ratpoints.Fast.fastPoints` (`Ratpoints/Fast/Sieve.lean`), has no C of its
-own and is seven to twenty times slower; `Ratpoints.FastMask.fastPoints_perm` proves that the two
-list the same points, and `Ratpoints.FastMask.mem_fastPoints_iff` and
-`Ratpoints.FastMask.nodup_fastPoints` (`Ratpoints/Proof/FastMask.lean`) that the list holds exactly
-the points of height at most `H` with their denominator in the range, assuming Sturm's theorem (only
-such points without it, `Ratpoints.FastMask.isPoint_and_inRegion_of_mem_fastPoints`), each once, in
-an order of its own, for every input and every setting of the parameters of the sieve; both are
-certified by Comparator. `scripts/fasttest.py` compares the points, as sets, with those of
-`ratpoints` on its test suites, in CI.
+compares the C code with them on two and a half million cases, in CI.
+`Ratpoints.FastMask.mem_fastPoints_iff` and `Ratpoints.FastMask.nodup_fastPoints`
+(`Ratpoints/Proof/FastMask.lean`) prove that the list holds exactly the points of height at most
+`H` with their denominator in the range, assuming Sturm's theorem (only such points without it,
+`Ratpoints.FastMask.isPoint_and_inRegion_of_mem_fastPoints`), each once, in an order of its own,
+for every input and every setting of the parameters of the sieve; both are certified by
+Comparator. `scripts/fasttest.py` compares the points, as sets, with those of `ratpoints` on its
+test suites, also under random settings of the parameters, in CI.
+
+Six further options, each with a natural number, set parameters that the search otherwise chooses,
+for experiments with its speed; `0` leaves the choice to the search, and no setting changes the
+set of the points.
+
+| option | parameter |
+| --- | --- |
+| `-tG n` | the step |
+| `-tL n` | the largest length of a chunk, in numerators |
+| `-tM n` | the largest product of the moduli of a family |
+| `-tF n` | the weight of the choice of the moduli: more moduli with a larger weight |
+| `-tS n` | the depth of the Sturm step, as `-S` of `ratpoints` |
+| `-tK n` | the number of families of the first stage |
 
 Running times against `ratpoints` (C) and the program of the model (`ratpoints-model`), on one
 core of an Intel Core i7-1355U (wall times, one process per curve):
 
 | curve | H | C | `ratpoints-model` | `ratpoints-lean` |
 | --- | ---: | ---: | ---: | ---: |
-| generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 0.27 s |
-| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.45 s | 48 s | 0.9 s |
-| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.04 s |
-| the 1206 curves of the three test suites | 16383 | 2.5 s | 162 s | 9 s |
+| generic genus 2 (`testdata.h` 776) | 10^5 | 0.18 s | 22.3 s | 0.20 s |
+| point-rich genus 2 (`testdata-many.h` 90) | 10^5 | 0.45 s | 48 s | 0.7 s |
+| degree 8 (`testdata-degrees.h` 100) | 10^5 | 0.02 s | 1.8 s | 0.02 s |
+| the 1206 curves of the three test suites | 16383 | 2.5 s | 162 s | 7 s |
 
 `ratpoints-model 'a_0 a_1 ... a_n' H [options]` is the program of the faithful model; it has the
 command line of `ratpoints`. It reads the coefficients (constant term first), the height bound and
