@@ -100,7 +100,7 @@ status:
     Sturm's theorem when the Sturm step is on), without duplicates, in the order of ratpoints; with
     the statements under RATPOINTS_NO_CHECK, the protocol of the delivery and the two theorems of
     the brute-force reference they are eleven of the thirteen statements of
-    comparator/challenges.json, which lake comparator --paranoid accepted on 2026-10-31; the other
+    comparator/challenges.json, which lake comparator --paranoid accepted on 2026-11-21; the other
     two say that the fast search of the program ratpoints-lean (Ratpoints.FastMask.fastPoints, not
     a model of the C code, with three primitives on bit masks in C whose Lean bodies are the
     reference definitions the proofs use) lists, assuming Sturm's theorem, exactly the points of

@@ -58,7 +58,7 @@ does), the search `Ratpoints.findPoints`
 The brute-force reference `Ratpoints.bruteForce` lists exactly the points, each once; the fast
 search `Ratpoints.FastMask.fastPoints` of `ratpoints-lean` lists, for every range of the
 denominators, only points, each once, and all of them assuming Sturm's theorem. These thirteen
-statements are certified by Comparator: `lake comparator --paranoid` accepted them on 2026-10-31
+statements are certified by Comparator: `lake comparator --paranoid` accepted them on 2026-11-21
 (`comparator/README.md`). Also proved, but not certified: what `ratpoints-model` prints
 (`Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok`); that the Sturm step keeps every point, under
 Sturm's theorem, so that with the exact check on its depth does not change the output
