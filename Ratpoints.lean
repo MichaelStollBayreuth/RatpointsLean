@@ -38,6 +38,7 @@ public import Ratpoints.Mathlib.NumberTheory.SmoothNumbers
 public import Ratpoints.Mathlib.Order.WithBotTop
 public import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 public import Ratpoints.Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import Ratpoints.Mathlib.Topology.Algebra.Order.Polynomial
 public import Ratpoints.Model
 public import Ratpoints.Model.Blocks
 public import Ratpoints.Model.Bounds

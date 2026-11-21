@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Data.List.SignVariations
 public import Ratpoints.Mathlib.Algebra.Polynomial.Sturm.Sequence
-public import Ratpoints.Mathlib.Analysis.Polynomial.Order
 
 import Ratpoints.Mathlib.Algebra.Polynomial.Eval.Coeff
+import Ratpoints.Mathlib.Topology.Algebra.Order.Polynomial
 
 /-!
 # The sign variations of positive multiples and of polynomials near infinity
@@ -32,10 +32,9 @@ has the signs of its image over `ℝ`.
 The file has no Mathlib sibling: Mathlib has the Sturm sequence
 (`Mathlib.Algebra.Polynomial.Sturm.Sequence`) and the sign variations of a list
 (`Mathlib.Data.List.SignVariations`), but neither file imports the other, and Mathlib has neither
-Sturm's theorem nor a file that imports both. So the file chooses its imports: the sign
-variations, and the mirrors of the Sturm sequence (`Polynomial.PosAssoc`) and of the eventual signs
-of polynomials (`Mathlib.Analysis.Polynomial.Order`, which brings the filters and the ordered
-normed fields of the statements), and for its proofs the mirror of
+Sturm's theorem nor a file that imports both. So the file chooses its imports: the sign variations
+and the mirror of the Sturm sequence (`Polynomial.PosAssoc`), and for its proofs the mirrors of
+`Mathlib.Topology.Algebra.Order.Polynomial`, with the signs of polynomials near infinity, and of
 `Mathlib.Algebra.Polynomial.Eval.Coeff`, with the values of the images of polynomials at rational
 points (`Polynomial.eval_ratCast_map`).
 -/
@@ -99,7 +98,7 @@ end PosAssoc
 
 section AtInfinity
 
-variable {𝕜 : Type*} [NormedField 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 
 /-- Far right, the sign variations of a list of nonzero polynomials at a point are those of their
 leading coefficients. -/

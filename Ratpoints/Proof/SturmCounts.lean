@@ -10,6 +10,7 @@ public import Ratpoints.Spec.Sturm
 
 import Ratpoints.Mathlib.Analysis.Polynomial.Sturm
 import Ratpoints.Mathlib.FieldTheory.Perfect
+import Ratpoints.Mathlib.Topology.Algebra.Order.Polynomial
 
 /-!
 # What Sturm's theorem says about an interval
