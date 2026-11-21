@@ -6,7 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Data.Nat.PrimeFin
-public import Mathlib.NumberTheory.Padics.PadicVal.Defs
+public import Mathlib.RingTheory.Multiplicity
 public import Ratpoints.Mathlib.NumberTheory.SmoothNumbers
 public import Ratpoints.Model.Setup
 public import Ratpoints.Spec.Basic
@@ -16,9 +16,9 @@ public import Std.WP
 import Mathlib.Data.Nat.Squarefree
 import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.List.Prime
-import Ratpoints.Mathlib.Data.Nat.PadicValNat
 import Ratpoints.Mathlib.Data.Nat.Prime.Defs
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
+import Ratpoints.Mathlib.RingTheory.Multiplicity
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Setup
@@ -131,14 +131,14 @@ theorem even_of_sq_eq_binaryForm_of_odd_of_dvd {c : List ℤ} {a y : ℤ} {b : �
 -- The terms of `F(a, b)` other than `c_d a ^ d b`, for `b = p ^ m b'` and `k < d`, when
 -- `(d - k) m ≥ 1 + val - v_p(c_k)` for `c_k ≠ 0`, are divisible by `p ^ (val + m + 1)`.
 private theorem pow_dvd_of_add_one_le {c : List ℤ} {a b' : ℤ} {p m val k : ℕ} (hk : k < degree c)
-    (hmin : c.getD k 0 ≠ 0 → val + 1 ≤ padicValNat p (c.getD k 0).natAbs + (degree c - k) * m) :
+    (hmin : c.getD k 0 ≠ 0 → val + 1 ≤ multiplicity p (c.getD k 0).natAbs + (degree c - k) * m) :
     (p : ℤ) ^ (val + m + 1) ∣ c.getD k 0 * a ^ k * ((p : ℤ) ^ m * b') ^ (degree c + 1 - k) := by
   rcases eq_or_ne (c.getD k 0) 0 with h0 | h0
   · rw [h0, zero_mul, zero_mul]
     exact dvd_zero _
-  have hc : (p : ℤ) ^ padicValNat p (c.getD k 0).natAbs ∣ c.getD k 0 :=
-    Int.natCast_dvd.mpr (Nat.padicValNat_def ▸ pow_multiplicity_dvd ..)
-  have hle : val + m + 1 ≤ padicValNat p (c.getD k 0).natAbs + m * (degree c + 1 - k) := by
+  have hc : (p : ℤ) ^ multiplicity p (c.getD k 0).natAbs ∣ c.getD k 0 :=
+    Int.natCast_dvd.mpr (pow_multiplicity_dvd ..)
+  have hle : val + m + 1 ≤ multiplicity p (c.getD k 0).natAbs + m * (degree c + 1 - k) := by
     rw [Nat.sub_add_comm hk.le]
     lia [hmin h0]
   refine (pow_dvd_pow _ hle).trans ?_
@@ -151,20 +151,20 @@ denominator `b` of a point with `m = v_p(b) ≥ 1` and `(d - k) m ≥ 1 + val - 
 `val + m`, which is then even. -/
 theorem even_add_of_sq_eq_binaryForm_of_odd {c : List ℤ} {a y : ℤ} {b p val : ℕ}
     [hp : Fact p.Prime] (hd : degree c % 2 = 1)
-    (hval : padicValNat p (c.getD (degree c) 0).natAbs = val)
+    (hval : multiplicity p (c.getD (degree c) 0).natAbs = val)
     (hmin : ∀ k < degree c, c.getD k 0 ≠ 0 →
-      val + 1 ≤ padicValNat p (c.getD k 0).natAbs + (degree c - k) * padicValNat p b)
-    (hab : Int.gcd a b = 1) (hm : padicValNat p b ≠ 0) (hy : y ^ 2 = binaryForm c a b) :
-    Even (val + padicValNat p b) := by
+      val + 1 ≤ multiplicity p (c.getD k 0).natAbs + (degree c - k) * multiplicity p b)
+    (hab : Int.gcd a b = 1) (hm : multiplicity p b ≠ 0) (hy : y ^ 2 = binaryForm c a b) :
+    Even (val + multiplicity p b) := by
   have hpp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp.out
   have hpa := Int.not_natCast_dvd_of_gcd_eq_one hp.out.ne_one hab
-    (dvd_of_one_le_multiplicity (Nat.one_le_iff_ne_zero.mpr (Nat.padicValNat_def ▸ hm)))
+    (Nat.multiplicity_dvd_of_ne_zero hm)
   obtain ⟨b', hb', hpb'⟩ := Int.exists_eq_pow_padicValInt_mul hp.out.ne_one (n := b)
-    fun h ↦ by simp_all [Nat.padicValNat_def]
-  rw [padicValInt.of_nat, ← Nat.padicValNat_def] at hb'
+    fun h ↦ by simp_all
+  rw [padicValInt.of_nat] at hb'
   obtain ⟨r, hr, hpr⟩ := Int.exists_eq_pow_padicValInt_mul hp.out.ne_one
     (getD_degree_ne_zero_of_pos (c := c) (by lia))
-  rw [padicValInt, ← Nat.padicValNat_def, hval] at hr
+  rw [padicValInt, hval] at hr
   refine even_of_sq_eq_binaryForm_of_odd_of_dvd hd hy (u := r * a ^ degree c * b')
     (by rw [hr, hb', pow_add]; ring)
     (hpp.not_dvd_mul (hpp.not_dvd_mul hpr (mt hpp.dvd_of_dvd_pow hpa)) hpb') fun i hi ↦ ?_
@@ -176,11 +176,11 @@ times: for `v_p(b) ≥ 1` the term `c_d a ^ d b` of `F(a, b)` alone has the leas
 (`Ratpoints.even_add_of_sq_eq_binaryForm_of_odd` with `v_p(c_d) = 0`). -/
 theorem even_of_sq_eq_binaryForm_of_odd {c : List ℤ} {a y : ℤ} {b p : ℕ} [Fact p.Prime]
     (hd : degree c % 2 = 1) (hc : ¬(p : ℤ) ∣ c.getD (degree c) 0) (hab : Int.gcd a b = 1)
-    (hy : y ^ 2 = binaryForm c a b) : Even (padicValNat p b) := by
-  rcases eq_or_ne (padicValNat p b) 0 with h0 | hm
+    (hy : y ^ 2 = binaryForm c a b) : Even (multiplicity p b) := by
+  rcases eq_or_ne (multiplicity p b) 0 with h0 | hm
   · simp [h0]
   simpa using even_add_of_sq_eq_binaryForm_of_odd hd
-    (Nat.padicValNat_def.trans (multiplicity_eq_zero_of_not_dvd (mt Int.natCast_dvd.mpr hc)))
+    (multiplicity_eq_zero_of_not_dvd (mt Int.natCast_dvd.mpr hc))
     (fun k hk _ ↦ le_add_left (Nat.mul_pos (Nat.sub_pos_of_lt hk) (Nat.pos_of_ne_zero hm)))
     hab hm hy
 
@@ -192,7 +192,7 @@ theorem isSquare_of_sq_eq_binaryForm_of_odd {c : List ℤ} (hd : degree c % 2 = 
     (hy : y ^ 2 = binaryForm c a b) : IsSquare b := by
   refine Nat.isSquare_iff_even_factorization.mpr fun p hp ↦ ?_
   have : Fact p.Prime := ⟨hp⟩
-  rw [Nat.factorization_def _ hp, ← Nat.padicValNat_def]
+  rw [Nat.factorization_def _ hp]
   exact even_of_sq_eq_binaryForm_of_odd hd
     (fun h ↦ (Nat.prime_iff_prime_int.mp hp).not_isUnit (isUnit_of_dvd_unit h hc)) hab hy
 
@@ -216,7 +216,7 @@ theorem exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd {c : List ℤ} (hd : degree
     by simpa using h0⟩
   have : Fact p.Prime := ⟨hpp⟩
   have hev := even_of_sq_eq_binaryForm_of_odd hd hc hab hy
-  rw [Nat.padicValNat_def, ← Nat.factorization_def _ hpp, ← hks,
+  rw [← Nat.factorization_def _ hpp, ← hks,
     Nat.factorization_mul (left_ne_zero_of_mul (hks ▸ hb)) hs.ne_zero, Finsupp.add_apply,
     Nat.factorization_pow, Finsupp.smul_apply, smul_eq_mul,
     Nat.factorization_eq_one_of_squarefree hs hpp hps] at hev
@@ -303,7 +303,7 @@ namespace Setup
 its valuation `v = v_p(w) ≥ 1`, and every prime factor of `w` is among them. -/
 def IsFactorization (w : ℕ) (fac : List (ℕ × ℕ)) : Prop :=
   (fac.map Prod.fst).Pairwise (· < ·) ∧
-    (∀ x ∈ fac, x.1.Prime ∧ 0 < x.2 ∧ x.2 = padicValNat x.1 w) ∧
+    (∀ x ∈ fac, x.1.Prime ∧ 0 < x.2 ∧ x.2 = multiplicity x.1 w) ∧
     ∀ q, q.Prime → q ∣ w → q ∈ fac.map Prod.fst
 
 /-- The square `p * p` of a prime of the table, which `setup_us1` computes as an `int`
@@ -340,7 +340,7 @@ structure FactorLcfInvariant (w0 : ℕ) (suff : List ℕ) (w : ℕ) (fac : Array
   pairwise_lt : (fac.toList.map Prod.fst).Pairwise (· < ·)
   /-- Each factor found is a prime with its valuation in `w0`, at least `1`, that does not divide
   the cofactor. -/
-  prime_valuation : ∀ x ∈ fac.toList, x.1.Prime ∧ x.2 = padicValNat x.1 w0 ∧ 0 < x.2 ∧ ¬x.1 ∣ w
+  prime_valuation : ∀ x ∈ fac.toList, x.1.Prime ∧ x.2 = multiplicity x.1 w0 ∧ 0 < x.2 ∧ ¬x.1 ∣ w
   /-- The cofactor satisfies `Ratpoints.Setup.CofactorInvariant`. -/
   cofactor : CofactorInvariant w0 fac.toList suff w
 
@@ -378,7 +378,7 @@ theorem FactorLcfInvariant.push {w0 w m p v : ℕ} {suff suff' : List ℕ} {fac 
     h4⟩
   · exact ⟨(h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1,
       fun hd ↦ (h3 x hx).2.2.2 (hd.trans (hm ▸ dvd_mul_left m _))⟩
-  · exact ⟨hp, (padicValNat_eq_of_eq_pow_mul_of_not_dvd hp.ne_zero (by rw [h1, hm]; ring)
+  · exact ⟨hp, (multiplicity_eq_of_eq_pow_mul_of_not_dvd hp.ne_zero (by rw [h1, hm]; ring)
       (hp.prime.not_dvd_mul hpm hP)).symm, hv, hpm⟩
 
 /-- After the power `2 ^ v2 ≠ 1` of `w0`, found: the odd part of `w0`, every prime factor of which
@@ -770,9 +770,7 @@ theorem IsFactorization.map_fst_eq_dedup {n : ℕ} {fac : List (ℕ × ℕ)} (h 
   rw [List.mem_dedup, Nat.mem_primeFactorsList hn]
   refine ⟨fun hp ↦ ?_, fun ⟨hp, hpn⟩ ↦ h.2.2 p hp hpn⟩
   obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hp
-  have : Fact x.1.Prime := ⟨(h.2.1 x hx).1⟩
-  exact ⟨(h.2.1 x hx).1,
-    dvd_of_one_le_multiplicity (Nat.padicValNat_def ▸ (h.2.1 x hx).2.2 ▸ (h.2.1 x hx).2.1)⟩
+  exact ⟨(h.2.1 x hx).1, dvd_of_multiplicity_pos ((h.2.1 x hx).2.2 ▸ (h.2.1 x hx).2.1)⟩
 
 /-! ### The slopes -/
 
@@ -986,12 +984,12 @@ theorem DenInfo.excludes_eq_false_iff {e : DenInfo} {b : ℕ} :
 (`Ratpoints.Setup.slope_spec`), does not exclude the denominator `b ≥ 1` of a point: for
 `v_p(b) ≥ slope`, `v_p(b) + val` is even (`Ratpoints.even_add_of_sq_eq_binaryForm_of_odd`). -/
 theorem DenInfo.excludes_eq_false_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 1) {p val : ℕ}
-    (hp : p.Prime) (hval : val = padicValNat p (c.getD (degree c) 0).natAbs) {a y : ℤ} {b : ℕ}
+    (hp : p.Prime) (hval : val = multiplicity p (c.getD (degree c) 0).natAbs) {a y : ℤ} {b : ℕ}
     (hb : b ≠ 0) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     (⟨p, val, Id.run (Setup.slope c (degree c) p val)⟩ : DenInfo).excludes b = false := by
   have : Fact p.Prime := ⟨hp⟩
   have hsl := Std.WP.Id.of_run_eq_wp rfl _ ((slope_spec c (degree c) p val).le_wp trivial)
-  have hv : (Id.run (valuation b p)).1 = padicValNat p b := by
+  have hv : (Id.run (valuation b p)).1 = multiplicity p b := by
     rw [fst_run_valuation (Int.natCast_ne_zero.mpr hb) hp.one_lt, Int.natAbs_natCast]
   simp only [DenInfo.excludes_eq_false_iff, hv, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
   refine fun ⟨hle, hodd⟩ ↦ Nat.not_even_iff_odd.mpr (Nat.odd_iff.mpr (by lia))

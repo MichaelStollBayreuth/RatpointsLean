@@ -13,7 +13,7 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 Candidates for `Mathlib.NumberTheory.Padics.PadicVal.Basic`: a nonzero integer as the power of `p`
 of its valuation times an integer prime to `p`, for any `p ≠ 1`
 (`Int.exists_eq_pow_padicValInt_mul`), the `p`-adic valuation of the integer `p ^ k` for any `p > 1`
-(`padicValInt_base_pow`, the integer form of `padicValNat_base_pow`), and a square that is a power
+(`padicValInt_base_pow`, the integer form of `multiplicity_base_pow`), and a square that is a power
 of `p` times a unit at `p`, whose exponent is even and whose unit part is a square
 (`Int.even_and_isSquare_of_sq_eq_pow_mul`), also for a square that is a sum whose terms but one are
 divisible by a higher power of `p` (`Int.even_and_exists_isSquare_add_of_sq_eq_sum`).

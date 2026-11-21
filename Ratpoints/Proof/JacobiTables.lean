@@ -13,9 +13,9 @@ public import Std.WP
 
 import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
 import Ratpoints.Mathlib.Data.List.Prime
-import Ratpoints.Mathlib.Data.Nat.PadicValNat
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+import Ratpoints.Mathlib.RingTheory.Multiplicity
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Jacobi
@@ -202,11 +202,11 @@ signs are those of `Ratpoints.Sieve.jacobiSigns` for the number of these primes 
 exponent that are `3 (mod 4)`, the sign of `lcf` and `v₂(lcf)`. -/
 def IsJacobiInfo (lcf : ℤ) (ji : JacobiInfo) : Prop :=
   (∀ x ∈ ji.primes, x.1.Prime ∧ x.1 ≠ 2 ∧ x.1 ∣ lcf.natAbs ∧
-    x.2 = if padicValNat x.1 lcf.natAbs % 2 = 1 then some (Id.run (nonSquares x.1)) else none) ∧
-  lcf.natAbs = 2 ^ padicValNat 2 lcf.natAbs *
-    (ji.primes.map fun x ↦ x.1 ^ padicValNat x.1 lcf.natAbs).prod ∧
+    x.2 = if multiplicity x.1 lcf.natAbs % 2 = 1 then some (Id.run (nonSquares x.1)) else none) ∧
+  lcf.natAbs = 2 ^ multiplicity 2 lcf.natAbs *
+    (ji.primes.map fun x ↦ x.1 ^ multiplicity x.1 lcf.natAbs).prod ∧
   ji.sign = jacobiSigns (ji.primes.filter fun x ↦ x.2.isSome && x.1 &&& 2 != 0).length
-    (decide (lcf < 0)) (padicValNat 2 lcf.natAbs)
+    (decide (lcf < 0)) (multiplicity 2 lcf.natAbs)
 
 /-- The invariant of the loop of `Ratpoints.Sieve.jacobiSetup` on `lcf` with the exponent `v` of `2`
 in it, on the cofactor `w` and the entries `qs`: for `lcf = 0`, `w = 0`; otherwise `|lcf|` is
@@ -215,20 +215,19 @@ entries are odd primes of `lcf` from `Ratpoints.primeTable` that do not divide `
 table of the non-squares exactly when its exponent in `lcf` is odd. -/
 def JacobiSetupInvariant (lcf : ℤ) (v w : ℕ) (qs : Array (ℕ × Option (Array Bool))) : Prop :=
   (lcf = 0 → w = 0) ∧ (lcf ≠ 0 →
-    lcf.natAbs = 2 ^ v * w * (qs.toList.map fun x ↦ x.1 ^ padicValNat x.1 lcf.natAbs).prod ∧
+    lcf.natAbs = 2 ^ v * w * (qs.toList.map fun x ↦ x.1 ^ multiplicity x.1 lcf.natAbs).prod ∧
     w % 2 = 1 ∧ ∀ x ∈ qs.toList, x.1 ∈ primeTable ∧ x.1 ≠ 2 ∧ x.1 ∣ lcf.natAbs ∧ ¬x.1 ∣ w ∧
-      x.2 = if padicValNat x.1 lcf.natAbs % 2 = 1 then some (Id.run (nonSquares x.1)) else none)
+      x.2 = if multiplicity x.1 lcf.natAbs % 2 = 1 then some (Id.run (nonSquares x.1)) else none)
 
 theorem jacobiSetupInvariant_empty {lcf : ℤ} {v r : ℕ}
     (hv : (v, r) = Id.run (Setup.valuation lcf 2)) :
     JacobiSetupInvariant lcf v (lcf.natAbs / 2 ^ v) #[] := by
   refine ⟨fun h ↦ by simp [h], fun h ↦ ?_⟩
-  obtain rfl : v = padicValNat 2 lcf.natAbs := by
+  obtain rfl : v = multiplicity 2 lcf.natAbs := by
     rw [← Setup.fst_run_valuation h Nat.one_lt_two, ← hv]
-  have hd : 2 ^ padicValNat 2 lcf.natAbs ∣ lcf.natAbs :=
-    Nat.padicValNat_def ▸ pow_multiplicity_dvd ..
+  have hd : 2 ^ multiplicity 2 lcf.natAbs ∣ lcf.natAbs := pow_multiplicity_dvd ..
   refine ⟨by simp [Nat.mul_div_cancel' hd], ?_, by simp⟩
-  rw [Nat.padicValNat_def, ← Nat.factorization_def _ Nat.prime_two]
+  rw [← Nat.factorization_def _ Nat.prime_two]
   exact Nat.two_dvd_ne_zero.mp (Nat.not_dvd_ordCompl Nat.prime_two (by simpa using h))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.jacobiSetup` over the primes of the table, with
@@ -270,24 +269,24 @@ theorem JacobiSetupInvariant.dvd_natAbs {lcf : ℤ} {v w : ℕ}
     {qs : Array (ℕ × Option (Array Bool))} (h : JacobiSetupInvariant lcf v w qs) (h0 : lcf ≠ 0) :
     w ∣ lcf.natAbs := by
   obtain ⟨h1, -, -⟩ := h.2 h0
-  refine ⟨2 ^ v * (qs.toList.map fun x ↦ x.1 ^ padicValNat x.1 lcf.natAbs).prod, ?_⟩
+  refine ⟨2 ^ v * (qs.toList.map fun x ↦ x.1 ^ multiplicity x.1 lcf.natAbs).prod, ?_⟩
   nth_rw 1 [h1]
   ring
 
 /-- The exponent `e` of a prime `q` of the cofactor `w = q ^ e m`, `q ∤ m`, is `v_q(lcf)`, since `q`
 is neither `2` nor one of the primes taken out before. -/
-theorem JacobiSetupInvariant.padicValNat_eq {lcf : ℤ} {v w q e m : ℕ}
+theorem JacobiSetupInvariant.multiplicity_eq {lcf : ℤ} {v w q e m : ℕ}
     {qs : Array (ℕ × Option (Array Bool))} (h0 : lcf ≠ 0) (h : JacobiSetupInvariant lcf v w qs)
     (hq : q.Prime) (hm : w = q ^ e * m) (hqm : ¬q ∣ m) (hqw : q ∣ w) :
-    padicValNat q lcf.natAbs = e := by
+    multiplicity q lcf.natAbs = e := by
   obtain ⟨h1, h2, h3⟩ := h.2 h0
   have h2q : ¬q ∣ 2 := fun hd ↦ by
     obtain rfl := (Nat.prime_dvd_prime_iff_eq hq Nat.prime_two).mp hd
     lia
-  have hP : ¬q ∣ (qs.toList.map fun x ↦ x.1 ^ padicValNat x.1 lcf.natAbs).prod :=
+  have hP : ¬q ∣ (qs.toList.map fun x ↦ x.1 ^ multiplicity x.1 lcf.natAbs).prod :=
     hq.prime.not_dvd_prod_map_pow fun x hx ↦
       ⟨(prime_of_mem_primeTable (h3 x hx).1).prime, fun he ↦ (h3 x hx).2.2.2.1 (he ▸ hqw)⟩
-  refine padicValNat_eq_of_eq_pow_mul_of_not_dvd hq.ne_zero ?_ (hq.prime.not_dvd_mul
+  refine multiplicity_eq_of_eq_pow_mul_of_not_dvd hq.ne_zero ?_ (hq.prime.not_dvd_mul
     (hq.prime.not_dvd_mul hqm (mt (hq.prime.dvd_of_dvd_pow (n := v)) h2q)) hP)
   nth_rw 1 [h1, hm]
   ring
@@ -307,7 +306,7 @@ theorem JacobiSetupInvariant.push {lcf : ℤ} {v w cur e r : ℕ} {pref suff : L
   have hw0 : w ≠ 0 := by rintro rfl; simp at h1; lia
   obtain ⟨m, hm, hcm⟩ := Setup.exists_eq_of_eq_run_valuation hw0 hcur.one_lt he
   have hcw : cur ∣ w := Nat.dvd_of_mod_eq_zero (by simpa using hw)
-  have hv := h.padicValNat_eq h0 hcur hm hcm hcw
+  have hv := h.multiplicity_eq h0 hcur hm hcm hcw
   have hmw : m ∣ w := hm ▸ dvd_mul_left m _
   rw [Nat.div_eq_of_eq_mul_right (Nat.pow_pos hcur.pos) hm]
   refine ⟨?_, Nat.odd_iff.mp ((Nat.odd_iff.mpr h2).of_dvd_nat hmw), fun x hx ↦ ?_⟩
@@ -362,7 +361,7 @@ theorem JacobiSetupLoopInvariant.isJacobiInfo {lcf : ℤ} {bHigh v r w n3 u : �
   obtain rfl : w = 1 := by simpa using hw
   have h0 : lcf ≠ 0 := fun h0 ↦ one_ne_zero (h.1 h0)
   obtain ⟨h1, -, h3⟩ := h.2 h0
-  obtain rfl : v = padicValNat 2 lcf.natAbs := by
+  obtain rfl : v = multiplicity 2 lcf.natAbs := by
     rw [← Setup.fst_run_valuation h0 Nat.one_lt_two, ← hv]
   obtain rfl := Option.some.inj hji
   refine ⟨Nat.le_of_not_lt hb, h0, ⟨fun x hx ↦ ?_, by simpa using h1, congr(jacobiSigns $hn3 _ _)⟩,
@@ -662,10 +661,10 @@ private theorem jacobiSym_eq_χ₄_pow_mul_natAbs (a : ℤ) {b : ℕ} (hb : b % 
   · simp [h.not_gt, Int.natAbs_of_nonneg h]
 
 theorem jacobiSym_natAbs_eq_mul_prod {lcf : ℤ} {v b : ℕ} {L : List (ℕ × Option (Array Bool))}
-    (h : lcf.natAbs = 2 ^ v * (L.map fun x ↦ x.1 ^ padicValNat x.1 lcf.natAbs).prod)
+    (h : lcf.natAbs = 2 ^ v * (L.map fun x ↦ x.1 ^ multiplicity x.1 lcf.natAbs).prod)
     (hb : b % 2 = 1) :
     J(lcf.natAbs | b) =
-      ZMod.χ₈ b ^ v * (L.map fun x ↦ J(x.1 | b) ^ padicValNat x.1 lcf.natAbs).prod := by
+      ZMod.χ₈ b ^ v * (L.map fun x ↦ J(x.1 | b) ^ multiplicity x.1 lcf.natAbs).prod := by
   nth_rw 1 [h]
   push_cast
   rw [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two (Nat.odd_iff.mpr hb),
@@ -674,9 +673,9 @@ theorem jacobiSym_natAbs_eq_mul_prod {lcf : ℤ} {v b : ℕ} {L : List (ℕ × O
 
 theorem prod_map_jacobiSym_pow_eq {lcf : ℤ} {L : List (ℕ × Option (Array Bool))}
     (h : ∀ x ∈ L, x.1.Prime ∧ x.1 ≠ 2 ∧ x.1 ∣ lcf.natAbs ∧
-      x.2 = if padicValNat x.1 lcf.natAbs % 2 = 1 then some (Id.run (nonSquares x.1)) else none)
+      x.2 = if multiplicity x.1 lcf.natAbs % 2 = 1 then some (Id.run (nonSquares x.1)) else none)
     {b : ℕ} (hb : b % 2 = 1) (hq : ∀ x ∈ L, ¬x.1 ∣ b) :
-    (L.map fun x ↦ J(x.1 | b) ^ padicValNat x.1 lcf.natAbs).prod =
+    (L.map fun x ↦ J(x.1 | b) ^ multiplicity x.1 lcf.natAbs).prod =
       ZMod.χ₄ b ^ (L.filter fun x ↦ x.2.isSome && x.1 &&& 2 != 0).length *
         (L.map fun x ↦ x.2.elim 1 fun ns ↦ if ns[b % x.1]! = true then -1 else 1).prod := by
   rw [← List.prod_map_ite_eq_pow, ← List.prod_map_mul]

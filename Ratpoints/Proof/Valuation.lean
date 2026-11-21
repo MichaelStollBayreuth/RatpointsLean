@@ -5,11 +5,11 @@ Authors: Michael Stoll
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.PadicVal.Defs
+public import Mathlib.RingTheory.Multiplicity
 public import Ratpoints.Model.Setup
 public import Std.WP
 
-import Ratpoints.Mathlib.Data.Nat.PadicValNat
+import Ratpoints.Mathlib.RingTheory.Multiplicity
 import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
@@ -27,14 +27,14 @@ The loop of `Ratpoints.Setup.valuation`, repeated division with remainder, gives
   `Ratpoints.Setup.exists_eq_run_valuation` states this for `n ≠ 0` without the program logic,
   with `p ∤ m`, and `Ratpoints.Setup.exists_eq_of_eq_run_valuation` for a natural number `w ≠ 0`,
   as `w = p ^ v m` with `p ∤ m`.
-* `Ratpoints.Setup.fst_run_valuation`: for `p > 1` and `n ≠ 0`, the valuation is
-  `padicValNat p |n|`.
+* `Ratpoints.Setup.fst_run_valuation`: for `p > 1` and `n ≠ 0`, the valuation is the
+  multiplicity of `p` in `|n|`.
 
 ## Implementation notes
 
 The contract is proved with `vcgen`, the program logic of Lean core, with a loop invariant that is
 a named definition, in a file with Mathlib, since the valuation of the C code is Mathlib's
-`padicValNat`. `Ratpoints.Setup.valuation_value` gives the result as its own value, for the
+`multiplicity`. `Ratpoints.Setup.valuation_value` gives the result as its own value, for the
 contracts of the loops that bind it and read it through the plain statements.
 -/
 
@@ -116,9 +116,9 @@ theorem exists_eq_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : 1 < p) 
   exact ⟨m, hm, hmr, fun h ↦ hr (hmr ▸ Nat.mod_eq_zero_of_dvd h)⟩
 
 theorem fst_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : 1 < p) :
-    (Id.run (valuation n p)).1 = padicValNat p n.natAbs := by
+    (Id.run (valuation n p)).1 = multiplicity p n.natAbs := by
   obtain ⟨m, hm, -, hpm⟩ := exists_eq_run_valuation hn hp
-  exact (padicValNat_eq_of_eq_pow_mul_of_not_dvd (Nat.ne_zero_of_lt hp) hm hpm).symm
+  exact (multiplicity_eq_of_eq_pow_mul_of_not_dvd (Nat.ne_zero_of_lt hp) hm hpm).symm
 
 /-- The valuation of a natural number `w ≠ 0` at `p > 1` by `Ratpoints.Setup.valuation`, in the form
 in which a loop that binds its result reads it: `w = p ^ v m` with `p ∤ m`. -/

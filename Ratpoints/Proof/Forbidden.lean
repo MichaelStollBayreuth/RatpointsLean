@@ -5,8 +5,9 @@ Authors: Michael Stoll
 -/
 module
 
+public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.Data.ZMod.Defs
-public import Mathlib.NumberTheory.Padics.PadicVal.Defs
+public import Mathlib.RingTheory.Multiplicity
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Spec.Basic
 public import Std.WP
@@ -135,23 +136,23 @@ valuation `w + j m`, where `c_{d-j} = p ^ w u` with `p ∤ u` and `p ^ (w + j m 
 unit part `u` is a square modulo `p`, since `a ^ (d - j)` and `(b / p ^ m) ^ j` then are. -/
 theorem even_and_isSquare_of_sq_eq_binaryForm_of_even {c : List ℤ} {p : ℕ} [hp : Fact p.Prime]
     (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1)
-    (hy : y ^ 2 = binaryForm c a b) (hm : padicValNat p b ≠ 0) {j w : ℕ} {u : ℤ}
+    (hy : y ^ 2 = binaryForm c a b) (hm : multiplicity p b ≠ 0) {j w : ℕ} {u : ℤ}
     (hj : j ≤ degree c) (hu : c.getD (degree c - j) 0 = (p : ℤ) ^ w * u) (hpu : ¬(p : ℤ) ∣ u)
-    (hmin : ∀ i ≤ degree c, i ≠ j → (p : ℤ) ^ (w + j * padicValNat p b + 1) ∣
-      c.getD (degree c - i) 0 * (p : ℤ) ^ (i * padicValNat p b)) :
-    Even (w + j * padicValNat p b) ∧ (Even j → IsSquare (u : ZMod p)) := by
+    (hmin : ∀ i ≤ degree c, i ≠ j → (p : ℤ) ^ (w + j * multiplicity p b + 1) ∣
+      c.getD (degree c - i) 0 * (p : ℤ) ^ (i * multiplicity p b)) :
+    Even (w + j * multiplicity p b) ∧ (Even j → IsSquare (u : ZMod p)) := by
   have hpp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp.out
   have hpa := Int.not_natCast_dvd_of_gcd_eq_one hp.out.ne_one hab
-    (dvd_of_one_le_multiplicity (Nat.one_le_iff_ne_zero.mpr (Nat.padicValNat_def ▸ hm)))
+    (Nat.multiplicity_dvd_of_ne_zero hm)
   obtain ⟨b', hb', hpb'⟩ := Int.exists_eq_pow_padicValInt_mul hp.out.ne_one (n := b)
-    fun h ↦ by simp_all [Nat.padicValNat_def]
-  rw [padicValInt.of_nat, ← Nat.padicValNat_def] at hb'
+    fun h ↦ by simp_all
+  rw [padicValInt.of_nat] at hb'
   have hterm (i : ℕ) : c.getD (degree c - i) 0 * a ^ (degree c - i) * (b : ℤ) ^ i =
-      c.getD (degree c - i) 0 * (p : ℤ) ^ (i * padicValNat p b) *
+      c.getD (degree c - i) 0 * (p : ℤ) ^ (i * multiplicity p b) *
         (a ^ (degree c - i) * b' ^ i) := by rw [hb']; ring
   rw [binaryForm_eq_sum_of_even hd] at hy
   obtain ⟨hev, t, ht⟩ := Int.even_and_exists_isSquare_add_of_sq_eq_sum
-    (v := w + j * padicValNat p b) (u := u * a ^ (degree c - j) * b' ^ j) hy
+    (v := w + j * multiplicity p b) (u := u * a ^ (degree c - j) * b' ^ j) hy
     (Finset.mem_range.mpr (Nat.lt_succ_of_le hj)) (by rw [hterm, hu, pow_add]; ring)
     (hpp.not_dvd_mul (hpp.not_dvd_mul hpu (mt hpp.dvd_of_dvd_pow hpa)) (mt hpp.dvd_of_dvd_pow hpb'))
     fun i hi hij ↦ hterm i ▸ (hmin i (Nat.le_of_lt_succ (Finset.mem_range.mp hi)) hij).mul_right _
@@ -422,12 +423,12 @@ the coefficients reduced modulo `p`. -/
 theorem even_and_getElem!_squaresMod_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {p : ℕ}
     (hp : p.Prime) {cm : Array ℕ} (hcm : ∀ j ≤ degree c, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat)
     {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b)
-    (hm : padicValNat p b ≠ 0) {j₀ w r : ℕ}
+    (hm : multiplicity p b ≠ 0) {j₀ w r : ℕ}
     (hus : (Id.run (unitParts c (degree c) p cm))[j₀]! = some (w, r))
     (hmin : ∀ j, (Id.run (unitParts c (degree c) p cm))[j]!.isSome → j ≠ j₀ →
-      w + j₀ * padicValNat p b <
-        ((Id.run (unitParts c (degree c) p cm))[j]!.getD (0, 0)).1 + j * padicValNat p b) :
-    Even (w + j₀ * padicValNat p b) ∧ (Even j₀ → (squaresMod p)[r]! = true) := by
+      w + j₀ * multiplicity p b <
+        ((Id.run (unitParts c (degree c) p cm))[j]!.getD (0, 0)).1 + j * multiplicity p b) :
+    Even (w + j₀ * multiplicity p b) ∧ (Even j₀ → (squaresMod p)[r]! = true) := by
   have : Fact p.Prime := ⟨hp⟩
   have hj₀ := le_of_getElem!_run_unitParts_eq_some hp.one_lt hcm hus
   obtain ⟨hr, u, hu, hpu, hru⟩ := hus ▸ isUnitPart_run_unitParts hp.one_lt hcm hj₀
@@ -447,9 +448,9 @@ reduced modulo `p`. -/
 theorem run_forbiddenAt_eq_false_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {p : ℕ}
     (hp : p.Prime) {cm : Array ℕ} (hcm : ∀ j ≤ degree c, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat)
     {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b)
-    (hm : padicValNat p b ≠ 0) :
+    (hm : multiplicity p b ≠ 0) :
     Id.run (forbiddenAt (Id.run (unitParts c (degree c) p cm)) (squaresMod p)
-      (padicValNat p b)) = false := by
+      (multiplicity p b)) = false := by
   refine Bool.eq_false_iff.mpr fun h ↦ ?_
   obtain ⟨j₀, hc, hmin, hcrit⟩ := exists_of_run_forbiddenAt_eq_true h
   rcases hus : (Id.run (unitParts c (degree c) p cm))[j₀]! with _ | ⟨w, r⟩
@@ -650,9 +651,9 @@ theorem testBit_run_forbiddenValuations_eq_false_of_sq_eq {c : List ℤ} (hd : d
     {p : ℕ} (hp : p.Prime) (bHigh : ℕ) {cm : Array ℕ}
     (hcm : ∀ j ≤ degree c, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat) {a y : ℤ} {b : ℕ}
     (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
-    (Id.run (forbiddenValuations c (degree c) p bHigh cm)).testBit (padicValNat p b) = false := by
+    (Id.run (forbiddenValuations c (degree c) p bHigh cm)).testBit (multiplicity p b) = false := by
   rw [testBit_run_forbiddenValuations c _ hp.one_lt]
-  rcases eq_or_ne (padicValNat p b) 0 with h0 | h0
+  rcases eq_or_ne (multiplicity p b) 0 with h0 | h0
   · simp [h0]
   · simp [run_forbiddenAt_eq_false_of_sq_eq hd hp hcm hab hy h0]
 
@@ -697,11 +698,10 @@ theorem not_dvd_of_run_forbiddenOfPrime_eq_inl {c : List ℤ} (hd : degree c % 2
   intro hpb
   rcases (eq_of_run_forbiddenOfPrime_eq_inl he).2 with ⟨-, hall⟩ | rfl
   · have : Fact p.Prime := ⟨hp⟩
-    have hv : padicValNat p b ≠ 0 :=
-      Nat.padicValNat_def ▸ Nat.pos_iff_ne_zero.mp (one_le_multiplicity_of_dvd hb hpb)
-    have hle : p ^ padicValNat p b ≤ bHigh :=
-      (Nat.le_of_dvd (by lia) (Nat.padicValNat_def ▸ pow_multiplicity_dvd p b)).trans hbH
-    have := congr(Nat.testBit $hall (padicValNat p b))
+    have hv : multiplicity p b ≠ 0 := (dvd_iff_multiplicity_ne_zero hb).mp hpb
+    have hle : p ^ multiplicity p b ≤ bHigh :=
+      (Nat.le_of_dvd (by lia) (pow_multiplicity_dvd p b)).trans hbH
+    have := congr(Nat.testBit $hall (multiplicity p b))
     simp only [Nat.testBit_and, testBit_run_allValuations hp.one_lt,
       testBit_run_forbiddenValuations_eq_false_of_sq_eq hd hp bHigh hcm hab hy] at this
     simp [hv, hle] at this

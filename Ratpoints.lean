@@ -26,7 +26,6 @@ public import Ratpoints.Mathlib.Data.List.Prime
 public import Ratpoints.Mathlib.Data.List.SignVariations
 public import Ratpoints.Mathlib.Data.List.Sort
 public import Ratpoints.Mathlib.Data.Nat.Factors
-public import Ratpoints.Mathlib.Data.Nat.PadicValNat
 public import Ratpoints.Mathlib.Data.Nat.Prime.Defs
 public import Ratpoints.Mathlib.Data.Nat.Squarefree
 public import Ratpoints.Mathlib.Data.Rat.Floor
@@ -37,6 +36,7 @@ public import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Ratpoints.Mathlib.NumberTheory.SmoothNumbers
 public import Ratpoints.Mathlib.Order.WithBotTop
 public import Ratpoints.Mathlib.RingTheory.Coprime.Basic
+public import Ratpoints.Mathlib.RingTheory.Multiplicity
 public import Ratpoints.Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Ratpoints.Mathlib.Topology.Algebra.Order.Polynomial
 public import Ratpoints.Model
