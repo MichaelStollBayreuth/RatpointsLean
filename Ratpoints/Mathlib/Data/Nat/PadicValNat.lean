@@ -26,6 +26,6 @@ hypothesis `p ∤ b'` fails): the first component of `Nat.maxPowDvdDiv_of_pow_mu
 theorem padicValNat_eq_of_eq_pow_mul_of_not_dvd {p b b' m : ℕ} (hp : p ≠ 0) (hb : b = p ^ m * b')
     (hb' : ¬p ∣ b') : padicValNat p b = m := by
   have hb0 : b ≠ 0 := hb ▸ mul_ne_zero (pow_ne_zero m hp) fun h ↦ hb' (h ▸ dvd_zero p)
-  rw [← Nat.fst_maxPowDvdDiv, Nat.maxPowDvdDiv_of_pow_mul_eq hb0 hb.symm hb']
+  rw [Nat.padicValNat_def, ← Nat.fst_maxPowDvdDiv, Nat.maxPowDvdDiv_of_pow_mul_eq hb0 hb.symm hb']
 
 end

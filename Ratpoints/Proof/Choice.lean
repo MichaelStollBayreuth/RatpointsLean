@@ -272,19 +272,19 @@ theorem examineInLoop_spec (c : List ℤ) (u checkDenom : Bool) (maxForbidden bH
     ⦃ fun r ↦ (r = none → ∀ H q, ¬IsPoint c H q) ∧ ∀ st', r = some st' →
         st'.WF c bHigh ∧ st'.primeSe.size = pn + 1 ∧ st'.pnLim = st.pnLim ⦄ := by
   vcgen [examineInLoop, examinePrime?_value, forbiddenOfPrime_value]
-  all_goals simp only [reduceCtorEq, false_implies, implies_true, true_and, and_true,
-    Option.some.injEq, forall_eq'] at *
+  all_goals simp only [reduceCtorEq, Option.some.injEq] at *
   all_goals obtain ⟨h, hs, hpn⟩ := ‹TableLoop.WF c bHigh st ∧ _›
   all_goals try -- the exit: `examinePrime?` returns none
-    exact fun _ ↦ not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none hpn
+    exact not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none hpn
       (‹_ = Id.run _›.symm.trans (‹_ = _›.trans (Option.eq_none_iff_forall_ne_some.mpr
-        fun ⟨t, cm, k, r⟩ ↦ ‹∀ t cm k r, _ = some (t, cm, k, r) → False› t cm k r)))
+        fun ⟨t, cm, k, r⟩ ↦ ‹∀ t cm k r, _ = some (t, cm, k, r) → False› t cm k r))) _ _
   all_goals subst ‹_ = some (_, _, _, _)›
   all_goals have he := ‹some (_, _, _, _) = _›.symm
-  all_goals refine ⟨?_, by simp [hs]⟩
+  all_goals subst ‹(_ : TableLoop) = _›
   all_goals try subst ‹_ = some (Sum.inl _)›
   all_goals try subst ‹_ = some (Sum.inr _)›
   all_goals first
+    | (simp [hs]; done)
     | exact (h.push_ofPrime hs hpn he ..).push_ba_of_run hpn he ‹some (Sum.inl _) = _›.symm
     | exact (h.push_ofPrime hs hpn he ..).push_val_of_run hpn he ‹some (Sum.inr _) = _›.symm
     | exact h.push_ofPrime hs hpn he ..
@@ -337,10 +337,10 @@ theorem tablesLoop_spec (c : List ℤ) (u checkDenom mayExtend : Bool) (s : Siev
   vcgen [tablesLoop, examineInLoop_spec, raiseLimit_spec c bHigh] invariants
   | inv1 => TablesLoopInvariant c bHigh
   all_goals simp only [TablesLoopInvariant, Lean.Order.meet_prop_eq_and, Lean.Order.join_prop_eq_or,
-    Lean.Order.iSup_prop_eq_exists, Lean.Order.ofProp_prop_eq, reduceCtorEq, false_and, or_false,
-    false_or, true_and, and_false, Option.some.injEq, exists_eq_left', exists_false, and_true,
-    Except.error.injEq, Except.ok.injEq, forall_eq', false_implies, implies_true,
-    ← Option.eq_none_iff_forall_ne_some, ne_eq, List.cons_ne_nil, not_false_eq_true,
+    Lean.Order.iSup_prop_eq_exists, Lean.Order.CompleteLattice.ofProp_prop_eq, reduceCtorEq,
+    false_and, or_false, false_or, true_and, and_false, Option.some.injEq, exists_eq_left',
+    exists_false, and_true, Except.error.injEq, Except.ok.injEq, forall_eq', false_implies,
+    implies_true, ← Option.eq_none_iff_forall_ne_some, ne_eq, List.cons_ne_nil, not_false_eq_true,
     forall_const, List.length_append, List.length_singleton, not_true_eq_false] at *
   all_goals grind [TableLoop.wf_init, TableLoop.WF.pnLim_le,
     Std.Legacy.Range.length_eq_of_toList_eq_append_cons,
@@ -500,20 +500,21 @@ theorem choiceTail_spec (c : List ℤ) (u mayExtend : Bool) (s : SieveOptions) (
   vcgen [choiceTail, runShape_true, addModuli_spec, firstStages_value, stageEntries_spec c,
     thirdOf_spec]
   all_goals obtain ⟨h, hforb, hval, hcd⟩ := ‹TableLoop.WF c a.bHigh st ∧ _›
-  · exact ⟨h.primeSe, h.pnLim_le,
-      fun _ he ↦ ModulusCandidate.isPrimeOrComposite_of_mem_map_phase1Key h.isPrime he _ _⟩
-  · obtain ⟨h1, h2, -, h4⟩ := firstStages_post ‹_› ‹_›
-    exact ⟨h1, h2, h4⟩
-  · exact ⟨‹_ ∧ _›.1, ‹_ ∧ _›.2 ▸ (firstStages_post ‹_› ‹_›).2.2.2⟩
-  · subst ‹_ = Except.error _›
-    obtain ⟨he, -⟩ := ‹(∀ p, _ = Except.error p → _) ∧ _›
-    exact ⟨fun _ hp ↦ by cases hp; exact he _ rfl, nofun⟩
-  · subst ‹_ = Except.ok _›
-    obtain ⟨-, ht⟩ := ‹(∀ p, _ = Except.error p → _) ∧ _›
-    refine ⟨nofun, fun _ hsi ↦ ?_⟩
-    cases hsi
-    exact isSievingInfo_choiceEnd (ht _ rfl) (firstStages_post ‹_› ‹_›).2.2.1 h.store hforb
-      hval hcd rfl rfl rfl
+  all_goals first
+    | exact h.primeSe
+    | exact h.pnLim_le
+    | exact ModulusCandidate.isPrimeOrComposite_of_mem_map_phase1Key h.isPrime ‹_› _ _
+    | exact (firstStages_post ‹_› ‹_›).1 _ ‹_›
+    | exact (firstStages_post ‹_› ‹_›).2.1
+    | exact (firstStages_post ‹_› ‹_›).2.2.2
+    | exact ‹ChoicePoolWF _ _ _ ∧ _›.1
+    | exact ‹ChoicePoolWF _ _ _ ∧ _›.2 ▸ (firstStages_post ‹_› ‹_›).2.2.2
+    | exact ‹(∀ p, _ = Except.error p → ∀ H q, ¬IsPoint c H q) ∧ _›.1 _ ‹_› _ _
+    | exact nomatch ‹Except.error _ = Except.ok (_ : SievingInfo)›
+    | exact nomatch ‹Except.ok (_ : SievingInfo) = Except.error _›
+    | cases ‹Except.ok (_ : SievingInfo) = Except.ok _›
+      exact isSievingInfo_choiceEnd (‹_ ∧ ∀ t, _ = Except.ok t → _›.2 _ ‹_›)
+        (firstStages_post ‹_› ‹_›).2.2.1 h.store hforb hval hcd rfl rfl rfl
 
 -- The cost of a check, as a value: no contract reads it.
 private theorem checkRelOf_true (c : List ℤ) (d H : ℕ) (s : SieveOptions) :
@@ -536,16 +537,19 @@ theorem sievingInfo_spec (c : List ℤ) (u checkDenom mayExtend : Bool) (s : Sie
   vcgen [sievingInfo, checkRelOf_true, runShape_true, tablesLoop_spec, forbidden_spec,
     choiceTail_spec]
   all_goals obtain ⟨hn, hcd⟩ := ‹s.numPrimes ≤ (numPrimes : ℤ) ∧ _›
-  · exact hn
+  all_goals try exact hn
   all_goals obtain ⟨he, hok⟩ := ‹(∀ p, _ = Except.error p → _) ∧ _›
-  · subst ‹_ = Except.error _›
-    exact ⟨fun _ hp ↦ by cases hp; exact he _ rfl, nofun⟩
-  all_goals subst ‹_ = Except.ok _›
-  · exact ⟨(hok _ rfl).ba, (hok _ rfl).val⟩
-  · exact ⟨hok _ rfl, ‹_ ∧ _›.1, ‹_ ∧ _›.2, fun h ↦ hcd (Bool.and_eq_true_iff.mp h).1⟩
-  · exact ⟨hok _ rfl, fun e he' ↦ (hok _ rfl).ba e (Array.mem_toList_iff.mp he'),
-      fun e he' ↦ (hok _ rfl).val e (Array.mem_toList_iff.mp he'),
-      fun h ↦ hcd (Bool.and_eq_true_iff.mp h).1⟩
+  all_goals first
+    | exact he _ ‹_ = Except.error _› _ _
+    | exact nomatch ‹Except.error _ = Except.ok (_ : SievingInfo)›
+    | exact hok _ ‹_›
+    | exact (hok _ ‹_›).ba _ ‹_›
+    | exact (hok _ ‹_›).val _ ‹_›
+    | exact (hok _ ‹_›).ba _ (Array.mem_toList_iff.mp ‹_›)
+    | exact (hok _ ‹_›).val _ (Array.mem_toList_iff.mp ‹_›)
+    | exact ‹(∀ e ∈ _, IsForbiddenEntry _ _ _ e) ∧ _›.1 _ ‹_›
+    | exact ‹_ ∧ ∀ e ∈ _, IsForbiddenVal _ _ _ e›.2 _ ‹_›
+    | exact hcd (Bool.and_eq_true_iff.mp ‹_›).1
 
 end Ratpoints
 

@@ -208,11 +208,11 @@ private theorem poly_toList_eq_zero_of_size_eq_zero {a : Array ℤ} (h : a.size 
 -- The scaled subtraction of a reduction step, from its coefficients.
 private theorem poly_toList_eq_C_mul_sub_C_mul_X_pow_mul {t a b : Array ℤ} {w v : ℤ} {e : ℕ}
     (h : ∀ i, t[i]! = w * a[i]! - v * if e ≤ i then b[i - e]! else 0) :
-    poly t.toList = C (w : ℚ) * poly a.toList - C (v : ℚ) * X ^ e * poly b.toList :=
-  Polynomial.ext fun i ↦ by
-    rw [coeff_poly_toList, h, coeff_sub, coeff_C_mul, mul_assoc, coeff_C_mul, coeff_X_pow_mul',
-      coeff_poly_toList, coeff_poly_toList]
-    split_ifs <;> simp
+    poly t.toList = C (w : ℚ) * poly a.toList - C (v : ℚ) * X ^ e * poly b.toList := by
+  ext i : 2
+  rw [coeff_poly_toList, h, coeff_sub, coeff_C_mul, mul_assoc, coeff_C_mul, coeff_X_pow_mul',
+    coeff_poly_toList, coeff_poly_toList]
+  split_ifs <;> simp
 
 -- The constant polynomial of an integer other than `0` is a unit over `ℚ`.
 private theorem isUnit_C_intCast {A : ℤ} (h : A ≠ 0) : IsUnit (C (A : ℚ)) :=
@@ -257,10 +257,10 @@ private theorem exists_poly_fullReduce {s : Array ℤ} (hs : s.back! ≠ 0) (t :
 
 -- `g` times the normalized remainder is `-t`, for the gcd `g` of the entries of `-t`.
 private theorem mul_poly_normalize (t : Array ℤ) :
-    C ((content (t.map Neg.neg) : ℤ) : ℚ) * poly (normalize t).toList = -poly t.toList :=
-  Polynomial.ext fun i ↦ by
-    rw [coeff_C_mul, coeff_poly_toList, coeff_neg, coeff_poly_toList, ← Int.cast_mul,
-      mul_getElem!_normalize, Int.cast_neg]
+    C ((content (t.map Neg.neg) : ℤ) : ℚ) * poly (normalize t).toList = -poly t.toList := by
+  ext i : 2
+  rw [coeff_C_mul, coeff_poly_toList, coeff_neg, coeff_poly_toList, ← Int.cast_mul,
+    mul_getElem!_normalize, Int.cast_neg]
 
 -- A full reduction that leaves nothing: `s`, not constant, divides `t`.
 private theorem not_isCoprime_of_fullReduce_eq_empty {s t : Array ℤ} (hs : s.back! ≠ 0)
@@ -277,25 +277,25 @@ private theorem not_isCoprime_of_fullReduce_eq_empty {s t : Array ℤ} (hs : s.b
 /-! ### Remainder chains -/
 
 theorem IsChain.poly_toList_getElem!_zero {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
-    (h : IsChain c d ch) : poly ch[0]!.toList = poly (c.take (d + 1)) :=
-  Polynomial.ext fun i ↦ by
-    rw [coeff_poly_toList, h.getElem!_zero, coeff_poly, List.getD_eq_getElem?_getD,
-      List.getElem?_take]
-    split_ifs with hi
-    · rw [Array.getElem!_map_range _ hi, List.getD_eq_getElem?_getD]
-    · rw [getElem!_neg _ i (by simpa using hi)]
-      simp
+    (h : IsChain c d ch) : poly ch[0]!.toList = poly (c.take (d + 1)) := by
+  ext i : 2
+  rw [coeff_poly_toList, h.getElem!_zero, coeff_poly, List.getD_eq_getElem?_getD,
+    List.getElem?_take]
+  split_ifs with hi
+  · rw [Array.getElem!_map_range _ hi, List.getD_eq_getElem?_getD]
+  · rw [getElem!_neg _ i (by simpa using hi)]
+    simp
 
 theorem IsChain.poly_toList_getElem!_one {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
-    (h : IsChain c d ch) : poly ch[1]!.toList = derivative (poly ch[0]!.toList) :=
-  Polynomial.ext fun n ↦ by
-    rw [coeff_derivative, coeff_poly_toList, coeff_poly_toList, h.getElem!_zero, h.getElem!_one]
-    by_cases hn : n < d
-    · rw [Array.getElem!_map_range _ hn, Array.getElem!_map_range _ (by lia)]
-      push_cast
-      ring
-    · rw [getElem!_neg _ n (by simpa using hn), getElem!_neg _ (n + 1) (by simpa using hn)]
-      simp
+    (h : IsChain c d ch) : poly ch[1]!.toList = derivative (poly ch[0]!.toList) := by
+  ext n : 2
+  rw [coeff_derivative, coeff_poly_toList, coeff_poly_toList, h.getElem!_zero, h.getElem!_one]
+  by_cases hn : n < d
+  · rw [Array.getElem!_map_range _ hn, Array.getElem!_map_range _ (by lia)]
+    push_cast
+    ring
+  · rw [getElem!_neg _ n (by simpa using hn), getElem!_neg _ (n + 1) (by simpa using hn)]
+    simp
 
 /-- Three consecutive rows `s_k`, `s_(k+1)`, `s_(k+2)` of a remainder chain satisfy
 `A s_k = Q s_(k+1) - g s_(k+2)` with integers `A, g > 0`, the relation of a generalized Sturm
@@ -420,12 +420,12 @@ private theorem binaryForm_neg_neg (c : List ℤ) (x z : ℤ) :
 -- The polynomial of a list reflected at `N ≥ degree c` is the reflection of `Ratpoints.poly c`.
 private theorem poly_eq_reflect_of_getD {c c' : List ℤ} {N : ℕ} (hc : degree c ≤ N)
     (h : ∀ i, c'.getD i 0 = if i ≤ N then c.getD (N - i) 0 else 0) :
-    poly c' = (poly c).reflect N :=
-  Polynomial.ext fun i ↦ by
-    rw [coeff_reflect, coeff_poly, coeff_poly, h]
-    split_ifs with hi
-    · rw [revAt_le hi]
-    · rw [revAt_eq_self_of_lt (by lia), getD_eq_zero_of_degree_lt (by lia), Int.cast_zero]
+    poly c' = (poly c).reflect N := by
+  ext i : 2
+  rw [coeff_reflect, coeff_poly, coeff_poly, h]
+  split_ifs with hi
+  · rw [revAt_le hi]
+  · rw [revAt_eq_self_of_lt (by lia), getD_eq_zero_of_degree_lt (by lia), Int.cast_zero]
 
 namespace Setup
 

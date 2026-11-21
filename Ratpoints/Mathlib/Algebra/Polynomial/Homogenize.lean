@@ -110,7 +110,7 @@ variable {R : Type*} [CommRing R] [IsDomain R] {p : R[X]} {n : ℕ}
 private theorem le_natDegree_add_one_of_squarefree_homogenize (hn : p.natDegree ≤ n)
     (h : Squarefree (p.homogenize n)) : n ≤ p.natDegree + 1 := by
   by_contra! hlt
-  refine MvPolynomial.X_prime.not_isUnit (h (MvPolynomial.X 1) ?_)
+  refine MvPolynomial.prime_X.not_isUnit (h (MvPolynomial.X 1) ?_)
   rw [homogenize_eq_homogenize_natDegree_mul hn, ← sq]
   exact (pow_dvd_pow _ (by lia)).mul_left _
 
@@ -119,9 +119,9 @@ private theorem not_X_one_dvd_of_mul_self_dvd_homogenize (hp : p ≠ 0) (hn : p.
     (h : n ≤ p.natDegree + 1) {A : MvPolynomial (Fin 2) R} (hA : A * A ∣ p.homogenize n) :
     ¬ MvPolynomial.X 1 ∣ A := fun hX ↦ by
   rw [homogenize_eq_homogenize_natDegree_mul hn, ← sq] at hA
-  have := MvPolynomial.X_prime.pow_dvd_of_dvd_mul_left 2 (not_X_one_dvd_homogenize_natDegree hp)
+  have := MvPolynomial.prime_X.pow_dvd_of_dvd_mul_left 2 (not_X_one_dvd_homogenize_natDegree hp)
     ((pow_dvd_pow_of_dvd hX 2).trans hA)
-  rw [pow_dvd_pow_iff (MvPolynomial.X_ne_zero 1) MvPolynomial.X_prime.not_isUnit] at this
+  rw [pow_dvd_pow_iff (MvPolynomial.X_ne_zero 1) MvPolynomial.prime_X.not_isUnit] at this
   lia
 
 -- A homogeneous `A` that `X 1` does not divide is a unit if its value at `(X, 1)` is one.

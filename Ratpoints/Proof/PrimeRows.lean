@@ -223,7 +223,7 @@ theorem initFourLoop_spec (isfs : Array Bool) (p d4 : Nat) (w : UInt64)
   all_goals try vc_simp
   all_goals first
     | exact fourInvariant_zero isfs ‹_›
-    | exact FourInvariant.post ‹_›
+    | vc_leaf FourInvariant.post _
     | exact FourInvariant.add_four ‹_› ‹_› ‹_›
     | exact FourInvariant.exit ‹_› ‹_›
 
@@ -644,10 +644,10 @@ theorem sieveInit1_spec (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore
   all_goals try vc_simp
   all_goals first
     | exact doubleInvariant_init_of_pre ‹_› ‹_›
-    | exact sieveInit1_post ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact PatternDoubleInvariant.or_shiftLeft ‹_› ‹_›
     | exact PatternDoubleInvariant.exit ‹_› ‹_›
     | lia
+    | vc_leaf sieveInit1_post (store := store) (ref := ref) _ _ _ _ _
 
 /-! ### `CODE_INIT_SIEVE2` -/
 
@@ -723,7 +723,7 @@ theorem sieve2Word_spec (t : Entry) (d d4 n ab ab1 ab2 ab3 : Nat) :
   | inv1 _ _ i _ _ _ _ _ => fun done _ st ↦ RestInvariant t.isFSquare t.p d ab i done.length st
   all_goals first
     | exact sieve2Word_rest_init ‹_› ‹_›
-    | exact sieve2Word_post ‹_› ‹_› ‹_›
+    | vc_leaf sieve2Word_post _ _ _
     | (refine RestInvariant.append_initBit ?_ ‹_› ‹_›; grind)
     | grind
 
@@ -807,7 +807,7 @@ theorem sieve2Pattern_spec (t : Entry) (b : Nat) (help : Vector UInt64 (t.p / 64
   all_goals first
     | exact patInvariant_init help ‹_›
     | exact PatInvariant.post ‹_›
-    | exact PatInvariant.pre ‹_› ‹_› ‹_›
+    | vc_leaf PatInvariant.pre _ _ _
     | exact PatInvariant.set! (by lia) ‹_› ‹_› ‹_›
 
 /-- The ring of `CODE_INIT_SIEVE2` at the bit `s` of the pattern with the cursor `a1 ≤ wp`: word
@@ -982,9 +982,9 @@ theorem sieve2Rows_spec (p : Nat) (help : Vector UInt64 (p / 64 + 2)) :
         RowWords g p (p / 64 + done.length) st.2.1
   all_goals first
     | exact fun _ hj ↦ absurd hj (Nat.not_lt_zero _)
-    | exact ringState_init ‹_› _ ‹_›
+    | vc_leaf ringState_init _
     | exact RingState.post ‹_› ‹_› _ ‹_›
-    | exact RingState.append ‹_› (by lia) ‹_› ‹_›
+    | vc_leaf RingState.append _ (by lia) _ _
     | exact RowWords.copy ‹_› ‹_› ‹_›
 
 theorem sieveInit2_post {t : Entry} {ref : EntryRef} {b : Nat} {store : RowStore}
@@ -1009,8 +1009,8 @@ theorem sieveInit2_spec (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore
   vcgen [sieveInit2] invariants
   | inv1 => fun _ _ _ ↦ True
   all_goals first
-    | exact sieveInit2_post ‹_› ‹_› ‹_› ‹_›
     | lia
+    | vc_leaf sieveInit2_post (store := store) (ref := ref) _ _ _ _
 
 end Sieve
 

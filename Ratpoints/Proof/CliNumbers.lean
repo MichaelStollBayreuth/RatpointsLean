@@ -197,7 +197,7 @@ theorem outward_spec (x : Double) (v : ℚ) (dir : ℤ) :
   all_goals try vc_simp
   all_goals first
     | exact outwardInvariant_start v dir ‹_›
-    | exact OutwardInvariant.post ‹_›
+    | vc_leaf OutwardInvariant.post _
     | exact OutwardInvariant.exit_of_cond ‹_› ‹_›
     | exact OutwardInvariant.exit_of_not_isFinite ‹_› ‹_›
     | exact OutwardInvariant.step ‹_› ‹_› ‹_›
@@ -1109,8 +1109,8 @@ theorem joinIntervals_spec (dom : List (Double × Double)) :
     | exact JoinInvariant.merge_ge_lt ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact JoinInvariant.merge_ge_ge ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact JoinInvariant.push_cur ‹_› ‹_› ‹_› ‹_›
-    | exact joinIntervals_post_of_isEmpty ‹_› ‹_›
-    | exact JoinInvariant.post ‹_›
+    | vc_leaf joinIntervals_post_of_isEmpty _ _
+    | vc_leaf JoinInvariant.post _
 
 theorem run_joinIntervals {dom : List (Double × Double)} (h : NoNaN dom) :
     (Id.run (joinIntervals dom) = [] ↔ dom = []) ∧ NoNaN (Id.run (joinIntervals dom)) ∧

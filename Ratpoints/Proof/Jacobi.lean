@@ -309,9 +309,9 @@ theorem jacobiRound_spec (f b : ℕ) :
     | exact JacobiRoundHalveInvariant.div_two ‹_› ‹_› ‹_›
     | exact JacobiRoundHalveInvariant.exit ‹_› ‹_›
     | exact JacobiRoundHalveInvariant.jacobiRoundInvariant ‹_› ‹_›
-    | exact eq_gcd ‹_›
-    | exact odd ‹_›
-    | exact odd_of_mod_two_eq_one ‹_› (And.left ‹_›)
+    | vc_leaf eq_gcd _
+    | vc_leaf odd _
+    | vc_leaf odd_of_mod_two_eq_one _ (And.left ‹_›)
     | exact jacobiReduce_of_beq ‹_› ‹_› ‹_› (by simp [*])
     | exact jacobiReduce_jacobiReduce_of_beq ‹_› ‹_› ‹_› ‹_› (by simp [*]) (by simp [*])
     | exact jacobiReduce_jacobiReduce ‹_› ‹_› ‹_› ‹_› (by simp [*]) (by simp [*])
@@ -472,7 +472,7 @@ theorem jacobi_spec (b : ℕ) (lcf : ℤ) :
     | exact JacobiOddInvariant.jacobiInvariant ‹_›
     | exact JacobiInvariant.eq_jacobiSym_of_eq_some ‹_› ‹_›
     | exact JacobiInvariant.one_eq_jacobiSym_of_eq_none ‹_› ‹_›
-    | exact JacobiInvariant.pos_and_odd ‹_› ‹_›
+    | vc_leaf JacobiInvariant.pos_and_odd _ _
     | exact JacobiInvariant.exit_some ‹_› ‹_› ‹_›
     | exact JacobiInvariant.exit ‹_› ‹_›
     | exact JacobiInvariant.div_gcd ‹_› ‹_› ‹_› ‹_›

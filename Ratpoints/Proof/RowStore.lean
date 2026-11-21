@@ -9,6 +9,7 @@ public import Ratpoints.Proof.CompositeRows
 
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.PrimeRows
+import Ratpoints.Proof.VCSimp
 import Ratpoints.Proof.Words
 import Std.Data.HashMap.Lemmas
 import Std.Tactic.Do
@@ -254,20 +255,14 @@ theorem initFactorRow_spec (f : Factor) (ref : EntryRef) (b : Nat) (store : RowS
     by_cases hp : t.p < 64
     · rw [Factor.init_prime, sieveInit_of_lt hp]
       vcgen [initFactorRow]
-      all_goals first
-        | exact initFactorRow_pre_sieve1 hp ‹_›
-        | exact ‹_›
+      all_goals first | vc_leaf initFactorRow_pre_sieve1 hp _ | exact ‹_ ∧ _›.1 | exact ‹_ ∧ _›.2
     · rw [Factor.init_prime, sieveInit_of_not_lt hp]
       vcgen [initFactorRow]
-      all_goals first
-        | exact initFactorRow_pre_sieve2 hp ‹_›
-        | exact ‹_›
+      all_goals first | vc_leaf initFactorRow_pre_sieve2 hp _ | exact ‹_ ∧ _›.1 | exact ‹_ ∧ _›.2
   | power pw =>
     rw [Factor.init_power]
     vcgen [initFactorRow]
-    all_goals first
-      | exact initFactorRow_pre_power ‹_›
-      | exact ‹_›
+    all_goals first | vc_leaf initFactorRow_pre_power _ | exact ‹_ ∧ _›.1 | exact ‹_ ∧ _›.2
 
 /-! ### The rows of the factors of a product -/
 
@@ -370,8 +365,8 @@ theorem factorRows_spec (e : SieveEntry) (b : Nat) (store : RowStore) :
   | inv1 => fun pref _ st ↦ FactorRowsInvariant e b store pref st
   all_goals first
     | exact factorRowsInvariant_nil e b store
-    | exact FactorRowsInvariant.post ‹_›
-    | exact FactorRowsInvariant.pre_none ‹_› ‹_› ‹_› ‹_›
+    | vc_leaf FactorRowsInvariant.post _
+    | vc_leaf FactorRowsInvariant.pre_none _ _ _ _
     | exact FactorRowsInvariant.push_some ‹_› ‹_› ‹_› ‹_›
     | exact FactorRowsInvariant.push_none ‹_› ‹_› ‹_› ‹_›
 
@@ -494,10 +489,10 @@ theorem sieveInitProduct_spec (e : SieveEntry) (b : Nat) (store : RowStore) :
       row[y]! = productWord e frows e.factors.length (y % (e.p * rbaPack))
   all_goals first
     | exact ProductRowsPre.factorRows ‹_›
-    | exact sieveInitProduct_pre_copy ‹_›
-    | exact sieveInitProduct_pre_and ‹_› ‹_›
+    | vc_leaf sieveInitProduct_pre_copy _
+    | vc_leaf sieveInitProduct_pre_and _ _
     | exact productCopies_init ‹_› ‹_›
-    | exact sieveInitProduct_post ‹_› ‹_› ‹_›
+    | vc_leaf sieveInitProduct_post _ _ _
     | exact productCopies_storeBitArray ‹_› ‹_› ‹_›
 
 /-! ### The rows of the entries of a run -/
@@ -1041,9 +1036,9 @@ theorem buildRows_spec (R : EntryRef → Nat → Array UInt64) (L : List SieveEn
   | inv1 => fun pref _ st ↦ BuildRowsInvariant R L es bp specs pref.length st
   all_goals first
     | exact BuildRowsPre.buildRowsInvariant ‹_›
-    | exact BuildRowsPre.post_of_missing_false ‹_› ‹_›
-    | exact BuildRowsInvariant.post ‹_›
-    | exact BuildRowsInvariant.fetchRow_pre ‹_› ‹_› ‹_›
+    | vc_leaf BuildRowsPre.post_of_missing_false _ _
+    | vc_leaf BuildRowsInvariant.post _
+    | vc_leaf BuildRowsInvariant.fetchRow_pre _ _ _
     | exact BuildRowsInvariant.set ‹_› ‹_› ‹_› ‹_›
     | exact BuildRowsInvariant.skip ‹_› ‹_› ‹_›
 

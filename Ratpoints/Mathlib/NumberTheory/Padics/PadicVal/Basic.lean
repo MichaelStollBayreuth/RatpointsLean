@@ -39,7 +39,7 @@ theorem Int.exists_eq_pow_padicValInt_mul {p : ℕ} (hp : p ≠ 1) {n : ℤ} (hn
   exact (Int.finiteMultiplicity_iff.mpr ⟨by simpa using hp, hn⟩).exists_eq_pow_mul_and_not_dvd
 
 theorem padicValInt_base_pow {p : ℕ} (hp : 1 < p) (k : ℕ) : padicValInt p ((p : ℤ) ^ k) = k := by
-  rw [← Nat.cast_pow, padicValInt.of_nat, padicValNat_base_pow hp]
+  rw [← Nat.cast_pow, padicValInt.of_nat, multiplicity_base_pow hp]
 
 /-- **A square with a known power of `p`.** If `y ^ 2 = p ^ v u` with `p ∤ u`, then `v` is even, by
 the valuations at `p`, and `u` is the square of `y / p ^ (v / 2)`. -/

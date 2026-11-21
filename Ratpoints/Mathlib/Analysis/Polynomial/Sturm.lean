@@ -97,9 +97,9 @@ theorem signVariations_map_neg_one_pow_mul_leadingCoeff_eq_of_forall₂ {l l' : 
 
 end PosAssoc
 
-section OrderTopology
+section AtInfinity
 
-variable {𝕜 : Type*} [NormedField 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [OrderTopology 𝕜]
+variable {𝕜 : Type*} [NormedField 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 
 /-- Far right, the sign variations of a list of nonzero polynomials at a point are those of their
 leading coefficients. -/
@@ -123,7 +123,7 @@ theorem eventually_atBot_signVariations {ps : List 𝕜[X]} (h : ∀ p ∈ ps, p
   refine List.signVariations_congr ?_
   simpa only [List.map_map, Function.comp_def] using List.map_congr_left hx
 
-end OrderTopology
+end AtInfinity
 
 /-- The sign of the value of the image of a rational polynomial in an ordered field at a rational
 point is the sign of the value of the polynomial. -/

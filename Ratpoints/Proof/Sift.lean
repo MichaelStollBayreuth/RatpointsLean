@@ -12,6 +12,7 @@ public import Ratpoints.Proof.SiftBits
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
 import Ratpoints.Proof.Sieve
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -596,8 +597,8 @@ private theorem sift_spec_ranges (c : List Int) (d H A b : Nat) (fl : CheckFlags
   vcgen [sift, buildRows_value] invariants
   · SiftIntervalsLoopInvariant process c d H b fl es es3 w cl offsets pos rs r
   all_goals (subst_vars; simp only [SiftIntervalsLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
-    iSup_prop_eq_exists, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *)
+    iSup_prop_eq_exists, CompleteLattice.ofProp_prop_eq, reduceCtorEq, false_and, or_false,
+    false_or, true_and, and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *)
   all_goals first
     | exact ‹_›
     | exact siftIntervalsInvariant_zero ‹_› hs _
@@ -608,7 +609,7 @@ private theorem sift_spec_ranges (c : List Int) (d H A b : Nat) (fl : CheckFlags
         | have hsf := ha.specs_eq_and_fits_of_eq_run_buildRows ‹_› ‹_›
         | have hsf := SiftIntervalsInvariant.specs_eq_and_fits_of_not ‹_› ‹_›)
       first
-        | exact ha.pre_siftBits hA ‹_› hsf
+        | vc_leaf ha.pre_siftBits hA _ hsf
         | exact SiftIntervalsInvariant.post_of_quit ‹_›
             (ha.eq_deliver_getElem? ‹_› ‹_› ‹_› hsf.1 ‹_›) ‹_›
         | exact SiftIntervalsInvariant.append_of_eq_deliver ‹_›
@@ -641,9 +642,9 @@ private theorem sift_storeHolds (c : List Int) (d H A b : Nat) (fl : CheckFlags)
   · Std.WP.Invariant.withEarlyReturnNewDo Prop (fun _ _ s ↦ StoreHolds R L s.2.1)
       (fun ret _ ↦ StoreHolds R L ret.2.1)
   all_goals subst_vars
-  all_goals simp only [meet_prop_eq_and, join_prop_eq_or, iSup_prop_eq_exists, ofProp_prop_eq,
-    reduceCtorEq, false_and, or_false, false_or, true_and, and_false, Option.some.injEq,
-    exists_eq_left', exists_false, and_true] at *
+  all_goals simp only [meet_prop_eq_and, join_prop_eq_or, iSup_prop_eq_exists,
+    CompleteLattice.ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
+    and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals first
     | exact ‹_›
     | exact ‹_ ∧ _›.2
@@ -892,8 +893,8 @@ private theorem sift_counters_spec_pos (c : List Int) (d H A b : Nat) (fl : Chec
   · SiftIntervalsCountsLoopInvariant (σ := σ) b H sp1 es es3 mgs3 cl offsets pos iv cnt0
   all_goals subst_vars
   all_goals simp only [SiftIntervalsCountsLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
-    iSup_prop_eq_exists, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
+    iSup_prop_eq_exists, CompleteLattice.ofProp_prop_eq, reduceCtorEq, false_and, or_false,
+    false_or, true_and, and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals first
     | exact siftIntervalsCounts_zero ‹_› hs _
     | exact SiftIntervalsCounts.eq_siftCounts ‹_›
@@ -904,7 +905,7 @@ private theorem sift_counters_spec_pos (c : List Int) (d H A b : Nat) (fl : Chec
         | have hsf := SiftIntervalsCounts.specs_eq_and_fits_of_eq_run_buildRows hpos ‹_› ‹_›
         | have hsf := SiftIntervalsCounts.specs_eq_and_fits_of_not_doSetup ‹_› ‹_›)
       first
-        | exact SiftIntervalsCounts.pre_siftBits hA ‹_› hoff hsf
+        | vc_leaf SiftIntervalsCounts.pre_siftBits hA _ hoff hsf
         | exact SiftIntervalsCounts.append_of_siftBits ‹_› ‹_› ‹_› hsf hinv hoff ‹_› ‹_› _
     | (simp_all; done)
 

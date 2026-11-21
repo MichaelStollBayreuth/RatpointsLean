@@ -142,10 +142,10 @@ theorem even_and_isSquare_of_sq_eq_binaryForm_of_even {c : List ℤ} {p : ℕ} [
     Even (w + j * padicValNat p b) ∧ (Even j → IsSquare (u : ZMod p)) := by
   have hpp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp.out
   have hpa := Int.not_natCast_dvd_of_gcd_eq_one hp.out.ne_one hab
-    (dvd_of_one_le_padicValNat (Nat.one_le_iff_ne_zero.mpr hm))
+    (dvd_of_one_le_multiplicity (Nat.one_le_iff_ne_zero.mpr (Nat.padicValNat_def ▸ hm)))
   obtain ⟨b', hb', hpb'⟩ := Int.exists_eq_pow_padicValInt_mul hp.out.ne_one (n := b)
-    fun h ↦ by simp_all
-  rw [padicValInt.of_nat] at hb'
+    fun h ↦ by simp_all [Nat.padicValNat_def]
+  rw [padicValInt.of_nat, ← Nat.padicValNat_def] at hb'
   have hterm (i : ℕ) : c.getD (degree c - i) 0 * a ^ (degree c - i) * (b : ℤ) ^ i =
       c.getD (degree c - i) 0 * (p : ℤ) ^ (i * padicValNat p b) *
         (a ^ (degree c - i) * b' ^ i) := by rw [hb']; ring
@@ -255,7 +255,7 @@ theorem unitParts_spec (c : List ℤ) (d p : ℕ) (cm : Array ℕ) :
   · fun pref _ us ↦ UnitPartsInvariant c d p pref.length us
   all_goals first
     | exact unitPartsInvariant_zero c d p
-    | exact UnitPartsInvariant.size_eq_and_isUnitPart ‹_›
+    | vc_leaf UnitPartsInvariant.size_eq_and_isUnitPart _
     | exact UnitPartsInvariant.push ‹_› ‹_› ‹_›
     | exact UnitPartsInvariant.push ‹_› ‹_›
         (isUnitPart_of_eq_run_valuation ‹1 < p ∧ _›.1 ‹_› ‹_›)
@@ -697,8 +697,10 @@ theorem not_dvd_of_run_forbiddenOfPrime_eq_inl {c : List ℤ} (hd : degree c % 2
   intro hpb
   rcases (eq_of_run_forbiddenOfPrime_eq_inl he).2 with ⟨-, hall⟩ | rfl
   · have : Fact p.Prime := ⟨hp⟩
-    have hv : padicValNat p b ≠ 0 := Nat.pos_iff_ne_zero.mp (one_le_padicValNat_of_dvd hb hpb)
-    have hle : p ^ padicValNat p b ≤ bHigh := (Nat.le_of_dvd (by lia) pow_padicValNat_dvd).trans hbH
+    have hv : padicValNat p b ≠ 0 :=
+      Nat.padicValNat_def ▸ Nat.pos_iff_ne_zero.mp (one_le_multiplicity_of_dvd hb hpb)
+    have hle : p ^ padicValNat p b ≤ bHigh :=
+      (Nat.le_of_dvd (by lia) (Nat.padicValNat_def ▸ pow_multiplicity_dvd p b)).trans hbH
     have := congr(Nat.testBit $hall (padicValNat p b))
     simp only [Nat.testBit_and, testBit_run_allValuations hp.one_lt,
       testBit_run_forbiddenValuations_eq_false_of_sq_eq hd hp bHigh hcm hab hy] at this
@@ -891,9 +893,8 @@ theorem forbidden_spec (c : List ℤ) (d examined maxForbidden bHigh : ℕ) (ba 
     ‹(∀ e ∈ ba, IsForbiddenEntry c d bHigh e) ∧ ∀ e ∈ val, IsForbiddenVal c d bHigh e›
   all_goals first
     | exact h.1 _ ‹_›
-    | exact forall_isForbiddenEntry_and_forall_isForbiddenVal h.2
-        ‹∀ e ∈ _, IsForbiddenEntry _ _ _ e›
-    | exact forall_isForbiddenEntry_and_forall_isForbiddenVal h.2 h.1
+    | vc_leaf forall_isForbiddenEntry_and_forall_isForbiddenVal h.2 _
+    | vc_leaf forall_isForbiddenEntry_and_forall_isForbiddenVal h.2 h.1
     | exact forall_isForbiddenEntry_push ‹_› ‹_› ‹_›
     | assumption
 

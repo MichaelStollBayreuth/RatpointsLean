@@ -567,8 +567,8 @@ theorem siftBitArrayByWords_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckF
       (acceptedPoints w d b fl checks) cl i r
   all_goals subst_vars
   all_goals simp only [SiftBitArrayLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
-    iSup_prop_eq_exists, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
+    iSup_prop_eq_exists, CompleteLattice.ofProp_prop_eq, reduceCtorEq, false_and, or_false,
+    false_or, true_and, and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals first
     | exact siftBitArrayInvariant_zero _ _ _ _ ‹_ ∧ _›.1
     | exact ‹_ ∧ _›.2
@@ -600,8 +600,8 @@ theorem siftBitArrayWhole_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFla
       (acceptedPoints w d b fl checks) cl i r0
   all_goals subst_vars
   all_goals try simp only [SiftBitArrayWalkLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
-    iSup_prop_eq_exists, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
+    iSup_prop_eq_exists, CompleteLattice.ofProp_prop_eq, reduceCtorEq, false_and, or_false,
+    false_or, true_and, and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals first
     | exact ‹_ ∧ _›.2
     | exact ‹_ ∧ _›.1
@@ -861,7 +861,8 @@ private theorem scanPiece_spec_getLsbD (w : Thunk (List Int)) (d b : Nat) (fl : 
     | exact ScanPieceSentinelInvariant.append_set! ‹_› ‹_›
     | exact ScanPieceSentinelInvariant.eq_deliver_of_eq ‹_› ‹_›
     | exact ScanPieceInvariant.eq_deliver ‹_› ‹_›
-    | exact ⟨ScanPieceInvariant.quit_eq_false ‹_›, StageFits.mono ‹_ ∧ _›.2 (by lia) (by lia)⟩
+    | exact ScanPieceInvariant.quit_eq_false ‹_›
+    | exact StageFits.mono ‹_ ∧ _›.2 (by lia) (by lia)
     | exact ScanPieceInvariant.eq_deliver_of_quit ‹_› ‹_› ‹_›
     | exact ScanPieceInvariant.add_one_of_siftBitArray ‹_› ‹_› ‹_› ‹_›
     | exact ScanPieceInvariant.add_one_of_isZeroAt ‹_› ‹_› ‹_›

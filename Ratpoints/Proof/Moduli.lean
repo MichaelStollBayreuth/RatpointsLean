@@ -241,7 +241,7 @@ theorem modinv_spec (x m : ℕ) :
   all_goals obtain ⟨hm, hx⟩ := ‹1 < m ∧ _›
   all_goals first
     | exact modinvInvariant_zero (by lia)
-    | exact ModinvInvariant.post ‹_› hm hx
+    | vc_leaf ModinvInvariant.post _ hm hx
     | exact ModinvInvariant.sub_lt_and_sub_mul ‹_› ‹_›
     | exact ModinvInvariant.exit ‹_› ‹_›
 
@@ -288,7 +288,7 @@ theorem setSquareBits_spec (m : ℕ) (sq : Array UInt64) :
   | inv1 => fun pref _ sq' ↦ SquareBitsInvariant m pref sq'
   all_goals first
     | exact squareBitsInvariant_nil ‹_›
-    | exact SquareBitsInvariant.post ‹_›
+    | vc_leaf SquareBitsInvariant.post _
     | exact SquareBitsInvariant.push ‹_› ‹_› ‹_›
 
 /-- A bit array in which the bits of the squares modulo `m` are set has the bit of every residue
@@ -380,11 +380,11 @@ theorem unitInverses_spec (p e : ℕ) :
   all_goals obtain ⟨hp, he⟩ := ‹p.Prime ∧ 1 ≤ e›
   all_goals first
     | exact unitInversesInvariant_zero p (pow_pos hp.pos e)
-    | exact UnitInversesInvariant.post ‹_› (pow_pos hp.pos e) _
+    | vc_leaf UnitInversesInvariant.post _ (pow_pos hp.pos e) _
     | exact UnitInversesInvariant.push_zero ‹_› ‹_› (pow_pos hp.pos e) ‹_›
     | exact UnitInversesInvariant.push ‹_› ‹_› ‹_›
-    | exact ⟨Nat.one_lt_pow (by lia) hp.one_lt,
-        hp.coprime_pow_of_not_dvd fun h ↦ ‹¬_ % p = 0› (Nat.mod_eq_zero_of_dvd h)⟩
+    | exact Nat.one_lt_pow (by lia) hp.one_lt
+    | exact hp.coprime_pow_of_not_dvd fun h ↦ ‹¬_ % p = 0› (Nat.mod_eq_zero_of_dvd h)
 
 -- The coefficients of `examinePower`, with `c_D = 0` for odd `d`, reversed: Horner's rule gives the
 -- value `∑ cₖ x ^ (D - k)` of the reversed polynomial modulo `m`.
@@ -593,16 +593,17 @@ theorem examinePower_spec (c : List ℤ) (d p e : ℕ) (u pinf : Bool) :
   | inv4 => .ofMeasure fun s : Array UInt64 × ℕ ↦ p ^ e - s.2
   all_goals try vc_simp [Bool.false_eq_true, ↓reduceIte]
   all_goals first
-    | exact setSquareBits_pre ‹_› ‹_›
+    | vc_leaf setSquareBits_pre _ _
     | exact fsqInvariant_nil c d _ ‹_›
     | exact gsqInvariant_zero c d p _ ‹_›
     | exact set!_eq_replicate _ ‹_›
-    | exact examinePower_post ‹_› ‹_› ‹_›
     | exact FsqInvariant.push_setBitAt ‹_› ‹_› ‹_› ‹_› ‹_›
     | with_reducible exact FsqInvariant.push_of_not ‹_› ‹_› ‹_› ‹_›
     | exact GsqInvariant.push_setBitAt ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact GsqInvariant.push_of_not ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact GsqInvariant.exit ‹_› ‹_›
+    | exact (examinePower_post ‹_› ‹_› ‹_›).2.1 _ ‹_› ‹_›
+    | exact (examinePower_post ‹_› ‹_› ‹_›).2.2 _ ‹_› ‹_› ‹_›
     | grind
 
 theorem getElem!_inv_run_examinePower_lt {c : List ℤ} {d p e : ℕ} (u pinf : Bool) (hp : p.Prime)

@@ -491,7 +491,7 @@ theorem powerPatternUnit_spec (pw : Power) (b : Nat) (pat : Array UInt64) :
   | inv1 => fun done _ st ↦ UnitPatternInvariant pw pw.inv[b]! done.length st
   all_goals first
     | exact unitPatternInvariant_init ‹_›
-    | exact UnitPatternInvariant.post ‹_›
+    | vc_leaf UnitPatternInvariant.post _
     | exact UnitPatternInvariant.setBitAt ‹_› ‹_› ‹_› ‹_›
     | exact UnitPatternInvariant.skip ‹_› ‹_› ‹_› ‹_›
 
@@ -559,7 +559,7 @@ theorem powerPatternNonunit_spec (pw : Power) (b : Nat) (pat : Array UInt64) :
   | inv1 => fun done _ pat ↦ NonunitPatternInvariant pw b done.length pat
   all_goals first
     | exact nonunitPatternInvariant_init ‹_›
-    | exact NonunitPatternInvariant.post ‹0 < _ ∧ _›.1 ‹_›
+    | vc_leaf NonunitPatternInvariant.post ‹0 < _ ∧ _›.1 _
     | exact NonunitPatternInvariant.setBitAt ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact NonunitPatternInvariant.skip ‹_› ‹_› (.inl ‹_›)
     | exact NonunitPatternInvariant.skip ‹_› ‹_› (.inr ‹_›)
@@ -649,10 +649,10 @@ theorem sieveInitPower_spec (pw : Power) (ref : EntryRef) (b : Nat) (store : Row
   all_goals first
     | exact patZero_replicate
     | exact PatZero.set!_zero ‹_› _
-    | exact sieveInitPower_pre_layOut_unit ‹_› ‹_›
-    | exact sieveInitPower_pre_layOut_nonunit ‹_› ‹_›
-    | exact sieveInitPower_post (bitAt_mod_eq_admits_of_unit ‹_ ∧ _›.1 ‹_› ‹_ ∧ _›.2) ‹_›
-    | exact sieveInitPower_post (bitAt_mod_eq_admits_of_dvd ‹_ ∧ _›.1 ‹_› ‹_ ∧ _›.2) ‹_›
+    | vc_leaf sieveInitPower_pre_layOut_unit _ _
+    | vc_leaf sieveInitPower_pre_layOut_nonunit _ _
+    | vc_leaf sieveInitPower_post (bitAt_mod_eq_admits_of_unit ‹_ ∧ _›.1 ‹_› ‹_ ∧ _›.2) _
+    | vc_leaf sieveInitPower_post (bitAt_mod_eq_admits_of_dvd ‹_ ∧ _›.1 ‹_› ‹_ ∧ _›.2) _
     | grind
 
 /-! ### The blocks of the rows of a product -/

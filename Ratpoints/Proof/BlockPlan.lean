@@ -261,7 +261,8 @@ theorem Shape.blockPlan_spec (s : Shape) (bLow bHigh : Nat) :
     subst hst hsg
   all_goals first
     | exact ⟨rfl, rfl⟩
-    | exact ⟨BlockPlanInvariant.wf ‹_› (one_le_blockLength _), rfl⟩
+    | rfl
+    | exact BlockPlanInvariant.wf ‹_› (one_le_blockLength _)
     | exact BlockPlanInvariant.push_of_le ‹_› ‹_›
     | exact BlockPlanInvariant.push_of_not_le ‹_› ‹_›
 
@@ -343,7 +344,10 @@ theorem BlockPlan.WF.steps_spec {plan : BlockPlan} (h : plan.WF) (i : Nat) :
   all_goals first
     | exact h.segment_pre ‹_›
     | exact h.segment_succ ‹_› ‹_› ‹_›
-    | (rename_i hinv; exact ⟨hinv.1, hinv.2.1, hinv.2.2 trivial, rfl⟩)
+    | rfl
+    | exact ‹_ ∧ _ ∧ (True → _)›.1
+    | exact ‹_ ∧ _ ∧ (True → _)›.2.1
+    | exact ‹_ ∧ _ ∧ (True → _)›.2.2 trivial
     | (rename_i hs hinv; exact ⟨hinv.2.1, hinv.2.2.1, fun _ ↦ Nat.lt_of_not_le hs⟩)
 
 /-- The steps of block `i < plan.nblocks` of well-formed blocks, from the segment whose blocks hold

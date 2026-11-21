@@ -264,15 +264,16 @@ theorem powerIndex_spec (c : List ℤ) (u pinf : Bool) (pn p e : ℕ) (tab : Pow
           ∃ u pinf, pw = Id.run (examinePower c (degree c) primeTable[pn]! e u pinf) ⦄ := by
   vcgen [powerIndex, examinePower_value]
   all_goals obtain ⟨h, hpn, he, hp⟩ := ‹PowerTable.WF c tab ∧ _›
-  · exact h.lookup_post ‹_›
-  · rename_i pw hpw
-    rw [hp] at hpw
-    refine ⟨hpw ▸ h.push hpn he u pinf _, Array.extends_ite_push _ _ _, fun i hi ↦ ?_⟩
-    dsimp only at hi ⊢
-    split at hi
-    · obtain rfl := Option.some.inj hi
-      exact ⟨pw, by simp_all, u, pinf, hpw⟩
-    · cases hi
+  all_goals try subst pw
+  all_goals first
+    | vc_leaf h.lookup_post _
+    | exact hp ▸ h.push hpn he u pinf _
+    | exact Array.extends_ite_push _ _ _
+    | dsimp only at ‹(_, _).1 = some _› ⊢
+      split at ‹_ = some _›
+      · obtain rfl := Option.some.inj ‹_›
+        exact ⟨Id.run (examinePower c (degree c) p e u pinf), by simp_all, u, pinf, by rw [hp]⟩
+      · cases ‹none = _›
 
 /-- The code of a prime whose table the loop of the tables holds can be read. -/
 theorem isFactorCode_of_getD_eq_some {c : List ℤ} {primeSe : Array (Option (Entry × Float))}
@@ -325,19 +326,19 @@ theorem takeFactor_spec (c : List ℤ) (u : Bool) (primeSe : Array (Option (Entr
           (factorOfCode primeSe st'.tab.pws code).modulus = p ^ e) ∧ st.pn ≤ st'.pn ⦄ := by
   vcgen [takeFactor, powerIndex_spec]
   all_goals obtain ⟨hse, hok, hpn, he, hp⟩ := ‹IsExaminedPrimeSe c primeSe ∧ _›
-  iterate 2 exact ⟨hok, .refl _, nofun, Nat.le_refl _⟩
-  · exact ⟨hok, .refl _, fun _ ↦ ⟨rfl, st.pn, rfl,
-      isFactorCode_of_getD_eq_some hse st.tab.pws ‹_›, by
-        rw [modulus_factorOfCode_of_getD_eq_some hse st.tab.pws ‹_›, hp, ‹e = 1›, Nat.pow_one]⟩,
-      Nat.le_succ _⟩
-  · exact ⟨hok, hpn, he, hp⟩
-  · obtain ⟨hok', hl, -⟩ := ‹PowerTable.WF c _ ∧ _›
-    exact ⟨hok', hl, nofun, Nat.le_refl _⟩
-  · obtain ⟨hok', hl, hi⟩ := ‹PowerTable.WF c _ ∧ _›
-    obtain ⟨pw, hpw, u', pinf', hpw'⟩ := hi _ ‹_›
-    exact ⟨hok', hl, fun _ ↦ ⟨rfl, _, rfl,
-      isFactorCode_add_of_getElem?_eq_some primeSe hpn he hpw hpw',
-      by rw [modulus_factorOfCode_add_of_getElem?_eq_some primeSe hpw hpw', hp]⟩, Nat.le_succ _⟩
+  all_goals first
+    | assumption
+    | exact .refl _
+    | exact Nat.le_refl _
+    | exact Nat.le_succ _
+    | exact Bool.false_ne_true ‹_› |>.elim
+    | exact ‹PowerTable.WF c _ ∧ _ ∧ _›.1
+    | exact ‹PowerTable.WF c _ ∧ _ ∧ _›.2.1
+    | exact ⟨st.pn, rfl, isFactorCode_of_getD_eq_some hse st.tab.pws ‹_›, by
+        rw [modulus_factorOfCode_of_getD_eq_some hse st.tab.pws ‹_›, hp, ‹e = 1›, Nat.pow_one]⟩
+    | obtain ⟨pw, hpw, u', pinf', hpw'⟩ := ‹PowerTable.WF c _ ∧ _ ∧ ∀ _, _ → _›.2.2 _ ‹_›
+      exact ⟨_, rfl, isFactorCode_add_of_getElem?_eq_some primeSe hpn he hpw hpw',
+        by rw [modulus_factorOfCode_add_of_getElem?_eq_some primeSe hpw hpw', hp]⟩
 
 /-- The state `st` of the factorization of the candidate `m` (`Ratpoints.FacState`) for the curve
 with the coefficient list `c` and the tables of the loop of the tables `primeSe`: the prime powers
@@ -479,13 +480,15 @@ theorem offerModulus_spec (c : List ℤ) (u : Bool) (primeSe : Array (Option (En
         ∀ e, r.1 = some e → e.IsComposite c primeSe r.2.pws ⦄ := by
   vcgen [offerModulus, factorCandidate_spec c u primeSe pinf pnLim m]
   all_goals obtain ⟨hse, hL, ht, hm⟩ := ‹IsExaminedPrimeSe c primeSe ∧ _›
-  · exact ⟨ht, .refl _, nofun⟩
-  · exact ⟨hse, hL, FacState.wf_init (by lia) ht⟩
-  all_goals obtain ⟨h, hx⟩ := ‹FacState.WF c primeSe m _ ∧ _›
-  iterate 3 exact ⟨h.tab, hx, nofun⟩
-  refine ⟨h.tab, hx, fun e he ↦ ?_⟩
-  cases he
-  exact h.isComposite (by simp_all) (by simp_all) hm rfl rfl rfl rfl
+  all_goals first
+    | assumption
+    | exact .refl _
+    | exact FacState.wf_init (by lia) ht
+    | exact ‹FacState.WF c primeSe m _ ∧ _›.1.tab
+    | exact ‹FacState.WF c primeSe m _ ∧ _›.2
+    | cases ‹(none, _).1 = some _›
+    | cases ‹(_, _).1 = some _›; exact ‹FacState.WF c primeSe m _ ∧ _›.1.isComposite
+        (by simp_all) (by simp_all) hm rfl rfl rfl rfl
 
 theorem PowerTable.wf_empty (c : List ℤ) : PowerTable.WF c {} :=
   ⟨fun _ h ↦ absurd h (by simp), fun _ _ _ h ↦ absurd h (by simp)⟩
@@ -560,11 +563,12 @@ theorem makeModulus_spec (c : List ℤ) (e : ModulusCandidate) (n : ℕ)
     ⦃ fun se ↦ IsChoiceEntry c n se ⦄ := by
   vcgen [makeModulus]
   all_goals have h := ‹e.IsComposite c primeSe pws›
-  · exact one_lt_and_coprime_rbaLength_mod h.one_lt h.odd
-  · refine ⟨isModulusEntry_of_forall_isSound ⟨h.one_lt, h.lt_maxPrimeEven, h.odd⟩ h.isSound
-      (by rw [List.map_map]; exact h.prod_eq) (mul_rbaLength_mod_and_lt ‹_›) _ _ _ _, rfl,
-      fun h0 ↦ absurd (h.nf_eq.symm.trans h0) ?_⟩
-    simpa using h.fac_ne_nil
+  all_goals first
+    | vc_leaf one_lt_and_coprime_rbaLength_mod h.one_lt h.odd
+    | refine ⟨isModulusEntry_of_forall_isSound ⟨h.one_lt, h.lt_maxPrimeEven, h.odd⟩ h.isSound
+        (by rw [List.map_map]; exact h.prod_eq) (mul_rbaLength_mod_and_lt ‹_›) _ _ _ _, rfl,
+        fun h0 ↦ absurd (h.nf_eq.symm.trans h0) ?_⟩
+      simpa using h.fac_ne_nil
 
 /-- The candidates of the pool `pool` after the stages, whose second ends at `sp2`: those of the
 first two stages each with its sieve entry, made for its position (`Ratpoints.IsChoiceEntry`), and
@@ -704,7 +708,7 @@ theorem stageEntries_spec (c : List ℤ) (pool : Array ModulusCandidate) (sp2 : 
   | inv1 => fun pref _ p ↦ StageEntriesInvariant c pool pref.length p
   all_goals first
     | exact stageEntriesInvariant_zero c pool
-    | exact StageEntriesInvariant.post ‹_› ‹_›
+    | vc_leaf StageEntriesInvariant.post _ _
     | exact StageEntriesInvariant.isComposite ‹_› ‹_› ‹_› ‹_›
     | exact StageEntriesInvariant.set ‹_› ‹_› ‹_› ‹_›
     | exact StageEntriesInvariant.skip ‹_› ‹_› ‹_› ‹_›
@@ -750,15 +754,17 @@ theorem lookFurther_spec (c : List ℤ) (u : Bool) (st : ThirdState) :
         st'.pnLim = st.pnLim + 1 ∧ st'.sp3 = st.sp3 ∧
           (st'.pool = st.pool ∨ ∃ e, e.IsPrime c ∧ st'.pool = st.pool.push e) ⦄ := by
   vcgen [lookFurther, examinePrime?_value]
-  all_goals try subst ‹_ = none›
-  all_goals try subst ‹_ = some _›
-  · exact ⟨fun _ ↦ not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none ‹_›
-      (‹none = _› : none = Id.run _).symm, nofun⟩
-  · exact ⟨nofun, fun _ h ↦ by cases h; exact ⟨rfl, rfl, .inl rfl⟩⟩
-  · exact ⟨nofun, fun _ h ↦ by
-      cases h
-      exact ⟨rfl, rfl, .inr ⟨_, isPrime_ofPrime ‹_› (‹some _ = _› : some _ = Id.run _).symm _ _,
-        rfl⟩⟩⟩
+  all_goals subst ‹ex = _›
+  all_goals first
+    | exact not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none ‹_›
+        ‹none = Id.run (examinePrime? _ _ _ _)›.symm _ _
+    | exact nomatch ‹none = some (_ : ThirdState)›
+    | exact nomatch ‹some (_ : ThirdState) = none›
+    | cases ‹some (_ : ThirdState) = some _›
+      first
+      | rfl
+      | exact .inl rfl
+      | exact .inr ⟨_, isPrime_ofPrime ‹_› ‹some _ = Id.run _›.symm _ _, rfl⟩
 
 -- The mean density of the pool, as a value: no contract reads it.
 private theorem rTyp_true (pool : Array ModulusCandidate) : ⦃ True ⦄ rTyp pool ⦃ fun _ ↦ True ⦄ :=

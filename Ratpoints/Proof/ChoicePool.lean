@@ -173,12 +173,14 @@ theorem firstStages_spec (Q : ModulusCandidate → Prop) (hQ : ∀ e, Q e → �
     ⦃ ∀ e ∈ pool, Q e ⦄ firstStages pool s target ct est bpws sp2e
     ⦃ fun r ↦ (∀ e ∈ r.1, Q e) ∧ NfEqZeroFrom r.1 r.2.2 ∧ r.2.1 ≤ r.2.2 ∧ r.2.2 ≤ r.1.size ⦄ := by
   vcgen [firstStages, takeEntries_spec Q, dropComposites_spec Q]
-  · exact ⟨‹_›, Nat.zero_le _⟩
-  · obtain ⟨h, hs⟩ := ‹(∀ e ∈ _, Q e) ∧ 0 + _ ≤ _›
-    exact ⟨forall_mem_rankSecond hQ h _ _ _ _ _ _, by rw [size_rankSecond]; lia⟩
-  · exact ‹_›
-  · obtain ⟨h, hs, ht⟩ := ‹(∀ e ∈ _, Q e) ∧ _ ∧ NfEqZeroFrom _ _›
-    exact ⟨h, ht, Nat.le_add_right _ _, hs⟩
+  all_goals try dsimp only at *
+  all_goals first
+    | lia
+    | (rw [size_rankSecond]; lia)
+    | exact ‹∀ e ∈ _, Q e› _ ‹_›
+    | exact ‹(∀ e ∈ _, Q e) ∧ _›.1 _ ‹_›
+    | exact forall_mem_rankSecond hQ ‹(∀ e ∈ _, Q e) ∧ _›.1 _ _ _ _ _ _ _ ‹_›
+    | exact ‹_ ∧ _ ∧ NfEqZeroFrom _ _›.2.2
 
 theorem getElem_sortFrom_of_lt {pool : Array ModulusCandidate} {s : Nat} (hs : s ≤ pool.size)
     (le : ModulusCandidate → ModulusCandidate → Bool) {n : Nat} (hn : n < s) :

@@ -230,10 +230,10 @@ theorem siftPiece_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags) (sp1
               fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
   vcgen [siftPiece]
   all_goals first
-    | exact ⟨‹r.quit = false ∧ _›.1,
-        stageFits_drop ‹r.quit = false ∧ maskHigh < rbaLength ∧ _›.2.2 (smallFits_decide w0 n) sp1⟩
-    | exact ⟨‹1 < chunk ∧ chunk ≤ 16›.2,
-        stageFits_take ‹r.quit = false ∧ maskHigh < rbaLength ∧ _›.2.2 (smallFits_decide w0 n) sp1⟩
+    | exact ‹r.quit = false ∧ _›.1
+    | exact stageFits_drop ‹r.quit = false ∧ maskHigh < rbaLength ∧ _›.2.2
+        (smallFits_decide w0 n) sp1
+    | exact ‹1 < chunk ∧ chunk ≤ 16›.2
     | exact stageFits_take ‹r.quit = false ∧ maskHigh < rbaLength ∧ _›.2.2
         (smallFits_decide w0 n) sp1
     | exact IsMasked.eq_deliver ‹_› (isMasked_clearHighBits_clearLowBits _ _
@@ -349,8 +349,7 @@ theorem siftPiece_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFl
   vcgen [siftPiece, scanPiece_counters_spec]
   all_goals first
     | exact stageFits_drop ‹maskHigh < rbaLength ∧ _›.2 (smallFits_decide w0 n) sp1
-    | exact ⟨‹1 < chunk ∧ chunk ≤ 16›.2,
-        stageFits_take ‹maskHigh < rbaLength ∧ _›.2 (smallFits_decide w0 n) sp1⟩
+    | exact ‹1 < chunk ∧ chunk ≤ 16›.2
     | exact stageFits_take ‹maskHigh < rbaLength ∧ _›.2 (smallFits_decide w0 n) sp1
     | exact IsMasked.eq_counters ‹_› (isMasked_clearHighBits_clearLowBits _ _ ‹_ ∧ _›.1) ‹_› ‹_›
         ‹_› ‹_›
@@ -745,13 +744,25 @@ theorem SiftBitsInvariant.post {range : Nat} {w0 w1 : Int} (hlh : low ≤ high)
   rw [h.eq_counts, h.eq_of_exit rfl, hl]
   ac_rfl
 
+-- An empty interval of bits delivers nothing and counts nothing, with the arguments that only one
+-- conjunct mentions under a universal quantifier in it, so that `vc_leaf` finds them.
+private theorem eq_deliver_and_eq_add_of_not_le (h : ¬low ≤ high) :
+    (∀ {σ : Type} (process : Int → Int → Int → σ → Answer σ) (g : Int → List (Int × Int × Int))
+      (r : Delivery σ), r = r.deliver process ((((List.range (high + 1 - low).toNat).map
+        fun k : Nat ↦ low + k).filter fun j ↦ classBit cl.bits j && keep j).flatMap g)) ∧
+      ∀ (b : Nat) (checks : Thunk (List CheckSpec)) (keep1 : Int → Bool) (c : Counters),
+        c = c + bitsCounts b checks cl keep1 keep low high := by
+  rw [Int.toNat_of_nonpos (z := high + 1 - low) (by lia)]
+  refine ⟨fun _ _ _ ↦ rfl, fun _ _ _ _ ↦ ?_⟩
+  simp only [bitsCounts, h, ↓reduceIte, Counters.add_empty]
+
 /-- An empty interval of bits delivers nothing and counts nothing. -/
 theorem eq_deliver_and_of_not_le (h : ¬low ≤ high) (r : Delivery σ) (c : Counters) :
     r = r.deliver process ((((List.range (high + 1 - low).toNat).map fun k : Nat ↦ low + k).filter
       fun j ↦ classBit cl.bits j && keep j).flatMap g) ∧
-      (r.quit = false → c = c + bitsCounts b checks cl keep1 keep low high) := by
-  rw [Int.toNat_of_nonpos (z := high + 1 - low) (by lia)]
-  exact ⟨rfl, fun _ ↦ by simp only [bitsCounts, h, ↓reduceIte, Counters.add_empty]⟩
+      (r.quit = false → c = c + bitsCounts b checks cl keep1 keep low high) :=
+  ⟨(eq_deliver_and_eq_add_of_not_le h).1 _ _ r,
+    fun _ ↦ (eq_deliver_and_eq_add_of_not_le h).2 _ _ _ c⟩
 
 end
 
@@ -778,7 +789,8 @@ private theorem siftBits_spec_reads (w : Thunk (List Int)) (d b A : Nat) (fl : C
   all_goals (subst_vars; try vc_simp [SiftBitsWhileInvariant, reduceCtorEq, false_and, or_false,
     false_or, true_and, and_false, Option.some.injEq, Option.map_some, Option.map_none])
   all_goals first
-    | exact SiftBitsInvariant.quit_eq_false_and ‹_› hfits (by (try split) <;> lia [rbaLength_pos])
+    | exact SiftBitsInvariant.quit_eq_false ‹_ ∧ _ ∧ _›.2.2
+    | vc_leaf SiftBitsInvariant.quit_eq_false_and _ hfits (by (try split) <;> lia [rbaLength_pos])
     | have : ¬high / rbaLength + 1 < _ := ‹_›
       first
         | exact SiftBitsInvariant.append_of_not_lt ‹_› ‹_› ‹_› ‹_› ‹_›
@@ -787,8 +799,9 @@ private theorem siftBits_spec_reads (w : Thunk (List Int)) (d b A : Nat) (fl : C
       first
         | exact SiftBitsInvariant.append_of_lt ‹_› ‹_› ‹_› ‹_›
         | exact SiftBitsInvariant.eq_deliver_of_quit_of_lt ‹_› ‹_› ‹_› ‹_›
-    | grind [siftBitsInvariant_init, SiftBitsInvariant.exit_of_not_lt, eq_deliver_and_of_not_le,
-        SiftBitsInvariant.post]
+    | vc_leaf SiftBitsInvariant.post _ _
+    | vc_leaf eq_deliver_and_eq_add_of_not_le _
+    | grind [siftBitsInvariant_init, SiftBitsInvariant.exit_of_not_lt]
 
 /-- The bits from `low` to `high` in pieces of `A ≥ 1` bit arrays, with the moduli `specs` and their
 reciprocals, deliver the points of the numerators of the bits that pass the class word of `cl` and

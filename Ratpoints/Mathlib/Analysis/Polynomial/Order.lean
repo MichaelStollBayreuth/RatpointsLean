@@ -14,12 +14,12 @@ import Ratpoints.Mathlib.Algebra.Polynomial.FieldDivision
 /-!
 # The signs of a polynomial near a point and near infinity
 
-Candidates for `Mathlib.Analysis.Polynomial.Order`: over a linearly ordered normed field with the
-order topology, such as `ℝ`, a nonzero polynomial has, far right, the sign of its leading
-coefficient and, far left, that sign times `(-1) ^ deg` (`Polynomial.eventually_atTop_sign_eval`,
-`Polynomial.eventually_atBot_sign_eval`); near a point it keeps a nonzero sign
-(`Polynomial.eventually_sign_eval_eq`), near a root `x` where its derivative does not vanish it has
-the sign of `(y - x) p'(x)` at `y` (`Polynomial.eventually_sign_eval_eq_sign_sub_mul`), and just
+Candidates for `Mathlib.Analysis.Polynomial.Order`: over a linearly ordered normed field, such as
+`ℝ`, a nonzero polynomial has, far right, the sign of its leading coefficient and, far left, that
+sign times `(-1) ^ deg` (`Polynomial.eventually_atTop_sign_eval`,
+`Polynomial.eventually_atBot_sign_eval`); with the order topology, near a point it keeps a nonzero
+sign (`Polynomial.eventually_sign_eval_eq`), near a root `x` where its derivative does not vanish it
+has the sign of `(y - x) p'(x)` at `y` (`Polynomial.eventually_sign_eval_eq_sign_sub_mul`), and just
 right of a point `x` where it or its derivative does not vanish it has the sign of `p(x)`, or of
 `p'(x)` when `p(x) = 0`, and just left of `x` that of `p(x)`, or of `-p'(x)` when `p(x) = 0`
 (`Polynomial.eventually_sign_eval_nhdsGT`, `Polynomial.eventually_sign_eval_nhdsLT`). By the
@@ -51,6 +51,36 @@ open Filter Topology
 
 namespace Polynomial
 
+section AtInfinity
+
+variable {𝕜 : Type*} [NormedField 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+
+/-- Far right, a nonzero polynomial has the sign of its leading coefficient. -/
+theorem eventually_atTop_sign_eval {p : 𝕜[X]} (hp : p ≠ 0) :
+    ∀ᶠ x in atTop, SignType.sign (p.eval x) = SignType.sign p.leadingCoeff := by
+  by_cases hd : p.degree ≤ 0
+  · rw [eq_C_of_degree_le_zero hd]
+    simp
+  have hd' : 0 < p.degree := not_le.mp hd
+  rcases (leadingCoeff_ne_zero.mpr hp).lt_or_gt with hlt | hgt
+  · filter_upwards [(tendsto_atBot_of_leadingCoeff_nonpos hd' hlt.le).eventually_lt_atBot 0]
+      with x hx
+    rw [sign_neg hx, sign_neg hlt]
+  · filter_upwards [(tendsto_atTop_of_leadingCoeff_nonneg hd' hgt.le).eventually_gt_atTop 0]
+      with x hx
+    rw [sign_pos hx, sign_pos hgt]
+
+/-- Far left, a nonzero polynomial has the sign of `(-1) ^ deg` times its leading coefficient. -/
+theorem eventually_atBot_sign_eval {p : 𝕜[X]} (hp : p ≠ 0) :
+    ∀ᶠ x in atBot, SignType.sign (p.eval x) =
+      SignType.sign ((-1) ^ p.natDegree * p.leadingCoeff) := by
+  have h := eventually_atTop_sign_eval (p := p.comp (-X)) (comp_neg_X_eq_zero_iff.not.mpr hp)
+  rw [comp_neg_X_leadingCoeff_eq] at h
+  filter_upwards [tendsto_neg_atBot_atTop.eventually h] with x hx
+  simpa [eval_comp] using hx
+
+end AtInfinity
+
 section OrderTopology
 
 variable {𝕜 : Type*} [NormedField 𝕜] [LinearOrder 𝕜] [OrderTopology 𝕜]
@@ -65,30 +95,6 @@ theorem eventually_sign_eval_eq {p : 𝕜[X]} {x : 𝕜} (h : p.eval x ≠ 0) :
     rw [sign_pos hy, sign_pos hgt]
 
 variable [IsStrictOrderedRing 𝕜]
-
-/-- Far right, a nonzero polynomial has the sign of its leading coefficient. -/
-theorem eventually_atTop_sign_eval {p : 𝕜[X]} (hp : p ≠ 0) :
-    ∀ᶠ x in atTop, SignType.sign (p.eval x) = SignType.sign p.leadingCoeff := by
-  by_cases hd : p.degree ≤ 0
-  · rw [eq_C_of_degree_le_zero hd]
-    simp
-  have hd' : 0 < p.degree := not_le.mp hd
-  rcases (leadingCoeff_ne_zero.mpr hp).lt_or_gt with hlt | hgt
-  · filter_upwards [(tendsto_atBot_of_leadingCoeff_nonpos p hd' hlt.le).eventually_lt_atBot 0]
-      with x hx
-    rw [sign_neg hx, sign_neg hlt]
-  · filter_upwards [(tendsto_atTop_of_leadingCoeff_nonneg p hd' hgt.le).eventually_gt_atTop 0]
-      with x hx
-    rw [sign_pos hx, sign_pos hgt]
-
-/-- Far left, a nonzero polynomial has the sign of `(-1) ^ deg` times its leading coefficient. -/
-theorem eventually_atBot_sign_eval {p : 𝕜[X]} (hp : p ≠ 0) :
-    ∀ᶠ x in atBot, SignType.sign (p.eval x) =
-      SignType.sign ((-1) ^ p.natDegree * p.leadingCoeff) := by
-  have h := eventually_atTop_sign_eval (p := p.comp (-X)) (comp_neg_X_eq_zero_iff.not.mpr hp)
-  rw [comp_neg_X_leadingCoeff_eq] at h
-  filter_upwards [tendsto_neg_atBot_atTop.eventually h] with x hx
-  simpa [eval_comp] using hx
 
 /-- Near a root `x` of `p` with `p'(x) ≠ 0`, `p(y)` has the sign of `(y - x) p'(x)`. -/
 theorem eventually_sign_eval_eq_sign_sub_mul {p : 𝕜[X]} {x : 𝕜} (h0 : p.eval x = 0)

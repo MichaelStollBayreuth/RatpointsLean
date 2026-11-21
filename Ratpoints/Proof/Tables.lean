@@ -434,7 +434,7 @@ theorem hornerBarrett_spec (cm : Array ℕ) (d p a : ℕ) :
   all_goals obtain ⟨hsize, hp, ha, hcm⟩ := ‹cm.size = d + 1 ∧ _›
   all_goals first
     | exact hornerInvariant_zero hsize a (hcm d)
-    | exact ⟨hornerInvariant_zero hsize a (hcm d), one_le_hornerSteps⟩
+    | exact one_le_hornerSteps
     | exact ‹HornerInvariant _ _ _ _ _ _ _›.barrett_eq_evalMod_of_le hp ‹_›
     | exact HornerInvariant.barrett_eq_evalMod_of_lt ‹_› hp
     | exact ‹HornerInvariant _ _ _ _ _ _ _›.push_self ‹_› hsize ha hcm
@@ -610,15 +610,18 @@ theorem examinePrime?_spec (c : List ℤ) (d p : ℕ) (u : Bool) :
   -- the count of the residues with a square value, kept beside the table, is the count of its
   -- true entries
   · fun pref _ s ↦ ExaminePrimeInvariant c d p pref.length s.2 ∧ s.1 = s.2.toList.count true
-  all_goals try simp only [Bool.false_eq_true, ↓reduceIte] at *
+  all_goals simp only [Bool.false_eq_true, ↓reduceIte] at *
   all_goals obtain ⟨hp0, hp⟩ := ‹0 < p ∧ p < maxPrimeEven›
   all_goals first
-    | exact ⟨examinePrimeInvariant_zero c d hp0, by split <;> simp_all⟩
+    | exact examinePrimeInvariant_zero c d hp0
     | exact ⟨(‹_ ∧ _› : ExaminePrimeInvariant _ _ _ _ _ ∧ _).1.push ‹_› ‹_›, by simp_all⟩
-    | exact ⟨by simp, hp, Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›,
-        getElem!_map_range_emod_lt c d hp0⟩
+    | exact hp
+    | exact Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›
+    | exact getElem!_map_range_emod_lt c d hp0 _
     | exact ExaminePrimeInvariant.none_eq _ ‹_› hp0 ‹_›
     | exact ExaminePrimeInvariant.some_eq ‹_› hp0 ‹_› _
+    | (simp; done)
+    | split <;> simp_all
 
 theorem run_examinePrime? {c : List ℤ} {d p : ℕ} (u : Bool) (hp0 : 0 < p)
     (hp : p < maxPrimeEven) :

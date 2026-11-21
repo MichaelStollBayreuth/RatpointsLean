@@ -293,8 +293,8 @@ theorem siftBitArrayByWords_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl
       checks cl i cnt
   all_goals subst_vars
   all_goals simp only [SiftBitArrayCountsLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
-    iSup_prop_eq_exists, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
+    iSup_prop_eq_exists, CompleteLattice.ofProp_prop_eq, reduceCtorEq, false_and, or_false,
+    false_or, true_and, and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals first
     | exact siftBitArrayCounts_zero _ _ _ _ _ _
     | exact SiftBitArrayCounts.eq ‹_›
@@ -408,8 +408,8 @@ theorem siftBitArrayWhole_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl :
   | inv1 => SiftBitArrayWalkCountsLoopInvariant (σ := σ) (fun κ ↦ nums[κ]!) b checks cl i cnt0
   all_goals subst_vars
   all_goals try simp only [SiftBitArrayWalkCountsLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
-    iSup_prop_eq_exists, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
+    iSup_prop_eq_exists, CompleteLattice.ofProp_prop_eq, reduceCtorEq, false_and, or_false,
+    false_or, true_and, and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals first
     | exact siftBitArrayWalkCounts_zero ‹_› ‹_›
     | exact SiftBitArrayWalkCounts.eq ‹_› ‹_›

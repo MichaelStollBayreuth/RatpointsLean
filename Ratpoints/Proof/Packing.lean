@@ -530,11 +530,11 @@ theorem numClasses_spec (nb : Vector UInt64 64) :
   all_goals try subst_vars
   all_goals first
     | exact numClassesInvariant_zero nb
-    | exact NumClassesInvariant.post ‹_›
+    | vc_leaf NumClassesInvariant.post _
     | exact bne_iff_ne.mp ‹_›
     | exact strideInvariant_one _ _
     | exact NumClassesInvariant.set_or ‹_› ‹_› _ ‹_› (StrideInvariant.packs_self ‹_› ‹_›) rfl
-    | exact StrideInvariant.le_six_and_classOf ‹_›
+    | vc_leaf StrideInvariant.le_six_and_classOf _
     | exact NumClassesInvariant.set_or ‹_› ‹_› _ ‹_› (StrideInvariant.packs ‹_› ‹_›) rfl
     | exact ‹_ ∧ _›.2
     | exact ⟨by lia, strideInvariant_add_one ‹_› ‹_› ‹_›⟩
@@ -962,7 +962,7 @@ theorem classRows_spec (cls : Vector NumClass 64) (es : Array SieveEntry)
   all_goals try simp only at *
   all_goals first
     | exact classRowsInvariant_init cls es rinv np offsets
-    | exact ClassRowsInvariant.post ‹_› ‹_›
+    | vc_leaf ClassRowsInvariant.post _ _
     | exact ClassRowsInvariant.skip ‹_› ‹_› _ ‹_›
     | exact ClassRowsInvariant.reuse ‹_› ‹_ ∧ _›.1 ‹_› _ ‹_›
     | exact rowInvariant_nil _ _ _ _ _
@@ -1228,13 +1228,14 @@ theorem classOffsets_spec (cls : Vector NumClass 64) (es : List SieveEntry) (off
   all_goals first
     | exact kmaxInvariant_nil cls
     | exact entriesInvariant_nil _
-    | exact ‹_ ∧ _›.2
+    | exact ‹_ ∧ (∀ b < 64, cls[b]!.WF) ∧ _›.2.1 _ ‹_›
+    | exact ‹_ ∧ (∀ b < 64, cls[b]!.WF) ∧ _›.2.2
     | exact halvingInvariant_zero _ _
     | exact HalvingInvariant.push ‹_›
     | exact EntriesInvariant.push ‹_› ‹_›
     | exact KmaxInvariant.append_of_lt ‹_› ‹_› _ ‹_›
     | exact KmaxInvariant.append_of_not_lt ‹_› ‹_› _ ‹_›
-    | exact classOffsets_post ‹_› ‹_› ‹_› ‹_›
+    | vc_leaf classOffsets_post _ _ _ _
 
 /-! ### The residues of a denominator -/
 

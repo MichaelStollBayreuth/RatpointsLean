@@ -292,8 +292,8 @@ theorem relprime_spec (m n : Int64) :
     | exact false_eq_decide_gcd (ite_neg_pos_and_gcd_eq ‹_› ‹_›) ‹_› ‹_›
     | exact eq_decide_gcd_of_shiftRight (ite_neg_pos_and_gcd_eq ‹_› ‹_›) ‹_› ‹_› ‹_› ‹_›
     | exact eq_decide_gcd_of_shiftRight_right (ite_neg_pos_and_gcd_eq ‹_› ‹_›) ‹_› ‹_› ‹_›
-    | exact toNatClampNeg_shiftRight_mod_two (ite_neg_pos_and_gcd_eq ‹_› ‹_›) ‹_› ‹_›
-    | exact toNatClampNeg_mod_two_of_and_one (ite_neg_pos_and_gcd_eq ‹_› ‹_›) ‹_› ‹_›
+    | vc_leaf toNatClampNeg_shiftRight_mod_two (ite_neg_pos_and_gcd_eq _ _) _ _
+    | vc_leaf toNatClampNeg_mod_two_of_and_one (ite_neg_pos_and_gcd_eq _ _) _ _
 
 /-! ### The third stage -/
 
@@ -528,7 +528,8 @@ theorem accepted_spec (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) (cnt
   vcgen [accepted]
   all_goals obtain ⟨hb0, ha, hb⟩ := ‹0 < b ∧ a.natAbs < 2 ^ 63 ∧ b < 2 ^ 63›
   all_goals first
-    | exact ⟨Int64.minValue_lt_ofInt ha, Int64.ofNat_pos hb0 hb⟩
+    | exact Int64.minValue_lt_ofInt ha
+    | exact Int64.ofNat_pos hb0 hb
     | simp_all [Int64.toInt_ofInt_of_le (n := a) (by lia) (by lia), Int64.toInt_ofNat_of_lt hb]
 
 /-- The test of a candidate as its value: the walks through the set bits of a word read it so, and

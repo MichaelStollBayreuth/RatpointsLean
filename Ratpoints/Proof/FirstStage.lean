@@ -431,11 +431,11 @@ theorem chunkSieve_spec (sv : Array SieveSpec) (cw : UInt64) :
       RegsInvariant sv cw chunk k done.length (fun j ↦ j) regs
   all_goals first
     | exact absurd ‹_ < ([] : List Nat).length› (Nat.not_lt_zero _)
-    | exact chunkSieve_pre_zero ‹_›
+    | vc_leaf chunkSieve_pre_zero _
     | exact chunkModInvariant_init ‹_› ‹_›
-    | exact ChunkModInvariant.post ‹_› ‹_› (Array.size_set! ..)
+    | vc_leaf ChunkModInvariant.post _ _ (Array.size_set! ..)
     | exact ChunkModInvariant.regsInvariant ‹_› ‹_›
-    | exact chunkSieve_pre_cur ‹_› ‹_› ‹_› (Array.size_set! ..)
+    | vc_leaf chunkSieve_pre_cur _ _ _ (Array.size_set! ..)
     | exact RegsInvariant.chunkModInvariant ‹_› ‹_› ‹_› ‹_› (Array.size_set! ..)
     | exact RegsInvariant.append_andBitArray ‹_› (Array.size_set! ..)
         (ChunkModInvariant.getElem!_eq ‹_› ‹_› (Array.size_set! ..)) rfl (Nat.le_refl _) ‹_› ‹_›
@@ -583,8 +583,8 @@ theorem andChunks_spec (specs : List SieveSpec) (w0 : Int) (sv : Array SieveSpec
   all_goals try vc_simp
   all_goals first
     | exact andChunksInvariant_init surv ‹_›
-    | exact AndChunksInvariant.post ‹_›
-    | exact chunkSieve_pre_of_andChunksInvariant ‹_› ‹_›
+    | vc_leaf AndChunksInvariant.post _
+    | vc_leaf chunkSieve_pre_of_andChunksInvariant _ _
     | exact storeChunkInvariant_init ‹_›
     | exact StoreChunkInvariant.append_storeBitArray ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact AndChunksInvariant.add_chunk ‹_› ‹_› ‹_› ‹_› ‹_›
@@ -814,8 +814,8 @@ theorem andRowsChunked_spec (specs : List SieveSpec) (mgs : List Nat) (small : B
     | exact andRowsFillInvariant_zero cw n surv
     | exact AndRowsFillInvariant.getElem!_eq_andWords ‹_› ‹_› ‹_› ‹_›
     | exact AndRowsFillInvariant.append_fillBitArray ‹_› ‹_›
-    | exact andChunks_pre_of_toList_eq ‹_› ‹_› ‹_›
-    | exact tailLegs_pre_of_toList_eq ‹chunk ≤ 16 ∧ _›.1 ‹_› ‹_› ‹_›
+    | vc_leaf andChunks_pre_of_toList_eq _ _ _
+    | vc_leaf tailLegs_pre_of_toList_eq ‹chunk ≤ 16 ∧ _›.1 _ _ _
     | exact andRowsChunked_post ‹_› ‹_› ‹_› ‹_›
 
 end Sieve

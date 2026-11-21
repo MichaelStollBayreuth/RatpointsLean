@@ -109,8 +109,9 @@ theorem adaptUp_spec (es : Array SieveEntry) (start : Nat)
   all_goals simp only [AdaptUpInvariant, Std.Legacy.Range.length_toList] at *
   all_goals first
     | exact ⟨Nat.le_refl _, Nat.le_add_right _ _⟩
-    | exact ‹_›
     | exact AdaptUpInvariant.push ‹_›
+    | exact ‹start ≤ _ ∧ _›.1
+    | exact ‹start ≤ _ ∧ _›.2
     | exact (Std.Legacy.Range.length_toList start es.size) ▸ AdaptUpInvariant.done ‹_› ‹_›
 
 /-- The invariant of the loop of `Ratpoints.Sieve.adaptDown` on the new end `want` of the second
@@ -157,10 +158,10 @@ theorem adaptDown_spec (es : Array SieveEntry) (sp1 sp2 : Nat)
     | (rename_i hc _ h
        obtain ⟨rfl, h⟩ := h
        exact AdaptDownInvariant.sub_one h hc)
-    | (rename_i h
-       first
-         | exact h.2
-         | exact ⟨h.1, h.2.1, h.2.2.1⟩)
+    | (rename_i h; exact h.2)
+    | exact ‹_ ≤ sp2 ∧ _›.1
+    | exact ‹_ ≤ sp2 ∧ (sp1 ≤ sp2 → _) ∧ _›.2.1 ‹_›
+    | exact ‹_ ≤ sp2 ∧ _ ∧ (∀ k : ℕ, _ ≤ k → k < sp2 → es[k]!.nf = 0) ∧ _›.2.2.1 _ ‹_› ‹_›
 
 /-- The invariant of the loop of `Ratpoints.Sieve.adaptThird` on the end `sp3` of the third stage,
 from the end `sp2` of the second: at least `sp2` and at most `sp2` and the number of the entries. -/
@@ -346,7 +347,8 @@ theorem runFold_spec (s : SieveOptions) (P : Params) (es : List SieveEntry) (st 
   all_goals obtain ⟨h, hb⟩ := ‹Correction.WF _ _ _ ∧ _›
   all_goals first
     | exact ⟨h.size_pos, h.block_zero, h.decisionWF, h.latest, h.fold hb⟩
-    | exact ⟨h.latest, h.fold hb⟩
+    | exact h.latest
+    | exact h.fold hb
     | exact h.fold_adapt hb _ ‹_›
 
 -- The decisions after the fold of a block, with or without a new one.
@@ -708,9 +710,10 @@ theorem sieveRun_spec (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : SieveO
   all_goals first
     | exact sieveRunLoopInvariant_nil ‹_ ∧ _›.1 ‹_ ∧ _›.2 _
     | exact SieveRunLoopInvariant.post ‹_› _ ‹_›
-    | (obtain ⟨hq, hd, hs⟩ := SieveRunLoopInvariant.pre hdec ‹_›
-       exact ⟨hq, hA, hw, hdb, hd, rfl, hforb,
-         Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›, hbLow, hbHigh, hH, hs⟩)
+    | vc_leaf SieveRunLoopInvariant.pre hdec _
+    | assumption
+    | exact hdb _ ‹_›
+    | exact Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›
     | (obtain ⟨hs, hb, hc⟩ := ‹RowStore.Fits _ _ ∧ _›
        first
          | exact SieveRunLoopInvariant.quit ‹_› ‹_› hb ‹_›

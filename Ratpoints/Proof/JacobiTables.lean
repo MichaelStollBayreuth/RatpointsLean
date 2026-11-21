@@ -147,7 +147,7 @@ theorem nonSquares_spec (q : ℕ) :
   | inv1 => fun pref _ st ↦ NonSquaresInvariant q pref st
   all_goals first
     | exact nonSquaresInvariant_nil ‹_›
-    | exact NonSquaresInvariant.size_eq_and_getElem!_eq_false_iff ‹_›
+    | vc_leaf NonSquaresInvariant.size_eq_and_getElem!_eq_false_iff _
     | exact NonSquaresInvariant.set! ‹_› ‹_› ‹_›
         (by first | exact (ite_eq_left ‹_›).symm | exact (ite_eq_right ‹_›).symm)
 
@@ -225,9 +225,10 @@ theorem jacobiSetupInvariant_empty {lcf : ℤ} {v r : ℕ}
   refine ⟨fun h ↦ by simp [h], fun h ↦ ?_⟩
   obtain rfl : v = padicValNat 2 lcf.natAbs := by
     rw [← Setup.fst_run_valuation h Nat.one_lt_two, ← hv]
-  have hd : 2 ^ padicValNat 2 lcf.natAbs ∣ lcf.natAbs := pow_padicValNat_dvd
+  have hd : 2 ^ padicValNat 2 lcf.natAbs ∣ lcf.natAbs :=
+    Nat.padicValNat_def ▸ pow_multiplicity_dvd ..
   refine ⟨by simp [Nat.mul_div_cancel' hd], ?_, by simp⟩
-  rw [← Nat.factorization_def _ Nat.prime_two]
+  rw [Nat.padicValNat_def, ← Nat.factorization_def _ Nat.prime_two]
   exact Nat.two_dvd_ne_zero.mp (Nat.not_dvd_ordCompl Nat.prime_two (by simpa using h))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.jacobiSetup` over the primes of the table, with
@@ -399,7 +400,7 @@ theorem jacobiSetup_spec (lcf : ℤ) (bHigh : ℕ) :
     | exact jacobiSetupLoopInvariant_some_none _ _ _ _ _ _ _
     | exact (nomatch ‹none = some _›)
     | exact (JacobiSetupLoopInvariant.false_of_some ‹_› ‹_› ‹_›).elim
-    | exact JacobiSetupLoopInvariant.isJacobiInfo ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
+    | vc_leaf JacobiSetupLoopInvariant.isJacobiInfo _ _ _ _ _ _
     | exact JacobiSetupLoopInvariant.push ‹_› ‹_› ‹_› ‹_› (by simp_all) (by simp_all)
 
 end

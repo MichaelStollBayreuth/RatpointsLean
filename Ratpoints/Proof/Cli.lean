@@ -482,7 +482,7 @@ theorem Intervals.eq_of_upper_eq_ok_of_lSeen_eq_false {iv iv' : Intervals} {H : 
   by_cases hc : d.lt (heightEnd H).neg = true
   all_goals
     simp only [hc, ↓reduceIte, Bool.false_eq_true] at h ⊢
-    split at h <;> (try cases h)
+    split at h <;> cases h
     exact ⟨by simpa using ‹¬0 < cmpEnd _ _›, rfl⟩
 
 /-- The interval `d` of doubles holds the exact interval from `el` to `eu` of the command line as
