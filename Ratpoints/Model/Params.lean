@@ -127,7 +127,7 @@ and `-F` give C `long`s, which are `-1`, as in `main.c`, when the option is abse
 `-C`, `-Q` and `-W` give doubles, `-1.0` when absent; `-j` switches the Jacobi test off and `-J` on
 again; and the array size is `Ratpoints.defaultArraySize`, which the program sets.
 
-C: `main.c:338-348`, `main.c:350-351`, `main.c:353`, `ratpoints.h:365-367`
+C: `main.c:342-352`, `main.c:354-355`, `main.c:357`, `ratpoints.h:365-367`
 
 Deviation: integers for the `long`s of the fields, doubles by their bits (`Ratpoints.Double`) for
 the doubles, as the program reads doubles (`Ratpoints.Cli.scanDouble?`), and a Boolean for the bit

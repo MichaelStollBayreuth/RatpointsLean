@@ -16,16 +16,17 @@ meta import Ratpoints.Model.FindPoints
 # The command-line program `ratpoints-lean`
 
 `ratpoints-lean` has the command line of `ratpoints`: the coefficient list `'a_0 a_1 ... a_n'` of
-`y ^ 2 = a_n x ^ n + ⋯ + a_0` as one argument (constant term first), the height bound and the
-options. It reads them as `main.c` of `ratpoints` does, with its checks, messages and exit statuses,
-in its order, and prints what `ratpoints` prints: unless `-q` is given, the report, with the banner
-of `ratpoints-lean`, the curve, the height bound and the search region of the command line before
-the points, and after them the numbers of the moduli used, what the search did, the search intervals
-that it searched and the count of the points found, and, under `-v`, in place of the height bound
-and the messages after the points but the count, the report of the library (`Ratpoints.Report`),
-between the points as `ratpoints` prints it; under `-x`, the pairs that pass the sieve of the model,
-with the moduli that the search chooses from the curve as `ratpoints` chooses them
-(`Ratpoints.sievingInfo`) and corrects between the blocks of the run
+`y ^ 2 = a_n x ^ n + ⋯ + a_0` as one argument (constant term first), or `@file` for a file that
+holds the list and `@-` for the standard input (`Ratpoints.Cli.runWithFile`), the height bound and
+the options. It reads them as `main.c` of `ratpoints` does, with its checks, messages and exit
+statuses, in its order, and prints what `ratpoints` prints: unless `-q` is given, the report, with
+the banner of `ratpoints-lean`, the curve, the height bound and the search region of the command
+line before the points, and after them the numbers of the moduli used, what the search did, the
+search intervals that it searched and the count of the points found, and, under `-v`, in place of
+the height bound and the messages after the points but the count, the report of the library
+(`Ratpoints.Report`), between the points as `ratpoints` prints it; under `-x`, the pairs that pass
+the sieve of the model, with the moduli that the search chooses from the curve as `ratpoints`
+chooses them (`Ratpoints.sievingInfo`) and corrects between the blocks of the run
 (`Ratpoints.Sieve.adaptPrimes`), and over the numerators of the search intervals that the Sturm step
 leaves, which are those that `ratpoints` prints; and the points, through the callback `process` of
 `main.c` (`Ratpoints.Cli.process`), which the search calls for each point it finds
@@ -51,6 +52,7 @@ mapped back to the caller's curve, as `ratpoints` does with the same options.
 * `Ratpoints.Cli.Intervals`: the reading of the search intervals of `-l` and `-u`.
 * `Ratpoints.Cli.process`: the callback of the search, which prints the points.
 * `Ratpoints.Cli.run`: what the program prints and its exit status, on a command line.
+* `Ratpoints.Cli.runWithFile`: the same when the coefficient list may come from a file.
 * `Ratpoints.Cli.main`: the program.
 
 ## Implementation notes
@@ -78,7 +80,7 @@ program and its version, as that of `ratpoints` does, so that the test scripts o
 leave out the line beginning `This is ratpoints-`, leave it out too; the rest says what the
 program is, under which licence it is released and where it lives.
 
-C: `main.c:43-48`
+C: `main.c:44-49`
 
 Deviation: the text is that of `ratpoints-lean`. -/
 def banner : String :=
@@ -90,10 +92,10 @@ def banner : String :=
 
 /-- The usage of `ratpoints-lean`: that of `ratpoints`, all options included.
 
-C: `main.c:77-88`
+C: `main.c:78-91`
 
-Deviation: the program is called `ratpoints-lean`, and the lines below the first are indented to
-match. -/
+Deviation: the program is called `ratpoints-lean`, and the lines of the options below the first are
+indented to match. -/
 def usage : String :=
   "Usage: ratpoints-lean 'a_0 a_1 ... a_n' max_height\n" ++
   "                      [-dl low_den] [-du up_den]\n" ++
@@ -105,14 +107,16 @@ def usage : String :=
   "                      [-P stage3_primes] [-Q stage3_cost] [-W check_cost]\n" ++
   "                      [-F max_forbidden] [-t threads] [-s] [-S [iter]]\n" ++
   "                      [-q] [-v] [-z] [-Z] [-1] [-i] [-I]\n" ++
-  "                      [-k] [-K] [-j] [-J] [-x] [-X]\n\n"
+  "                      [-k] [-K] [-j] [-J] [-x] [-X]\n" ++
+  "       In place of the list of the a_i, @file reads it from a file\n" ++
+  "       and @- from standard input.\n\n"
 
 /-- The ways in which `ratpoints-lean` refuses its command line: the errors of `main.c` that a
 command line can cause, those of the reading of the command line and error 8, which `main.c` gives
-for a binary form that the library refuses as not squarefree; and error 9, which `main.c` gives for
+for a binary form that the library refuses as not squarefree; error 9, which `main.c` gives for
 the codes of the library other than `RATPOINTS_NON_SQUAREFREE` and `RATPOINTS_NO_MEMORY` (error 10,
 which the model cannot return), among them the refusal of search intervals that the command line
-never passes. -/
+never passes; and error 12, for a file of the coefficients that cannot be read. -/
 inductive Failure where
   /-- Error 2 of `main.c`: fewer than two arguments. -/
   | tooFewArguments
@@ -136,15 +140,19 @@ inductive Failure where
   `RATPOINTS_NO_MEMORY`, for the model the refusal of search intervals
   (`Ratpoints.Refusal.badArgs`), which no command line causes. -/
   | badArgs
-  /-- Error 11 of `main.c`: a coefficient that is not an integer. -/
+  /-- Error 11 of `main.c`: a coefficient that is not an integer, or a zero byte in the file of the
+  coefficients. -/
   | incorrectCoefficients
+  /-- Error 12 of `main.c`: the file that the first argument names as `@file` for the coefficient
+  list cannot be opened or read. -/
+  | unreadableFile
 
 /-- What `ratpoints-lean` prints on a failure: what the function `error` of `main.c` prints
 for the same error, a blank line, the message and a blank line; for error 2 the banner and the
 usage instead, which error 6 prints after its message, as its case falls through to that of
 error 2.
 
-C: `main.c:1042-1054`, `main.c:1056-1059`
+C: `main.c:1097-1109`, `main.c:1111-1115`
 
 Deviation: the banner and the usage are those of `ratpoints-lean`. -/
 def Failure.message : Failure → String
@@ -158,12 +166,13 @@ def Failure.message : Failure → String
   | .notSquarefree => "\nPolynomial is not square-free.\n\n"
   | .badArgs => "\nBug no. 1 - please report!\n\n"
   | .incorrectCoefficients => "\nIncorrect coefficients (not integers separated by blanks).\n\n"
+  | .unreadableFile => "\nCannot read the file of the coefficients.\n\n"
 
 /-- The exit status of `ratpoints-lean` on a failure: the number of the error of `main.c`,
 with which its function `error` exits, unless a write to the standard output has failed
 (`Ratpoints.Cli.main`).
 
-C: `main.c:1060-1061` -/
+C: `main.c:1116-1117` -/
 def Failure.status : Failure → UInt32
   | .tooFewArguments => 2
   | .tooManyCoefficients => 3
@@ -174,6 +183,7 @@ def Failure.status : Failure → UInt32
   | .notSquarefree => 8
   | .badArgs => 9
   | .incorrectCoefficients => 11
+  | .unreadableFile => 12
 
 /-- The failure of `ratpoints-lean` for a refusal of the search (`Ratpoints.findPointsWith`, whose
 refusals are those of `Ratpoints.findPoints`): the error of `main.c` with the number that
@@ -184,13 +194,13 @@ them `RATPOINTS_BAD_ARGS` (`Ratpoints.Refusal.badArgs`). The reading of the comm
 no search intervals that the library refuses, so that of the refusals of `Ratpoints.findPointsWith`,
 which `Ratpoints.Cli.run` maps by it, only `Ratpoints.Refusal.notSquarefree` can reach it.
 
-C: `main.c:257-262`
+C: `main.c:261-266`
 
 Deviation: no error 10, since the model has no failure for lack of memory; the refusals of the
 coefficients and of the height (`Ratpoints.Refusal.tooManyCoefficients`,
 `Ratpoints.Refusal.tooFewCoefficients`, `Ratpoints.Refusal.incorrectHeight`) mapped to the errors 3,
 5 and 4 with which `read_input` refuses those inputs before the library is called, where
-`main.c:261` gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it
+`main.c:265` gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it
 can be given (`find_points.c:4604-4605`, `find_points.c:4683` and `find_points.c:4708`); no command
 line reaches them; no `mpz_clear`. -/
 def Failure.ofRefusal : Refusal → Failure
@@ -202,13 +212,14 @@ def Failure.ofRefusal : Refusal → Failure
 
 /-! ### The command line -/
 
-/-- The coefficient list that the first argument `s` of the command line gives, constant term
-first, as `main.c` reads it: integers as `Ratpoints.Cli.intOfWord?` reads them, separated by C
-white space, which may also stand before the first and after the last. A word that is not an
-integer fails with error 11, wherever it stands; then more than `Ratpoints.maxDegree + 1`
-integers fail with error 3, and fewer than two with error 5.
+/-- The coefficient list that the first argument `s` of the command line gives, or the contents `s`
+of the file that it names (`Ratpoints.Cli.runWithFile`), constant term first, as `main.c` reads it:
+integers as `Ratpoints.Cli.intOfWord?` reads them, separated by C white space, which may also stand
+before the first and after the last. A word that is not an integer fails with error 11, wherever it
+stands; then more than `Ratpoints.maxDegree + 1` integers fail with error 3, and fewer than two with
+error 5.
 
-C: `main.c:54`, `main.c:319`, `main.c:363-376`
+C: `main.c:55`, `main.c:323`, `main.c:370`, `main.c:372`, `main.c:378-384`, `main.c:386-389`
 
 Deviation: a list of `Int`s for the global array `c` of `RATPOINTS_MAX_DEGREE + 1` GMP integers; the
 integers beyond these, which `main.c` reads into the variable `fff` only to check them, are read
@@ -223,7 +234,7 @@ def coefficients (s : String) : Except Failure (List Int) := do
 it: a C `long` as `Ratpoints.Cli.longOfString?` reads it, at least 1, so from 1 to `2⁶³ - 1`;
 anything else fails with error 4.
 
-C: `main.c:379-380` -/
+C: `main.c:392-393` -/
 def heightBound (s : String) : Except Failure Nat :=
   match (longOfString? s).filter fun h ↦ 1 ≤ h with
   | some h => return h.toNat
@@ -284,7 +295,7 @@ whether no point is printed (`-z`, and not `-Z`), the format of a point (`-f`), 
 `-fm`, `-fe`), none for none, and the exact ends of the search intervals of the command line, which
 `process` reads (`ends`, as the options `-l` and `-u` fill it: `Ratpoints.Cli.Intervals`).
 
-C: `main.c:57-64`, `main.c:384-391`, `ratpoints.h:407`
+C: `main.c:58-65`, `main.c:397-404`, `ratpoints.h:407`
 
 Deviation: a structure for the global variables; `Option String` for the strings and the format,
 `none` for the null pointer, and Lean strings for the C strings of the command line, which the Lean
@@ -324,10 +335,10 @@ end read is a lower one (`l_seen`), the number of the intervals read (`num_inter
 the doubles of the ends that the library is given and the exact ends,
 `ends[2 i] ≤ x ≤ ends[2 i + 1]` for the `i`-th interval.
 
-C: `main.c:66`, `main.c:73`, `main.c:318`, `main.c:320`
+C: `main.c:67`, `main.c:74`, `main.c:322`, `main.c:324`
 
 Deviation: a structure for the two locals of `read_input` and the two global arrays, whose entries
-are zero (the doubles) and `0` (the exact ends, as `mpq_init` sets them, `main.c:206`) at the start;
+are zero (the doubles) and `0` (the exact ends, as `mpq_init` sets them, `main.c:210`) at the start;
 pairs of doubles for the entries of the type `ratpoints_interval`; a natural number for the `long`
 `num_inter`. -/
 structure Intervals where
@@ -349,7 +360,7 @@ it is not above the upper end of the interval before, compared as the numbers th
 (`Ratpoints.Cli.cmpEnd`); otherwise the exact end and its double as the lower end of the next
 interval, which is not complete.
 
-C: `main.c:402-414` -/
+C: `main.c:415-427` -/
 def Intervals.lower (iv : Intervals) (a : String) : Except Failure Intervals := do
   if iv.lSeen then throw .intervals
   let n := iv.numInter
@@ -369,7 +380,7 @@ that holds no `x` of the search, made `[-∞, u]` rather than turned around); er
 end is above the upper one, compared as the numbers they are (`Ratpoints.Cli.cmpEnd`); otherwise
 the interval is complete.
 
-C: `main.c:418-437` -/
+C: `main.c:431-450` -/
 def Intervals.upper (iv : Intervals) (H : Nat) (a : String) : Except Failure Intervals := do
   let n := iv.numInter
   let mut iv := iv
@@ -392,7 +403,7 @@ as `read_input` of `main.c` completes it: an interval with a lower end and no up
 `+∞`, with the double `Ratpoints.Cli.heightEnd H`, or `+∞` when that lies below its lower double
 (an interval that holds no `x` of the search, made `[l, +∞]` rather than turned around).
 
-C: `main.c:670`, `main.c:674-679` -/
+C: `main.c:683`, `main.c:687-692` -/
 def Intervals.complete (iv : Intervals) (H : Nat) : Intervals :=
   if iv.lSeen then
     let n := iv.numInter
@@ -490,8 +501,8 @@ word, whatever it is, as the format or the string, and `-q -v -z -Z -1 -i -I` se
 the output (`Ratpoints.Cli.Output.store`); of each setting the last one wins. It ignores `-t`, the
 number of threads of the C program.
 
-C: `main.c:394-401`, `main.c:415-417`, `main.c:438-533`, `main.c:534-578`, `main.c:579-594`,
-`main.c:595-602`, `main.c:603-638`, `main.c:639-650`, `main.c:651-669`
+C: `main.c:407-414`, `main.c:428-430`, `main.c:451-546`, `main.c:547-591`, `main.c:592-607`,
+`main.c:608-615`, `main.c:616-651`, `main.c:652-663`, `main.c:664-682`
 
 Deviation: the argument of `-t`, the number of threads, checked and then ignored, since the model
 sieves the blocks of the run in turn on one thread, which gives the output of every number of
@@ -531,7 +542,7 @@ where
 line feed when the points are not checked exactly or only one point of each pair is delivered
 (`Ratpoints.Options.noCheck`, `Ratpoints.Options.noY`), else `(%x : %y : %z)` and a line feed.
 
-C: `main.c:682-686` -/
+C: `main.c:695-699` -/
 def defaultFormat (o : Options) : String :=
   if o.noCheck || o.noY then "(%x : %z)\n" else "(%x : %y : %z)\n"
 
@@ -547,12 +558,12 @@ then an interval with a lower end and no upper one is completed
 doubles, and the exact ends those of the settings of the output, the format is the default
 (`Ratpoints.Cli.defaultFormat`) unless an option `-f` gave one, and `-q` cancels `-v`.
 
-C: `main.c:211-215`, `main.c:316-317`, `main.c:334-337`, `main.c:381`, `main.c:680`,
-`main.c:689`, `main.c:692-693`
+C: `main.c:215-219`, `main.c:320-321`, `main.c:338-341`, `main.c:394`, `main.c:693`,
+`main.c:702`, `main.c:705-706`
 
 Deviation: `read_input` never returns a value other than 0, so the usage that `main.c` prints then
-(`main.c:213` and `main.c:214`) has no counterpart; the largest denominator `-1` of `main.c:337`,
-which `main.c:381` replaces by the height bound, not set; the search intervals a list of the
+(`main.c:217` and `main.c:218`) has no counterpart; the largest denominator `-1` of `main.c:341`,
+which `main.c:394` replaces by the height bound, not set; the search intervals a list of the
 intervals read, for the pointer `args->domain` to the array `domain` and the number
 `args->num_inter`. -/
 def input : List String → Except Failure (List Int × Nat × SieveOptions × Options × Output)
@@ -575,7 +586,7 @@ def input : List String → Except Failure (List Int × Nat × SieveOptions × O
 a tab for `t`, a line feed for `n`, a backslash for a backslash, a percent sign for `%`, and the
 backslash and `ch` as they are for every other character.
 
-C: `main.c:179-183`, `main.c:967-971`
+C: `main.c:183-187`, `main.c:1022-1026`
 
 Deviation: one function for the two switches of `process` and `print_string`, which agree. -/
 def escape (ch : Char) : String :=
@@ -590,7 +601,7 @@ def escape (ch : Char) : String :=
 characters as they are, but a backslash, which `Ratpoints.Cli.escape` prints with the character
 after it, and a backslash at the end, which prints itself and ends the string.
 
-C: `main.c:958-966`, `main.c:972-974`
+C: `main.c:1013-1021`, `main.c:1027-1029`
 
 Deviation: a recursion over the characters, for the loop over the C string. -/
 def printString (s : Option String) : String :=
@@ -610,7 +621,7 @@ sign before another character prints both, and one at the end prints itself and 
 backslash and the character after it print as `Ratpoints.Cli.escape` prints them, and one at the
 end prints itself and ends the format; every other character prints itself.
 
-C: `main.c:158-178`, `main.c:184-187`
+C: `main.c:162-182`, `main.c:188-191`
 
 Deviation: a recursion over the characters, for the loop over the C string; an `Int` for the GMP
 integer `y` and for the `long`s `x` and `z`, which print alike. -/
@@ -632,7 +643,7 @@ a point (`print_between`), the settings of the output that it reads, whether `%y
 (`no_y`), the number of the search intervals of the command line and their exact ends, against
 which `process` checks the points, and the text printed so far.
 
-C: `main.c:111-114`
+C: `main.c:115-118`
 
 Deviation: the text printed so far, for the standard output, to which `process` prints; an array
 for the pointer `ends` and a natural number for the `long` `num_inter`. -/
@@ -668,7 +679,7 @@ are not checked exactly or only one point of each pair is delivered, and the num
 intervals of the command line, as read before `Ratpoints.Cli.joinIntervals` joins them, with their
 exact ends.
 
-C: `main.c:236-243`, `main.c:247-248`
+C: `main.c:240-247`, `main.c:251-252`
 
 Deviation: the format the one that `Ratpoints.Cli.input` settled, `""` if none. -/
 def Data.ofOutput (u : Output) (o : Options) : Data where
@@ -694,7 +705,7 @@ weight `0` and leaves the flag clear, so that it is neither counted nor stops th
 printed unless no point is printed: after the string before the points if it is the first point
 printed, and else after the string between them, in the format (`Ratpoints.Cli.formatPoint`).
 
-C: `main.c:140-143`, `main.c:151-157`, `main.c:188-190`
+C: `main.c:144-147`, `main.c:155-161`, `main.c:192-194`
 
 Deviation: the data a value, for the pointer `info`, and returned with the weight and the flag, for
 the `int *quit` that the library passes, which is clear at every call; the text appended to that of
@@ -724,7 +735,7 @@ after `- ` if it is negative and the others after ` + ` or ` - `, each the absol
 coefficient, then `x` for the degree 1 and `x^i` for a degree `i ≥ 2`, the coefficient left out
 when it is `1` there; and a line feed.
 
-C: `main.c:918-954`
+C: `main.c:973-1009`
 
 Deviation: a fold over the coefficients, for the loop; no `fflush`. -/
 def printPoly (c : List Int) : String :=
@@ -778,7 +789,7 @@ def showIntervals (dom : List (Double × Double)) : String :=
 
 /-- The text of a message of the report, as `message` of `main.c` prints it.
 
-C: `main.c:978-982`, `main.c:985-1039`
+C: `main.c:1033-1037`, `main.c:1040-1094`
 
 Deviation: the banner of `ratpoints-lean` (`Ratpoints.Cli.banner`); a constructor for each message
 that `ratpoints-lean` prints, with its data, for the number `n` and the arguments of the library:
@@ -813,7 +824,7 @@ report is that of `-v` the height bound `H` and a blank line, and the search reg
 the command line gives search intervals, their doubles `dom` before they are joined, also under
 `-v`.
 
-C: `main.c:216-221`, `main.c:225` -/
+C: `main.c:220-225`, `main.c:229` -/
 def preamble (c : List Int) (H : Nat) (u : Output) (dom : List (Double × Double)) : String :=
   if u.quiet then ""
   else Message.banner.text ++ (Message.curve c).text ++
@@ -828,7 +839,7 @@ of the exact check of the options `o`, and the search intervals as the search le
 8, from `r.domain`); then the count of the points found, the count `total` of the search, of the
 pairs under `-x` or `-y` (message 2).
 
-C: `main.c:269-277` -/
+C: `main.c:273-281` -/
 def report {σ : Type} (s : SieveOptions) (o : Options) (u : Output) (r : Outcome σ) : String :=
   let flags := Message.flags r.reversed r.useSquares r.useSquares1 (!s.jacobi) o.noCheck
   let moduli := Message.moduli r.sp1Used r.sp2Used r.sp3Used
@@ -858,8 +869,8 @@ report (`Ratpoints.Cli.report`, nothing under `-q`), and exits with status 0; on
 the command line it prints `f.message` and exits with `f.status` (`Ratpoints.Cli.Failure.message`,
 `Ratpoints.Cli.Failure.status`).
 
-C: `main.c:196-199`, `main.c:222-223`, `main.c:249`, `main.c:252-253`, `main.c:266`, `main.c:268`,
-`main.c:285-286`
+C: `main.c:200-203`, `main.c:226-227`, `main.c:253`, `main.c:256-257`, `main.c:270`, `main.c:272`,
+`main.c:289-290`
 
 Deviation: the text written once at the end (`Ratpoints.Cli.main`), where `main.c` prints as it
 goes; the bit `RATPOINTS_VERBOSE` of the flags, which the program sets under `-v` and leaves clear
@@ -879,19 +890,87 @@ def run (args : List String) : String × UInt32 :=
       let before := if r.info.printBetween then "" else printString u.stringBefore
       (pre ++ r.info.out ++ before ++ printString u.stringAfter ++ report s o u r, 0)
 
-/-- The program `ratpoints-lean`: it prints the text of `Ratpoints.Cli.run` on the standard
-output, in one write once it is computed, flushes the standard output, and exits with the status of
-the run, unless the write or the flush fails (on a full device, say, or when the standard output is
-closed): then, as `ratpoints` does when it finds at its exit that a write to its standard output
-has failed (the function `exit_status` of `main.c`), it prints `Error writing to standard output.`
-between two blank lines on the standard error and exits with status 13, also when the run ended
-with the message and the status of a failure, which its reader has not seen then. A run that prints
-nothing writes nothing, so that nothing fails. One failed write is not reported: when the reader of
-the output is gone, the write fails with `IO.Error.resourceVanished`, since the Lean runtime ignores
-the signal `SIGPIPE` that ends `ratpoints` then, and the program exits quietly with the status 141
-that the shell reports for `ratpoints`.
+/-- The name of the file from which `ratpoints-lean` reads the coefficient list on the command line
+`args`, if it reads the list from a file: when the first argument begins with `@`, what follows the
+`@`, which may be empty and where `-` stands for the standard input. A command line of fewer than
+two arguments names no file: it fails with error 2 before `main.c` looks at its first argument.
 
-C: `main.c:1070-1077`
+C: `main.c:374-377` -/
+def coefficientFile? : List String → Option String
+  | s :: _ :: _ =>
+    match s.toList with
+    | '@' :: path => some (String.ofList path)
+    | _ => none
+  | _ => none
+
+/-- The coefficient list that the contents `b` of the file of the coefficients give, as
+`read_coeff_file` of `main.c` hands it to the scan of the coefficients: the bytes as characters,
+each byte the character with its number, so that a word with a byte that is not a digit, a sign or
+C white space fails as it does in `main.c`, the bytes from 128 on among them; error 11 when a byte
+is zero, at which the scan of `main.c` would stop as at the end of the list.
+
+C: `main.c:745-748`
+
+Deviation: a string with the bytes as its characters, for the buffer with a zero byte after the
+contents. -/
+def fileList (b : ByteArray) : Except Failure String :=
+  if b.data.contains 0 then throw .incorrectCoefficients
+  else return String.ofList (b.toList.map fun x ↦ Char.ofNat x.toNat)
+
+/-- What `ratpoints-lean` does on the command line `args` when the file that the command line names
+for the coefficient list (`Ratpoints.Cli.coefficientFile?`), if it names one, has the contents
+`file`, or cannot be opened or read (`none`): the text it prints on the standard output and its exit
+status when the writes succeed. A file that cannot be read fails with error 12 and a zero byte in it
+with error 11 (`Ratpoints.Cli.fileList`), before the height bound and the options are looked at;
+otherwise the program does what `Ratpoints.Cli.run` gives for the command line with the list that
+the contents give in place of its first argument, which is then read as a list whatever it begins
+with. On a command line that names no file it does what `Ratpoints.Cli.run` gives, and `file` is not
+looked at.
+
+C: `main.c:374-377`
+
+Deviation: the contents of the file as an argument, which `Ratpoints.Cli.main` reads before the
+command line is looked at any further, where `read_input` reads the file when it comes to the
+coefficients; no `free` of the buffer. -/
+def runWithFile (args : List String) (file : Option ByteArray) : String × UInt32 :=
+  match coefficientFile? args, file with
+  | none, _ => run args
+  | some _, none => (Failure.unreadableFile.message, Failure.unreadableFile.status)
+  | some _, some b =>
+    match fileList b with
+    | .error f => (f.message, f.status)
+    | .ok s => run (s :: args.tail)
+
+/-- The contents of the file `path`, as `read_coeff_file` of `main.c` reads the file of the
+coefficients: all its bytes to its end, from the standard input when `path` is `-`; `none` when the
+file cannot be opened or a read fails (error 12 of `main.c`).
+
+C: `main.c:718-720`, `main.c:723-730`, `main.c:739-744`
+
+Deviation: the functions of the Lean runtime that read a file or a stream to its end, for the loop
+of `fread` into a buffer that doubles; no error 10, since the model has no failure for lack of
+memory; the name of the file is the Lean string that the runtime decodes from the argument as
+UTF-8, where `main.c` passes its bytes to `fopen`. -/
+def readCoefficientFile (path : String) : BaseIO (Option ByteArray) := do
+  let read : IO ByteArray :=
+    if path = "-" then do (← IO.getStdin).readBinToEnd else IO.FS.readBinFile path
+  return (← read.toBaseIO).toOption
+
+/-- The program `ratpoints-lean`: it reads the file of the coefficients, if the command line names
+one (`Ratpoints.Cli.coefficientFile?`, `Ratpoints.Cli.readCoefficientFile`), prints the text of
+`Ratpoints.Cli.runWithFile` on the standard output, in one write once it is computed, flushes the
+standard output, and exits with the status of the run, unless the write or the flush fails (on a
+full device, say, or when the standard output is closed): then, as `ratpoints` does when it finds at
+its exit that a write to its standard output has failed (the function `exit_status` of `main.c`), it
+prints `Error writing to standard output.` between two blank lines on the standard error and exits
+with status 13, also when the run ended with the message and the status of a failure, which its
+reader has not seen then. A run that prints nothing writes nothing, so that nothing fails. One
+failed write is not reported: when the reader of the output is gone, the write fails with
+`IO.Error.resourceVanished`, since the Lean runtime ignores the signal `SIGPIPE` that ends
+`ratpoints` then, and the program exits quietly with the status 141 that the shell reports for
+`ratpoints`.
+
+C: `main.c:1126-1133`
 
 Deviation: one write of the whole text and its flush, where `main.c` tests at its exit whether a
 write has failed since the program started; status 141 without a message when the reader of the
@@ -899,7 +978,10 @@ output is gone, where the signal `SIGPIPE` ends `ratpoints` and, when a caller h
 be ignored, `ratpoints` reports the failed write with status 13; a failure to write the message on
 the standard error is ignored, as `main.c` ignores the result of its `fprintf`. -/
 def main (args : List String) : IO UInt32 := do
-  let (out, status) := run args
+  let file ← match coefficientFile? args with
+    | some path => readCoefficientFile path
+    | none => pure none
+  let (out, status) := runWithFile args file
   let stdout ← IO.getStdout
   try
     stdout.putStr out
@@ -917,6 +999,23 @@ Each of them is what `ratpoints` 3.1.1 does, but for the banner, also under `-v`
 the library. -/
 
 #guard (coefficients " +1\t0  -1 ").toOption == some [1, 0, -1]
+
+-- The list from a file: `@file` as the first of at least two arguments names it, its contents are
+-- read as the argument would be, a file that cannot be read fails with error 12 and a zero byte or
+-- a byte from 128 on with error 11.
+#guard coefficientFile? ["@a b", "10"] == some "a b" && coefficientFile? ["@", "10"] == some "" &&
+  coefficientFile? ["@-", "10", "-q"] == some "-" && coefficientFile? ["@x"] == none &&
+  coefficientFile? ["1 0 1", "10"] == none && coefficientFile? [" @x", "10"] == none
+
+#guard runWithFile ["@f", "10", "-q"] (some " 1\t0\n\n\t1\r\n".toUTF8) ==
+    run ["1 0 1", "10", "-q"] &&
+  runWithFile ["@f", "10"] none == ("\nCannot read the file of the coefficients.\n\n", 12) &&
+  runWithFile ["@f", "0"] none == ("\nCannot read the file of the coefficients.\n\n", 12) &&
+  (runWithFile ["@f", "10"] (some ⟨#[49, 32, 48, 32, 49, 0, 32, 50, 10]⟩)).2 == 11 &&
+  (runWithFile ["@f", "10"] (some ⟨#[49, 32, 0xe9, 32, 49]⟩)).2 == 11 &&
+  (runWithFile ["@f", "10"] (some "@g".toUTF8)).2 == 11 &&
+  (runWithFile ["@f", "10"] (some ByteArray.empty)).2 == 5 && (runWithFile ["@f"] none).2 == 2 &&
+  runWithFile ["1 0 1", "10", "-q"] none == run ["1 0 1", "10", "-q"]
 
 -- `maxDegree + 1` coefficients are read, one more fail with error 3.
 #guard (coefficients (" ".intercalate (List.replicate (maxDegree + 1) "1"))).toOption.isSome &&

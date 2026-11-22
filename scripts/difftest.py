@@ -19,7 +19,8 @@ and compares it with the recorded outputs and with the C program:
           the search region, -l -u -dl -du (errors 7 and 6, the join, the filter of process, the
           suppression of the reversal), for those of the output, -x -X -y -Y -z -Z -1 -i -I and the
           formats and strings of -f -fs -fm -fe, for the report, and for the refusals of forms that
-          are not squarefree, against the C program; searches at a large height that both programs
+          are not squarefree, and for the list of the coefficients read from a file (@name and @-),
+          against the C program; searches at a large height that both programs
           stop at once (difftest_cases.STOP_CASES); the usage; and failed writes: a standard output
           whose reader is gone, which ends the C program by SIGPIPE, where ratpoints-lean (the Lean
           runtime ignores SIGPIPE) is to exit quietly with the status 141 that the shell reports for
@@ -125,6 +126,14 @@ one), are compared with their record, the standard error and the exit status of 
 report of the failed write with status 13, or nothing with status 0 when the run writes nothing.
 Only on such a standard output may ratpoints-lean write to its standard error.
 
+A run whose first argument is @name, which reads the list of the coefficients from the file name,
+runs in a temporary directory that holds the files of difftest_cases.LIST_FILES by their names,
+among them those that test4.sh writes for its runs of this kind, and a run of @- finds on its
+standard input what test4.sh pipes into its own (difftest_cases.LIST_STDIN). The run of test4.sh on
+a list of 2 MB, two coefficients of a million digits, is skipped: ratpoints-lean reads a number in
+time quadratic in its digits and takes minutes on it; the errors suite compares the two programs on
+coefficients of 20001 digits instead.
+
 options:
   --lean PATH        the ratpoints-lean executable (default: .lake/build/bin/ratpoints-lean)
   --c PATH           the C program, built at the pinned commit without a tuning.mk, which the
@@ -153,6 +162,7 @@ options:
   -v                 print every comparison
 """
 import argparse
+import atexit
 import math
 import os
 import random
@@ -162,6 +172,7 @@ import shlex
 import signal
 import subprocess
 import sys
+import tempfile
 import tomllib
 from dataclasses import dataclass, field
 from fractions import Fraction
@@ -341,9 +352,33 @@ def run3(prog, args, env=None, timeout=TIMEOUT, limit=None):
         no_core()
         if limit:
             resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
-    r = subprocess.run([str(prog), *args], capture_output=True, timeout=timeout, env=env,
-                       preexec_fn=cap)
+    cwd, stdin = list_setting(args)
+    r = subprocess.run([str(Path(prog).resolve()), *args], capture_output=True, timeout=timeout,
+                       env=env, preexec_fn=cap, cwd=cwd, input=stdin)
     return r.stdout.decode('latin-1'), r.returncode, r.stderr.decode('latin-1')
+
+
+LIST_DIR = None  # the directory of the files of difftest_cases.LIST_FILES, once it is made
+
+
+def list_setting(args):
+    """The working directory and the standard input of a run on the command line `args`: for a
+    first argument @name, which reads the list of the coefficients from a file, the temporary
+    directory with the files of difftest_cases.LIST_FILES, made at the first such run and removed
+    when the harness ends, and for @- the bytes difftest_cases.LIST_STDIN; else None and None (the
+    directory and the standard input of the harness)."""
+    global LIST_DIR
+    if not args or as_bytes(args[0])[:1] != b'@':
+        return None, None
+    if LIST_DIR is None:
+        tmp = tempfile.TemporaryDirectory(prefix='difftest.')
+        atexit.register(tmp.cleanup)
+        LIST_DIR = Path(tmp.name)
+        for name, data in difftest_cases.LIST_FILES.items():
+            (LIST_DIR / name).write_bytes(data)
+        for name in difftest_cases.LIST_DIRS:
+            (LIST_DIR / name).mkdir()
+    return LIST_DIR, difftest_cases.LIST_STDIN if as_bytes(args[0]) == b'@-' else None
 
 
 def run(prog, args):
@@ -380,6 +415,18 @@ def full_device(prog, args, env=None):
         p = subprocess.run([str(prog), *args], stdout=f, stderr=subprocess.PIPE, timeout=TIMEOUT,
                            env=env, preexec_fn=no_core)
     return p.returncode, p.stderr.decode('latin-1')
+
+
+def with_stdin(prog, args, stdin, env=None):
+    """The standard output, the return code and the standard error of `prog` on the command line
+    `args` with the standard input `stdin` of subprocess.run, or, for None, a closed one."""
+    def setup():
+        no_core()
+        if stdin is None:
+            os.close(0)
+    p = subprocess.run([str(Path(prog).resolve()), *args], stdin=stdin, capture_output=True,
+                       timeout=TIMEOUT, env=env, preexec_fn=setup)
+    return p.stdout.decode('latin-1'), p.returncode, p.stderr.decode('latin-1')
 
 
 def closed_output(prog, args, env=None):
@@ -661,7 +708,8 @@ def as_recorded_by_e(raw):
     """What the helper e() of test4.sh records of an output: the trailing newlines dropped, one
     newline added, and the banner line and the usage taken out."""
     lines = (raw.rstrip('\n') + '\n').split('\n')[:-1]
-    return ''.join(l + '\n' for l in lines if not re.match(r'This is ratpoints-|Usage: | *\[', l))
+    return ''.join(l + '\n' for l in lines if not re.match(
+        r'This is ratpoints-|Usage: | *\[|       In place of the list|       and @- from', l))
 
 
 def height(arg):
@@ -1070,7 +1118,9 @@ def suite_test4(cfg, tally, window=None):
                     (skip or not big)):
                 compare_search(cfg, tally, label, r.args, text, st)
             continue
-        if r.filt in WRITE_FAILS:  # recorded by w(): the standard error and the exit status
+        if r.args and r.args[0] == difftest_cases.LIST_SKIPPED:
+            tally.skip('a list of 2 MB')
+        elif r.filt in WRITE_FAILS:  # recorded by w(): the standard error and the exit status
             if r.filt == '>/dev/full' and not os.path.exists('/dev/full'):
                 tally.skip('no /dev/full')
                 continue
@@ -1199,6 +1249,14 @@ def suite_errors(cfg, tally):
             special(cfg, tally, f'{name}: {args}',
                     lean == c == ((13, WRITE_ERROR) if writes else (0, '')),
                     f'ratpoints-lean gives {lean}, the C program {c}')
+    # The list from a standard input that is closed (it cannot be read: error 12) or holds nothing
+    # (error 5).
+    for name, stdin, code in (('closed', None, 12), ('empty', subprocess.DEVNULL, 5)):
+        lean, c = (with_stdin(prog, ['@-', '10'], stdin, env)
+                   for prog, env in ((cfg.lean, LEAN_ENV), (cfg.c, None)))
+        special(cfg, tally, f'the list from a standard input that is {name}',
+                lean == c and c[1:] == (code, ''),
+                f'ratpoints-lean gives {lean}, the C program {c}')
     for args, note in difftest_cases.CASES:
         against_c(cfg, tally, f'{note}: {args}', args)
     for args, note in difftest_cases.STOP_CASES:

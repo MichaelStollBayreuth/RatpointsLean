@@ -23,6 +23,26 @@ from fractions import Fraction
 
 C102 = ' '.join(['1'] + ['0'] * 100 + ['1'])          # 102 coefficients
 C101 = ' '.join(['1'] + ['0'] * 99 + ['1'])           # 101 coefficients: degree 100
+# The files from which a first argument @name reads the list of the coefficients, by name, with what
+# each holds: those of the runs of test4.sh that read the list from a file (lf-tab, empty, nul,
+# word; its list of 2 MB is left out, see LIST_SKIPPED) and further ones for the errors suite; dir
+# is a directory (LIST_DIRS), and a name that is not here names no file. LIST_STDIN is what a run
+# of @- reads from its standard input, as in test4.sh. The file huge holds C x^2 - (C - 1) with
+# C = 10^20000 + 7, which has the points (+-1 : +-1 : 1) of height at most 3, so that both
+# coefficients of 20001 digits must be read exactly (written as strings: Python limits the
+# conversion of an int to a string to 4300 digits).
+HUGE_ZEROS = '0' * 19999
+LIST_FILES = {'lf-tab': b' 1\t0\n\n\t1\r\n', 'empty': b'', 'nul': b'1 0 1\0 2\n',
+              'word': b'1 0 x\n', 'nul-end': b'1 0 1\0', 'latin': b'1 0 \xe9 1\n',
+              'utf8': '1 0 \u00e9 1\n'.encode(), 'bom': b'\xef\xbb\xbf1 0 1\n', 'at': b'@lf-tab\n',
+              'crlf': b'-2\r\n0\r\n0\r\n1\r\n', 'a b': b'1 0 1', 'c101': C101.encode(),
+              'c102': C102.encode(), 'c102x': (C102 + ' x').encode(),
+              'huge': f'-1{HUGE_ZEROS}6 0 1{HUGE_ZEROS}7\n'.encode()}
+LIST_DIRS = ('dir',)
+LIST_STDIN = b'1\n0\n1\n'
+# The file of test4.sh with a list of 2 MB (two coefficients of a million digits), whose run is
+# skipped: ratpoints-lean reads a number in time quadratic in its digits and takes minutes on it.
+LIST_SKIPPED = '@big'
 
 CASES = [
     # the number of arguments
@@ -59,6 +79,37 @@ CASES = [
     (['1 \u00a02'.encode(), '10'], 'a no-break space (U+00A0, two bytes in UTF-8): error 11'),
     (['-q', '1 0 1', '10'], 'an option before the coefficients is read as the list: error 11'),
     (['1 0 1', '-q', '10'], 'an option in place of the height: error 4'),
+    # the list of the coefficients from a file: @name, the files of LIST_FILES, and @- for the
+    # standard input, which holds LIST_STDIN
+    (['@lf-tab', '10', '-q'], 'a file with line feeds, tabs and a carriage return'),
+    (['@crlf', '10', '-q'], 'a file with the line ends of DOS'),
+    (['@lf-tab', '10'], 'the report on a list from a file'),
+    (['@lf-tab', '10', '-v'], 'the report of the library on a list from a file'),
+    (['@empty', '10'], 'an empty file: error 5'),
+    (['@/dev/null', '10'], 'a device that holds nothing: error 5'),
+    (['@missing', '10'], 'no such file: error 12'),
+    (['@missing', '0'], 'no such file and a bad height: error 12 comes first'),
+    (['@missing', '10', '-nonsense'], 'no such file and a bad option: error 12 comes first'),
+    (['@dir', '10'], 'a directory: error 12'),
+    (['@', '10'], 'the empty name: error 12'),
+    (['@missing'], 'a file as the only argument: error 2, the file is not looked at'),
+    (['@nul', '10'], 'a zero byte in the file: error 11'),
+    (['@nul-end', '10'], 'a zero byte at the end of the file: error 11'),
+    (['@nul', '0'], 'a zero byte and a bad height: error 11 comes first'),
+    (['@word', '10'], 'a word in the file that is no integer: error 11'),
+    (['@latin', '10'], 'a byte from 128 on in the file: error 11'),
+    (['@utf8', '10'], 'a letter of two bytes in UTF-8 in the file: error 11'),
+    (['@bom', '10'], 'a byte order mark: error 11'),
+    (['@at', '10'], 'a file that names a file: error 11'),
+    (['@c101', '3', '-q'], '101 coefficients from a file: accepted'),
+    (['@c102', '10'], '102 coefficients from a file: error 3'),
+    (['@c102x', '10'], '102 coefficients from a file, then a letter: error 11 comes first'),
+    (['@huge', '3', '-q'], 'coefficients of 20001 digits from a file'),
+    (['@-', '10', '-q'], 'the list from the standard input'),
+    (['@-', '0'], 'the list from the standard input and a bad height: error 4'),
+    (['@a b', '10', '-q'], 'a file name with a blank'),
+    ([' @lf-tab', '10'], 'a blank before the @: a list, error 11'),
+    (['1 0 1', '@lf-tab'], '@name in place of the height: error 4'),
     # the height
     (['1 0 1', '0'], 'height 0: error 4'),
     (['1 0 1', '-1'], 'height -1: error 4'),
@@ -457,7 +508,7 @@ def random_coefficients(rng):
 
 # Formats and strings for -f, -fs, -fm and -fe: conversions, escapes, a percent sign or a backslash
 # at the end, words that look like options, and characters beyond ASCII in UTF-8, also after % and
-# a backslash, which main.c reads byte by byte (main.c:158-187 the format, main.c:958-974 the
+# a backslash, which main.c reads byte by byte (main.c:162-191 the format, main.c:1013-1029 the
 # strings) and ratpoints-lean character by character (the Lean runtime decodes the arguments, so
 # that bytes that are not UTF-8 are a deviation).
 FORMATS = ['%x %y %z\\n', '(%x : %z)\\n', '%x\\t%y\\n', '%', '\\', '%%', '%%%x', '\\%\\\\',

@@ -7,8 +7,8 @@
 # release 3.1.1 to release 3.2.0.
 [pin]
 repository = "https://github.com/MichaelStollBayreuth/ratpoints"
-tag = "v3.1.1-8-gd73b595"
-commit = "d73b595174b67ecb73fdab9461894b878e03a580"
+tag = "v3.1.1-9-gebcacbe"
+commit = "ebcacbebeb151bff382cec5c1a8d843cd527a33e"
 
 # Every line of code of these files lies in exactly one recorded range: modelled (a `C:`
 # paragraph of a docstring of the model) or excluded (an [[excluded]] table below), as
@@ -619,133 +619,157 @@ reason = "the release of the copy of the caller's search intervals"
 
 [[excluded]]
 file = "main.c"
-lines = "29-37"
+lines = "29-38"
 kind = "other"
 reason = "the includes of the program; the model has no headers"
 
 [[excluded]]
 file = "main.c"
-lines = "55"
+lines = "56"
 kind = "memory"
 reason = "the GMP integers tmp and tmp2 for intermediate results, which the program initializes and releases and the model does not need"
 
 [[excluded]]
 file = "main.c"
-lines = "94-104"
+lines = "97-108"
 kind = "other"
 reason = "the prototypes of the functions of the program; the model has no forward declarations"
 
 [[excluded]]
 file = "main.c"
-lines = "200"
+lines = "204"
 kind = "interface"
 reason = "the declaration of the arguments of the library, ratpoints_args args, whose fields the model passes as the arguments of the search with a callback"
 
 [[excluded]]
 file = "main.c"
-lines = "202-208"
+lines = "206-212"
 kind = "memory"
 reason = "the initialization of the GMP integers of the coefficients, of the rational ends of the intervals and of tmp and tmp2 at the start of main"
 
 [[excluded]]
 file = "main.c"
-lines = "233-235"
+lines = "237-239"
 kind = "memory"
 reason = "the allocation of the data that the program passes to the callback process, and error 10 when it fails"
 
 [[excluded]]
 file = "main.c"
-lines = "255-256"
+lines = "259-260"
 kind = "memory"
 reason = "the release of the data that the program passed to the callback process, at the end of its block"
 
 [[excluded]]
 file = "main.c"
-lines = "280-284"
+lines = "284-288"
 kind = "memory"
 reason = "the release of tmp and tmp2, of the GMP integers of the coefficients and of the rational ends of the intervals at the end of main"
 
 [[excluded]]
 file = "main.c"
-lines = "331-333"
+lines = "335-337"
 kind = "interface"
-reason = "the initialization of the fields of the arguments of the library that the model has no counterpart for: the pointer to the global array c of the coefficients, whose entries read_input fills later (main.c:369), and the degree and the height, which it sets later (main.c:375 and main.c:379) and the model passes as values"
+reason = "the initialization of the fields of the arguments of the library that the model has no counterpart for: the pointer to the global array c of the coefficients, whose entries read_input fills later (main.c:381), and the degree and the height, which it sets later (main.c:388 and main.c:392) and the model passes as values"
 
 [[excluded]]
 file = "main.c"
-lines = "352"
+lines = "356"
 kind = "threads"
 reason = "the default of the number of threads, one: the calling thread sieves; the model has no threads"
 
 [[excluded]]
 file = "main.c"
-lines = "358"
+lines = "362"
 kind = "memory"
 reason = "the initialization of the GMP integer fff, into which the program reads the coefficients beyond the bound to check them"
 
 [[excluded]]
 file = "main.c"
-lines = "691"
+lines = "371"
+kind = "memory"
+reason = "the pointer to the buffer with the contents of the file of the coefficients, which read_coeff_file allocates; the model passes the contents as a value"
+
+[[excluded]]
+file = "main.c"
+lines = "385"
+kind = "memory"
+reason = "the release of the buffer with the contents of the file of the coefficients once the coefficients are read"
+
+[[excluded]]
+file = "main.c"
+lines = "704"
 kind = "memory"
 reason = "the release of the GMP integer fff at the end of read_input"
 
 [[excluded]]
 file = "main.c"
-lines = "770"
+lines = "721-722"
+kind = "memory"
+reason = "the buffer of read_coeff_file and its size; the model reads the file with the functions of the Lean runtime, which return its bytes"
+
+[[excluded]]
+file = "main.c"
+lines = "731-738"
+kind = "memory"
+reason = "the growth of the buffer of read_coeff_file, which doubles each time fread has filled it: the guard against an overflow of its size and its reallocation, each with error 10 when it fails, and the room that the buffer has for the next read, a byte being left for the zero at the end"
+
+[[excluded]]
+file = "main.c"
+lines = "825"
 kind = "memory"
 reason = "the initialization of the GMP rational t of outward"
 
 [[excluded]]
 file = "main.c"
-lines = "779"
+lines = "834"
 kind = "memory"
 reason = "the release of the GMP rational t of outward"
 
 [[excluded]]
 file = "main.c"
-lines = "825-826"
+lines = "880-881"
 kind = "memory"
 reason = "the allocation of the string of the digits of scan_end, and error 10 when it fails, which the model cannot meet"
 
 [[excluded]]
 file = "main.c"
-lines = "853"
+lines = "908"
 kind = "memory"
 reason = "the initialization of the GMP integer m of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "855"
+lines = "910"
 kind = "memory"
 reason = "the release of the string of the digits of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "872"
+lines = "927"
 kind = "memory"
 reason = "the initialization of the GMP integer p of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "879"
+lines = "934"
 kind = "memory"
 reason = "the release of the GMP integer p of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "882"
+lines = "937"
 kind = "memory"
 reason = "the release of the GMP integer m of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "983-984"
+lines = "1038-1039"
 kind = "other"
-reason = "the text of message 1, the banner and the usage, which main prints only when read_input returns a value other than 0, which it never does: its only return is at main.c:692, and every other failure exits through error"
+reason = "the text of message 1, the banner and the usage, which main prints only when read_input returns a value other than 0, which it never does: its only return is at main.c:705, and every other failure exits through error"
 
 [[excluded]]
 file = "main.c"
-lines = "1055"
+lines = "1110"
 kind = "memory"
 reason = "the message of error 10, for lack of memory, which the model cannot meet"
 
