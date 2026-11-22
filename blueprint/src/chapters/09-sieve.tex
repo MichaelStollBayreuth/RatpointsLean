@@ -28,7 +28,7 @@ from Chapter~\ref{chap:region}.
 In the C code the sieve of a denominator is \verb|sift| (\csource{find_points.c}{3461}{3636}), which
 cuts the bits of each search interval into pieces for \verb|_ratpoints_sift0|
 (\csource{sift.c}{498}{1305}), and each numerator that survives goes through \verb|accepted|
-(\csource{sift.c}{438}{446}) to the exact check (\csource{find_points.c}{5300}{5388}). The model has
+(\csource{sift.c}{438}{446}) to the exact check (\csource{find_points.c}{5327}{5415}). The model has
 a component for each step, in the sections below, with the data and the loops of the default build.
 
 A C \verb|long| is an integer or a natural number, with a lemma that it stays in range, except in
@@ -308,7 +308,7 @@ the word smaller, the scan since the sentinel is not zero.
   $a\, b^{-1}$, reduced with the reciprocal after adding the bias if there is one, and by division
   otherwise (\csource{sift.c}{291}{301}). The test of a candidate: $a$ is prime to~$b$ and passes
   the third stage (\csource{sift.c}{438}{446}). The exact check
-  (\csource{find_points.c}{5300}{5388}): unless~$\mathrm{noCheck}$, for the value~$v$ of Horner's
+  (\csource{find_points.c}{5327}{5415}): unless~$\mathrm{noCheck}$, for the value~$v$ of Horner's
   rule at~$a$ on the products $c_k b^{d - k}$ (a thunk made once per denominator), times~$b$ for
   odd~$d$, so that $v = F_c(a, b)$ (Definition~\ref{def:binaryForm}), and
   $y = \lfloor \sqrt{v} \rfloor$: when $v = y^2$, the call with $(a : y : b)$ and then, unless that

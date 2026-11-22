@@ -690,14 +690,14 @@ divisors tested with words and by their valuations, the store of the tables of r
 of the checked loop of the denominators, cleared when there is no forbidden divisor and no Jacobi
 test.
 
-C: `ratpoints.h:415`, `ratpoints.h:417`
+C: `ratpoints.h:424`, `ratpoints.h:426`
 
 Deviation: a structure for what `sieving_info` writes into the arguments, the arrays `sieve_list`
-and `magics` (`ratpoints.h:415`) and `forb_ba` and `forbidden` (`ratpoints.h:417`) as lists, for the
+and `magics` (`ratpoints.h:424`) and `forb_ba` and `forbidden` (`ratpoints.h:426`) as lists, for the
 arrays with their counts, the bit `RATPOINTS_CHECK_DENOM` of the flags as a Boolean and the fields
 of the result (`Ratpoints.Params`), and into the entries, the arrays `sieve` as the store of the
-tables of rows; no field for the array `stage3_list` (`ratpoints.h:415`), the buffer of the table of
-the third stage that the sieving thread fills for each denominator (`find_points.c:5177`), which the
+tables of rows; no field for the array `stage3_list` (`ratpoints.h:424`), the buffer of the table of
+the third stage that the sieving thread fills for each denominator (`find_points.c:5204`), which the
 model replaces by the thunk of the checks (`Ratpoints.Sieve.fillChecks`, `Ratpoints.Sieve.sift`). -/
 structure SievingInfo where
   /-- The result of the choice. -/

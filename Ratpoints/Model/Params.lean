@@ -59,7 +59,7 @@ the search reads the cut points of the stages and the array size, and the correc
 between its blocks the estimates of the run, the cost of a check and the words of the first
 correction; the moduli come to the run as their sieve entries (`Ratpoints.SievingInfo`).
 
-C: `ratpoints.h:394`, `ratpoints.h:421-423`, `ratpoints.h:432`
+C: `ratpoints.h:403`, `ratpoints.h:430-432`, `ratpoints.h:441`
 
 Deviation: the parameters as a structure of their own, for the fields of the arguments that
 `find_points_work` normalizes and `sieving_info` sets (`sp1`, `sp2`, `sp3`, `max_forbidden`,
@@ -107,7 +107,7 @@ for `0`, capped at `2 ⌈H / 64⌉` and at `Ratpoints.maxArraySize`, then rounde
 `Ratpoints.chunk`, which stays at most the cap `Ratpoints.maxArraySize`, a multiple of the chunk; at
 least 1 for `H ≥ 1` (`Ratpoints.one_le_arraySizeAt`).
 
-C: `rp-private.h:87`, `find_points.c:4716-4727`
+C: `rp-private.h:87`, `find_points.c:4733-4744`
 
 Deviation: a `Nat` for the `long` field, so that only `0` stands for the default, which the library
 takes for every value `≤ 0`; `64` for `LONG_LENGTH`; and the macro `CEIL` of a natural number `x` by
@@ -127,7 +127,7 @@ and `-F` give C `long`s, which are `-1`, as in `main.c`, when the option is abse
 `-C`, `-Q` and `-W` give doubles, `-1.0` when absent; `-j` switches the Jacobi test off and `-J` on
 again; and the array size is `Ratpoints.defaultArraySize`, which the program sets.
 
-C: `main.c:348-358`, `main.c:360-361`, `main.c:363`, `ratpoints.h:391-393`
+C: `main.c:348-358`, `main.c:360-361`, `main.c:363`, `ratpoints.h:400-402`
 
 Deviation: integers for the `long`s of the fields, doubles by their bits (`Ratpoints.Double`) for
 the doubles, as the program reads doubles (`Ratpoints.Cli.scanDouble?`), and a Boolean for the bit
@@ -181,12 +181,12 @@ the number of primes to the search (`np_is_default`) is read from `s` before thi
 The search normalizes the options so (`Ratpoints.findPointsWork`) and makes the choice of the moduli
 with the normalized options (`Ratpoints.sievingInfo`).
 
-C: `find_points.c:4693-4699`, `find_points.c:4705-4706`, `find_points.c:4712-4715`
+C: `find_points.c:4710-4716`, `find_points.c:4722-4723`, `find_points.c:4729-4732`
 
 Deviation: the normalized options returned, for the fields of the arguments that the C code
 normalizes in place and restores in `find_points_work` (`find_points.c:4587-4590` and
 `find_points.c:4609-4612`); the array size normalized with the height bound where it is read
-(`Ratpoints.arraySizeAt`); no enlargement of the buffer of the rows (`find_points.c:4704`), which
+(`Ratpoints.arraySizeAt`); no enlargement of the buffer of the rows (`find_points.c:4721`), which
 the model does not have; integers for the `long`s. -/
 def SieveOptions.normalize (s : SieveOptions) : SieveOptions :=
   let numPrimes : Int :=

@@ -727,7 +727,7 @@ C: `find_points.c:3776-3783`
 Deviation: the decisions an array of structures, for the three arrays `dec_block`, `dec_sp2` and
 `dec_sp3` and their count `ndec`; the fields `sp2`, `sp3` and `adapt_at` of the arguments, which
 `adapt_primes` writes and `run_fold` reads, kept here, since they are read only within the run, by
-`run_fold` and `adapt_primes`, after which `find_points.c:5213` overwrites `sp2` and `sp3` with the
+`run_fold` and `adapt_primes`, after which `find_points.c:5240` overwrites `sp2` and `sp3` with the
 ends of the last block folded; natural numbers for the `long`s and a `UInt64` for the
 `unsigned long`. -/
 structure Correction where
@@ -803,12 +803,12 @@ the fold of its report (`Ratpoints.Sieve.runFold`), after which the run returns 
 stopped the search. Returns the delivery and the ends of the second and the third stage of the last
 block folded, which the search reports as used.
 
-C: `find_points.c:5170`, `find_points.c:5202-5210`, `find_points.c:5213`
+C: `find_points.c:5197`, `find_points.c:5229-5237`, `find_points.c:5240`
 
 Deviation: the blocks on the calling thread alone, without the pool of threads, which sifts them
 apart and delivers them in the same order, the decision of each block depending only on the folds of
 the blocks at least `Ratpoints.adaptLag + 1` before it (excluded with the threads); the ends of the
-last block returned, for the fields `sp2` and `sp3` of the arguments that `find_points.c:5213`
+last block returned, for the fields `sp2` and `sp3` of the arguments that `find_points.c:5240`
 writes; the store of the tables of rows passed from one block to the next, for the arrays `sieve` of
 the entries of the arguments, its last state not returned, as nothing reads the tables of rows after
 the run; the delivery `r` passed and returned, for the pointers `info` and `wk.quit` and the count

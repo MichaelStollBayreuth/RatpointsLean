@@ -360,7 +360,7 @@ numerator prime to `b`, with the factor `b` for odd `d` and `1` for even `d`, in
 walk through the set bits of a word calls it (`Ratpoints.Sieve.walkWord`), only while the flag
 `quit` of `r` is clear, and returns when the flag is set after it.
 
-C: `sift.c:202-205`, `find_points.c:3140`, `find_points.c:5300-5388`, `rp-private.h:576`,
+C: `sift.c:202-205`, `find_points.c:3140`, `find_points.c:5327-5415`, `rp-private.h:576`,
 `rp-private.h:596-597`
 
 Deviation: the products `w` as a thunk, which the sieve of one denominator makes for each
@@ -425,22 +425,22 @@ it set of the same points mapped by `Ratpoints.Sieve.swapPoint`: after a reversa
 `(0 : y : 1)` of the caller's curve. The caller tests the flag `quit` after it and returns when it
 is set (`Ratpoints.chooseAndSearch`).
 
-C: `find_points.c:4684`, `find_points.c:4944-4946`, `find_points.c:4949`,
-`find_points.c:5118-5124`, `find_points.c:5128-5149`
+C: `find_points.c:4701`, `find_points.c:4971-4973`, `find_points.c:4976`,
+`find_points.c:5145-5151`, `find_points.c:5155-5176`
 
 Deviation: the flags `fl` as an argument, for the bits `RATPOINTS_REVERSED`, `RATPOINTS_NO_CHECK`
 and `RATPOINTS_NO_Y` of the flags of the search (`args->flags`); the delivery `r` passed and
 returned, for the pointer `info`, the local flag `quit` and the count `total` of
-`find_points_work_1`; the return when the callback stops the search (`find_points.c:5150-5153`) made
+`find_points_work_1`; the return when the callback stops the search (`find_points.c:5177-5180`) made
 by the caller (`Ratpoints.chooseAndSearch`), which also prints the line before them under
 `RATPOINTS_VERBOSE` (`Ratpoints.Report.atInfinity`), the line that there are points at infinity
 coming with the report of the tests on the denominators (`Ratpoints.Report.setup`); no output under
 `DEBUG`; the square test of `c_d` and the decision whether there are points at infinity are made on
 the list that it is given, after the reversal check, when the points are delivered, where the C code
-computes `lcfsq` before the check (`find_points.c:4684`), which clears it in case 2
-(`find_points.c:4820`), the only reversal after which the degree is even, and leaves it, unread,
+computes `lcfsq` before the check (`find_points.c:4701`), which clears it in case 2
+(`find_points.c:4842`), the only reversal after which the degree is even, and leaves it, unread,
 with the odd degree that cases 1 and 3 leave, and sets `point_at_infty` before the exits of the
-search (`find_points.c:4944-4949`); the square root by `Nat.sqrt`, for `mpz_sqrt`. -/
+search (`find_points.c:4971-4976`); the square root by `Nat.sqrt`, for `mpz_sqrt`. -/
 def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d : Nat)
     (fl : CheckFlags) (r : Delivery σ) :
     Delivery σ :=

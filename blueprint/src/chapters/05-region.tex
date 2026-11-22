@@ -87,16 +87,16 @@ intervals and the Sturm step come after the reversal check (Chapter~\ref{chap:se
   $\mathrm{DBL\_MANT\_DIG} + 2 = 55$, beyond which the ends of the intervals of the step would not
   all be doubles; and the switch of the reversal turned off, for the private bit
   \verb|RATPOINTS_NO_REVERSE_AUTO|, when the caller gives search intervals or the normalized range
-  is not $1, \dots, H$ (\csource{find_points.c}{4709}{4711}, \csource{find_points.c}{4728}{4739}).
+  is not $1, \dots, H$ (\csource{find_points.c}{4726}{4728}, \csource{find_points.c}{4745}{4756}).
   The \emph{search intervals} of a search: for none given, the default interval $[-h, h]$, where~$h$
   is the double of~$H$, moved up to the next double when $h < 2^{63}$ and the \verb|long| of~$h$ is
   below~$H$; otherwise the caller's intervals, or none, for \verb|RATPOINTS_BAD_ARGS|, when an
   interval has not $l \le u$ or does not begin above the end of the one before it, compared as
-  doubles, so that a NaN end is refused too (\csource{find_points.c}{4881}{4905}).
+  doubles, so that a NaN end is refused too (\csource{find_points.c}{4908}{4932}).
 \end{definition}
 
 The search turns the answer none into the refusal $\mathrm{badArgs}$; the test of a null pointer
-(\csource{find_points.c}{4880}{4880}) is excluded as part of the interface of the library.
+(\csource{find_points.c}{4907}{4907}) is excluded as part of the interface of the library.
 
 \begin{lemma}[The normalized options and the search intervals]\label{lem:searchIntervals}
   \uses{def:searchIntervals, def:regionSpec, def:Options}
@@ -256,7 +256,7 @@ which~$f$ may be $\ge 0$, and intersects them with the search intervals. The mod
   real root, and $c_0 < 0$; otherwise the intervals that the bisection keeps from
   $[-\infty, +\infty]$, started with the counts and the signs of~$f$ at~$\mp\infty$, intersected
   with the caller's intervals. The \emph{Sturm step of the search}, on the polynomial that the
-  reversal check hands on, at the normalized depth (\csource{find_points.c}{4929}{4942}): with the
+  reversal check hands on, at the normalized depth (\csource{find_points.c}{4956}{4969}): with the
   step off, the intervals as they are; the refusal $\mathrm{notSquarefree}$ when the chain is none;
   the intervals left, when there are some; and when there are none, none for an even~$d$ whose
   leading coefficient is not a square, so that the search returns at once, there being no point at

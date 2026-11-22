@@ -791,7 +791,7 @@ bit arrays staying `long`s for the bits of a height bound below `2 ^ 63`
 the pointers `info` and `wk->quit` and the count `total` that `sift` keeps from zero and returns,
 and the counters `cnt` passed and returned, for those of the sieving thread; no test of the flag
 `stop` of a thread of the pool after a piece (`find_points.c:3629`), which is null on the calling
-thread (`find_points.c:5179`, with the pool excluded with the threads), and no measurement
+thread (`find_points.c:5206`, with the pool excluded with the threads), and no measurement
 (`RP_SIFT_TOC`) on the return at a stop. -/
 def siftBits {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b A : Nat) (fl : CheckFlags) (sp1 : Nat) (specs : List SieveSpec) (mgs : List Nat)

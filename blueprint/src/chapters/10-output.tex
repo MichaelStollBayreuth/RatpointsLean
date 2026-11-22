@@ -14,11 +14,11 @@ pass the delivery on are those of Chapter~\ref{chap:sieve}.
 \section{The callback and the delivery}\label{sec:outputCallback}
 
 The header of the library declares the callback of \verb|find_points| and \verb|find_points_work|
-(\csource{ratpoints.h}{462}{463}, \csource{ratpoints.h}{467}{468}) as
+(\csource{ratpoints.h}{471}{472}, \csource{ratpoints.h}{476}{477}) as
 \verb|int proc(long, long, const mpz_t, void*, int*)|; the manual names its parameters \verb|x|,
 \verb|z|, \verb|y|, \verb|info| and \verb|quit|. The library adds the value that each call returns
 to a count \verb|total|, which it returns, or one of the negative codes of an error
-(\csource{ratpoints.h}{453}{456}); a call stops the search by setting \verb|*quit|, which the
+(\csource{ratpoints.h}{462}{465}); a call stops the search by setting \verb|*quit|, which the
 library clears before the search and tests after the steps that may have made calls
 (Section~\ref{sec:outputStops}), so that it is clear at every call. Every refusal of the input comes
 before the first call; only \verb|RATPOINTS_NO_MEMORY| can come after calls, when an allocation
@@ -26,14 +26,14 @@ fails, and the model has no allocation that can fail. The callback of the model 
 that a search threads through its components are those of Definition~\ref{def:deliver}; the delivery
 stands for the pointer \verb|info|, for the counts \verb|total| of the functions of the search as
 one running count, and for the flags of the stop of the points at infinity and of the sieve
-(\csource{find_points.c}{4620}{4621}, \csource{find_points.c}{3147}{3147}).
+(\csource{find_points.c}{4637}{4638}, \csource{find_points.c}{3147}{3147}).
 
 \begin{definition}[The flags of the check and the calls of a search]\label{def:callback}
   \uses{def:deliver}
   \lean{Ratpoints.CheckFlags, Ratpoints.Delivery.callMapped, Ratpoints.appendPoint, Ratpoints.Delivery.print}
   \leanok
   The flags of the check, which decide what the exact check and the points at infinity deliver:
-  the bits \verb|RATPOINTS_REVERSED| (\csource{ratpoints.h}{440}{440}), \verb|RATPOINTS_NO_CHECK|
+  the bits \verb|RATPOINTS_REVERSED| (\csource{ratpoints.h}{449}{449}), \verb|RATPOINTS_NO_CHECK|
   and \verb|RATPOINTS_NO_Y| of the word of flags, as three Booleans, clear by default. One call
   (Definition~\ref{def:deliver}) with a point $(a : y : b)$ of the polynomial searched, mapped back
   to the caller's curve when the flag of the reversal is set: with $(b : y : a)$ for $a \ge 0$ and
@@ -80,8 +80,8 @@ tests it after each step that may have made calls, returning its count at once w
 (\csource{find_points.c}{3630}{3630}); \verb|run_block| after each denominator, in each shape of the
 loop (\csource{find_points.c}{3949}{3949}, \csource{find_points.c}{3978}{3978},
 \csource{find_points.c}{4065}{4065}, \csource{find_points.c}{4089}{4089}); the loop over the blocks
-after each block (\csource{find_points.c}{5208}{5208}); and \verb|find_points_work_1| after the
-points at infinity, before it sieves (\csource{find_points.c}{5150}{5153}). So the calls made are
+after each block (\csource{find_points.c}{5235}{5235}); and \verb|find_points_work_1| after the
+points at infinity, before it sieves (\csource{find_points.c}{5177}{5180}). So the calls made are
 those of the search that no call stops, up to and including the first call that sets the flag, and
 the count is the sum of their weights. With threads the calling thread of the C code delivers the
 points of the blocks in their order; that blocks sifted apart and delivered in this way make the
@@ -105,11 +105,11 @@ the first call that stops it: the protocol of the delivery (Theorem~\ref{thm:pro
 \section{The options of the output}\label{sec:outputFlags}
 
 Two bits of the flags of the caller change which points the library delivers
-(\csource{ratpoints.h}{429}{430}): under \verb|RATPOINTS_NO_Y| only the point with $y \ge 0$ of a
+(\csource{ratpoints.h}{438}{439}): under \verb|RATPOINTS_NO_Y| only the point with $y \ge 0$ of a
 pair $(x : \pm y : z)$ goes to the callback, and under \verb|RATPOINTS_NO_CHECK| every numerator
 that passes the sieve goes to it with $y = 0$, without the exact check, whether or not it gives a
-point. The C code reads them only in the exact check (\csource{find_points.c}{5300}{5388}), at the
-points at infinity (\csource{find_points.c}{5118}{5149}), and \verb|RATPOINTS_NO_CHECK| also in a
+point. The C code reads them only in the exact check (\csource{find_points.c}{5327}{5415}), at the
+points at infinity (\csource{find_points.c}{5145}{5176}), and \verb|RATPOINTS_NO_CHECK| also in a
 line of the report; the reversal, the Sturm step, the exits, the tests on the denominators and the
 sieve run as without them. Conversely, what \verb|RATPOINTS_NO_CHECK| delivers depends on everything
 that decides which numerators pass the sieve: the moduli, the Jacobi test, the reversal and the
@@ -176,12 +176,12 @@ height at most~$H$ in the search region (Theorem~\ref{thm:noCheck}).
 \section{What a search gives back}\label{sec:outputBack}
 
 Besides the count, \verb|find_points| writes back what the program reads after the search: three
-bits of \verb|args->flags| (\csource{ratpoints.h}{440}{443}), \verb|RATPOINTS_REVERSED|, set by the
+bits of \verb|args->flags| (\csource{ratpoints.h}{449}{452}), \verb|RATPOINTS_REVERSED|, set by the
 reversal check, and \verb|RATPOINTS_USE_SQUARES| and \verb|RATPOINTS_USE_SQUARES1|, set for odd
 degree when the leading coefficient is~$\pm 1$ and, otherwise, when the set-up of its divisors
-succeeds (\csource{find_points.c}{4960}{4993}), for message~7; the search intervals as the Sturm
+succeeds (\csource{find_points.c}{4987}{5020}), for message~7; the search intervals as the Sturm
 step leaves them, for message~8; and the numbers of the moduli used in the stages
-(\csource{ratpoints.h}{404}{404}), for message~4. The outcome of a search in the model holds exactly
+(\csource{ratpoints.h}{413}{413}), for message~4. The outcome of a search in the model holds exactly
 these, with the data of the callback and the count (Definition~\ref{def:Options}). The search sets
 the bits before its exits and before the points at infinity, and it returns after the Sturm step
 only for even degree, where the two bits of the squares are clear; so the bits and the intervals are
@@ -190,11 +190,11 @@ of the moduli are zeroed on entry and set after the sieve from the moduli of the
 so that they depend on where the callback stops the search (Chapter~\ref{chap:theorems}). Nothing
 else is written back: the reversed coefficients and the private fields that the choice of the moduli
 writes are not, and the bits of the input come back as the caller set them
-(\csource{find_points.c}{4656}{4656}).
+(\csource{find_points.c}{4673}{4673}).
 
 \section{The report of the library}\label{sec:outputReport}
 
-Under the bit \verb|RATPOINTS_VERBOSE| of the flags (\csource{ratpoints.h}{433}{433}), which the
+Under the bit \verb|RATPOINTS_VERBOSE| of the flags (\csource{ratpoints.h}{442}{442}), which the
 option \verb|-v| of the program sets, the library prints a report of the search on the standard
 output, between the points that the callback of the program prints there. The model has no standard
 output: the search takes a \emph{print channel}, a function that prints a text into the data of the
@@ -204,23 +204,26 @@ the channel that prints nothing (Definition~\ref{def:findPoints}).
 
 \begin{definition}[The report of the library]\label{def:libraryReport}
   \uses{def:Options, def:choiceOfModuli, def:packing, def:setupUs1, def:reversal, def:sieveEntry}
-  \lean{Ratpoints.Report.arguments, Ratpoints.Report.reversal, Ratpoints.Report.sturmStep, Ratpoints.Report.setup, Ratpoints.Report.packing, Ratpoints.Report.choice, Ratpoints.Report.moduli, Ratpoints.Report.excluded, Ratpoints.Report.sieving}
+  \lean{Ratpoints.Report.arguments, Ratpoints.Report.reversal, Ratpoints.Report.coeffBits, Ratpoints.Report.sturmStep, Ratpoints.Report.setup, Ratpoints.Report.packing, Ratpoints.Report.choice, Ratpoints.Report.moduli, Ratpoints.Report.excluded, Ratpoints.Report.sieving}
   \leanok
   The texts of the report, each as \verb|printf| prints it from the data that the C code prints,
   with \verb|%ld|, \verb|%3ld|, and \verb|%.pf| for the doubles and the values of \verb|Float| as
   glibc prints them, the exact value rounded to~$p$ places with ties to even: the arguments of the
-  search as it normalizes them (\csource{find_points.c}{4741}{4775}); the outcome of the reversal
-  check (\csource{find_points.c}{4790}{4793}, \csource{find_points.c}{4807}{4808},
-  \csource{find_points.c}{4821}{4824}, \csource{find_points.c}{4841}{4851},
-  \csource{find_points.c}{4854}{4857}); the Sturm step (\csource{find_points.c}{4914}{4928}); the
-  points at infinity and the tests on the denominators (\csource{find_points.c}{4947}{4948},
-  \csource{find_points.c}{4965}{4968}, \csource{find_points.c}{4971}{4976},
-  \csource{find_points.c}{4978}{4991}, \csource{find_points.c}{4996}{4997}); the packing of the
-  classes of the numerators (\csource{find_points.c}{5019}{5035}); the choice of the moduli
+  search as it normalizes them (\csource{find_points.c}{4758}{4797}); the outcome of the reversal
+  check (\csource{find_points.c}{4812}{4815}, \csource{find_points.c}{4829}{4830},
+  \csource{find_points.c}{4843}{4846}, \csource{find_points.c}{4863}{4878},
+  \csource{find_points.c}{4881}{4884}); the Sturm step (\csource{find_points.c}{4941}{4955}); the
+  points at infinity and the tests on the denominators (\csource{find_points.c}{4974}{4975},
+  \csource{find_points.c}{4992}{4995}, \csource{find_points.c}{4998}{5003},
+  \csource{find_points.c}{5005}{5018}, \csource{find_points.c}{5023}{5024}); the packing of the
+  classes of the numerators (\csource{find_points.c}{5046}{5062}); the choice of the moduli
   (\csource{find_points.c}{3107}{3113}), the moduli of the three stages with the cost of an exact
-  check (\csource{find_points.c}{5077}{5092}) and the forbidden divisors
-  (\csource{find_points.c}{5093}{5098}); and the lines before the sieve
-  (\csource{find_points.c}{5161}{5163}).
+  check (\csource{find_points.c}{5104}{5119}) and the forbidden divisors
+  (\csource{find_points.c}{5120}{5125}); and the lines before the sieve
+  (\csource{find_points.c}{5188}{5190}). From the degree $\mathrm{printDegree} = 1000$ on
+  (\lname{Ratpoints.printDegree}, the macro \verb|RATPOINTS_PRINT_DEGREE|), the arguments and the
+  reversal give, in place of the coefficients, the number of bits of the largest of them in absolute
+  value, as \verb|mpz_sizeinbase| counts them (\csource{find_points.c}{4620}{4631}).
 \end{definition}
 
 Four texts complete the report: the two exits on the way (\lname{Ratpoints.Report.noClasses},
@@ -267,7 +270,7 @@ checks and ignores: the model sifts the blocks of the run in turn, and the threa
   format is \verb|(%x : %z)\n| under \verb|-x| or \verb|-y| and \verb|(%x : %y : %z)\n| otherwise,
   unless \verb|-f| gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{751}{751}). A failure
   prints the message of the function \verb|error| of \verb|main.c|, for errors~2 and~6 with the
-  banner and the usage (\csource{main.c}{1145}{1157}).
+  banner and the usage (\csource{main.c}{1162}{1174}).
 \end{definition}
 
 \begin{definition}[The numbers and the search region of the command line]\label{def:cliNumbers}
@@ -357,36 +360,38 @@ keeps, under \verb|-1| only the first of them, and its count is their number
   \uses{def:cliInput, def:cliProcess, def:cliNumbers, def:findPoints, def:Options, def:libraryReport}
   \lean{Ratpoints.Cli.run, Ratpoints.Cli.main, Ratpoints.Cli.preamble, Ratpoints.Cli.report, Ratpoints.Cli.Message.text, Ratpoints.Cli.runWithFile, Ratpoints.Cli.coefficientFile?, Ratpoints.Cli.fileList, Ratpoints.Cli.readCoefficientFile}
   \leanok
-  The messages of the report of \verb|main.c| (\csource{main.c}{1088}{1142}), among them the search
+  The messages of the report of \verb|main.c| (\csource{main.c}{1088}{1159}), among them the search
   region of the command line (message~3), the numbers of the moduli used (message~4), what the
-  search did, from the bits written back (message~7), the search intervals as the search leaves
-  them (message~8), and the count of the points, or of the point pairs under \verb|-x| or \verb|-y|
+  search did, from the bits written back (message~7), the search intervals as the search leaves them
+  (message~8), and the count of the points, or of the point pairs under \verb|-x| or \verb|-y|
   (message~2). The program on a command line (\csource{main.c}{202}{205}): on a failure of the
   command line, the message and the status of the failure. Otherwise, unless \verb|-q|, the head of
-  the report: the banner, the curve, the height bound unless \verb|-v|
-  (\csource{main.c}{217}{222}), and message~3 when the command line gives intervals
-  (\csource{main.c}{226}{226}); then the search with a print channel
-  (Definition~\ref{def:findPoints}), with the options of the sieve of the command line and the array
-  size that \verb|main.c| sets (\csource{main.c}{223}{224}), the options of the search on the joined
-  intervals (\csource{main.c}{250}{250}), the callback of the program on its data and, under
-  \verb|-v|, the print channel that appends to the text of the data (\csource{main.c}{253}{254}). On
-  a refusal it prints what the library printed and the message of the error that \verb|main.c| gives
-  for it (\lname{Ratpoints.Cli.Failure.ofRefusal}: error~8 for a binary form that is not
-  squarefree), and exits with that status. Otherwise it prints what the callback and the library
-  printed, the string before the points if no point was printed (\csource{main.c}{276}{276}), the
-  string after them (\csource{main.c}{278}{278}) and, unless \verb|-q|, the end of the report: two
-  line feeds and messages~4, 7 and~8 unless \verb|-v|, then message~2 (\csource{main.c}{279}{287});
-  its status is~$0$ (\csource{main.c}{296}{297}). The program writes this text once and flushes its
-  standard output; when that fails, it says so on its standard error and exits with status~$13$,
-  whatever the status of the run, as \verb|main.c| does when it finds at its exit that a write to
-  its standard output has failed (\csource{main.c}{1174}{1181}). On a command line of at least two
-  arguments, a first argument \verb|@file| names a file that holds the coefficient list, and
-  \verb|@-| the standard input (\csource{main.c}{382}{385}): the program reads the file to its end
-  (\csource{main.c}{766}{768}) and then does what it does on the command line with the contents of
-  the file in place of its first argument, each byte read as the character with its number. A file
-  that cannot be opened or read fails with error~12, and a zero byte in it, at which the scan of
-  \verb|main.c| would stop as at the end of the list, with error~11
-  (\csource{main.c}{793}{796}), both before the height bound and the options are looked at.
+  the report: the banner, the curve (message~5: the polynomial as \verb|print_poly| prints it, or
+  from the degree $\mathrm{printDegree}$ on its degree and the number of bits of its largest
+  coefficient), the height bound unless \verb|-v| (\csource{main.c}{217}{222}), and message~3 when
+  the command line gives intervals (\csource{main.c}{226}{226}); then the search with a print
+  channel (Definition~\ref{def:findPoints}), with the options of the sieve of the command line and
+  the array size that \verb|main.c| sets (\csource{main.c}{223}{224}), the options of the search on
+  the joined intervals (\csource{main.c}{250}{250}), the callback of the program on its data and,
+  under \verb|-v|, the print channel that appends to the text of the data
+  (\csource{main.c}{253}{254}). On a refusal it prints what the library printed and the message of
+  the error that \verb|main.c| gives for it (\lname{Ratpoints.Cli.Failure.ofRefusal}: error~8 for a
+  binary form that is not squarefree), and exits with that status. Otherwise it prints what the
+  callback and the library printed, the string before the points if no point was printed
+  (\csource{main.c}{276}{276}), the string after them (\csource{main.c}{278}{278}) and, unless
+  \verb|-q|, the end of the report: two line feeds and messages~4, 7 and~8 unless \verb|-v|, then
+  message~2 (\csource{main.c}{279}{287}); its status is~$0$ (\csource{main.c}{296}{297}). The
+  program writes this text once and flushes its standard output; when that fails, it says so on its
+  standard error and exits with status~$13$, whatever the status of the run, as \verb|main.c| does
+  when it finds at its exit that a write to its standard output has failed
+  (\csource{main.c}{1191}{1198}). On a command line of at least two arguments, a first argument
+  \verb|@file| names a file that holds the coefficient list, and \verb|@-| the standard input
+  (\csource{main.c}{382}{385}): the program reads the file to its end (\csource{main.c}{766}{768})
+  and then does what it does on the command line with the contents of the file in place of its first
+  argument, each byte read as the character with its number. A file that cannot be opened or read
+  fails with error~12, and a zero byte in it, at which the scan of \verb|main.c| would stop as at
+  the end of the list, with error~11 (\csource{main.c}{793}{796}), both before the height bound and
+  the options are looked at.
 \end{definition}
 
 The exit statuses are thus those of \verb|main.c|: $0$ after a search, $2$ to~$7$ and~$11$ for the

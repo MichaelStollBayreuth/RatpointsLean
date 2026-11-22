@@ -36,6 +36,8 @@ only that its entries are the odd primes below 1022, in increasing order
 ## Main definitions
 
 * `Ratpoints.maxDegree`: the largest degree that `ratpoints` accepts.
+* `Ratpoints.printDegree`: the degree from which on `ratpoints` prints the degree and the size of
+  the coefficients of the polynomial in place of the polynomial.
 * `Ratpoints.primeTable`: the odd primes below 1024, among which the moduli are chosen.
 * `Ratpoints.maxBitsInPrime`, `Ratpoints.numPrimes`, `Ratpoints.maxPrimeEven`: the moduli are
   chosen among the primes of the table below `maxPrimeEven = 2 ^ maxBitsInPrime`, the first
@@ -98,6 +100,18 @@ C: `ratpoints.h:33-59`
 Deviation: the value set here, that of the header of `ratpoints`, where a build may give the
 compiler a smaller value. -/
 def maxDegree : Nat := 1518500246
+
+/-- The degree from which on `ratpoints` prints the degree of the polynomial and the number of bits
+of its largest coefficient where it would print the polynomial or the list of its coefficients,
+`RATPOINTS_PRINT_DEGREE`: in the equation of the curve of the report of the program
+(`Ratpoints.Cli.Message.text`) and in the report of the library (`Ratpoints.Report.arguments`,
+`Ratpoints.Report.reversal`).
+
+C: `ratpoints.h:66-68`
+
+Deviation: the value set here, that of the header of `ratpoints`, where a build may give the
+compiler another value. -/
+def printDegree : Nat := 1000
 
 /-- The odd primes below 1024, in increasing order: the table `prime` of `primes.h`, of size
 `PRIMES1000`, which `find_points.c` includes, among which `ratpoints` chooses its moduli.
@@ -172,7 +186,7 @@ def hornerSteps : Nat := 64 / maxBitsInPrime - 1
 /-- How many primes the sieve takes when the option `-p` does not say,
 `RATPOINTS_DEFAULT_NUM_PRIMES`; like the value of `-p`, it is capped at `Ratpoints.numPrimes`.
 
-C: `ratpoints.h:359-366` -/
+C: `ratpoints.h:368-375` -/
 def defaultNumPrimes : Nat := 30
 
 /-- The depth of the Sturm step when the options do not say, `RATPOINTS_DEFAULT_STURM`: the default
@@ -181,13 +195,13 @@ argument; `-s` sets `-1`, and `-S` with an argument the depth that it gives. The
 Sturm step (`Ratpoints.Sturm.iterate`) splits the intervals that it cannot decide up to this depth,
 which the search caps at `55` (`Ratpoints.Options.normalize`).
 
-C: `ratpoints.h:367-369` -/
+C: `ratpoints.h:376-378` -/
 def defaultSturm : Int := 10
 
 /-- At most how many forbidden divisors of the denominators are tested when the option `-F` does
 not say, `RATPOINTS_DEFAULT_MAX_FORBIDDEN`.
 
-C: `ratpoints.h:371-378` -/
+C: `ratpoints.h:380-387` -/
 def defaultMaxForbidden : Nat := 64
 
 /-- The number of 64-bit words of a bit array of the sieve, `RBA_PACK`: 4 in the default build,
@@ -238,7 +252,7 @@ def rbaShift : Nat := 8
 /-- At most how many bit arrays a piece of the numerators has when the parameters do not say,
 `RATPOINTS_ARRAY_SIZE`.
 
-C: `ratpoints.h:380-382` -/
+C: `ratpoints.h:389-391` -/
 def defaultArraySize : Nat := 256
 
 /-- The number of bit arrays that the first stage of the sieve takes at a time, `RATPOINTS_CHUNK`:
@@ -338,28 +352,28 @@ takes as it is under `-U 0` and otherwise scales by the length of the run
 (`Ratpoints.phase2Offset`); also the number of the next candidates whose mean density stands for
 the second stage of a long run (`Ratpoints.downstreamFactor`).
 
-C: `ratpoints.h:121-123` -/
+C: `ratpoints.h:130-132` -/
 def sp2Extra : Nat := 11
 
 /-- The survivors per 64-bit word swept that one more modulus of the first stage has to remove, for
 a modulus that costs one and per word, `RATPOINTS_SURVIVORS_PER_WORD`: the target of the rule that
 ends the first stage (`Ratpoints.phase1Wants`), unless the option `-r` gives a positive value.
 
-C: `ratpoints.h:118-120` -/
+C: `ratpoints.h:127-129` -/
 def survivorsPerWord : Float := 0.002
 
 /-- The run length, in numerator words, at which setting a modulus of the second stage up costs as
 much as sieving with it, `RATPOINTS_SP2_U0`: the scale of the offset of the second stage
 (`Ratpoints.phase2Offset`), unless the option `-U` gives a value `≥ 0`.
 
-C: `ratpoints.h:146-148` -/
+C: `ratpoints.h:155-157` -/
 def sp2U0 : Float := 1.6e6
 
 /-- What one prime of the third stage costs per survivor, as a fraction of one exact check,
 `RATPOINTS_SP3_PER_SURVIVOR`, in the rule that chooses the third stage (`Ratpoints.thirdOf`) and in
 its correction during the run (`Ratpoints.Sieve.adaptThird`).
 
-C: `ratpoints.h:176-178` -/
+C: `ratpoints.h:185-187` -/
 def sp3PerSurvivor : Float := 0.055
 
 /-- What one prime of the third stage costs per denominator, as a fraction of one exact check,
@@ -367,100 +381,100 @@ def sp3PerSurvivor : Float := 0.055
 its correction during the run (`Ratpoints.Sieve.adaptThird`), unless the option `-Q` gives a value
 `≥ 0`.
 
-C: `ratpoints.h:179-181` -/
+C: `ratpoints.h:188-190` -/
 def sp3PerDenom : Float := 0.013
 
 /-- The share of the survivors of the first two stages that the test for common factors leaves,
 `RATPOINTS_SP3_COPRIME`, in the estimate of the survivors that reach the third stage
 (`Ratpoints.survivorsAtThird`).
 
-C: `ratpoints.h:190-192` -/
+C: `ratpoints.h:199-201` -/
 def sp3Coprime : Float := 0.7
 
 /-- What building one row of a sieve table costs, in units of one and of the first stage per word,
 `RATPOINTS_COST_TABLE`, unless the option `-C` gives a value `≥ 0` (`Ratpoints.primeCost`,
 `Ratpoints.addModuli`).
 
-C: `ratpoints.h:218-220` -/
+C: `ratpoints.h:227-229` -/
 def costTable : Float := 38.0
 
 /-- The largest composite modulus that `ratpoints` offers, `RATPOINTS_COMPOSITE_MAX`: the odd
 composites from 9 up to it and below `Ratpoints.maxPrimeEven` (`Ratpoints.addModuli`).
 
-C: `ratpoints.h:236-238` -/
+C: `ratpoints.h:245-247` -/
 def compositeMax : Nat := 64
 
 /-- What one entry of `bp_list` costs per denominator, `RATPOINTS_COST_BP` (`Ratpoints.primeCost`).
 
-C: `ratpoints.h:239-244` -/
+C: `ratpoints.h:248-253` -/
 def costBp : Float := 8.0
 
 /-- What the sieve spec of a modulus of the first two stages costs per denominator,
 `RATPOINTS_COST_SETUP` (`Ratpoints.primeCost`).
 
-C: `ratpoints.h:250-252` -/
+C: `ratpoints.h:259-261` -/
 def costSetup : Float := 30.0
 
 /-- What one call of the sieve costs a modulus of the first stage, `RATPOINTS_COST_CALL`
 (`Ratpoints.choiceEstimate`).
 
-C: `ratpoints.h:267-269` -/
+C: `ratpoints.h:276-278` -/
 def costCall : Float := 50.0
 
 /-- What fetching one line of 64 bytes of a row costs per denominator, `RATPOINTS_COST_LINE`
 (`Ratpoints.phase1Key`).
 
-C: `ratpoints.h:284-286` -/
+C: `ratpoints.h:293-295` -/
 def costLine : Float := 4.5
 
 /-- What one and on a surviving bit array of the second stage costs, `RATPOINTS_COST_PHASE2`
 (`Ratpoints.downstreamFactor`, the keys of the second stage, `Ratpoints.rankSecond`, and the walks
 of its correction during the run, `Ratpoints.Sieve.adaptUp` and `Ratpoints.Sieve.adaptDown`).
 
-C: `ratpoints.h:287-289` -/
+C: `ratpoints.h:296-298` -/
 def costPhase2 : Float := 110.0
 
 /-- What one survivor of the second stage costs to extract and test, `RATPOINTS_COST_SURVIVOR`
 (`Ratpoints.downstreamFactor`, `Ratpoints.Sieve.adaptSecond`).
 
-C: `ratpoints.h:296-298` -/
+C: `ratpoints.h:305-307` -/
 def costSurvivor : Float := 1400.0
 
 /-- What one exact check costs relative to the cost of an and, `RATPOINTS_COST_CHECK`, read by the
 correction of the second stage during the run (`Ratpoints.Sieve.adaptSecond`).
 
-C: `ratpoints.h:306-308` -/
+C: `ratpoints.h:315-317` -/
 def costCheck : Float := 1600.0
 
 /-- The cost of one step of Horner's rule in the exact check, `RATPOINTS_CHECK_STEP`
 (`Ratpoints.checkCost`).
 
-C: `ratpoints.h:338-340` -/
+C: `ratpoints.h:347-349` -/
 def checkStep : Float := 29.0
 
 /-- The cost of one step of Horner's rule per limb it carries, `RATPOINTS_CHECK_LIMB`
 (`Ratpoints.checkCost`).
 
-C: `ratpoints.h:341-343` -/
+C: `ratpoints.h:350-352` -/
 def checkLimb : Float := 8.0
 
 /-- The cost of the call of the exact check and of a square root of one limb,
 `RATPOINTS_CHECK_CALL` (`Ratpoints.checkCost`).
 
-C: `ratpoints.h:344-346` -/
+C: `ratpoints.h:353-355` -/
 def checkCall : Float := 94.0
 
 /-- The cost of each further limb of the square root of the exact check, `RATPOINTS_CHECK_ROOT`
 (`Ratpoints.checkCost`).
 
-C: `ratpoints.h:347-349` -/
+C: `ratpoints.h:356-358` -/
 def checkRoot : Float := 170.0
 
 /-- The cost of one exact check on the curves on which the third stage was tuned,
 `RATPOINTS_CHECK_REFERENCE`, which the cost of the check of the curve is divided by
 (`Ratpoints.checkRelOf`).
 
-C: `ratpoints.h:355-357` -/
+C: `ratpoints.h:364-366` -/
 def checkReference : Float := 306.0
 
 /-- A bound on the number of composite moduli offered, `RP_MAX_MODULI`: half of

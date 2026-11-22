@@ -120,7 +120,7 @@ class Opt:
 
 
 VARIANTS = {
-    'A': {'maxDegree': 30, 'maxBitsInPrime': 5, 'defaultNumPrimes': 7, 'defaultMaxForbidden': 0,
+    'A': {'maxDegree': 30, 'printDegree': 0, 'maxBitsInPrime': 5, 'defaultNumPrimes': 7, 'defaultMaxForbidden': 0,
           'rbaPack': 1, 'chunk': 1, 'defaultArraySize': 3, 'defaultSturm': -1,
           'veryBig': 0, 'maxDivisors': 2, 'jacobiPrimes': 0, 'jacobiTable': 0,
           'mulModLimit': 0, 'stage3Limit': 0, 'useLongInPhase2': True,
@@ -133,7 +133,7 @@ VARIANTS = {
           'runShapeSamples': 1, 'adaptWords': 0,
           'adaptArrays': 0, 'adaptBits': 0, 'adaptLag': 0, 'blocksWanted': 1, 'blockMin': 1,
           'blockLen': Opt(1)},
-    'B': {'maxDegree': 200, 'maxBitsInPrime': 10, 'defaultNumPrimes': 60,
+    'B': {'maxDegree': 200, 'printDegree': 10 ** 6, 'maxBitsInPrime': 10, 'defaultNumPrimes': 60,
           'defaultMaxForbidden': 200, 'rbaPack': 8, 'chunk': 13, 'defaultArraySize': 1000,
           'defaultSturm': 62, 'veryBig': 7, 'maxDivisors': 100000,
           'jacobiPrimes': 200, 'jacobiTable': 100000, 'mulModLimit': 2 ** 31 + 11,

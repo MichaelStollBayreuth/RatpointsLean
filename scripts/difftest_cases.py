@@ -23,6 +23,8 @@ from fractions import Fraction
 
 C102 = ' '.join(['1'] + ['0'] * 100 + ['1'])          # 102 coefficients: degree 101
 C101 = ' '.join(['1'] + ['0'] * 99 + ['1'])           # 101 coefficients: degree 100
+C1000 = ' '.join(['1'] + ['0'] * 998 + ['1'])         # degree 999: printed in full
+C1001 = ' '.join(['1'] + ['0'] * 999 + ['1'])         # degree 1000: the short form of the curve
 # The files from which a first argument @name reads the list of the coefficients, by name, with what
 # each holds: those of the runs of test4.sh that read the list from a file (lf-tab, empty, nul,
 # word; its list of 2 MB is left out, see LIST_SKIPPED) and further ones for the errors suite; dir
@@ -32,6 +34,9 @@ C101 = ' '.join(['1'] + ['0'] * 99 + ['1'])           # 101 coefficients: degree
 # coefficients of 20001 digits must be read exactly (written as strings: Python limits the
 # conversion of an int to a string to 4300 digits).
 HUGE_ZEROS = '0' * 19999
+# deg3000 of test4.sh: (x^1500 + C)^2 + x (2 x - 1) with C = 10^100 + 7
+DEG3000_C2 = str((10 ** 100 + 7) ** 2)
+DEG3000_2C = str(2 * (10 ** 100 + 7))
 LIST_FILES = {'lf-tab': b' 1\t0\n\n\t1\r\n', 'empty': b'', 'nul': b'1 0 1\0 2\n',
               'word': b'1 0 x\n', 'nul-end': b'1 0 1\0', 'latin': b'1 0 \xe9 1\n',
               'utf8': '1 0 \u00e9 1\n'.encode(), 'bom': b'\xef\xbb\xbf1 0 1\n', 'at': b'@lf-tab\n',
@@ -40,6 +45,14 @@ LIST_FILES = {'lf-tab': b' 1\t0\n\n\t1\r\n', 'empty': b'', 'nul': b'1 0 1\0 2\n'
               'deg250': ' '.join(['1', '-1', '2'] + ['0'] * 122 + ['2'] + ['0'] * 124
                                  + ['1']).encode() + b'\n',
               'deg251': ' '.join(['1', '2', '1'] + ['0'] * 247 + ['-1', '2']).encode() + b'\n',
+              'deg999': ' '.join(['0', '1', '2'] + ['0'] * 995 + ['-1', '2']).encode() + b'\n',
+              'deg999z': ' '.join(['0', '1', '2'] + ['0'] * 995
+                                  + ['-1', '2', '0']).encode() + b'\n',
+              'deg1000': ' '.join(['1', '-1', '2'] + ['0'] * 497 + ['2'] + ['0'] * 499
+                                  + ['1']).encode() + b'\n',
+              'deg1001': ' '.join(['0', '1', '2'] + ['0'] * 997 + ['-1', '2']).encode() + b'\n',
+              'deg3000': ' '.join([DEG3000_C2, '-1', '2'] + ['0'] * 1497 + [DEG3000_2C]
+                                  + ['0'] * 1499 + ['1']).encode() + b'\n',
               'huge': f'-1{HUGE_ZEROS}6 0 1{HUGE_ZEROS}7\n'.encode()}
 LIST_DIRS = ('dir',)
 LIST_STDIN = b'1\n0\n1\n'
@@ -107,6 +120,13 @@ CASES = [
     (['@c101', '3', '-q'], '101 coefficients from a file: accepted'),
     (['@c102', '10'], '102 coefficients from a file: searched'),
     (['@c102x', '10'], '102 coefficients from a file, then a letter: error 11'),
+    ([C1001, '10'], 'degree 1000: the degree and the bits in place of the curve'),
+    ([C1001, '10', '-v'], 'degree 1000 under -v: the bits in place of the coefficients'),
+    ([C1000, '10'], 'degree 999: the curve in full'),
+    ([C1000 + ' 0', '10', '-v'], '1001 coefficients of a polynomial of degree 999: in full'),
+    ([C1001 + ' 0 0', '10', '-v', '-s'], 'leading zeros after degree 1000: the short form'),
+    (['@deg1001', '10', '-v', '-q'], 'the short form after a reversal, under -q too'),
+    (['-' + '9' * 40 + ' 0' * 1000 + ' 7', '3', '-v', '-s'], 'degree 1001 with a large coefficient'),
     (['@huge', '3', '-q'], 'coefficients of 20001 digits from a file'),
     (['@-', '10', '-q'], 'the list from the standard input'),
     (['@-', '0'], 'the list from the standard input and a bad height: error 4'),

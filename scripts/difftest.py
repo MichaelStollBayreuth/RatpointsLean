@@ -691,7 +691,7 @@ def big_search(args, st, out):
         k += 1
     per = min(2 * H + 1, hi * width + k) if st.ends else 2 * H + 1
     numerators = n * per
-    # a search region suppresses the reversal unless it is the whole box (find_points.c:4736)
+    # a search region suppresses the reversal unless it is the whole box (find_points.c:4753)
     first = first_point(out) if st.one and (st.ends or lo > 1 or hi < H) else None
     if first is not None and first[1] == 0:
         numerators = 0

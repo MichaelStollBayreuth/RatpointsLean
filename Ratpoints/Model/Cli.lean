@@ -151,7 +151,7 @@ for the same error, a blank line, the message and a blank line; for error 2 the 
 usage instead, which error 6 prints after its message, as its case falls through to that of
 error 2.
 
-C: `main.c:1145-1157`, `main.c:1159-1163`
+C: `main.c:1162-1174`, `main.c:1176-1180`
 
 Deviation: the banner and the usage are those of `ratpoints-lean`. -/
 def Failure.message : Failure → String
@@ -171,7 +171,7 @@ def Failure.message : Failure → String
 with which its function `error` exits, unless a write to the standard output has failed
 (`Ratpoints.Cli.main`).
 
-C: `main.c:1164-1165` -/
+C: `main.c:1181-1182` -/
 def Failure.status : Failure → UInt32
   | .tooFewArguments => 2
   | .tooManyCoefficients => 3
@@ -201,7 +201,7 @@ the coefficients and of the height (`Ratpoints.Refusal.tooManyCoefficients`,
 `Ratpoints.Refusal.tooFewCoefficients`, `Ratpoints.Refusal.incorrectHeight`) mapped to the errors 3,
 5 and 4 with which `read_input` refuses those inputs before the library is called, where
 `main.c:271` gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it
-can be given (`find_points.c:4604-4605`, `find_points.c:4683` and `find_points.c:4708`); no command
+can be given (`find_points.c:4604-4605`, `find_points.c:4700` and `find_points.c:4725`); no command
 line reaches them; no `mpz_clear`. -/
 def Failure.ofRefusal : Refusal → Failure
   | .tooManyCoefficients => .tooManyCoefficients
@@ -294,7 +294,7 @@ whether no point is printed (`-z`, and not `-Z`), the format of a point (`-f`), 
 `-fm`, `-fe`), none for none, and the exact ends of the search intervals of the command line, which
 `process` reads (`ends`, as the options `-l` and `-u` fill it: `Ratpoints.Cli.Intervals`).
 
-C: `main.c:59-66`, `main.c:421-428`, `ratpoints.h:433`
+C: `main.c:59-66`, `main.c:421-428`, `ratpoints.h:442`
 
 Deviation: a structure for the global variables; `Option String` for the strings and the format,
 `none` for the null pointer, and Lean strings for the C strings of the command line, which the Lean
@@ -790,7 +790,8 @@ inductive Message where
   /-- Message 4: the numbers `sp1`, `sp2` and `sp3` of the moduli used in the first stage, in the
   first two and in all three stages. -/
   | moduli (sp1 sp2 sp3 : Nat)
-  /-- Message 5: the curve of the coefficient list `c`. -/
+  /-- Message 5: the curve of the coefficient list `c`, or its degree and the size of its
+  coefficients. -/
   | curve (c : List Int)
   /-- Message 6: the height bound `H`. -/
   | height (H : Nat)
@@ -806,14 +807,17 @@ def showIntervals (dom : List (Double × Double)) : String :=
 
 /-- The text of a message of the report, as `message` of `main.c` prints it.
 
-C: `main.c:1081-1085`, `main.c:1088-1142`
+C: `main.c:1081-1085`, `main.c:1088-1159`
 
 Deviation: the banner of `ratpoints-lean` (`Ratpoints.Cli.banner`); a constructor for each message
 that `ratpoints-lean` prints, with its data, for the number `n` and the arguments of the library:
 message 1, which the program prints when `read_input` fails, which it never does, is left out; the
 loops over the intervals of messages 3 and 8 as `Ratpoints.Cli.showIntervals`, the conversion `%lf`
-of message 8 being `%f`; the difference `sp3_used - sp2_used` of message 4 an integer, for the
-`long`; no `fflush`. -/
+of message 8 being `%f`; in message 5, which from the degree `Ratpoints.printDegree` on prints the
+degree and the number of bits of the largest coefficient in place of the polynomial, the degree of
+the list with its leading zeros dropped as `Ratpoints.BruteForce.degree` and the number of bits as
+`Ratpoints.Report.coeffBits`, for the two loops; the difference `sp3_used - sp2_used` of message 4
+an integer, for the `long`; no `fflush`. -/
 def Message.text : Message → String
   | .banner => s!"\n{Cli.banner}\n"
   | .count total pairs =>
@@ -822,7 +826,11 @@ def Message.text : Message → String
   | .moduli sp1 sp2 sp3 => s!"{sp1} moduli used for first stage of sieving,\n" ++
     s!"{sp2} moduli used for both stages of sieving together,\n" ++
     s!"{(sp3 : Int) - sp2} further primes used in the third stage.\n"
-  | .curve c => s!"\nCurve equation is  y^2 = {printPoly c}\n"
+  | .curve c =>
+    let d := BruteForce.degree c
+    if printDegree ≤ d then s!"\nCurve equation is  y^2 = f(x), where f has degree {d} and " ++
+      s!"coefficients of at most {Report.coeffBits (c.take (d + 1))} bits\n\n"
+    else s!"\nCurve equation is  y^2 = {printPoly c}\n"
   | .height H => s!"max. Height = {H}\n"
   | .flags rev us us1 nj nc =>
     (if rev then "Polynomial was reversed for better performance.\n" else "") ++
@@ -987,7 +995,7 @@ failed write is not reported: when the reader of the output is gone, the write f
 `ratpoints` then, and the program exits quietly with the status 141 that the shell reports for
 `ratpoints`.
 
-C: `main.c:1174-1181`
+C: `main.c:1191-1198`
 
 Deviation: one write of the whole text and its flush, where `main.c` tests at its exit whether a
 write has failed since the program started; status 141 without a message when the reader of the
@@ -1033,6 +1041,14 @@ the library. -/
   (runWithFile ["@f", "10"] (some "@g".toUTF8)).2 == 11 &&
   (runWithFile ["@f", "10"] (some ByteArray.empty)).2 == 5 && (runWithFile ["@f"] none).2 == 2 &&
   runWithFile ["1 0 1", "10", "-q"] none == run ["1 0 1", "10", "-q"]
+
+-- Message 5 from the degree 1000 on, the leading zeros of the list not counted: the degree and the
+-- number of bits of the largest coefficient, and the polynomial below.
+#guard (Message.curve (1 :: List.replicate 999 0 ++ [-9, 0, 0])).text ==
+    "\nCurve equation is  y^2 = f(x), where f has degree 1000 and coefficients of at most 4 " ++
+      "bits\n\n" &&
+  (Message.curve (1 :: List.replicate 998 0 ++ [-9, 0, 0])).text ==
+    "\nCurve equation is  y^2 = - 9 x^999 + 1\n\n"
 
 -- A list of 102 coefficients is read and searched; error 3 is for a list of more than
 -- `maxDegree + 1` coefficients, too many for an example.

@@ -7,6 +7,10 @@ module
 
 public import Ratpoints.Model.Choice
 
+-- The `#guard` examples use the constants and the options of the sieve at compile time.
+meta import Ratpoints.Model.Constants
+meta import Ratpoints.Model.Params
+
 /-!
 # The report of the library
 
@@ -53,19 +57,32 @@ def width3 (n : Int) : String :=
 `printf(" ")` followed by `mpz_out_str` in base 10: each after a space. -/
 def longs (xs : List Int) : String := String.join (xs.map fun x ↦ s!" {x}")
 
+/-- The number of bits of the largest of the integers `xs` in absolute value, as `mpz_sizeinbase`
+counts them in base 2, `⌊log₂ |x|⌋ + 1` for `x ≠ 0` and `1` for a zero: what the report prints in
+place of the coefficients of a polynomial of a degree from `Ratpoints.printDegree` on. It is `0` for
+no integers.
+
+C: `find_points.c:4620-4631`
+
+Deviation: the list of the integers, for the array and the degree; a natural number for the
+`unsigned long`. -/
+def coeffBits (xs : List Int) : Nat := xs.foldl (fun bits x ↦ max bits (x.natAbs.log2 + 1)) 0
+
 /-! ### Before the search -/
 
 /-- The report of the arguments of a search, which `find_points_work_1` prints under
 `RATPOINTS_VERBOSE` once it has normalized them, before the reversal check: the degree `d` of the
-polynomial, the leading zeros dropped, and its coefficients `c₀, …, c_d` from the list `c`; the
-height bound `H`; the range of the denominators from `bLow` to `bHigh`; of the normalized options
-of the sieve `s`, the number of the primes to look at under `%3ld`, the ends of the second and of
-the first stage, each under `%3ld` or as chosen from the curve when it is negative, and the bound of
-the forbidden divisors; the depth `sturm` of the Sturm step, or that there is none for a negative
-depth; whether the points are not checked (`noCheck`), whether the polynomial is not reversed
-(`reverse` clear) and whether the Jacobi test is off; and a blank line.
+polynomial, the leading zeros dropped, and its coefficients `c₀, …, c_d` from the list `c`, or for
+`d` from `Ratpoints.printDegree` on the number of bits of the largest of them
+(`Ratpoints.Report.coeffBits`); the height bound `H`; the range of the denominators from `bLow` to
+`bHigh`; of the normalized options of the sieve `s`, the number of the primes to look at under
+`%3ld`, the ends of the second and of the first stage, each under `%3ld` or as chosen from the curve
+when it is negative, and the bound of the forbidden divisors; the depth `sturm` of the Sturm step,
+or that there is none for a negative depth; whether the points are not checked (`noCheck`), whether
+the polynomial is not reversed (`reverse` clear) and whether the Jacobi test is off; and a blank
+line.
 
-C: `find_points.c:4741-4775`
+C: `find_points.c:4758-4797`
 
 Deviation: the fields of the arguments as arguments, as the search normalizes them: the options of
 the sieve as `Ratpoints.SieveOptions.normalize` gives them, the range of the denominators, the
@@ -75,8 +92,10 @@ the bits `RATPOINTS_NO_REVERSE` and `RATPOINTS_NO_REVERSE_AUTO` of the flags, an
 def arguments (c : List Int) (d H : Nat) (s : SieveOptions) (bLow bHigh sturm : Int)
     (noCheck reverse : Bool) : String :=
   let chosen (n : Int) : String := if n < 0 then "(chosen from the curve)" else width3 n
-  s!"\nfind_points:\n  degree:       {d}\n  coefficients:{longs (c.take (d + 1))}\n" ++
-    s!"  height bound: {H}\n  denominators from {bLow} to {bHigh}\n" ++
+  s!"\nfind_points:\n  degree:       {d}\n  coefficients:" ++
+    (if d < printDegree then longs (c.take (d + 1))
+      else s!" of at most {coeffBits (c.take (d + 1))} bits (not printed)") ++
+    s!"\n  height bound: {H}\n  denominators from {bLow} to {bHigh}\n" ++
     s!"  number of primes to consider:     {width3 s.numPrimes}\n" ++
     s!"  number of moduli for sieving:     {chosen s.sp2}\n" ++
     s!"  number of moduli for first stage: {chosen s.sp1}\n" ++
@@ -91,11 +110,12 @@ def arguments (c : List Int) (d H : Nat) (s : SieveOptions) (bLow bHigh sturm : 
 the leading zeros dropped, which gives `r` (`Ratpoints.Setup.reversal`), as `find_points_work_1`
 prints it under `RATPOINTS_VERBOSE`: with the switch on, a line that it checks, and nothing more
 when it refuses the form; then, when it reverses the polynomial, which of its cases does so, with
-the reversed coefficients `c'₀, …, c'_d` for case 3, and otherwise that it does not, also with the
-switch off.
+the reversed coefficients `c'₀, …, c'_d` for case 3, or for `d` from `Ratpoints.printDegree` on the
+number of bits of the largest of them (`Ratpoints.Report.coeffBits`), and otherwise that it does
+not, also with the switch off.
 
-C: `find_points.c:4790-4793`, `find_points.c:4807-4808`, `find_points.c:4821-4824`,
-`find_points.c:4841-4851`, `find_points.c:4854-4857`
+C: `find_points.c:4812-4815`, `find_points.c:4829-4830`, `find_points.c:4843-4846`,
+`find_points.c:4863-4878`, `find_points.c:4881-4884`
 
 Deviation: one text, from the result of the check, for the messages that the C code prints in its
 course, the case of a reversal read from the degree and the constant term as the check decides it:
@@ -109,7 +129,9 @@ def reversal (allow : Bool) (c : List Int) (d : Nat) (r : Except Refusal (List I
   | .ok (c', _, true) =>
     if d % 2 = 1 then
       "  odd degree, leading coefficient not +/-1, zero constant term, coefficient of x is " ++
-        s!"+/-1 ==> reverse\n  coefficients now:{longs (c'.take (d + 1))}\n\n"
+        "+/-1 ==> reverse\n  coefficients now:" ++
+        (if d < printDegree then longs (c'.take (d + 1))
+          else s!" of at most {coeffBits (c'.take (d + 1))} bits (not printed)") ++ "\n\n"
     else if c.getD 0 0 = 0 then "  even degree, zero constant term ==> reverse\n\n"
     else "  even degree, leading coefficient is a square, constant term is not a square " ++
       "==> reverse\n\n"
@@ -121,7 +143,7 @@ step refuses it, that it is negative on the search region when the step keeps no
 the intervals that it keeps, each as `[l, u] `, its ends under `%lf`
 (`Ratpoints.Double.printFixed`), and a blank line.
 
-C: `find_points.c:4910-4911`, `find_points.c:4914-4928`
+C: `find_points.c:4937-4938`, `find_points.c:4941-4955`
 
 Deviation: one text, from the result of the step, for the line before the step and the message
 after it, which the C code decides by the code that `_ratpoints_compute_sturm` returns: negative
@@ -147,8 +169,8 @@ and otherwise that they are squares times divisors of `lcf`, with the divisors, 
 when the divisor set-up `us1` has succeeded (`Ratpoints.Setup.setupUs1`), and that it has not
 otherwise; and a line before the 2-adic information.
 
-C: `find_points.c:4947-4948`, `find_points.c:4965-4968`, `find_points.c:4971-4976`,
-`find_points.c:4978-4991`, `find_points.c:4996-4997`
+C: `find_points.c:4974-4975`, `find_points.c:4992-4995`, `find_points.c:4998-5003`,
+`find_points.c:5005-5018`, `find_points.c:5023-5024`
 
 Deviation: one text for the messages between the Sturm step and the 2-adic information, the lines
 before the divisor set-up printed with those after it, from its result: the set-up prints nothing;
@@ -171,7 +193,7 @@ def setup (d : Nat) (lcf : Int) (us1 : Option (List Setup.DenInfo × List Nat)) 
 numerator and there is no point at infinity, which `find_points_work_1` prints under
 `RATPOINTS_VERBOSE`.
 
-C: `find_points.c:5010-5011` -/
+C: `find_points.c:5037-5038` -/
 def noClasses : String := "  no denominator admits a numerator mod 64 ==> no points\n\n"
 
 /-- The report of the packing of the numerators, which `find_points_work_1` prints under
@@ -181,7 +203,7 @@ stride `2 ^ k` of the packing of its numerators under ` %ld`, or ` -` when the c
 numerator, its pattern being `0`, from the classes `cls` (`Ratpoints.Sieve.NumClass`); then the
 number `numPrimes` of the primes to look at.
 
-C: `find_points.c:5019-5035`, `find_points.c:5038-5041`
+C: `find_points.c:5046-5062`, `find_points.c:5065-5068`
 
 Deviation: the pattern of a class, one word in the model, for the first word of its bit array
 (`EXT0`), which repeats the pattern; a list for the array `rep`. -/
@@ -198,7 +220,7 @@ def packing (cls : Vector NumClass 64) (numPrimes : Int) : String :=
 the choice of the moduli looks at (`Ratpoints.sievingInfo`), which `find_points_work_1` prints under
 `RATPOINTS_VERBOSE`.
 
-C: `find_points.c:5057-5059` -/
+C: `find_points.c:5084-5086` -/
 def noPoints (p : Nat) : String := s!"  no points mod p = {p} ==> no rational points\n\n"
 
 /-- The report at the end of the choice of the moduli `P`, which `sieving_info` prints under
@@ -224,7 +246,7 @@ valuations up to `M`, the least `f ≥ 1` with the bits `f, …, M` of `mask` se
 `M` is clear: the valuations `m < f` excluded, each as ` v_p(b)=m`, and the tail as ` p^f|b` when
 `f ≤ M`.
 
-C: `find_points.c:5099-5108`
+C: `find_points.c:5126-5135`
 
 Deviation: natural numbers for the `long`s and for the mask, a `while` loop for each of the two
 loops `for`, the first with the power and the valuation in the order of its body. -/
@@ -249,7 +271,7 @@ excluded at each prime of `forbVal`, tested by its valuations
 (`Ratpoints.Report.excludedValuations`, with the largest denominator `bHigh`); ` (lcf/b) = -1` when
 the Jacobi test runs (`useJacobi`); and a line feed.
 
-C: `find_points.c:5093-5098`, `find_points.c:5109-5113`
+C: `find_points.c:5120-5125`, `find_points.c:5136-5140`
 
 Deviation: loops over the lists, for the loops over the zero-terminated arrays `forb_ba` and
 `forbidden`; the switch of the Jacobi test as a Boolean, for the bit `RATPOINTS_USE_JACOBI` of the
@@ -272,7 +294,7 @@ the number of its moduli and its moduli, each under ` %ld`; the cost of one exac
 (`Ratpoints.Report.excluded`, with the switch `useJacobi` of the Jacobi test and the largest
 denominator `bHigh`); and a blank line.
 
-C: `find_points.c:5077-5092`, `find_points.c:5114-5116`
+C: `find_points.c:5104-5119`, `find_points.c:5141-5143`
 
 Deviation: the moduli of the stages as the moduli of the sieve entries in their order, for the
 fields `p` of the entries of `sieve_list`; the doubles as values of Lean's `Float`
@@ -297,7 +319,7 @@ def moduli (si : SievingInfo) (useJacobi : Bool) (bHigh : Nat) : Id String := do
 /-- The line before the points at infinity, which `find_points_work_1` prints under
 `RATPOINTS_VERBOSE` when there are points at infinity.
 
-C: `find_points.c:5125-5127` -/
+C: `find_points.c:5152-5154` -/
 def atInfinity : String := "Points at infinity:\n"
 
 /-- The lines after the points at infinity, which `find_points_work_1` prints under
@@ -306,7 +328,7 @@ at infinity, when there are points at infinity (`atInf`), and, unless the Sturm 
 interval (`sturmEmpty`), in which case the search returns there, a line before the sieve and a blank
 line.
 
-C: `find_points.c:5154`, `find_points.c:5161-5163`
+C: `find_points.c:5181`, `find_points.c:5188-5190`
 
 Deviation: one text for the line feed after the points at infinity and the line before the sieve,
 between which the C code returns when the Sturm step has left no interval. -/
@@ -326,6 +348,22 @@ def sieving (atInf sturmEmpty : Bool) : String :=
 -- valuation `3` of a denominator up to `30`).
 #guard [(0b0110, " v_3(b)=1 v_3(b)=2"), (0b1100, " 3^2|b"), (0b1010, " v_3(b)=1 3^3|b")].all
   fun (m, s) ↦ Id.run (excludedValuations 3 m 30) == s
+
+-- The number of bits as `mpz_sizeinbase` counts them, and the two lists of the report from the
+-- degree 1000 on, where 999 still prints the coefficients.
+#guard coeffBits [] == 0 && coeffBits [0] == 1 && coeffBits [0, 1, -1] == 1 &&
+  coeffBits [3, -8, 7] == 4 && coeffBits [2 ^ 64 - 1, 5] == 64 && coeffBits [-2 ^ 64] == 65
+#guard
+  let c := 3 :: List.replicate 999 0 ++ [-5]
+  ((arguments c 1000 7 {} 1 7 10 false true).splitOn "\n").take 4 ==
+      ["", "find_points:", "  degree:       1000",
+        "  coefficients: of at most 3 bits (not printed)"] &&
+    ((arguments (c.take 1000) 999 7 {} 1 7 10 false true).splitOn "\n")[3]! ==
+      "  coefficients: 3" ++ String.join (List.replicate 999 " 0") &&
+    (reversal true (0 :: 1 :: c) 1001 (.ok (c ++ [1, 0], 1001, true))).endsWith
+      "==> reverse\n  coefficients now: of at most 3 bits (not printed)\n\n" &&
+    (reversal true [0, 1, 0, 2] 3 (.ok ([0, 2, 0, 1], 3, true))).endsWith
+      "==> reverse\n  coefficients now: 0 2 0 1\n\n"
 
 end Report
 

@@ -221,7 +221,7 @@ density left while each pays for itself; the primes left after it are the reserv
       (\csource{find_points.c}{3042}{3052}).
   \end{enumerate}
   The result holds the cut points $s_1 \le s_2 \le s_3$, the ends of the three stages, the number of
-  primes looked at and the estimates of the run (\csource{ratpoints.h}{421}{423}), with the sieve
+  primes looked at and the estimates of the run (\csource{ratpoints.h}{430}{432}), with the sieve
   entries of all the moduli, the reserve included, their reciprocals, the forbidden divisors, the
   store of the tables of rows and the switch of the checked loop.
 \end{definition}
@@ -358,7 +358,7 @@ blocks from $j + \mathrm{adaptLag} + 1$ on, with the lag $\mathrm{adaptLag} = 32
   correction changes an end. The run starts from the decision of the choice for
   block~$0$, sifts each block with the decisions made before it and folds its report, returns after
   the block in which the callback stopped the search, and gives the ends~$s_2$ and~$s_3$ of the
-  last block folded, the moduli used (\csource{find_points.c}{5202}{5210}).
+  last block folded, the moduli used (\csource{find_points.c}{5229}{5237}).
 \end{definition}
 
 \begin{lemma}[The correction keeps the decisions well formed]\label{lem:correction}

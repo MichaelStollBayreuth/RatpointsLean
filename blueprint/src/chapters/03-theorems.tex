@@ -36,8 +36,8 @@ list. The statements speak about the last two.
   \leanok
   The search with a callback and a print channel models the library function \verb|find_points|, the
   function \verb|find_points_work| that it calls and the start of \verb|find_points_work_1|
-  (\csource{ratpoints.h}{462}{463}, \csource{find_points.c}{4567}{4573},
-  \csource{find_points.c}{4674}{4683}, among others). It makes the refusals of the program in its
+  (\csource{ratpoints.h}{471}{472}, \csource{find_points.c}{4567}{4573},
+  \csource{find_points.c}{4691}{4700}, among others). It makes the refusals of the program in its
   order (Lemma~\ref{lem:setupOrder}), first those of the coefficient list, the height bound and the
   leading zeros (errors 3, 5, 4 and~8), then those of the set-up (Definition~\ref{def:setupSearch}),
   which may also return at once after the Sturm step with nothing delivered; otherwise it runs the
@@ -58,22 +58,22 @@ list. The statements speak about the last two.
   For the polynomial that the set-up hands on, with the flags of the check (the flag of the reversal
   and the two options of the output), the range of the denominators and the intervals that the Sturm
   step leaves, with its flag \verb|sturm_empty|, the search sets up the tests on the denominators
-  (\csource{find_points.c}{4950}{4964}) and the 2-adic information, and returns with nothing
+  (\csource{find_points.c}{4977}{4991}) and the 2-adic information, and returns with nothing
   delivered when no class modulo~$64$ admits a numerator and there is no point at infinity
-  (\csource{find_points.c}{5004}{5009}); it tests whether the coefficients are all \verb|long|s,
-  (Definition~\ref{def:maxDegree}; \csource{find_points.c}{4864}{4873}), which chooses how the tables reduce them modulo a prime; it
+  (\csource{find_points.c}{5031}{5036}); it tests whether the coefficients are all \verb|long|s,
+  (Definition~\ref{def:maxDegree}; \csource{find_points.c}{4891}{4900}), which chooses how the tables reduce them modulo a prime; it
   chooses the moduli
   (Definition~\ref{def:choiceOfModuli}), with nothing delivered when the curve has no points modulo
-  a prime (\csource{find_points.c}{5046}{5056}); it delivers the points at infinity
+  a prime (\csource{find_points.c}{5073}{5083}); it delivers the points at infinity
   (Definition~\ref{def:pointsAtInfinity}) and returns when the callback has stopped the search or
-  the Sturm step has left no interval (\csource{find_points.c}{5150}{5153},
-  \csource{find_points.c}{5155}{5156}); otherwise it runs over the blocks of the denominators of the
+  the Sturm step has left no interval (\csource{find_points.c}{5177}{5180},
+  \csource{find_points.c}{5182}{5183}); otherwise it runs over the blocks of the denominators of the
   shape of the loop (Definition~\ref{def:Shape}) with the correction of the moduli
-  (Definition~\ref{def:correction}, \csource{find_points.c}{5187}{5189}). Each point is mapped back
+  (Definition~\ref{def:correction}, \csource{find_points.c}{5214}{5216}). Each point is mapped back
   to the caller's curve when the flag of the reversal is set (Definition~\ref{def:reversal}). The
   outcome has the bits of the flags, the search intervals that the Sturm step leaves (those that
   this search is given), and the numbers of the moduli of the last block that the run sifts
-  (\csource{find_points.c}{5260}{5263}), $0$ after a return before the sieve.
+  (\csource{find_points.c}{5287}{5290}), $0$ after a return before the sieve.
 \end{definition}
 
 \section{The points that a search finds}\label{sec:theoremsPoints}

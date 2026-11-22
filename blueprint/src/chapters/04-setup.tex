@@ -29,25 +29,25 @@ $\mathrm{maxDegree}$ (\csource{find_points.c}{4604}{4605}), and then:
 \begin{enumerate}
   \item it drops the leading zero coefficients and refuses the form as not squarefree when that
     lowers $\lceil n/2 \rceil$, that is when $d + 2 \le N$, so that $Z^2 \mid \Phi_c$
-    (\csource{find_points.c}{4674}{4682}); this catches every list of two or more entries of
+    (\csource{find_points.c}{4691}{4699}); this catches every list of two or more entries of
     degree~$0$, so that the refusal of a degree~$0$ as bad arguments that follows
-    (\csource{find_points.c}{4683}{4683}) is never met from the program; then it refuses a height
-    bound below~$1$ (\csource{find_points.c}{4708}{4708});
+    (\csource{find_points.c}{4700}{4700}) is never met from the program; then it refuses a height
+    bound below~$1$ (\csource{find_points.c}{4725}{4725});
   \item it turns the reversal off when the caller gives search intervals or a range of the
-    denominators other than $1, \dots, H$ (\csource{find_points.c}{4736}{4737}), and runs the
+    denominators other than $1, \dots, H$ (\csource{find_points.c}{4753}{4754}), and runs the
     reversal check, which refuses the form when~$d$ is even and $c_0 = c_1 = 0$, so that
-    $X^2 \mid \Phi_c$, and may reverse the polynomial (\csource{find_points.c}{4782}{4853});
+    $X^2 \mid \Phi_c$, and may reverse the polynomial (\csource{find_points.c}{4804}{4880});
   \item it takes the default interval $[-H, H]$, its ends rounded outward to doubles, when the
     caller gives none, and otherwise refuses as bad arguments search intervals without $l \le u$,
-    not increasing and strictly apart, or with a NaN end (\csource{find_points.c}{4881}{4905}),
+    not increasing and strictly apart, or with a NaN end (\csource{find_points.c}{4908}{4932}),
     which no command line causes;
   \item with the Sturm step on, it refuses the form when the remainder chain of the polynomial
     searched meets a zero remainder, then restricts the search intervals, and returns when nothing
-    is left to search and there is no point at infinity (\csource{find_points.c}{4907}{4942});
+    is left to search and there is no point at infinity (\csource{find_points.c}{4934}{4969});
   \item it sets up the tests on the denominators and chooses the moduli, each with an exit when it
-    finds that the curve has no points (\csource{find_points.c}{5004}{5013},
-    \csource{find_points.c}{5046}{5062});
-  \item it delivers the points at infinity (\csource{find_points.c}{5118}{5155}) and sieves.
+    finds that the curve has no points (\csource{find_points.c}{5031}{5040},
+    \csource{find_points.c}{5073}{5089});
+  \item it delivers the points at infinity (\csource{find_points.c}{5145}{5182}) and sieves.
 \end{enumerate}
 The program reports the refusal as not squarefree with its error~8, and the other negative codes of
 the library with its error~9, but for a lack of memory, error~10, whose message adds a hint on
@@ -66,7 +66,7 @@ deviations of the set-up are noted in the sections below.
   \leanok
   The refusals (Definition~\ref{def:Options}) carry the errors~3, 5, 4, 8 and~9 of the program; an
   integer is a \verb|long| when it lies in $[-2^{63}, 2^{63})$. The set-up of \verb|find_points_work_1|, whose state is declared at
-  \csource{find_points.c}{4627}{4635}, for the list~$c$ of degree~$d$ and the options~$o$,
+  \csource{find_points.c}{4644}{4652}, for the list~$c$ of degree~$d$ and the options~$o$,
   normalizes the options (\lname{Ratpoints.Options.normalize}), so that the reversal is allowed only
   when~$o$ allows it and its search region is the whole box; runs the reversal check
   (Definition~\ref{def:reversal}), which may refuse or hand on a list~$c'$ of degree~$d'$; takes
@@ -174,8 +174,8 @@ reversal, not the reversed coefficients.
   the list $c_d, \dots, c_1, c_0$ with the degree~$d - 1$ (case~1); for even~$d$ with~$c_d$ a square
   and~$c_0$ not, the list $c_d, \dots, c_0$ (case~2); for odd~$d$ with $|c_d| \ne 1$, $c_0 = 0$ and
   $|c_1| = 1$, the list $c_0, c_d, \dots, c_1$ (case~3); and otherwise~$c$ itself; with a flag that
-  says whether the list is reversed (\csource{find_points.c}{4794}{4806},
-  \csource{find_points.c}{4809}{4820}, \csource{find_points.c}{4825}{4840}). The squares are those
+  says whether the list is reversed (\csource{find_points.c}{4816}{4828},
+  \csource{find_points.c}{4831}{4842}, \csource{find_points.c}{4847}{4862}). The squares are those
   of \verb|mpz_perfect_square_p|: $0$ and the squares of the positive integers. The map of a
   reversed search sends a point $(a, y, b)$ of the reversed curve to $(b, y, a)$ for $a \ge 0$ and
   to $(-b, y, -a)$ for $a < 0$; the exact check applies it to every point it finds when the flag of
@@ -299,8 +299,8 @@ curve.
   $(0, 1)$ when the flag of the reversal is set, one call with $(a : 0 : b)$ under
   $\mathrm{noCheck}$ or for odd~$d$, and otherwise the call with $(a : s : b)$ for
   $s = \lfloor \sqrt{c_d} \rfloor$ and then, unless that call stopped the search or~$\mathrm{noY}$
-  is set, the call with $(a : -s : b)$; nothing otherwise (\csource{find_points.c}{4944}{4946},
-  \csource{find_points.c}{5118}{5124}, \csource{find_points.c}{5128}{5149}). The contract: on a
+  is set, the call with $(a : -s : b)$; nothing otherwise (\csource{find_points.c}{4971}{4973},
+  \csource{find_points.c}{5145}{5151}, \csource{find_points.c}{5155}{5176}). The contract: on a
   delivery whose flag is clear these calls are the delivery (Definition~\ref{def:deliver}) of the
   list of $(1, 0, 0)$, or of $(1, s, 0)$ and, unless~$\mathrm{noY}$, $(1, -s, 0)$, each mapped by
   the map of the reversal when its flag is set, and of the empty list when there are no points at
@@ -323,7 +323,7 @@ examines the table of the residues~$x$ with~$f(x)$ a square modulo~$p$, with a l
 points at infinity modulo~$p$ (Chapter~\ref{chap:rows}). When no entry is true,
 \verb|examine_prime| returns~$-1$ (\csource{find_points.c}{1776}{1776}) and the search ends with no
 points (\csource{find_points.c}{2630}{2631}, \csource{find_points.c}{3012}{3016},
-\csource{find_points.c}{5046}{5062}). The model's table with the exit,
+\csource{find_points.c}{5073}{5089}). The model's table with the exit,
 \lname{Ratpoints.Sieve.examinePrime?}, is then none, and otherwise the reference table
 \lname{Ratpoints.Sieve.examinePrime}, for every prime below
 $\mathrm{maxPrimeEven} = 2^{\mathrm{maxBitsInPrime}}$, the bound of the moduli of the sieve, below
