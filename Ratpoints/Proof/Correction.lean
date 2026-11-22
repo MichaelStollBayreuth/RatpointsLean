@@ -897,9 +897,9 @@ calling thread gives (`Ratpoints.Sieve.sieveRun`), for the hypotheses of
 `Ratpoints.Sieve.sieveRun_spec` and words of the classes and ranges of the numerators of
 `Ratpoints.Sieve.RunWords`. The pool of threads of the C code meets these hypotheses: a thread
 starts block `i` only once the blocks before block `i - RP_ADAPT_LAG` are folded
-(`find_points.c:4313-4317`), and the tables of rows that the threads share only gain complete rows,
+(`find_points.c:4320-4324`), and the tables of rows that the threads share only gain complete rows,
 published once built (`init.c:180`, `init.c:241`, `init.c:391`, `init.c:443`), so that they fit all
-the entries whenever a thread reads them (`find_points.c:3179`, `find_points.c:3552-3554`). -/
+the entries whenever a thread reads them (`find_points.c:3186`, `find_points.c:3559-3561`). -/
 theorem run_deliverSlots_eq_fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : CheckFlags)
     (s : SieveOptions) (P : Params) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)

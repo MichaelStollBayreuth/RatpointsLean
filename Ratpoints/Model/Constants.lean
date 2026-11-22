@@ -544,12 +544,12 @@ def adaptLag : Nat := 32
 /-- About how many blocks the steps of a run are cut into, `RP_BLOCKS_WANTED`
 (`Ratpoints.Sieve.blockLength`).
 
-C: `find_points.c:3750-3752` -/
+C: `find_points.c:3757-3759` -/
 def blocksWanted : Nat := 1024
 
 /-- The least number of steps of a block, `RP_BLOCK_MIN` (`Ratpoints.Sieve.blockLength`).
 
-C: `find_points.c:3753-3755` -/
+C: `find_points.c:3760-3762` -/
 def blockMin : Nat := 16
 
 /-- The fixed length of the blocks that a build of `ratpoints` may set, `RP_BLOCK_LEN`, to test the
@@ -591,7 +591,7 @@ theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
 
 /-- The fixed length of the blocks, when a build sets one (`Ratpoints.blockLen`), is positive, as
-the C code assumes when it divides by it (`find_points.c:3868`): so the length of the blocks of a
+the C code assumes when it divides by it (`find_points.c:3875`): so the length of the blocks of a
 run is at least 1 (`Ratpoints.Sieve.blockLength`), and the loops of the shapes over the steps of a
 block end. -/
 theorem blockLen_pos : ∀ n ∈ blockLen, 0 < n := by decide

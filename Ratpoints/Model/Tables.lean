@@ -527,8 +527,8 @@ up: with it, the remainder (`Ratpoints.Sieve.mulMod`) and the quotient (`Ratpoin
 `examine_prime`, `make_power` and `make_modulus` make (`find_points.c:1822`, `find_points.c:2438`
 and `find_points.c:2470`; here `Ratpoints.primeEntry` and `Ratpoints.makeModulus`), in the tables of
 the Jacobi test (`find_points.c:713`; here `Ratpoints.Sieve.jacobiSetup`), and in the entries of the
-forbidden divisors tested with words (`find_points.c:2666`, `find_points.c:2686` and
-`find_points.c:2756`; here `Ratpoints.Sieve.ForbiddenEntry.magic`), with which the C code reduces
+forbidden divisors tested with words (`find_points.c:2673`, `find_points.c:2693` and
+`find_points.c:2763`; here `Ratpoints.Sieve.ForbiddenEntry.magic`), with which the C code reduces
 the word number of the first word of a block (`Ratpoints.Sieve.forbStarts`). For `p = 1`, which is
 no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps to `0` in the C code; the reductions,
 which read it as a 64-bit word, read `0` too. -/

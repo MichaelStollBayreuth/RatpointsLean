@@ -81,8 +81,9 @@ def TakeEntriesInvariant (Q : ModulusCandidate → Prop) (start : Nat) :
 stage: it keeps a property `Q` of the candidates, since it only drops candidates, and the candidates
 taken from `start` on lie within the pool. -/
 theorem takeEntries_spec (Q : ModulusCandidate → Prop) (pool : Array ModulusCandidate)
-    (start : Nat) (used : UInt64) (want : Int) (rate bpw target : Float) (extra : Nat) :
-    ⦃ (∀ e ∈ pool, Q e) ∧ start ≤ pool.size ⦄ takeEntries pool start used want rate bpw target extra
+    (start : Nat) (used : UInt64) (want max : Int) (rate bpw target : Float) (extra : Nat) :
+    ⦃ (∀ e ∈ pool, Q e) ∧ start ≤ pool.size ⦄
+    takeEntries pool start used want max rate bpw target extra
     ⦃ fun r ↦ (∀ e ∈ r.1, Q e) ∧ start + r.2.2.2 ≤ r.1.size ⦄ := by
   vcgen [takeEntries, dropUsed_spec Q, phase1Wants_true] invariants
   | inv1 => TakeEntriesInvariant Q start

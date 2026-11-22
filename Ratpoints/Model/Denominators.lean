@@ -288,7 +288,7 @@ def forbiddenValuations (c : List Int) (d p bHigh : Nat) (cm : Array Nat) : Id N
 (`Ratpoints.Sieve.forbiddenValuations`) that holds all of them says that `p` divides no denominator
 of a point.
 
-C: `find_points.c:2650-2659`
+C: `find_points.c:2657-2666`
 
 Deviation: a natural number for the `unsigned long` mask, without the cap `m < LONG_LENGTH - 1` of
 the loop, which never binds for a `long` `b_high` and an odd prime, the loop ending before `m = 40`
@@ -316,7 +316,7 @@ when it is not `0`, gives `p` with its words, the first `p` words of the row of 
 words when there are no points at infinity modulo `p`, which for even `d` says that `c_d` is not a
 square modulo `p`.
 
-C: `find_points.c:2644-2649`, `find_points.c:2660-2694`
+C: `find_points.c:2651-2656`, `find_points.c:2667-2701`
 
 Deviation: the entry returned, for the entries that the C code writes into the arrays
 `args->forb_ba` and `args->forbidden` and counts; the words of the prime an array of the first `p`
@@ -345,8 +345,8 @@ table the first `p` words of its row of `0` (`Ratpoints.Sieve.sieves0`), and for
 its words made as the C code makes them after the loop (`Ratpoints.Sieve.forbiddenRow`); both lists
 in the order found.
 
-C: `find_points.c:2550-2553`, `find_points.c:2578-2579`, `find_points.c:2727-2790`,
-`find_points.c:2796-2807`
+C: `find_points.c:2557-2560`, `find_points.c:2585-2586`, `find_points.c:2734-2797`,
+`find_points.c:2803-2814`
 
 Deviation: the position `examined` as an argument, for the final `pn_lim` of the loop of the tables;
 the Kronecker symbol by the table of the squares modulo `p`, which marks `0` as a square, for
@@ -594,7 +594,7 @@ def ceilSqrt (n : Nat) : Nat := Nat.sqrt (n - 1) + 1
 
 /-- The largest `k` with `k ^ 2 ≤ n`, `⌊√n⌋`.
 
-C: `find_points.c:3787-3795`
+C: `find_points.c:3794-3802`
 
 Deviation: the exact square root of the natural numbers (`Nat.sqrt`), for the square root in
 `double` corrected by a step either way; natural numbers for the `long`s, so that `0` is the only
@@ -606,7 +606,7 @@ the leading coefficient, with its valuation `val` and its slope (`Ratpoints.Setu
 `Ratpoints.Setup.setupUs1`), the valuation `v = v_p(b)` (`Ratpoints.Setup.valuation`) has
 `v ≥ slope` and `v + val` odd, and true otherwise.
 
-C: `find_points.c:3965-3974`
+C: `find_points.c:3972-3981`
 
 Deviation: the test returned, for the flag `flag`; natural numbers for the `int`s and `long`s. -/
 def denInfoTest (info : List Setup.DenInfo) (b : Nat) : Id Bool := do
@@ -621,7 +621,7 @@ def denInfoTest (info : List Setup.DenInfo) (b : Nat) : Id Bool := do
 `v_p(b)` (`Ratpoints.Setup.valuation`); then, with the Jacobi test on (`useJacobi`) and no tables,
 that the binary algorithm (`Ratpoints.Sieve.jacobi`) gives `(lcf / b*) = 1`.
 
-C: `find_points.c:4031-4032`, `find_points.c:4034-4062`
+C: `find_points.c:4038-4039`, `find_points.c:4041-4069`
 
 Deviation: the binary algorithm of `jacobi` also where the run calls `jacobi1` on the `long`
 `lcf_long` (`Ratpoints.Sieve.jacobi`); bit `v_p(b)` of the mask of a natural number, false beyond
@@ -647,7 +647,7 @@ the forbidden divisors tested with words and by their valuations, the switch of 
 its tables when they apply and the leading coefficient (even degree, when there is a test); and
 every denominator.
 
-C: `find_points.c:3746-3749`, `find_points.c:3757-3770`, `find_points.c:3784`
+C: `find_points.c:3753-3756`, `find_points.c:3764-3777`, `find_points.c:3791`
 
 Deviation: an inductive type with the data of each shape, for the constant `shape` and the fields of
 `rp_run` that the shapes read, with these exceptions: the forbidden divisors as lists, for `forb_ba`
@@ -681,7 +681,7 @@ denominator `bHigh` (`Ratpoints.Sieve.jacobiSetup`), and `lcf`; and every denomi
 bounds of the search intervals `domain` for the height bound `H` and the denominators up to `bHigh`
 (`Ratpoints.Sieve.exactBounds`) are made after the shape, once for the run.
 
-C: `find_points.c:3799-3827`, `find_points.c:3890-3891`, `find_points.c:3897-3898`
+C: `find_points.c:3806-3834`, `find_points.c:3897-3898`, `find_points.c:3904-3905`
 
 Deviation: the shape returned with its data, for the fields of the run that `run_setup` fills, and
 Booleans and an option for the bits `RATPOINTS_USE_SQUARES`, `RATPOINTS_USE_SQUARES1`,

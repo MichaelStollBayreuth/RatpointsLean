@@ -294,7 +294,7 @@ theorem nodup_squares1Dens {divisors : List ℕ} (hnd : divisors.Nodup)
     exact Nat.eq_of_mul_sq_eq_mul_sq (hsq s hs) (hsq s' hs') (by lia) h2
 
 /-- The denominators `k ^ 2` of the square shape, which the C code computes as `long`s
-(`find_points.c:3943`), are at most `bHigh`, and so `long`s for a `long` `bHigh`. -/
+(`find_points.c:3950`), are at most `bHigh`, and so `long`s for a `long` `bHigh`. -/
 theorem fitsLong_of_mem_squaresDens {bLow bHigh b : ℕ} (hb : b ∈ squaresDens bLow bHigh)
     (hH : bHigh < 2 ^ 63) : fitsLong (b : ℤ) = true := by
   obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hb
@@ -302,7 +302,7 @@ theorem fitsLong_of_mem_squaresDens {bLow bHigh b : ℕ} (hb : b ∈ squaresDens
   lia [le_floorSqrt_iff.mp (by lia [List.mem_range'_1.mp hk] : k ≤ floorSqrt bHigh)]
 
 /-- The denominators `s k ^ 2` of the divisor shape, which the C code computes as `long`s
-(`find_points.c:3961`), are at most `bHigh`, and so `long`s for a `long` `bHigh`, as is
+(`find_points.c:3968`), are at most `bHigh`, and so `long`s for a `long` `bHigh`, as is
 `s k ≤ s k ^ 2` for `k ≥ 1`. -/
 theorem fitsLong_of_mem_squares1Dens {divisors : List ℕ} {bLow bHigh b : ℕ}
     (hb : b ∈ squares1Dens divisors bLow bHigh) (hH : bHigh < 2 ^ 63) :
@@ -450,8 +450,8 @@ theorem le_and_le_and_getLsbD_of_mem_wordsDens {db : UInt64} {forb : List Forbid
   exact ⟨ht.1.2, ht.2, ht.1.1.1⟩
 
 /-- The denominators `64 w + t` of the word shape, which the C code computes as `long`s
-(`base = w << LONG_SHIFT` and `b = base + RP_CTZL(b_bits)`, `find_points.c:4012`,
-`find_points.c:4029`), are at most `bHigh`, and so `long`s for a `long` `bHigh`; so is `64 w` for
+(`base = w << LONG_SHIFT` and `b = base + RP_CTZL(b_bits)`, `find_points.c:4019`,
+`find_points.c:4036`), are at most `bHigh`, and so `long`s for a `long` `bHigh`; so is `64 w` for
 the words `w ≤ ⌊bHigh / 64⌋` (`Ratpoints.Setup.fitsLong_mul_of_le_div`). -/
 theorem fitsLong_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
     (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) (hH : bHigh < 2 ^ 63) :

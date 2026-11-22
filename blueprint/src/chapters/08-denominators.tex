@@ -26,7 +26,7 @@ loop over the denominators into blocks (Chapter~\ref{chap:moduli}); the class of
 its first pattern and the packing of its numerators (Chapter~\ref{chap:sieve}).
 
 In the C code, \verb|find_points_work_1| sets the flags of the tests
-(\csource{find_points.c}{4674}{4674}, \csource{find_points.c}{4982}{5020}): for even~$d$ the
+(\csource{find_points.c}{4681}{4681}, \csource{find_points.c}{4989}{5027}): for even~$d$ the
 checked loop and, when~$c_d$ is not a square and the caller does not forbid it (the
 option~\verb|-j| of the program), the Jacobi test; for odd~$d$ the squares when $|c_d| = 1$ and the
 divisors of \verb|setup_us1| otherwise. The model keeps the order of the C code
@@ -195,13 +195,13 @@ once (\lname{Ratpoints.Sieve.ForbiddenEntry}), and primes with a mask of exclude
   modulo~$p$ (\csource{find_points.c}{2233}{2243}); the mask of the forbidden valuations at~$p$, a
   natural number, has bit~$m$ set for the $m \ge 1$ with $p^m \le b_{\mathrm{high}}$ that the test
   excludes (\csource{find_points.c}{2244}{2249}). The forbidden divisor of an examined prime~$p$
-  (\csource{find_points.c}{2660}{2694}): for $p \mid c_d$ and a nonzero mask, $p$ with its words
+  (\csource{find_points.c}{2667}{2701}): for $p \mid c_d$ and a nonzero mask, $p$ with its words
   when the mask holds every $m \ge 1$ with $p^m \le b_{\mathrm{high}}$, and~$p$ with its mask
   otherwise; for $p \nmid c_d$, $p$ with its words when~$c_d$ is not a square modulo~$p$, as the
   entry at infinity of its table says. Then, unless~$c_d$ is a square, the further primes~$p$ of the
   table, from the first one not examined, with $p^2 \le b_{\mathrm{high}}$ and~$c_d$ not a square
   modulo~$p$, with their words, while fewer than~$\mathrm{maxForbidden}$ forbidden divisors are
-  found (\csource{find_points.c}{2727}{2790}). The contracts: a true test means that one term of
+  found (\csource{find_points.c}{2734}{2797}). The contracts: a true test means that one term of
   least valuation excludes~$m$, and the mask is as described. A forbidden divisor is
   \emph{admissible} when it is the forbidden divisor of a prime of the table, made from the residues
   of the coefficients and the entry at infinity of its table, or, with words, a prime of the table
@@ -214,7 +214,7 @@ of word~$r$ clear exactly when $p \mid 64 r + j$, read from the generated patter
 the first~$\mathrm{numPrimes}$ primes of the table and made as \verb|sieving_info| makes them for
 the others (\lname{Ratpoints.Sieve.extract\_sieves0}). For even~$d$, and while fewer
 than~$\mathrm{maxForbidden}$ forbidden divisors have been found, the loop of the tables records the
-forbidden divisor of each examined prime (\csource{find_points.c}{2641}{2643}); these are admissible
+forbidden divisor of each examined prime (\csource{find_points.c}{2648}{2650}); these are admissible
 (\lname{Ratpoints.Sieve.isForbiddenEntry\_of\_run\_examinePrime?\_eq\_some} and its companion), so
 that the choice of the moduli hands on admissible forbidden divisors only
 (\lname{Ratpoints.IsSievingInfo}, Chapter~\ref{chap:moduli}).
@@ -305,9 +305,9 @@ The contract of the binary algorithm rests on invariants of its loops; $b^*$ is
   \uses{def:setupUs1, def:valuation, def:jacobi, def:Double, def:packing, def:bitArrays, def:exactBounds}
   \lean{Ratpoints.Sieve.Shape, Ratpoints.Sieve.runSetup, Ratpoints.Sieve.fst_run_runSetup, Ratpoints.Sieve.denInfoTest, Ratpoints.Sieve.wordsTest, Ratpoints.Sieve.Shape.dens, Ratpoints.Sieve.Shape.keep, Ratpoints.Sieve.wordsDens, Ratpoints.searchDens}
   \leanok
-  The four shapes with their data (\csource{find_points.c}{3746}{3749},
-  \csource{find_points.c}{3757}{3770}), which \verb|run_setup| chooses from the flags and returns
-  with the bounds of the search intervals (\csource{find_points.c}{3799}{3827}), and their
+  The four shapes with their data (\csource{find_points.c}{3753}{3756},
+  \csource{find_points.c}{3764}{3777}), which \verb|run_setup| chooses from the flags and returns
+  with the bounds of the search intervals (\csource{find_points.c}{3806}{3834}), and their
   denominators from~$b_{\mathrm{low}}$ to~$b_{\mathrm{high}}$ in the order of the loop, each with
   its test of a single denominator:
   \begin{enumerate}
@@ -318,13 +318,13 @@ The contract of the binary algorithm rests on invariants of its loops; $b^*$ is
       Definition~\ref{def:setupUs1}, the divisors times squares: for each divisor~$s$ in turn,
       the~$s k^2$ of the range in increasing order of~$k$, with the class test and the valuation
       test, which~$b$ fails when the record of a prime excludes it
-      (\csource{find_points.c}{3965}{3974});
+      (\csource{find_points.c}{3972}{3981});
     \item otherwise, under the flag of the checked loop, the words, with the forbidden divisors, the
       switch of the Jacobi test, its tables when the test is on and they exist, and~$c_d$: word by
       word, the $64 w + j$ of the range for the set bits~$j$, lowest first, of~$\mathrm{den\_bits}$
       and-ed with word $w \bmod p$ of each forbidden divisor~$p$ with words, tested by the tables,
       then by the forbidden divisors with masks, and, with the Jacobi test on and no tables, by the
-      binary algorithm (\csource{find_points.c}{4034}{4062});
+      binary algorithm (\csource{find_points.c}{4041}{4069});
     \item otherwise every denominator, $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, with the class
       test.
   \end{enumerate}
@@ -343,7 +343,7 @@ visit the denominators of the list of the shape in its order
 (\lname{Ratpoints.Sieve.Shape.flatMap\_blockDens}). In the shape of the words they reduce the number
 of the first word of a block modulo each forbidden divisor, with its reciprocal while that number is
 at most~$\mathrm{mulModLimit}$ and by division otherwise, and step on from there
-(\csource{find_points.c}{4002}{4027}).
+(\csource{find_points.c}{4009}{4034}).
 
 \begin{lemma}[The shapes keep every point]\label{lem:shapes}
   \uses{def:Shape, def:twoAdic, def:setupUs1, def:forbidden, def:jacobi, def:binaryForm, def:packing}

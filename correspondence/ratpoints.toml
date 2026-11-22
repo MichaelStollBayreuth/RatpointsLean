@@ -7,8 +7,8 @@
 # release 3.1.1 to release 3.2.0.
 [pin]
 repository = "https://github.com/MichaelStollBayreuth/ratpoints"
-tag = "v3.1.1-15-g14f3b3e"
-commit = "14f3b3edad906f63c631c2b434b71dd41908c461"
+tag = "v3.1.1-16-g54ad719"
+commit = "54ad7192b8178611a83231ef279e9299804a1903"
 
 # Every line of code of these files lies in exactly one recorded range: modelled (a `C:`
 # paragraph of a docstring of the model) or excluded (an [[excluded]] table below), as
@@ -213,7 +213,7 @@ reason = "RP_PHASE_TIMING and RP_PHASE_COUNTS, development instrumentation: the 
 file = "find_points.c"
 lines = "180-182"
 kind = "memory"
-reason = "rp_coeffs, the scratch arrays of the set-up of a search that the degree sizes (the coefficients as longs, modulo a prime, and modulo 64 or a prime power, and the valuations and unit parts of the coefficients at a prime with the flags of the non-zero ones), which find_points_work takes from the heap once for the search (find_points.c:4547-4565) and hands down to the functions that use them; the model makes each array where it is used"
+reason = "rp_coeffs, the scratch arrays of the set-up of a search that the degree sizes (the coefficients as longs, modulo a prime, and modulo 64 or a prime power, and the valuations and unit parts of the coefficients at a prime with the flags of the non-zero ones), which find_points_work takes from the heap once for the search (find_points.c:4554-4572) and hands down to the functions that use them; the model makes each array where it is used"
 
 [[excluded]]
 file = "find_points.c"
@@ -225,7 +225,7 @@ reason = "pointer_align, which aligns the buffers and the survivors array; ba_bu
 file = "find_points.c"
 lines = "285-388"
 kind = "interface"
-reason = "find_points_init, which a caller of the library calls before find_points_work: it answers a degree outside 0, ..., RATPOINTS_MAX_DEGREE with the work length -1, but find_points_work refuses such a degree itself (find_points.c:4604-4605, which the model has), so the work length -1, refused at find_points.c:4688-4689, matters only to a caller who changes the degree between the two calls; it allocates the scratch integers work and the buffers and arrays of the arguments, giving all of them back when one cannot be had, clears the pointer to the pool of threads, and prints messages under DEBUG; the model allocates nothing"
+reason = "find_points_init, which a caller of the library calls before find_points_work: it answers a degree outside 0, ..., RATPOINTS_MAX_DEGREE with the work length -1, but find_points_work refuses such a degree itself (find_points.c:4611-4612, which the model has), so the work length -1, refused at find_points.c:4695-4696, matters only to a caller who changes the degree between the two calls; it allocates the scratch integers work and the buffers and arrays of the arguments, giving all of them back when one cannot be had, clears the pointer to the pool of threads, and prints messages under DEBUG; the model allocates nothing"
 
 [[excluded]]
 file = "find_points.c"
@@ -259,259 +259,259 @@ reason = "the count np of a prime power stored in its rp_power, which nothing re
 
 [[excluded]]
 file = "find_points.c"
-lines = "2819"
+lines = "2826"
 kind = "memory"
 reason = "the enlargement of ba_buffer for the primes that the loop of the tables of sieving_info looked at beyond num_primes, which fails only for lack of memory"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3054-3080"
+lines = "3061-3087"
 kind = "memory"
 reason = "the enlargement of ba_buffer for the tables of every prime looked at, those that the third stage looked at among them, and of the composite moduli of the first two stages and their prime-power factors, which fails only for lack of memory"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3091-3105"
+lines = "3098-3112"
 kind = "instrumentation"
 reason = "RP_PRIME_STATS, development instrumentation that prints on stderr one line per curve: the primes looked at and those that carry information, the ends of the three stages, the estimates of the run and the density of each candidate"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3116-3118"
+lines = "3123-3125"
 kind = "instrumentation"
 reason = "the message under DEBUG at the end of sieving_info"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3150-3154"
+lines = "3157-3161"
 kind = "memory"
 reason = "the result of worker_init, whether the survivors array could be allocated, and worker_clear, which frees it; the model takes a fresh array for each piece and cannot fail for lack of memory"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3258-3275"
+lines = "3265-3282"
 kind = "other"
 reason = "the arm of exact_scale for a build without a 128-bit type or with RP_NO_INT128, which puts the 128-bit product together from 32-bit halves; the modelled builds compile the arm with unsigned __int128 (Ratpoints.Sieve.exactScale)"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3828-3832"
+lines = "3835-3839"
 kind = "memory"
 reason = "the arrays of the segments of the run (their bounds and first blocks) in one allocation, which fails only for lack of memory, and before it the pointers to the other two arrays that run_clear frees set to NULL"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3878-3881"
+lines = "3885-3888"
 kind = "memory"
 reason = "the arrays of the decisions of the correction of the moduli between the blocks in one allocation, which fails only for lack of memory"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3887-3889"
+lines = "3894-3896"
 kind = "memory"
 reason = "the array of the search intervals of the run on the heap, whose allocation fails only for lack of memory"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3892-3896"
+lines = "3899-3903"
 kind = "instrumentation"
 reason = "the report of the loop over the denominators under DEBUG at the end of run_setup: its shape, its segments and its blocks"
 
 [[excluded]]
 file = "find_points.c"
-lines = "3900-3904"
+lines = "3907-3911"
 kind = "memory"
 reason = "run_clear, which releases the arrays of the run"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4150-4540"
+lines = "4157-4547"
 kind = "threads"
-reason = "the pool of threads (the lock of the tables of rows, the workers, the collection of the points of a block, run_threaded) and its stubs for a build without threads; the pool sieves the blocks apart and delivers them in their order, a block not starting before the block RP_ADAPT_LAG + 1 before it is folded, so that the decision of each block and the output are those of the blocks sifted in turn on one thread, which the model does, but for the failure of the search (RATPOINTS_NO_MEMORY) when a thread of the pool has no memory to store a point of its block before the delivery reaches it (find_points.c:4266-4271, find_points.c:4503, find_points.c:4522), a failure that the model, allocating nothing, cannot meet"
+reason = "the pool of threads (the lock of the tables of rows, the workers, the collection of the points of a block, run_threaded) and its stubs for a build without threads; the pool sieves the blocks apart and delivers them in their order, a block not starting before the block RP_ADAPT_LAG + 1 before it is folded, so that the decision of each block and the output are those of the blocks sifted in turn on one thread, which the model does, but for the failure of the search (RATPOINTS_NO_MEMORY) when a thread of the pool has no memory to store a point of its block before the delivery reaches it (find_points.c:4273-4278, find_points.c:4510, find_points.c:4529), a failure that the model, allocating nothing, cannot meet"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4547-4565"
+lines = "4554-4572"
 kind = "memory"
 reason = "coeffs_clear and coeffs_init, which free and allocate the scratch arrays of rp_coeffs (find_points.c:180-182) for a degree, coeffs_init saying whether it got them all; the model allocates nothing"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4587-4590"
+lines = "4594-4597"
 kind = "interface"
 reason = "the input fields of the arguments that find_points_work saves, so that a caller who reuses the arguments for the next curve does not find the normalizations and choices of the search in them; the model writes nothing back"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4592"
+lines = "4599"
 kind = "memory"
 reason = "the scratch arrays of rp_coeffs (find_points.c:180-182) of the search, a local structure of find_points_work"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4606"
+lines = "4613"
 kind = "memory"
 reason = "the allocation of the scratch arrays of rp_coeffs for the degree given, with the failure of the search for lack of memory (RATPOINTS_NO_MEMORY), which the model cannot meet"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4608"
+lines = "4615"
 kind = "memory"
 reason = "the release of the scratch arrays of rp_coeffs after the search"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4609-4612"
+lines = "4616-4619"
 kind = "interface"
 reason = "the input fields of the arguments that find_points_work puts back"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4639"
+lines = "4646"
 kind = "threads"
 reason = "the worker of the calling thread, the state with which a thread sieves its blocks (its survivors, its third stage); the model sieves the blocks in turn, without threads, and passes what the sieve needs as arguments"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4677-4679"
+lines = "4684-4686"
 kind = "memory"
 reason = "the reset of the bump allocators of the buffers that find_points_init allocates, from which the set-up and the sieve take their memory; the model allocates nothing itself"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4681-4683"
+lines = "4688-4690"
 kind = "instrumentation"
 reason = "the message under DEBUG at the start of find_points_work_1"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4685-4690"
+lines = "4692-4697"
 kind = "interface"
-reason = "the checks of the coefficient array and of the work array that find_points_init sets up, which only a caller of the library can fail (the work array is missing when find_points_init refused the degree and the caller then gave an admissible one, since find_points_work refuses an inadmissible degree first at find_points.c:4604-4605, or for lack of memory, which the model cannot meet)"
+reason = "the checks of the coefficient array and of the work array that find_points_init sets up, which only a caller of the library can fail (the work array is missing when find_points_init refused the degree and the caller then gave an admissible one, since find_points_work refuses an inadmissible degree first at find_points.c:4611-4612, or for lack of memory, which the model cannot meet)"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4703-4705"
+lines = "4710-4712"
 kind = "instrumentation"
 reason = "the message under DEBUG before the checks of the parameters"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4721"
+lines = "4728"
 kind = "memory"
 reason = "the enlargement of ba_buffer for more primes than find_points_init sized it for, which fails only for lack of memory"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4799-4802"
+lines = "4806-4809"
 kind = "instrumentation"
 reason = "the message under DEBUG before the reversal check"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4886-4889"
+lines = "4893-4896"
 kind = "instrumentation"
 reason = "the message under DEBUG after the reversal check when it reverses"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4902-4904"
+lines = "4909-4911"
 kind = "instrumentation"
 reason = "the message under DEBUG before the search region and the Sturm step"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4907"
+lines = "4914"
 kind = "interface"
 reason = "the check of the array of search intervals, which only a caller of the library can fail"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5042-5045"
+lines = "5049-5052"
 kind = "instrumentation"
 reason = "the denominators of the 2-adic information under DEBUG, where the report under RATPOINTS_VERBOSE has the packing of the numerators"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5091-5103"
+lines = "5098-5110"
 kind = "instrumentation"
 reason = "the moduli of the first two stages under DEBUG, where the report under RATPOINTS_VERBOSE has those of the three stages, the cost of a check and the forbidden divisors"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5185-5187"
+lines = "5192-5194"
 kind = "instrumentation"
 reason = "the message before the sieve under DEBUG"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5199-5202"
+lines = "5206-5209"
 kind = "instrumentation"
 reason = "the message under DEBUG before the allocation of the survivors"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5204-5205"
+lines = "5211-5212"
 kind = "memory"
 reason = "worker_init, which allocates the survivors array of the worker of the calling thread and sets up its state, and fails only for lack of memory; the model passes what the sieve needs as arguments"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5206"
+lines = "5213"
 kind = "threads"
 reason = "the worker of the calling thread without a pool: the calling thread sieves; the model has no threads"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5210-5213"
+lines = "5217-5220"
 kind = "instrumentation"
 reason = "the end of the message under DEBUG about the allocation of the survivors"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5217-5228"
+lines = "5224-5235"
 kind = "threads"
 reason = "the pool of threads, when asked for, with a survivors array for each thread, and the threaded run with its failure; the model has no threads, which deliver the blocks in their order"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5238"
+lines = "5245"
 kind = "threads"
 reason = "the end of the block of the pool of threads"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5241"
+lines = "5248"
 kind = "memory"
 reason = "the release of the run (run_clear)"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5243"
+lines = "5250"
 kind = "memory"
 reason = "the release of the worker of the calling thread (worker_clear)"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5246-5285"
+lines = "5253-5292"
 kind = "instrumentation"
 reason = "the report on the shape of the run under RP_PRIME_STATS and RP_PHASE_TIMING, which prints on stderr what run_shape predicted against what the run did"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5292-5294"
+lines = "5299-5301"
 kind = "instrumentation"
 reason = "the message under DEBUG at the end of find_points_work_1"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5309"
+lines = "5316"
 kind = "memory"
 reason = "find_points_init, which allocates the work array and the buffers of the search; its refusal of a degree outside 0, ..., RATPOINTS_MAX_DEGREE never takes effect, since find_points_work refuses the same degrees first"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5315"
+lines = "5322"
 kind = "memory"
 reason = "find_points_clear, which releases them"
 

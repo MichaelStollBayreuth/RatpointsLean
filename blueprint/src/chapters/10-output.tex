@@ -26,7 +26,7 @@ fails, and the model has no allocation that can fail. The callback of the model 
 that a search threads through its components are those of Definition~\ref{def:deliver}; the delivery
 stands for the pointer \verb|info|, for the counts \verb|total| of the functions of the search as
 one running count, and for the flags of the stop of the points at infinity and of the sieve
-(\csource{find_points.c}{4637}{4638}, \csource{find_points.c}{3147}{3147}).
+(\csource{find_points.c}{4644}{4645}, \csource{find_points.c}{3154}{3154}).
 
 \begin{definition}[The flags of the check and the calls of a search]\label{def:callback}
   \uses{def:deliver}
@@ -72,16 +72,16 @@ statements speak (Definition~\ref{def:findPoints}).
 \section{The stops}\label{sec:outputStops}
 
 In the C code on one thread only a call of the callback sets the flag (with threads a worker also
-sets it when the search has been stopped, \csource{find_points.c}{3629}{3629}), and each function
+sets it when the search has been stopped, \csource{find_points.c}{3636}{3636}), and each function
 tests it after each step that may have made calls, returning its count at once when it is set:
 \verb|_ratpoints_sift0| after the check of a numerator (\csource{sift.c}{1250}{1251},
 \csource{sift.c}{1287}{1288}, and \csource{sift.c}{1168}{1169} in the arm of
 \verb|USE_LONG_IN_PHASE_2|); \verb|sift| after each call of \verb|_ratpoints_sift0|
-(\csource{find_points.c}{3630}{3630}); \verb|run_block| after each denominator, in each shape of the
-loop (\csource{find_points.c}{3949}{3949}, \csource{find_points.c}{3978}{3978},
-\csource{find_points.c}{4065}{4065}, \csource{find_points.c}{4089}{4089}); the loop over the blocks
-after each block (\csource{find_points.c}{5235}{5235}); and \verb|find_points_work_1| after the
-points at infinity, before it sieves (\csource{find_points.c}{5177}{5180}). So the calls made are
+(\csource{find_points.c}{3637}{3637}); \verb|run_block| after each denominator, in each shape of the
+loop (\csource{find_points.c}{3956}{3956}, \csource{find_points.c}{3985}{3985},
+\csource{find_points.c}{4072}{4072}, \csource{find_points.c}{4096}{4096}); the loop over the blocks
+after each block (\csource{find_points.c}{5242}{5242}); and \verb|find_points_work_1| after the
+points at infinity, before it sieves (\csource{find_points.c}{5184}{5187}). So the calls made are
 those of the search that no call stops, up to and including the first call that sets the flag, and
 the count is the sum of their weights. With threads the calling thread of the C code delivers the
 points of the blocks in their order; that blocks sifted apart and delivered in this way make the
@@ -108,8 +108,8 @@ Two bits of the flags of the caller change which points the library delivers
 (\csource{ratpoints.h}{438}{439}): under \verb|RATPOINTS_NO_Y| only the point with $y \ge 0$ of a
 pair $(x : \pm y : z)$ goes to the callback, and under \verb|RATPOINTS_NO_CHECK| every numerator
 that passes the sieve goes to it with $y = 0$, without the exact check, whether or not it gives a
-point. The C code reads them only in the exact check (\csource{find_points.c}{5327}{5415}), at the
-points at infinity (\csource{find_points.c}{5145}{5176}), and \verb|RATPOINTS_NO_CHECK| also in a
+point. The C code reads them only in the exact check (\csource{find_points.c}{5334}{5422}), at the
+points at infinity (\csource{find_points.c}{5152}{5183}), and \verb|RATPOINTS_NO_CHECK| also in a
 line of the report; the reversal, the Sturm step, the exits, the tests on the denominators and the
 sieve run as without them. Conversely, what \verb|RATPOINTS_NO_CHECK| delivers depends on everything
 that decides which numerators pass the sieve: the moduli, the Jacobi test, the reversal and the
@@ -179,7 +179,7 @@ Besides the count, \verb|find_points| writes back what the program reads after t
 bits of \verb|args->flags| (\csource{ratpoints.h}{449}{452}), \verb|RATPOINTS_REVERSED|, set by the
 reversal check, and \verb|RATPOINTS_USE_SQUARES| and \verb|RATPOINTS_USE_SQUARES1|, set for odd
 degree when the leading coefficient is~$\pm 1$ and, otherwise, when the set-up of its divisors
-succeeds (\csource{find_points.c}{4987}{5020}), for message~7; the search intervals as the Sturm
+succeeds (\csource{find_points.c}{4994}{5027}), for message~7; the search intervals as the Sturm
 step leaves them, for message~8; and the numbers of the moduli used in the stages
 (\csource{ratpoints.h}{413}{413}), for message~4. The outcome of a search in the model holds exactly
 these, with the data of the callback and the count (Definition~\ref{def:Options}). The search sets
@@ -190,7 +190,7 @@ of the moduli are zeroed on entry and set after the sieve from the moduli of the
 so that they depend on where the callback stops the search (Chapter~\ref{chap:theorems}). Nothing
 else is written back: the reversed coefficients and the private fields that the choice of the moduli
 writes are not, and the bits of the input come back as the caller set them
-(\csource{find_points.c}{4673}{4673}).
+(\csource{find_points.c}{4680}{4680}).
 
 \section{The report of the library}\label{sec:outputReport}
 
@@ -209,21 +209,21 @@ the channel that prints nothing (Definition~\ref{def:findPoints}).
   The texts of the report, each as \verb|printf| prints it from the data that the C code prints,
   with \verb|%ld|, \verb|%3ld|, and \verb|%.pf| for the doubles and the values of \verb|Float| as
   glibc prints them, the exact value rounded to~$p$ places with ties to even: the arguments of the
-  search as it normalizes them (\csource{find_points.c}{4758}{4797}); the outcome of the reversal
-  check (\csource{find_points.c}{4812}{4815}, \csource{find_points.c}{4829}{4830},
-  \csource{find_points.c}{4843}{4846}, \csource{find_points.c}{4863}{4878},
-  \csource{find_points.c}{4881}{4884}); the Sturm step (\csource{find_points.c}{4941}{4955}); the
-  points at infinity and the tests on the denominators (\csource{find_points.c}{4974}{4975},
-  \csource{find_points.c}{4992}{4995}, \csource{find_points.c}{4998}{5003},
-  \csource{find_points.c}{5005}{5018}, \csource{find_points.c}{5023}{5024}); the packing of the
-  classes of the numerators (\csource{find_points.c}{5046}{5062}); the choice of the moduli
-  (\csource{find_points.c}{3107}{3113}), the moduli of the three stages with the cost of an exact
-  check (\csource{find_points.c}{5104}{5119}) and the forbidden divisors
-  (\csource{find_points.c}{5120}{5125}); and the lines before the sieve
-  (\csource{find_points.c}{5188}{5190}). From the degree $\mathrm{printDegree} = 1000$ on
+  search as it normalizes them (\csource{find_points.c}{4765}{4804}); the outcome of the reversal
+  check (\csource{find_points.c}{4819}{4822}, \csource{find_points.c}{4836}{4837},
+  \csource{find_points.c}{4850}{4853}, \csource{find_points.c}{4870}{4885},
+  \csource{find_points.c}{4888}{4891}); the Sturm step (\csource{find_points.c}{4948}{4962}); the
+  points at infinity and the tests on the denominators (\csource{find_points.c}{4981}{4982},
+  \csource{find_points.c}{4999}{5002}, \csource{find_points.c}{5005}{5010},
+  \csource{find_points.c}{5012}{5025}, \csource{find_points.c}{5030}{5031}); the packing of the
+  classes of the numerators (\csource{find_points.c}{5053}{5069}); the choice of the moduli
+  (\csource{find_points.c}{3114}{3120}), the moduli of the three stages with the cost of an exact
+  check (\csource{find_points.c}{5111}{5126}) and the forbidden divisors
+  (\csource{find_points.c}{5127}{5132}); and the lines before the sieve
+  (\csource{find_points.c}{5195}{5197}). From the degree $\mathrm{printDegree} = 1000$ on
   (\lname{Ratpoints.printDegree}, the macro \verb|RATPOINTS_PRINT_DEGREE|), the arguments and the
   reversal give, in place of the coefficients, the number of bits of the largest of them in absolute
-  value, as \verb|mpz_sizeinbase| counts them (\csource{find_points.c}{4620}{4631}).
+  value, as \verb|mpz_sizeinbase| counts them (\csource{find_points.c}{4627}{4638}).
 \end{definition}
 
 Four texts complete the report: the two exits on the way (\lname{Ratpoints.Report.noClasses},

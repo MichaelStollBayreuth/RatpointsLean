@@ -92,7 +92,7 @@ beyond the table: all ones, then for `i < 64` the bit of the position `p i` clea
 `N` being bit `N mod 64` of word `⌊N / 64⌋`. The pattern `sieves0` repeats them
 (`Ratpoints.Sieve.sieves0`).
 
-C: `find_points.c:2791-2795`, `gen_find_points_h.c:118-120`
+C: `find_points.c:2798-2802`, `gen_find_points_h.c:118-120`
 
 Deviation: one function for the two codes that make these words, the array `work` of the generator
 of `find_points.h`, for the primes of the table, and the words that `sieving_info` makes in the
@@ -186,7 +186,7 @@ entry, the reserve included (`Ratpoints.choiceEnd`), where `make_power` and `mak
 with the entry; a table of rows made only when its reference is absent, for the test of `power_se`
 (`find_points.c:2460` and `find_points.c:2482`) by which the entry of a prime power is made once,
 and for the entry of a prime, which `examine_prime` makes once, with its table of rows, in the loop
-of the tables (`Ratpoints.examineInLoop`) or in the third stage (`find_points.c:3012-3013`), where
+of the tables (`Ratpoints.examineInLoop`) or in the third stage (`find_points.c:3019-3020`), where
 the model makes the table of a prime of the third stage after the choice, and none for a prime that
 the third stage examines and passes over, whose table nothing reads. -/
 def SieveEntry.addTables (e : SieveEntry) (s : RowStore) : RowStore :=

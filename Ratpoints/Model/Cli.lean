@@ -201,7 +201,7 @@ the coefficients and of the height (`Ratpoints.Refusal.tooManyCoefficients`,
 `Ratpoints.Refusal.tooFewCoefficients`, `Ratpoints.Refusal.incorrectHeight`) mapped to the errors 3,
 5 and 4 with which `read_input` refuses those inputs before the library is called, where
 `main.c:271` gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it
-can be given (`find_points.c:4604-4605`, `find_points.c:4700` and `find_points.c:4725`); no command
+can be given (`find_points.c:4611-4612`, `find_points.c:4707` and `find_points.c:4732`); no command
 line reaches them; no `mpz_clear`. -/
 def Failure.ofRefusal : Refusal → Failure
   | .tooManyCoefficients => .tooManyCoefficients

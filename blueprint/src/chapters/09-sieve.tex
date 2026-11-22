@@ -25,10 +25,10 @@ from Chapter~\ref{chap:region}.
 
 \section{The sieve in the C code and in the model}\label{sec:sieveC}
 
-In the C code the sieve of a denominator is \verb|sift| (\csource{find_points.c}{3461}{3636}), which
+In the C code the sieve of a denominator is \verb|sift| (\csource{find_points.c}{3468}{3643}), which
 cuts the bits of each search interval into pieces for \verb|_ratpoints_sift0|
 (\csource{sift.c}{498}{1305}), and each numerator that survives goes through \verb|accepted|
-(\csource{sift.c}{438}{446}) to the exact check (\csource{find_points.c}{5327}{5415}). The model has
+(\csource{sift.c}{438}{446}) to the exact check (\csource{find_points.c}{5334}{5422}). The model has
 a component for each step, in the sections below, with the data and the loops of the default build.
 
 A C \verb|long| is an integer or a natural number, with a lemma that it stays in range, except in
@@ -153,11 +153,11 @@ offset computed once per run for each packing and each modulus.
   $a_0\,(2^k\,\mathrm{rbaLength})^{-1} \bmod p$ plus the bias of~$p$, the least multiple of~$p$ from
   $\mathrm{rowBias} = 2^{31}$ on (\csource{find_points.c}{1177}{1195}). The residues
   $b\,\mathrm{dinv}[k] \bmod p$ of a denominator for the moduli of the first two stages, in three
-  branches by the size of~$b$ (\csource{find_points.c}{3660}{3700}). The bits
+  branches by the size of~$b$ (\csource{find_points.c}{3667}{3707}). The bits
   $\lceil (\mathrm{low} - a_0)/2^k \rceil$ to $\lfloor (\mathrm{high} - a_0)/2^k \rfloor$ of an
   interval of numerators, by arithmetic shifts of signed 64-bit words, in a plain form and in a form
   that splits each end into its multiple of~$2^k$ and its rest, which cannot overflow
-  (\csource{find_points.c}{3374}{3389}).
+  (\csource{find_points.c}{3381}{3396}).
 \end{definition}
 
 \begin{lemma}[What the packing computes]\label{lem:packing}
@@ -308,7 +308,7 @@ the word smaller, the scan since the sentinel is not zero.
   $a\, b^{-1}$, reduced with the reciprocal after adding the bias if there is one, and by division
   otherwise (\csource{sift.c}{291}{301}). The test of a candidate: $a$ is prime to~$b$ and passes
   the third stage (\csource{sift.c}{438}{446}). The exact check
-  (\csource{find_points.c}{5327}{5415}): unless~$\mathrm{noCheck}$, for the value~$v$ of Horner's
+  (\csource{find_points.c}{5334}{5422}): unless~$\mathrm{noCheck}$, for the value~$v$ of Horner's
   rule at~$a$ on the products $c_k b^{d - k}$ (a thunk made once per denominator), times~$b$ for
   odd~$d$, so that $v = F_c(a, b)$ (Definition~\ref{def:binaryForm}), and
   $y = \lfloor \sqrt{v} \rfloor$: when $v = y^2$, the call with $(a : y : b)$ and then, unless that
@@ -365,10 +365,10 @@ correction of the moduli (Chapter~\ref{chap:moduli}), and these are prime entrie
   sentinel, the first stage with the first~$s_1$ moduli in the arm that $1 < \mathrm{chunk} \le 16$
   chooses, the masks of the ends (\csource{sift.c}{1030}{1041}) and the scan with the moduli of the
   second stage. The bits from~$\mathrm{low}$ to~$\mathrm{high}$ of an interval
-  (\csource{find_points.c}{3582}{3631}): the word numbers from
+  (\csource{find_points.c}{3589}{3638}): the word numbers from
   $\lfloor \mathrm{low}/\mathrm{rbaLength} \rfloor$ to
   $\lfloor \mathrm{high}/\mathrm{rbaLength} \rfloor$ in pieces of at most~$A$ bit arrays, the first
-  and the last masked. One denominator (\csource{find_points.c}{3461}{3507}): for each search
+  and the last masked. One denominator (\csource{find_points.c}{3468}{3514}): for each search
   interval the bits of its numerators within the height bound (Chapter~\ref{chap:region}); at the
   first interval that the height bound does not rule out (also one without numerators) the sieve
   specs (Definition~\ref{def:runTables}), the modulus, the offset of the row of the class and the

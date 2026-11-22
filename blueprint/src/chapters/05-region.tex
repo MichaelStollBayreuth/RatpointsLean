@@ -73,8 +73,8 @@ the proofs show what the theorems need, a faithful rounding.
 \section{The search intervals}\label{sec:searchIntervals}
 
 The library normalizes the range of the denominators and the depth \verb|sturm| of the Sturm step
-in place and restores those of the caller afterwards (\csource{find_points.c}{4587}{4590},
-\csource{find_points.c}{4609}{4612}); the model returns the normalized options instead. The search
+in place and restores those of the caller afterwards (\csource{find_points.c}{4594}{4597},
+\csource{find_points.c}{4616}{4619}); the model returns the normalized options instead. The search
 intervals and the Sturm step come after the reversal check (Chapter~\ref{chap:setup}).
 
 \begin{definition}[The normalized options and the search intervals]\label{def:searchIntervals}
@@ -87,16 +87,16 @@ intervals and the Sturm step come after the reversal check (Chapter~\ref{chap:se
   $\mathrm{DBL\_MANT\_DIG} + 2 = 55$, beyond which the ends of the intervals of the step would not
   all be doubles; and the switch of the reversal turned off, for the private bit
   \verb|RATPOINTS_NO_REVERSE_AUTO|, when the caller gives search intervals or the normalized range
-  is not $1, \dots, H$ (\csource{find_points.c}{4726}{4728}, \csource{find_points.c}{4745}{4756}).
+  is not $1, \dots, H$ (\csource{find_points.c}{4733}{4735}, \csource{find_points.c}{4752}{4763}).
   The \emph{search intervals} of a search: for none given, the default interval $[-h, h]$, where~$h$
   is the double of~$H$, moved up to the next double when $h < 2^{63}$ and the \verb|long| of~$h$ is
   below~$H$; otherwise the caller's intervals, or none, for \verb|RATPOINTS_BAD_ARGS|, when an
   interval has not $l \le u$ or does not begin above the end of the one before it, compared as
-  doubles, so that a NaN end is refused too (\csource{find_points.c}{4908}{4932}).
+  doubles, so that a NaN end is refused too (\csource{find_points.c}{4915}{4939}).
 \end{definition}
 
 The search turns the answer none into the refusal $\mathrm{badArgs}$; the test of a null pointer
-(\csource{find_points.c}{4907}{4907}) is excluded as part of the interface of the library.
+(\csource{find_points.c}{4914}{4914}) is excluded as part of the interface of the library.
 
 \begin{lemma}[The normalized options and the search intervals]\label{lem:searchIntervals}
   \uses{def:searchIntervals, def:regionSpec, def:Options}
@@ -129,38 +129,38 @@ The search turns the answer none into the refusal $\mathrm{badArgs}$; the test o
 For a denominator~$b$ the numerators of an interval $[l, u]$ are $\lceil b l \rceil, \dots,
 \lfloor b u \rfloor$ within the height bound. The C code computes them exactly from the doubles of
 the ends, on \verb|long|s and in~$128$~bits where those do not suffice, and the model on the same
-words; the bounds are made once for the run (\csource{find_points.c}{3890}{3891}).
+words; the bounds are made once for the run (\csource{find_points.c}{3897}{3898}).
 
 \begin{definition}[The exact bounds of the search intervals]\label{def:exactBounds}
   \uses{def:Double, def:packing, def:bitArrays, def:reciprocal}
   \lean{Ratpoints.Sieve.exactEnd, Ratpoints.Sieve.exactMantissa, Ratpoints.Sieve.exactScale, Ratpoints.Sieve.endForm, Ratpoints.Sieve.exactBounds, Ratpoints.Sieve.intervalBits, Ratpoints.Sieve.intervalBitsExact, Ratpoints.Sieve.RangesFor}
   \leanok
   \begin{enumerate}
-    \item An \emph{end}~$x$ (\csource{find_points.c}{3283}{3290},
-      \csource{find_points.c}{3291}{3310}, \csource{find_points.c}{3311}{3318}): its sign, $x < 0$
+    \item An \emph{end}~$x$ (\csource{find_points.c}{3290}{3297},
+      \csource{find_points.c}{3298}{3317}, \csource{find_points.c}{3318}{3325}): its sign, $x < 0$
       as in C, so that~$-0.0$ is not negative; for $|x| < 2^{63}$, $|x| = m\,2^{-s}$ with~$m$ odd
       or $s = 0$, except that~$s$ is capped at~$127$, where $m\,2^{-s} \ne |x|$ but $b\,m\,2^{-s}$
       and~$b|x|$ both lie strictly between~$0$ and~$1$ for $1 \le b < 2^{63}$; otherwise
       $m = 2^{63}$ and $s = 0$; and the rounding $r = 2^s - 1$ when the end wants~$b|x|$ rounded up
       (a lower end with $x \ge 0$, an upper end with $x < 0$), else $r = 0$. Its \emph{scaled} value
       at~$b$, $\min(2^{64} - 1, \lfloor (b m + r)/2^s \rfloor)$, is computed on two words
-      (\csource{find_points.c}{3250}{3257}).
-    \item The \emph{form} $(M, C, \mathit{sh})$ of an end (\csource{find_points.c}{3323}{3337}),
+      (\csource{find_points.c}{3257}{3264}).
+    \item The \emph{form} $(M, C, \mathit{sh})$ of an end (\csource{find_points.c}{3330}{3344}),
       for which $(b M + C) \gg \mathit{sh}$ fits a \verb|long| for every $b \le b_{\mathrm{high}}$:
       $(0, \mp H, 0)$ for an end at or beyond the height bound on its side ($x \le -H$ at a lower
       end, $x \ge H$ at an upper end); $(\pm m, C, s)$, with $C = 2^s - 1$ at a lower end and~$0$
       at an upper end, when $s < 64$ and $m \le \lfloor (2^{63} - 1 - C)/b_{\mathrm{high}}
       \rfloor$; and none otherwise.
-    \item The \emph{bounds} of the search intervals (\csource{find_points.c}{3342}{3359}): the two
+    \item The \emph{bounds} of the search intervals (\csource{find_points.c}{3349}{3366}): the two
       ends of each interval, which is taken inline, with the forms of its ends, when
       $H \le 2^{63} - 65$ and both ends have a form, and otherwise gets the forms of an empty
       interval.
     \item The \emph{bits} of an interval at~$b$ for a class of the numerators
-      (\csource{find_points.c}{3429}{3453}): $\mathit{lo} = \lceil b l \rceil$ and
+      (\csource{find_points.c}{3436}{3460}): $\mathit{lo} = \lceil b l \rceil$ and
       $\mathit{hi} = \lfloor b u \rfloor$ from the forms; the code~$2$ for $\mathit{lo} > H$; for
       $\mathit{hi} < -H$ the code~$1$ if the interval is taken inline, and otherwise what
       \verb|interval_bits_exact| computes from the scaled ends
-      (\csource{find_points.c}{3400}{3425}); and otherwise the code~$0$ with the bits of the first
+      (\csource{find_points.c}{3407}{3432}); and otherwise the code~$0$ with the bits of the first
       and the last numerator of the class in $\max(\mathit{lo}, -H), \dots, \min(\mathit{hi}, H)$.
     \item The bounds of an interval \emph{represent} a range $\mathit{lo}, \dots, \mathit{hi}$
       at~$b$ when, for every class of a packing (Chapter~\ref{chap:sieve}: stride~$2^k$ with
@@ -174,7 +174,7 @@ words; the bounds are made once for the run (\csource{find_points.c}{3890}{3891}
 \end{definition}
 
 This is what the loop of the sieve of one denominator over the intervals needs
-(Chapter~\ref{chap:sieve}, \csource{find_points.c}{3490}{3507}): the code~$2$ ends the denominator,
+(Chapter~\ref{chap:sieve}, \csource{find_points.c}{3497}{3514}): the code~$2$ ends the denominator,
 the code~$1$ goes on to the next interval and the code~$0$ sieves the bits, so that the numerators
 of a denominator come in increasing order.
 
@@ -256,7 +256,7 @@ which~$f$ may be $\ge 0$, and intersects them with the search intervals. The mod
   real root, and $c_0 < 0$; otherwise the intervals that the bisection keeps from
   $[-\infty, +\infty]$, started with the counts and the signs of~$f$ at~$\mp\infty$, intersected
   with the caller's intervals. The \emph{Sturm step of the search}, on the polynomial that the
-  reversal check hands on, at the normalized depth (\csource{find_points.c}{4956}{4969}): with the
+  reversal check hands on, at the normalized depth (\csource{find_points.c}{4963}{4976}): with the
   step off, the intervals as they are; the refusal $\mathrm{notSquarefree}$ when the chain is none;
   the intervals left, when there are some; and when there are none, none for an even~$d$ whose
   leading coefficient is not a square, so that the search returns at once, there being no point at
@@ -421,7 +421,7 @@ that a search returns; Theorem~\ref{thm:order} states this beside the order of t
 Two deviations of this part bear on what the proofs cover (Chapter~\ref{chap:ccode} lists all of
 them by kind). The model of \verb|exact_scale| forms the $128$-bit product, sum and shift on
 two~$64$-bit words, for the \verb|unsigned __int128| of the arm that the default build compiles;
-the other arm, for a build without a $128$-bit type (\csource{find_points.c}{3258}{3275}), is
+the other arm, for a build without a $128$-bit type (\csource{find_points.c}{3265}{3282}), is
 excluded. And the \verb|long|s are \verb|Int64|s, where a wrap would stand for an overflow of the C
 code, which the bounds on the forms and on the ends of the bisection exclude;
 Lemma~\ref{lem:sturmCoverage}(3) bounds the arrays of the Sturm step.

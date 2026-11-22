@@ -36,8 +36,8 @@ list. The statements speak about the last two.
   \leanok
   The search with a callback and a print channel models the library function \verb|find_points|, the
   function \verb|find_points_work| that it calls and the start of \verb|find_points_work_1|
-  (\csource{ratpoints.h}{471}{472}, \csource{find_points.c}{4567}{4573},
-  \csource{find_points.c}{4691}{4700}, among others). It makes the refusals of the program in its
+  (\csource{ratpoints.h}{471}{472}, \csource{find_points.c}{4574}{4580},
+  \csource{find_points.c}{4698}{4707}, among others). It makes the refusals of the program in its
   order (Lemma~\ref{lem:setupOrder}), first those of the coefficient list, the height bound and the
   leading zeros (errors 3, 5, 4 and~8), then those of the set-up (Definition~\ref{def:setupSearch}),
   which may also return at once after the Sturm step with nothing delivered; otherwise it runs the
@@ -58,22 +58,22 @@ list. The statements speak about the last two.
   For the polynomial that the set-up hands on, with the flags of the check (the flag of the reversal
   and the two options of the output), the range of the denominators and the intervals that the Sturm
   step leaves, with its flag \verb|sturm_empty|, the search sets up the tests on the denominators
-  (\csource{find_points.c}{4977}{4991}) and the 2-adic information, and returns with nothing
+  (\csource{find_points.c}{4984}{4998}) and the 2-adic information, and returns with nothing
   delivered when no class modulo~$64$ admits a numerator and there is no point at infinity
-  (\csource{find_points.c}{5031}{5036}); it tests whether the coefficients are all \verb|long|s,
-  (Definition~\ref{def:maxDegree}; \csource{find_points.c}{4891}{4900}), which chooses how the tables reduce them modulo a prime; it
+  (\csource{find_points.c}{5038}{5043}); it tests whether the coefficients are all \verb|long|s,
+  (Definition~\ref{def:maxDegree}; \csource{find_points.c}{4898}{4907}), which chooses how the tables reduce them modulo a prime; it
   chooses the moduli
   (Definition~\ref{def:choiceOfModuli}), with nothing delivered when the curve has no points modulo
-  a prime (\csource{find_points.c}{5073}{5083}); it delivers the points at infinity
+  a prime (\csource{find_points.c}{5080}{5090}); it delivers the points at infinity
   (Definition~\ref{def:pointsAtInfinity}) and returns when the callback has stopped the search or
-  the Sturm step has left no interval (\csource{find_points.c}{5177}{5180},
-  \csource{find_points.c}{5182}{5183}); otherwise it runs over the blocks of the denominators of the
+  the Sturm step has left no interval (\csource{find_points.c}{5184}{5187},
+  \csource{find_points.c}{5189}{5190}); otherwise it runs over the blocks of the denominators of the
   shape of the loop (Definition~\ref{def:Shape}) with the correction of the moduli
-  (Definition~\ref{def:correction}, \csource{find_points.c}{5214}{5216}). Each point is mapped back
+  (Definition~\ref{def:correction}, \csource{find_points.c}{5221}{5223}). Each point is mapped back
   to the caller's curve when the flag of the reversal is set (Definition~\ref{def:reversal}). The
   outcome has the bits of the flags, the search intervals that the Sturm step leaves (those that
   this search is given), and the numbers of the moduli of the last block that the run sifts
-  (\csource{find_points.c}{5287}{5290}), $0$ after a return before the sieve.
+  (\csource{find_points.c}{5294}{5297}), $0$ after a return before the sieve.
 \end{definition}
 
 \section{The points that a search finds}\label{sec:theoremsPoints}
@@ -544,10 +544,10 @@ statement of the challenge.
 
 The pool of threads of the C code meets these hypotheses: a thread starts block~$i$ only once the
 blocks before block $i - L$ are folded, $L$ being \verb|RP_ADAPT_LAG|
-(\csource{find_points.c}{4313}{4317}); the tables of rows that the threads share only gain complete
+(\csource{find_points.c}{4320}{4324}); the tables of rows that the threads share only gain complete
 rows, published once built (\csource{init.c}{180}{180}, \csource{init.c}{241}{241},
 \csource{init.c}{391}{391}, \csource{init.c}{443}{443}), so that they fit all the entries whenever a
-thread reads them (\csource{find_points.c}{3179}{3179}, \csource{find_points.c}{3552}{3554}); and
+thread reads them (\csource{find_points.c}{3186}{3186}, \csource{find_points.c}{3559}{3561}); and
 the calling thread delivers the slots in the order of the blocks. The threads themselves stay
 outside the model (Chapter~\ref{chap:ccode}), and \verb|ratpoints-model| accepts \verb|-t| and
 ignores it.

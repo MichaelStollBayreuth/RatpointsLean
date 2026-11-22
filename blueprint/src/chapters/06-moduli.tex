@@ -48,8 +48,8 @@ that it is the table of Definition~\ref{def:tableOfPrime} is shown in Chapter~\r
   \lean{Ratpoints.TableLoop, Ratpoints.examineInLoop, Ratpoints.raiseLimit, Ratpoints.tablesLoop, Ratpoints.TableLoop.WF, Ratpoints.tablesLoop_spec}
   \leanok
   The loop of \verb|sieving_info| over the primes of the table while fewer than the number to look
-  at, the normalized value of \verb|-p|, have been looked at (\csource{find_points.c}{2618}{2622}).
-  The examination of a prime (\csource{find_points.c}{2623}{2643}) gives its table, the coefficients
+  at, the normalized value of \verb|-p|, have been looked at (\csource{find_points.c}{2625}{2629}).
+  The examination of a prime (\csource{find_points.c}{2630}{2650}) gives its table, the coefficients
   modulo~$p$, its density (the share of the numerators that its rows let through) and a code: $-1$,
   the exit, when the curve has no points modulo~$p$ (Chapter~\ref{chap:setup}); $0$ when the prime
   says nothing; $2$ when it says only that numerator and denominator are coprime; $1$ otherwise. A
@@ -58,7 +58,7 @@ that it is the table of Definition~\ref{def:tableOfPrime} is shown in Chapter~\r
   modulo~$p$ give the forbidden divisor of~$p$ (Chapter~\ref{chap:denominators}). When the caller
   left the number of primes to the library, the loop looks at one more prime, at most
   $\mathrm{numPrimes}$ in all, while the first two stages would be short of candidates that say
-  more than coprimality (\csource{find_points.c}{2712}{2723}).
+  more than coprimality (\csource{find_points.c}{2719}{2730}).
 
   The contract: for options that look at no more than $\mathrm{numPrimes}$ primes, an exit means
   that the curve has no points of any height; otherwise at most $\mathrm{numPrimes}$ primes are to
@@ -187,7 +187,7 @@ what it says: a modulus of density~$r$ says $-\log r$.
 
 \section{The choice of the moduli and of the cut points}\label{sec:moduliChoice}
 
-In \verb|sieving_info| (\csource{find_points.c}{2538}{3121}) the first stage takes candidates in
+In \verb|sieving_info| (\csource{find_points.c}{2545}{3128}) the first stage takes candidates in
 the order of their keys, and so does the second, after the rest is keyed again by the cost of a word
 that survives the first; each drops every candidate that shares a prime with one taken, so that the
 moduli of the first two stages are pairwise coprime. The third stage takes the prime of least
@@ -202,23 +202,24 @@ density left while each pays for itself; the primes left after it are the reserv
   (Definition~\ref{def:Options}), takes these steps:
   \begin{enumerate}
     \item the tuning, from \verb|-r|, \verb|-R|, \verb|-U| and \verb|-C| or the defaults
-      (\csource{find_points.c}{2586}{2592});
+      (\csource{find_points.c}{2593}{2599});
     \item the first estimate, the loop of the tables with its exit, which returns the prime, and
-      the further forbidden divisors (\csource{find_points.c}{2538}{2549});
+      the further forbidden divisors (\csource{find_points.c}{2545}{2556});
     \item the estimate and the keys again, the composite moduli with their entries (\verb|add_moduli|,
       Section~\ref{sec:moduliComposite}) and the sort
-      (\csource{find_points.c}{2826}{2830}, \csource{find_points.c}{2834}{2841},
-      \csource{find_points.c}{2844}{2844});
-    \item the first stage, the value of \verb|-n| or as many as its rule wants, and the second, the
-      value of \verb|-N| or the offset, each taking candidates in their order
-      (\csource{find_points.c}{2506}{2524}, \csource{find_points.c}{2861}{2864},
-      \csource{find_points.c}{2882}{2889});
+      (\csource{find_points.c}{2833}{2837}, \csource{find_points.c}{2841}{2848},
+      \csource{find_points.c}{2851}{2851});
+    \item the first stage, the value of \verb|-n| or as many as its rule wants, at most the value
+      of \verb|-N| when that is given, and the second, the value of \verb|-N| or the offset, each
+      taking candidates in their order
+      (\csource{find_points.c}{2511}{2531}, \csource{find_points.c}{2868}{2871},
+      \csource{find_points.c}{2889}{2896});
     \item the third stage, up to the value of \verb|-P| more or while each prime pays for itself,
       looking at further primes, with the exit, when no prime left pays
-      (\csource{find_points.c}{2991}{2993}, \csource{find_points.c}{3027}{3034});
+      (\csource{find_points.c}{2998}{3000}, \csource{find_points.c}{3034}{3041});
     \item the end: the third stage and the reserve sorted by density from~$s_2$ on, the entries of
       all the candidates, their reciprocals and the store with the tables of rows of every entry
-      (\csource{find_points.c}{3042}{3052}).
+      (\csource{find_points.c}{3049}{3059}).
   \end{enumerate}
   The result holds the cut points $s_1 \le s_2 \le s_3$, the ends of the three stages, the number of
   primes looked at and the estimates of the run (\csource{ratpoints.h}{430}{432}), with the sieve
@@ -280,16 +281,16 @@ of a block length that the build fixes (\lname{Ratpoints.blockLen\_pos}).
   \uses{def:Shape, def:sift, def:deliver, def:callback, def:counters}
   \lean{Ratpoints.Sieve.Shape.segments, Ratpoints.Sieve.BlockPlan, Ratpoints.Sieve.blockLength, Ratpoints.Sieve.Shape.blockPlan, Ratpoints.Sieve.BlockPlan.steps, Ratpoints.Sieve.Shape.blockLoop, Ratpoints.Sieve.Decision, Ratpoints.Sieve.Decision.InForce, Ratpoints.Sieve.findDecision, Ratpoints.Sieve.runBlock}
   \leanok
-  The steps of a shape form segments (\csource{find_points.c}{3833}{3858}): the~$k$ of the squares
+  The steps of a shape form segments (\csource{find_points.c}{3840}{3865}): the~$k$ of the squares
   $k^2$, for each divisor~$s$ of the divisor shape the~$k$ of $s k^2$, both within
   $[b_{\mathrm{low}}, b_{\mathrm{high}}]$, or the words of~$64$ denominators, or the denominators.
   The blocks have length
   $\lfloor \mathrm{steps}/1024 \rfloor + 1$, at least~$16$, or the length that the build fixes
-  (\csource{find_points.c}{3859}{3863}), and cut each segment into consecutive pieces
-  (\csource{find_points.c}{3864}{3871}). A decision of the correction is the first block that it is
+  (\csource{find_points.c}{3866}{3870}), and cut each segment into consecutive pieces
+  (\csource{find_points.c}{3871}{3878}). A decision of the correction is the first block that it is
   for, with the ends~$s_2$ and~$s_3$ from that block on; the decision in force for block~$i$ is the
-  last whose first block is at most~$i$ (\csource{find_points.c}{3929}{3931}). Block~$i$
-  (\csource{find_points.c}{3910}{3919}) hands each denominator of its steps that passes the tests
+  last whose first block is at most~$i$ (\csource{find_points.c}{3936}{3938}). Block~$i$
+  (\csource{find_points.c}{3917}{3926}) hands each denominator of its steps that passes the tests
   of the shape to the sieve of one denominator, with the sieve entries cut by the decision in force
   into the first two stages, the first ending at~$s_1$, and the third; it returns when the callback
   stops the search, and reports its counters with its decision.
@@ -353,12 +354,12 @@ blocks from $j + \mathrm{adaptLag} + 1$ on, with the lag $\mathrm{adaptLag} = 32
   the run has swept enough words, sets the next one at twice the words swept and computes the
   rates, the walk of~$s_2$ under \verb|-A 2| or more and the end of the third stage, every double
   in the order of the C code.
-  The fold of block~$j$ (\csource{find_points.c}{4135}{4148}) adds its counters to the state of the
+  The fold of block~$j$ (\csource{find_points.c}{4142}{4155}) adds its counters to the state of the
   correction and appends a decision for the blocks from $j + \mathrm{adaptLag} + 1$ on when the
   correction changes an end. The run starts from the decision of the choice for
   block~$0$, sifts each block with the decisions made before it and folds its report, returns after
   the block in which the callback stopped the search, and gives the ends~$s_2$ and~$s_3$ of the
-  last block folded, the moduli used (\csource{find_points.c}{5229}{5237}).
+  last block folded, the moduli used (\csource{find_points.c}{5236}{5244}).
 \end{definition}
 
 \begin{lemma}[The correction keeps the decisions well formed]\label{lem:correction}

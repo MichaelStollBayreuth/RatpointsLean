@@ -563,7 +563,7 @@ the first bit array cleared if `maskLow ≠ 0` (`Ratpoints.Sieve.clearLowBits`),
 callback `process` on the delivery `r` and returns when the callback stops the search. This is
 `_ratpoints_sift0` of the C code, with the allocation of the survivors array that it works in.
 
-C: `find_points.c:3137-3139`, `sift.c:498-531`, `sift.c:548`, `sift.c:1030-1041`,
+C: `find_points.c:3144-3146`, `sift.c:498-531`, `sift.c:548`, `sift.c:1030-1041`,
 `sift.c:1056-1058`, `sift.c:1300-1305`, `rp-private.h:575`, `rp-private.h:610-614`
 
 Deviation: the arm of the first stage chosen by a test on the constant `Ratpoints.chunk`, for the
@@ -613,7 +613,7 @@ multiple of `2 ^ k`, the end shifted right by `k`, and its rest, the end and-ed 
 `2 ^ k - 1`, from which `a₀` is taken, so that nothing leaves the range of a `long` also for an end
 within `2 ^ k` of its bounds. Both forms give the same bits where both stay in range.
 
-C: `find_points.c:3374-3389`
+C: `find_points.c:3381-3396`
 
 Deviation: `Int64` for the `long`s, in two's complement, the representation on which the and with
 the mask acts, also on a negative end, and `>>>` on `Int64` the arithmetic shift, for the `>>` of a
@@ -648,7 +648,7 @@ interval holds none, and otherwise clipped to `height`; and the code `0` with th
 `⌈b l⌉, …, ⌊b u⌋` (`Ratpoints.Sieve.numeratorsToBits`), in the form that splits the ends for the
 heights above `2 ^ 63 - 65`.
 
-C: `find_points.c:3400-3425`
+C: `find_points.c:3407-3432`
 
 Deviation: the code and the bits returned as a triple, for the `int` and the pointers `low` and
 `high` through which the C code writes the bits, the bits `(0, 0)` with the codes `1` and `2`, for
@@ -682,7 +682,7 @@ of an empty one; and otherwise the code `0` with the bits of `lo, …, hi` clipp
 `-height, …, height` (`Ratpoints.Sieve.numeratorsToBits`, in the form that does not split the ends).
 The code `0` comes also for an interval that holds no numerator, when `lo > hi`.
 
-C: `find_points.c:3429-3453`
+C: `find_points.c:3436-3460`
 
 Deviation: the code and the bits returned as a triple, for the `int` and the pointers `low` and
 `high` through which the C code writes the bits, the bits `(0, 0)` with the codes `1` and `2`, for
@@ -714,7 +714,7 @@ the start `0`, which the chunked first stage sets before it reads it
 (`Ratpoints.Sieve.chunkStarts`), and the end `p` of the walk of the chunked first stage through the
 row; a row is missing when one of them is not built yet, and `Ratpoints.Sieve.buildRows` builds it.
 
-C: `find_points.c:3168-3189`
+C: `find_points.c:3175-3196`
 
 Deviation: a list of the moduli with their rows and offsets, for the array of sieve specs `ssp` that
 `set_rows` fills; the empty array for the null pointer of a row not built yet; the start set to `0`,
@@ -740,7 +740,7 @@ rows of its entry, read again, and otherwise built into it by the builder of the
 (`Ratpoints.Sieve.SieveEntry.fetchRow`), and the end `p` of the walk of the chunked first stage
 through the row; the specs and the store with the rows built.
 
-C: `find_points.c:3541-3573`
+C: `find_points.c:3548-3580`
 
 Deviation: the specs and the store of the tables of rows of the run passed and returned, for the
 array of the sieve specs and the arrays `sieve` of the entries; the empty array for the null pointer
@@ -776,11 +776,11 @@ the first piece and the high mask `rbaLength - 1 - (high mod rbaLength)` if it i
 the bits that the masks leave lie end to end and make up `low, …, high`; after each piece the loop
 returns if the callback has stopped the search.
 
-C: `find_points.c:3582-3631`
+C: `find_points.c:3589-3638`
 
 Deviation: a function of its own for the bits of one interval of the numerators, the part of the
 loop over the intervals of `sift` after the set-up; the size `A` of the pieces as an argument, for
-`args->array_size` (`find_points.c:3590`), which `sift` reads through the pointer `args` of the
+`args->array_size` (`find_points.c:3597`), which `sift` reads through the pointer `args` of the
 sieving thread; natural numbers and integers for the `long`s, the word numbers and the masks by the
 division and the remainder, rounding down, by `Ratpoints.rbaLength`, for the shift by `RBA_SHIFT`
 and the mask by `RBA_LENGTH - 1` (with `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift`), which gcc
@@ -790,8 +790,8 @@ bit arrays staying `long`s for the bits of a height bound below `2 ^ 63`
 `Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow`); the delivery `r` passed and returned, for
 the pointers `info` and `wk->quit` and the count `total` that `sift` keeps from zero and returns,
 and the counters `cnt` passed and returned, for those of the sieving thread; no test of the flag
-`stop` of a thread of the pool after a piece (`find_points.c:3629`), which is null on the calling
-thread (`find_points.c:5206`, with the pool excluded with the threads), and no measurement
+`stop` of a thread of the pool after a piece (`find_points.c:3636`), which is null on the calling
+thread (`find_points.c:5213`, with the pool excluded with the threads), and no measurement
 (`RP_SIFT_TOC`) on the return at a stop. -/
 def siftBits {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b A : Nat) (fl : CheckFlags) (sp1 : Nat) (specs : List SieveSpec) (mgs : List Nat)
@@ -839,16 +839,16 @@ first two stages, the first stage ending after `sp1` of them, the degree `d` and
 which returns when the callback stops the search. With the one interval `[-h, h]` of a search
 without search intervals, for `h ≥ H`, the numerators are `-H, …, H`.
 
-C: `find_points.c:3130-3132`, `find_points.c:3141-3142`, `find_points.c:3147-3148`,
-`find_points.c:3454-3459`, `find_points.c:3461-3507`, `find_points.c:3509-3540`,
-`find_points.c:3574-3580`, `find_points.c:3632-3636`, `rp-private.h:574`, `rp-private.h:577-578`,
+C: `find_points.c:3137-3139`, `find_points.c:3148-3149`, `find_points.c:3154-3155`,
+`find_points.c:3461-3466`, `find_points.c:3468-3514`, `find_points.c:3516-3547`,
+`find_points.c:3581-3587`, `find_points.c:3639-3643`, `rp-private.h:574`, `rp-private.h:577-578`,
 `rp-private.h:583`, `rp-private.h:585`
 
 Deviation: the height bound converted to `Int64`, which is exact for `H < 2 ^ 63`, and the
 denominator too, and the bits back to integers; the bounds of the search intervals an array, for the
 struct `rp_intervals` with its pointers `bd` and `end`, which `sift` reaches through the field `iv`
-of the sieving thread, which `worker_init` clears (`find_points.c:3148`) and `run_block` sets for
-each block (`find_points.c:3934`; here `Ratpoints.Sieve.runBlock`, which passes the array of the run
+of the sieving thread, which `worker_init` clears (`find_points.c:3155`) and `run_block` sets for
+each block (`find_points.c:3941`; here `Ratpoints.Sieve.runBlock`, which passes the array of the run
 on); one call of `Ratpoints.Sieve.setRows`, for the two calls with the flag `shared` a constant,
 between which the pool of threads chooses, which the model does not have; the store of the tables of
 rows passed and returned, for the arrays `sieve` of the entries of the arguments, which `sift`
@@ -866,7 +866,7 @@ argument, which the C code reaches through the pointer `offset` of the class; th
 fills, and its flag `stage3_filled`, which `sift` clears; the thunk of the products `w`, for the
 flag `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when it computes the
 products; the counters `cnt` passed and returned, for those of the sieving thread, the count `sifts`
-one up at the start (`find_points.c:3480`); the delivery `r` passed and returned, for the pointers
+one up at the start (`find_points.c:3487`); the delivery `r` passed and returned, for the pointers
 `info` and `wk->quit`, which `worker_init` clears, and the count `total` that `sift` keeps from zero
 and returns; the arguments of the run passed explicitly, for the pointer `args` of the sieving
 thread (`rp-private.h:574`), which `worker_init` sets and through which `sift` reads them; no pool,

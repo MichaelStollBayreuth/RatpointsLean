@@ -274,11 +274,11 @@ builders are generated for each prime from \verb|CODE_INIT_SIEVE1| for $p < 64$
 
 \section{The rows of a run}\label{sec:runRows}
 
-The sieve sets up a denominator by \verb|set_rows| (\csource{find_points.c}{3168}{3189}), the row
+The sieve sets up a denominator by \verb|set_rows| (\csource{find_points.c}{3175}{3196}), the row
 of the residue of each modulus of the first two stages from its entry, perhaps absent. It builds
 each absent row by the function of the entry, under the lock of the tables when threads share them
 and after reading the pointer again, since another thread may have built it in the meantime
-(\csource{find_points.c}{3541}{3573}); the model, which has no threads, reads it again as well.
+(\csource{find_points.c}{3548}{3580}); the model, which has no threads, reads it again as well.
 Within a run the moduli of the first two stages are pairwise coprime (Chapter~\ref{chap:moduli}),
 so that each table of rows is reached through one modulus; the contracts also admit entries that
 share a table. The run hands the store on from one denominator and one block to the next.
@@ -293,11 +293,11 @@ share a table. The run hands the store on from one denominator and one block to 
   (\csource{find_points.c}{2443}{2443}, \csource{find_points.c}{2487}{2487}). The row of a
   residue~$b$ of a sieve entry \emph{read or built}: the row in its table when it is there, and
   otherwise the row that its builder builds into it. The sieve specs of a denominator, as
-  \verb|set_rows| makes them (\csource{find_points.c}{3168}{3189}): for each entry of the first two
+  \verb|set_rows| makes them (\csource{find_points.c}{3175}{3196}): for each entry of the first two
   stages its modulus, the offset of the row of the class and its row at its residue of~$b$, absent
   when it is not built, with the end~$p$. The missing rows of a denominator: each sieve spec of the
   first two stages without a row gets the row read or built of its entry at its residue
-  (\csource{find_points.c}{3541}{3573}).
+  (\csource{find_points.c}{3548}{3580}).
 \end{definition}
 
 \begin{lemma}[The rows of a run are closed forms]\label{lem:runRows}

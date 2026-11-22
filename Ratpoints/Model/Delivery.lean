@@ -65,7 +65,7 @@ structure Answer (σ : Type) where
 /-- The state of the delivery of a search: the data `info` of the callback, the count `total`, the
 sum of the values that the calls of the callback returned so far, and the flag `quit`, whether a
 call has stopped the search. The search starts with `total = 0` and `quit` clear
-(`find_points.c:4637-4638`, `find_points.c:3147`), and its components test `quit` after each call of
+(`find_points.c:4644-4645`, `find_points.c:3154`), and its components test `quit` after each call of
 the callback, where the C code tests `*quit`, and return at once when it is set. One value stands
 for what the C code keeps apart: the pointer `info`, which the library hands on unchanged; the
 counts `total` that each function of the search keeps from zero and returns, which its caller adds
@@ -128,8 +128,8 @@ structure CheckFlags where
 the delivery `r`, mapped back to the caller's curve when `reversed` is set: with `(b : y : a)` for
 `a ≥ 0` and `(-b : y : -a)` for `a < 0` (as `Ratpoints.Sieve.swapPoint` maps the point), and
 otherwise with `(a : y : b)` itself. These are the three branches that `_ratpoints_check_point`
-writes at each of its calls of `process` (`find_points.c:5389-5393`, `find_points.c:5398-5402`,
-`find_points.c:5408-5412`), one definition here; the negations stay `long`s for a numerator and a
+writes at each of its calls of `process` (`find_points.c:5396-5400`, `find_points.c:5405-5409`,
+`find_points.c:5415-5419`), one definition here; the negations stay `long`s for a numerator and a
 denominator of a height bound below `2 ^ 63`. -/
 def Delivery.callMapped (process : Int → Int → Int → σ → Answer σ) (r : Delivery σ)
     (reversed : Bool) (a b y : Int) :
