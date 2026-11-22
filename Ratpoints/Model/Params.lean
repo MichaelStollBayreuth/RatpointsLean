@@ -59,7 +59,7 @@ the search reads the cut points of the stages and the array size, and the correc
 between its blocks the estimates of the run, the cost of a check and the words of the first
 correction; the moduli come to the run as their sieve entries (`Ratpoints.SievingInfo`).
 
-C: `ratpoints.h:368`, `ratpoints.h:395-397`, `ratpoints.h:406`
+C: `ratpoints.h:394`, `ratpoints.h:421-423`, `ratpoints.h:432`
 
 Deviation: the parameters as a structure of their own, for the fields of the arguments that
 `find_points_work` normalizes and `sieving_info` sets (`sp1`, `sp2`, `sp3`, `max_forbidden`,
@@ -127,7 +127,7 @@ and `-F` give C `long`s, which are `-1`, as in `main.c`, when the option is abse
 `-C`, `-Q` and `-W` give doubles, `-1.0` when absent; `-j` switches the Jacobi test off and `-J` on
 again; and the array size is `Ratpoints.defaultArraySize`, which the program sets.
 
-C: `main.c:348-358`, `main.c:360-361`, `main.c:363`, `ratpoints.h:365-367`
+C: `main.c:348-358`, `main.c:360-361`, `main.c:363`, `ratpoints.h:391-393`
 
 Deviation: integers for the `long`s of the fields, doubles by their bits (`Ratpoints.Double`) for
 the doubles, as the program reads doubles (`Ratpoints.Cli.scanDouble?`), and a Boolean for the bit

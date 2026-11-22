@@ -294,7 +294,7 @@ whether no point is printed (`-z`, and not `-Z`), the format of a point (`-f`), 
 `-fm`, `-fe`), none for none, and the exact ends of the search intervals of the command line, which
 `process` reads (`ends`, as the options `-l` and `-u` fill it: `Ratpoints.Cli.Intervals`).
 
-C: `main.c:59-66`, `main.c:421-428`, `ratpoints.h:407`
+C: `main.c:59-66`, `main.c:421-428`, `ratpoints.h:433`
 
 Deviation: a structure for the global variables; `Option String` for the strings and the format,
 `none` for the null pointer, and Lean strings for the C strings of the command line, which the Lean
@@ -1034,9 +1034,11 @@ the library. -/
   (runWithFile ["@f", "10"] (some ByteArray.empty)).2 == 5 && (runWithFile ["@f"] none).2 == 2 &&
   runWithFile ["1 0 1", "10", "-q"] none == run ["1 0 1", "10", "-q"]
 
--- `maxDegree + 1` coefficients are read, one more fail with error 3.
-#guard (coefficients (" ".intercalate (List.replicate (maxDegree + 1) "1"))).toOption.isSome &&
-  run [" ".intercalate (List.replicate (maxDegree + 2) "1"), "5"] ==
+-- A list of 102 coefficients is read and searched; error 3 is for a list of more than
+-- `maxDegree + 1` coefficients, too many for an example.
+#guard run [" ".intercalate (List.replicate 102 "1"), "5", "-q"] ==
+    ("(1 : 0 : 0)\n(-1 : 0 : 1)\n(0 : 1 : 1)\n(0 : -1 : 1)\n", 0) &&
+  (Failure.tooManyCoefficients.message, Failure.tooManyCoefficients.status) ==
     ("\nToo many coefficients.\n\n", 3)
 
 #guard run ["1 2 x", "10"] ==
@@ -1326,9 +1328,9 @@ private def maskReport (r : String × UInt32) : String × UInt32 :=
   fun os ↦ (run (["1 0 1", "5", "-q"] ++ os)).2 == 7
 #guard (run (["1 0 1", "5", "-q", "-z", "-l", "1", "-u", "1"])).2 == 0
 #guard
-  let os := (List.range (maxDegree + 1)).flatMap fun i ↦
+  let os := (List.range 101).flatMap fun i ↦
     ["-l", toString (2 * i), "-u", toString (2 * i + 1)]
-  (run (["1 0 1", "5", "-q", "-z"] ++ os ++ ["-l", toString (2 * maxDegree + 100)])).2 == 0
+  (run (["1 0 1", "5", "-q", "-z"] ++ os ++ ["-l", "300"])).2 == 0
 #guard run ["1 0 1", "5", "-q", "-u", "0", "-l", "2"] == ("(1 : 1 : 0)\n(1 : -1 : 0)\n" ++
     "(0 : 1 : 1)\n(0 : -1 : 1)\n(-4 : 5 : 3)\n(-4 : -5 : 3)\n(-3 : 5 : 4)\n(-3 : -5 : 4)\n", 0) &&
   run ["1 0 1", "5", "-q", "-l", "1"] ==

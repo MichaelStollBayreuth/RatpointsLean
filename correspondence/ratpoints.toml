@@ -7,8 +7,8 @@
 # release 3.1.1 to release 3.2.0.
 [pin]
 repository = "https://github.com/MichaelStollBayreuth/ratpoints"
-tag = "v3.1.1-12-gda48a67"
-commit = "da48a6774c6d83400e90ad77f4e3b51d4906988f"
+tag = "v3.1.1-13-g8e7c0f7"
+commit = "8e7c0f7fad0c0c733a6ae7a41ef46723e71f1d67"
 
 # Every line of code of these files lies in exactly one recorded range: modelled (a `C:`
 # paragraph of a docstring of the model) or excluded (an [[excluded]] table below), as
@@ -145,49 +145,49 @@ reason = "the include of gmp.h, the header of GMP; the model has no headers"
 
 [[excluded]]
 file = "ratpoints.h"
-lines = "42"
+lines = "68"
 kind = "other"
 reason = "RATPOINTS_DEFAULT_SP1, the fixed end of the first stage of the versions 2.x, which the C code reads nowhere: the library chooses the end of the first stage from the curve (sieving_info)"
 
 [[excluded]]
 file = "ratpoints.h"
-lines = "43"
+lines = "69"
 kind = "other"
 reason = "RATPOINTS_DEFAULT_SP2, the fixed end of the second stage of the versions 2.x, which the C code reads nowhere"
 
 [[excluded]]
 file = "ratpoints.h"
-lines = "439"
+lines = "465"
 kind = "interface"
 reason = "the prototype of find_points_init, which a caller of the library calls before find_points_work and whose definition (find_points.c:285-388) is excluded as interface: the model allocates nothing"
 
 [[excluded]]
 file = "ratpoints.h"
-lines = "444"
+lines = "470"
 kind = "memory"
 reason = "the prototype of find_points_clear, which frees what find_points_init allocated and whose definition (find_points.c:390-429) is excluded as memory: the model allocates nothing"
 
 [[excluded]]
 file = "ratpoints.h"
-lines = "370-376"
+lines = "396-402"
 kind = "threads"
 reason = "the number of threads that sieve; the model sieves on the calling thread, with the same output for every number of threads"
 
 [[excluded]]
 file = "ratpoints.h"
-lines = "398"
+lines = "424"
 kind = "threads"
 reason = "the pool of threads of the arguments; the model has no threads"
 
 [[excluded]]
 file = "ratpoints.h"
-lines = "385-388"
+lines = "411-414"
 kind = "memory"
 reason = "the private fields of the arguments that hold memory: the scratch integers of the search with their number (work, work_length), and the buffers of the sieve entries, of the bit arrays of the rows and of the integers of the tables of the primes, each with the pointer to its free space (se_buffer, se_next, ba_buffer, ba_next, int_buffer, int_next), which find_points_init allocates (find_points.c:285-388, excluded as interface); the model computes with Lean's integers and makes the entries, the rows and the tables as fresh values"
 
 [[excluded]]
 file = "ratpoints.h"
-lines = "392-394"
+lines = "418-420"
 kind = "memory"
 reason = "the private fields of the arguments that hold memory: the buffer of the words of the forbidden divisors beyond the table with its length (forb_words, forb_words_len), the buffer of the rows as allocated, with the primes and the bit arrays it has room for (ba_buffer_na, ba_buffer_primes, ba_buffer_arrays), and the buffer of the prime powers (pw_buffer); the model makes the words, the rows and the records of the prime powers as fresh values (Ratpoints.Sieve.forbiddenRow, Ratpoints.Sieve.examinePower)"
 

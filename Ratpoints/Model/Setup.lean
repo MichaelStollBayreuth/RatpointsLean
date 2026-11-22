@@ -249,7 +249,8 @@ with `v_p(0) = Ratpoints.veryBig`, so that a zero coefficient imposes nothing wh
 
 C: `find_points.c:907-925`, `rp-private.h:87`
 
-Deviation: integers for the `int`s, and the slope as a natural number; no output under `DEBUG`. -/
+Deviation: integers for the `int`s and for the `long` `k`, and the slope as a natural number; no
+output under `DEBUG`. -/
 def slope (c : List Int) (d p val : Nat) : Id Nat := do
   let mut n : Int := 1
   for j in [0:d] do
@@ -270,11 +271,11 @@ times squares, which the divisor shape of the loop over the denominators visits 
 (`Ratpoints.Sieve.squares1Block`).
 
 C: `find_points.c:779-789`, `find_points.c:876`, `find_points.c:894-906`, `find_points.c:927-948`,
-`ratpoints.h:390`
+`ratpoints.h:416`
 
 Deviation: the leading coefficient read from the list, for the integer `work[0]` that the caller
 sets to `|c_d|` (`find_points.c:4961-4962`); lists, for the arrays `den_info` and `divisors` of the
-arguments (`ratpoints.h:390`) with their terminating zeros; `none` for a factorization that is not
+arguments (`ratpoints.h:416`) with their terminating zeros; `none` for a factorization that is not
 complete or too many divisors, where `setup_us1` leaves the flag `RATPOINTS_USE_SQUARES1` clear, and
 the lists returned, where it sets the flag; no output under `DEBUG`. -/
 def setupUs1 (c : List Int) (d bHigh : Nat) : Id (Option (List DenInfo × List Nat)) := do

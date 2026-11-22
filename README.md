@@ -40,7 +40,7 @@ hypothesis on the latter (from them and from the curve the search chooses its mo
 does), the search `Ratpoints.findPoints`
 
 - refuses exactly the inputs that `ratpoints` refuses: with the Sturm step on, fewer than two or
-  more than `maxDegree + 1 = 101` coefficients, `H = 0` or `H ≥ 2^63` (a height that is not a C
+  more than `maxDegree + 1` coefficients, `H = 0` or `H ≥ 2^63` (a height that is not a C
   `long`), a binary form that is not squarefree, and search intervals that are not well formed; with
   the Sturm step off, exactly what `ratpoints` refuses under `-s`;
 - returns otherwise, with the exact check on, exactly the points of height at most `H` in the
@@ -89,7 +89,7 @@ of code of the C files is recorded, with the Lean declarations that model it or 
 model leaves it out, and `scripts/correspondence.py` checks the record against the C code at the
 pinned commit (`correspondence/README.md`). The differential tests run `ratpoints-model` and the C
 program on the same inputs and compare the outputs byte for byte, the points in their order, the
-exit statuses and the reports: 5471 comparisons in the default suites, 13 in the suite of the runs
+exit statuses and the reports: 5474 comparisons in the default suites, 13 in the suite of the runs
 of `test4.sh` above height 30000 and 92 in the suite of the searches in which `ratpoints` corrects
 its moduli, none failed. Since the choice of the moduli computes with the `log` and `pow` of the
 platform, the tests run the C program on the same machine and compare exactly what depends on the

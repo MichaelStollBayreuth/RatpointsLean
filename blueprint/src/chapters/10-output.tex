@@ -14,11 +14,11 @@ pass the delivery on are those of Chapter~\ref{chap:sieve}.
 \section{The callback and the delivery}\label{sec:outputCallback}
 
 The header of the library declares the callback of \verb|find_points| and \verb|find_points_work|
-(\csource{ratpoints.h}{436}{437}, \csource{ratpoints.h}{441}{442}) as
+(\csource{ratpoints.h}{462}{463}, \csource{ratpoints.h}{467}{468}) as
 \verb|int proc(long, long, const mpz_t, void*, int*)|; the manual names its parameters \verb|x|,
 \verb|z|, \verb|y|, \verb|info| and \verb|quit|. The library adds the value that each call returns
 to a count \verb|total|, which it returns, or one of the negative codes of an error
-(\csource{ratpoints.h}{427}{430}); a call stops the search by setting \verb|*quit|, which the
+(\csource{ratpoints.h}{453}{456}); a call stops the search by setting \verb|*quit|, which the
 library clears before the search and tests after the steps that may have made calls
 (Section~\ref{sec:outputStops}), so that it is clear at every call. Every refusal of the input comes
 before the first call; only \verb|RATPOINTS_NO_MEMORY| can come after calls, when an allocation
@@ -33,7 +33,7 @@ one running count, and for the flags of the stop of the points at infinity and o
   \lean{Ratpoints.CheckFlags, Ratpoints.Delivery.callMapped, Ratpoints.appendPoint, Ratpoints.Delivery.print}
   \leanok
   The flags of the check, which decide what the exact check and the points at infinity deliver:
-  the bits \verb|RATPOINTS_REVERSED| (\csource{ratpoints.h}{414}{414}), \verb|RATPOINTS_NO_CHECK|
+  the bits \verb|RATPOINTS_REVERSED| (\csource{ratpoints.h}{440}{440}), \verb|RATPOINTS_NO_CHECK|
   and \verb|RATPOINTS_NO_Y| of the word of flags, as three Booleans, clear by default. One call
   (Definition~\ref{def:deliver}) with a point $(a : y : b)$ of the polynomial searched, mapped back
   to the caller's curve when the flag of the reversal is set: with $(b : y : a)$ for $a \ge 0$ and
@@ -105,7 +105,7 @@ the first call that stops it: the protocol of the delivery (Theorem~\ref{thm:pro
 \section{The options of the output}\label{sec:outputFlags}
 
 Two bits of the flags of the caller change which points the library delivers
-(\csource{ratpoints.h}{403}{404}): under \verb|RATPOINTS_NO_Y| only the point with $y \ge 0$ of a
+(\csource{ratpoints.h}{429}{430}): under \verb|RATPOINTS_NO_Y| only the point with $y \ge 0$ of a
 pair $(x : \pm y : z)$ goes to the callback, and under \verb|RATPOINTS_NO_CHECK| every numerator
 that passes the sieve goes to it with $y = 0$, without the exact check, whether or not it gives a
 point. The C code reads them only in the exact check (\csource{find_points.c}{5300}{5388}), at the
@@ -176,12 +176,12 @@ height at most~$H$ in the search region (Theorem~\ref{thm:noCheck}).
 \section{What a search gives back}\label{sec:outputBack}
 
 Besides the count, \verb|find_points| writes back what the program reads after the search: three
-bits of \verb|args->flags| (\csource{ratpoints.h}{414}{417}), \verb|RATPOINTS_REVERSED|, set by the
+bits of \verb|args->flags| (\csource{ratpoints.h}{440}{443}), \verb|RATPOINTS_REVERSED|, set by the
 reversal check, and \verb|RATPOINTS_USE_SQUARES| and \verb|RATPOINTS_USE_SQUARES1|, set for odd
 degree when the leading coefficient is~$\pm 1$ and, otherwise, when the set-up of its divisors
 succeeds (\csource{find_points.c}{4960}{4993}), for message~7; the search intervals as the Sturm
 step leaves them, for message~8; and the numbers of the moduli used in the stages
-(\csource{ratpoints.h}{378}{378}), for message~4. The outcome of a search in the model holds exactly
+(\csource{ratpoints.h}{404}{404}), for message~4. The outcome of a search in the model holds exactly
 these, with the data of the callback and the count (Definition~\ref{def:Options}). The search sets
 the bits before its exits and before the points at infinity, and it returns after the Sturm step
 only for even degree, where the two bits of the squares are clear; so the bits and the intervals are
@@ -194,7 +194,7 @@ writes are not, and the bits of the input come back as the caller set them
 
 \section{The report of the library}\label{sec:outputReport}
 
-Under the bit \verb|RATPOINTS_VERBOSE| of the flags (\csource{ratpoints.h}{407}{407}), which the
+Under the bit \verb|RATPOINTS_VERBOSE| of the flags (\csource{ratpoints.h}{433}{433}), which the
 option \verb|-v| of the program sets, the library prints a report of the search on the standard
 output, between the points that the callback of the program prints there. The model has no standard
 output: the search takes a \emph{print channel}, a function that prints a text into the data of the

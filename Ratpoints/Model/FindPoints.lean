@@ -92,8 +92,8 @@ and without the Sturm step the reversal check), what is delivered (the options o
 search region; under the first of the output, the reversal, the options of the sieve and the Sturm
 step change it too), and with its intervals what the search writes back (`Ratpoints.Outcome`).
 
-C: `main.c:359`, `main.c:363`, `ratpoints.h:359`, `ratpoints.h:363-364`, `ratpoints.h:369`,
-`ratpoints.h:403-405`
+C: `main.c:359`, `main.c:363`, `ratpoints.h:385`, `ratpoints.h:389-390`, `ratpoints.h:395`,
+`ratpoints.h:429-431`
 
 Deviation: a structure for the fields of `ratpoints_args` that hold these options: Booleans for the
 bits `RATPOINTS_NO_CHECK`, `RATPOINTS_NO_Y` and `RATPOINTS_NO_REVERSE` of the flags, `noCheck` and
@@ -144,7 +144,7 @@ would not all be doubles, and the switch of the reversal off (`RATPOINTS_NO_REVE
 caller gives search intervals or the range of the denominators is not `1, …, H`.
 
 C: `find_points.c:4690-4691`, `find_points.c:4709-4711`, `find_points.c:4728-4739`,
-`ratpoints.h:421-424`
+`ratpoints.h:447-450`
 
 Deviation: the normalized options returned, for the fields of the arguments that the C code
 normalizes in place and restores in `find_points_work` (`find_points.c:4587-4590` and
@@ -179,7 +179,7 @@ the search (its message 4): those of the first stage, of the first two and of al
 the last block of the run was sifted with them (`Ratpoints.Sieve.sieveRun`), and `0` for each when
 the search returns before the sieve.
 
-C: `ratpoints.h:377-383`, `ratpoints.h:414`, `ratpoints.h:416-417`
+C: `ratpoints.h:403-409`, `ratpoints.h:440`, `ratpoints.h:442-443`
 
 Deviation: a structure for what the C code returns and writes back into the arguments: the data of
 the callback, which the caller has behind its pointer `info`, the count, which `find_points` returns
@@ -414,8 +414,8 @@ when an exit is taken; with `sturmEmpty` set, only the points at infinity.
 C: `find_points.c:4638-4639`, `find_points.c:4645-4646`, `find_points.c:4652`,
 `find_points.c:4653-4654`, `find_points.c:4657`, `find_points.c:4950-4964`,
 `find_points.c:4969-4970`, `find_points.c:4977`, `find_points.c:4992-4993`, `find_points.c:4998`,
-`find_points.c:5004-5009`, `find_points.c:5012-5013`, `find_points.c:5042-5045`, `ratpoints.h:415`,
-`ratpoints.h:418`
+`find_points.c:5004-5009`, `find_points.c:5012-5013`, `find_points.c:5042-5045`, `ratpoints.h:441`,
+`ratpoints.h:444`
 
 Deviation: the range of the denominators, the search intervals and the flag `sturm_empty` as
 arguments, for the fields `b_low`, `b_high`, `domain` and `num_inter` of the arguments and the local
@@ -555,8 +555,8 @@ C: `find_points.c:4567-4573`, `find_points.c:4591`, `find_points.c:4597-4598`,
 `find_points.c:4604-4605`, `find_points.c:4607`, `find_points.c:4613-4614`,
 `find_points.c:4616-4621`, `find_points.c:4656`, `find_points.c:4674-4683`, `find_points.c:4708`,
 `find_points.c:5269-5270`, `find_points.c:5276-5279`, `find_points.c:5285`,
-`find_points.c:5291-5292`, `ratpoints.h:362`, `ratpoints.h:399-400`, `ratpoints.h:409-411`,
-`ratpoints.h:427-430`, `ratpoints.h:436-437`, `ratpoints.h:441-442`
+`find_points.c:5291-5292`, `ratpoints.h:388`, `ratpoints.h:425-426`, `ratpoints.h:435-437`,
+`ratpoints.h:453-456`, `ratpoints.h:462-463`, `ratpoints.h:467-468`
 
 Deviation: one function for `find_points`, `find_points_work` and the start of `find_points_work_1`,
 which the library calls in turn, and the rest of which is `Ratpoints.findPointsWork`. The refusals
@@ -571,10 +571,10 @@ of the leading zeros first); and the height bound, which the program checks befo
 library, comes before the test of the leading zeros, which the library makes first, so that `5 0`
 with `H = 0` is error 4, as the program gives it. The degree with the leading zeros dropped is
 `Ratpoints.BruteForce.degree c`. A natural number `H` for the `long` `height` of the arguments
-(`ratpoints.h:362`), so that `H = 0` stands for the heights below 1 that `find_points.c:4708`
+(`ratpoints.h:388`), so that `H = 0` stands for the heights below 1 that `find_points.c:4708`
 refuses; a height that is not a `long`, `2 ^ 63` or more, is refused with error 4, as the program
 refuses it when it reads the height (`Ratpoints.Cli.heightBound`), where the library cannot be given
-one, its height being a `long`. The end of the type `ratpoints_args` (`ratpoints.h:399-400`) with
+one, its height being a `long`. The end of the type `ratpoints_args` (`ratpoints.h:425-426`) with
 its first fields, whose other fields are those of the options, the parameters, the result of the
 choice of the moduli and the outcome (`Ratpoints.Options`, `Ratpoints.SieveOptions`,
 `Ratpoints.Params`, `Ratpoints.SievingInfo`, `Ratpoints.Outcome`), of the divisor set-up
@@ -1173,9 +1173,10 @@ private def entriesOf (c : List Int) (d k : Nat) (ms : List Nat) :
     sturm, reverse, noCheck, bLow, bHigh, domain := dom.map fun (l, u) ↦ (⟨l⟩, ⟨u⟩) }
   match findPoints c H {} o with | .error e' => e' == e | .ok _ => false
 
-#guard findPoints (List.replicate (maxDegree + 2) 1) 0 {} matches
-  .error .tooManyCoefficients
-#guard findPoints (List.replicate (maxDegree + 1) 1) 1 { numPrimes := 0 } matches .ok _
+-- Lists of 101 and of 102 coefficients are searched; a list that is refused for its length has
+-- more than `maxDegree + 1` entries, too many for an example.
+#guard [101, 102].all fun n ↦
+  findPoints (List.replicate n 1) 1 { numPrimes := 0 } matches .ok _
 #guard findPoints [1] 0 {} matches .error .tooFewCoefficients
 #guard findPoints [1, 0, 1] 0 {} matches .error .incorrectHeight
 #guard findPoints [5, 0] 0 {} matches .error .incorrectHeight

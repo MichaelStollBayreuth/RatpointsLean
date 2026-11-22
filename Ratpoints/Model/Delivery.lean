@@ -46,7 +46,7 @@ namespace Ratpoints
 as a weight for counting the points; usually it will be 1", says the manual), whether it set
 `*quit` to stop the search, and the data behind `info` after the call.
 
-C: `ratpoints.h:436-437`, `ratpoints.h:441-442`
+C: `ratpoints.h:462-463`, `ratpoints.h:467-468`
 
 Deviation: the result of the call returned as a value, for the `int` that `process` returns, the
 `int` that it writes through the pointer `quit`, which the library clears before the search and
@@ -108,7 +108,7 @@ caller's curve; `RATPOINTS_NO_CHECK`, the option of the caller to have every num
 the sieve delivered without the exact check, with `y = 0`; and `RATPOINTS_NO_Y`, the option to have
 only the point with `y ≥ 0` of a pair `(x : ±y : z)` delivered.
 
-C: `ratpoints.h:414`
+C: `ratpoints.h:440`
 
 Deviation: a structure with a Boolean for each of the three bits, for the bits of the word `flags`
 of the arguments, which `_ratpoints_check_point` reads through its worker and `find_points_work_1`

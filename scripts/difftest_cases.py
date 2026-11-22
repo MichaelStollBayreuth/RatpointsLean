@@ -21,7 +21,7 @@ import math
 from decimal import Decimal
 from fractions import Fraction
 
-C102 = ' '.join(['1'] + ['0'] * 100 + ['1'])          # 102 coefficients
+C102 = ' '.join(['1'] + ['0'] * 100 + ['1'])          # 102 coefficients: degree 101
 C101 = ' '.join(['1'] + ['0'] * 99 + ['1'])           # 101 coefficients: degree 100
 # The files from which a first argument @name reads the list of the coefficients, by name, with what
 # each holds: those of the runs of test4.sh that read the list from a file (lf-tab, empty, nul,
@@ -37,6 +37,9 @@ LIST_FILES = {'lf-tab': b' 1\t0\n\n\t1\r\n', 'empty': b'', 'nul': b'1 0 1\0 2\n'
               'utf8': '1 0 \u00e9 1\n'.encode(), 'bom': b'\xef\xbb\xbf1 0 1\n', 'at': b'@lf-tab\n',
               'crlf': b'-2\r\n0\r\n0\r\n1\r\n', 'a b': b'1 0 1', 'c101': C101.encode(),
               'c102': C102.encode(), 'c102x': (C102 + ' x').encode(),
+              'deg250': ' '.join(['1', '-1', '2'] + ['0'] * 122 + ['2'] + ['0'] * 124
+                                 + ['1']).encode() + b'\n',
+              'deg251': ' '.join(['1', '2', '1'] + ['0'] * 247 + ['-1', '2']).encode() + b'\n',
               'huge': f'-1{HUGE_ZEROS}6 0 1{HUGE_ZEROS}7\n'.encode()}
 LIST_DIRS = ('dir',)
 LIST_STDIN = b'1\n0\n1\n'
@@ -69,9 +72,9 @@ CASES = [
     (['-0 1', '10', '-q'], '-0 is 0'),
     (['0001 0002', '10', '-q'], 'leading zeros'),
     (['1 0 0 0 100000000000000000000000000000000000000000001', '3', '-q'], 'a large coefficient'),
-    ([C102, '10'], '102 coefficients: error 3'),
-    ([C102, 'abc'], '102 coefficients and a bad height: error 3 comes first'),
-    ([C102 + ' x', '10'], '102 coefficients, then a letter: error 11 comes first'),
+    ([C102, '10'], '102 coefficients: searched, the degree is 101'),
+    ([C102, 'abc'], '102 coefficients and a bad height: error 4'),
+    ([C102 + ' x', '10'], '102 coefficients, then a letter: error 11'),
     ([C101, '3', '-q'], '101 coefficients: accepted'),
     (['x', 'abc'], 'bad coefficients and bad height: error 11 comes first'),
     (['', 'abc'], 'empty list and bad height: error 5 comes first'),
@@ -102,8 +105,8 @@ CASES = [
     (['@bom', '10'], 'a byte order mark: error 11'),
     (['@at', '10'], 'a file that names a file: error 11'),
     (['@c101', '3', '-q'], '101 coefficients from a file: accepted'),
-    (['@c102', '10'], '102 coefficients from a file: error 3'),
-    (['@c102x', '10'], '102 coefficients from a file, then a letter: error 11 comes first'),
+    (['@c102', '10'], '102 coefficients from a file: searched'),
+    (['@c102x', '10'], '102 coefficients from a file, then a letter: error 11'),
     (['@huge', '3', '-q'], 'coefficients of 20001 digits from a file'),
     (['@-', '10', '-q'], 'the list from the standard input'),
     (['@-', '0'], 'the list from the standard input and a bad height: error 4'),

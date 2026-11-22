@@ -862,7 +862,7 @@ def survives (entries : List SieveEntry) (b : Nat) (a : Int) : Bool := entries.a
 
 -- Horner's rule with Barrett's reduction on its schedule against Horner's rule reduced at every
 -- step, for the primes below `2 ^ maxBitsInPrime` with the largest coefficients and residues, where
--- the accumulator comes nearest to `2 ^ 64`, at degrees around the schedule and at `maxDegree`.
+-- the accumulator comes nearest to `2 ^ 64`, at degrees around the schedule and at 100.
 #guard (primeTable.toList.take numPrimes).all fun p ↦
   [0, 1, 6, 7, 8, 13, 14, 15, 100].all fun d ↦
     let cm := Array.replicate (d + 1) (p - 1)

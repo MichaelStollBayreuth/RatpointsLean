@@ -29,13 +29,13 @@ denominator of the point, after the rational number~$a/b$. For instance,
 among them $(129 : 3830 : 100)$, as $3830^2 = 100\,(129^3 - 2 \cdot 100^3)$.
 
 The search is done by the library function \verb|find_points|. It takes its arguments in a
-structure \verb|ratpoints_args| (\csource{ratpoints.h}{362}{400}): the coefficients and the height
+structure \verb|ratpoints_args| (\csource{ratpoints.h}{388}{426}): the coefficients and the height
 bound; flags that switch off the exact check of the points, the second point $(a : -y : b)$ of each
 pair, the reversal of the polynomial and the Jacobi test; a restriction of the search to intervals
 for~$x/z$ and to a range of the denominators; the depth of a Sturm step; and parameters that tune
 the sieve. It returns no list of points. It hands each point that it finds to a function of its
 caller, the \emph{callback}, together with the caller's data, adds up the values that the calls
-return, and stops as soon as a call asks it to (\csource{ratpoints.h}{436}{437}). The program
+return, and stops as soon as a call asks it to (\csource{ratpoints.h}{462}{463}). The program
 \verb|ratpoints| reads the coefficients, the height bound and its options from the command line,
 calls the library with a callback that prints the points in a format chosen by the options, and
 prints a report around them.
@@ -205,7 +205,7 @@ nor does the depth of the Sturm step, which the theorem also states in the form 
 with the step switched off returns the same list (this part is proved, not certified).
 
 \emph{The refusals} (Theorem~\ref{thm:refusals}). With the Sturm step on, $\mathrm{findPoints}$
-refuses exactly when~$c$ has fewer than two or more than $\mathrm{maxDegree} + 1 = 101$ entries,
+refuses exactly when~$c$ has fewer than two or more than $\mathrm{maxDegree} + 1$ entries,
 $H = 0$ or $H \ge 2^{63}$ (not a C \verb|long|), $\Phi_c$ is not squarefree, or the search
 intervals are not well formed. With the Sturm step off, the condition on~$\Phi_c$ is replaced by the
 two tests that \ratpoints{} makes without the remainder chain of the Sturm step, on the leading zeros
@@ -370,7 +370,7 @@ kind and a reason, each range locked with the hash of its text and its owners an
 against the pinned commit, and in which paragraphs \verb|Deviation:| say where the model departs
 from the C code (Sections~\ref{sec:ccodeRecord} and~\ref{sec:ccodeDeviations}); and the
 differential tests, which run both programs on the same command lines and compare the points in
-their order, the output byte for byte, the reports and the exit statuses: $5471$ comparisons in the
+their order, the output byte for byte, the reports and the exit statuses: $5474$ comparisons in the
 default suites and~$13$ and~$92$ in two further suites, none of which fails
 (Section~\ref{sec:ccodeTests}). As glibc's \verb|log| and \verb|pow| are not correctly rounded and
 depend on the processor, the comparisons that depend on the choice of the moduli are made with both

@@ -216,7 +216,11 @@ on a full device and on a closed standard output. The runs that read the list of
 from a file find their files in a temporary directory; the run of \verb|test4.sh| on a list of
 $2$~MB, two coefficients of a million digits, is skipped, since the model reads a number in time
 quadratic in its digits and takes minutes where \ratpoints{} takes a fraction of a second, and
-coefficients of $20001$ digits are compared in its place.
+coefficients of $20001$ digits are compared in its place. One check of \verb|main.c| is beyond every
+run: error~3, for a list of more than $\mathrm{maxDegree} + 1$ coefficients
+(Definition~\ref{def:maxDegree}), which \ratpoints{} tests in a build with the bound~$100$
+(\verb|make testmaxdegree|); for the model, the refusal is part of Theorem~\ref{thm:refusals}, and
+the runs here search polynomials of the degrees $101$, $102$, $250$ and~$251$.
 
 The default suites search up to the height~$30000$, and above it in narrow search regions. Since the
 choice of the moduli computes with the \verb|log| and \verb|pow| of the platform's C library, which
@@ -230,13 +234,14 @@ suites make these comparisons, none of which fails:
   suite & what it runs & comparisons \\
   \hline
   \verb|test4| & the runs of \verb|test4.sh|, against \verb|testbase4| and the C program, but
-    for~$13$ above the height~$30000$ and one on a list of coefficients of $2$~MB & $614$ \\
+    for~$13$ above the height~$30000$ and one on a list of coefficients of $2$~MB & $617$ \\
   \verb|test3| & the runs of \verb|test3.sh| & $21$ \\
   \verb|rptest| & the curves of \verb|testdata.h|, \verb|testdata-many.h| and
     \verb|testdata-degrees.h| at the height~$100$, against their recorded points & $1206$ \\
   \verb|random| & random polynomials of degree~$1$ to~$8$ at heights up to~$30$ & $300$ \\
   \verb|outputs| & random options of the output, formats and strings & $300$ \\
-  \verb|errors| & hand-written command lines for every check of \verb|main.c| and every option,
+  \verb|errors| & hand-written command lines for every check of \verb|main.c| but that of
+    error~3, and for every option,
     the refusals, the report under \verb|-v|, searches stopped at once at the height~$10^{12}$,
     failed writes, the list of the coefficients from a file, up to $1200$ search intervals
     & $434$ \\
@@ -250,7 +255,7 @@ suites make these comparisons, none of which fails:
   \verb|threads| & the C program with \verb|-t 4| and \verb|-t 7| & $205$ \\
   \verb|verbose| & random searches under \verb|-v| & $300$ \\
   \hline
-  & the default suites & $5471$ \\
+  & the default suites & $5474$ \\
   \hline
   \verb|test4high| & the runs of \verb|test4.sh| at the heights $40000$ to~$100000$ & $13$ \\
   \verb|adapt| & searches at the heights $16383$ to~$50000$ on which the C program corrects its

@@ -16,8 +16,8 @@ project:
     the normalized points of height at most H in the search region that the caller gives (assuming
     Sturm's theorem when the Sturm step is on), without duplicates, in the order of the C program,
     delivered to the callback of the caller as the C code delivers them, and refuses exactly the
-    inputs that the C program refuses (in a default run fewer than two or more than maxDegree + 1 =
-    101 coefficients, H = 0 or H >= 2^63, a height that is not a C long, and a binary form that is
+    inputs that the C program refuses (in a default run fewer than two or more than maxDegree + 1
+    coefficients, H = 0 or H >= 2^63, a height that is not a C long, and a binary form that is
     not squarefree, and search intervals that are not well formed); a correspondence record and
     differential tests link the model to the C code.
   authors: ["Michael Stoll"]
@@ -110,7 +110,7 @@ status:
     deliver them, give what the run delivers. Every line of code of the C files is recorded, with
     the declarations that model it or the reason for its exclusion, and CI checks the record against
     the C code at the pinned commit; the differential tests compare ratpoints-model with the C
-    program, built on the same machine (5471 comparisons in the default suites, 13 in the suite of the runs of test4.sh
+    program, built on the same machine (5474 comparisons in the default suites, 13 in the suite of the runs of test4.sh
     above height 30000 and 92 in the suite of the searches in which ratpoints corrects its moduli,
     none failed).
   sorry_count: 0
@@ -301,7 +301,7 @@ alignment:
         (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok); the threads, which the model leaves
         out, sift the blocks apart and deliver them in their order, which gives what the run
         delivers (Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun, not certified by comparator)
-    - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree, search intervals that are not well formed"
+    - source: "the refusals: fewer than two or more than maxDegree + 1 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree, search intervals that are not well formed"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.Output"
       status: "formalized"
