@@ -636,7 +636,7 @@ the C code assumes of `RATPOINTS_MAX_DEGREE` without a check. -/
 theorem maxDegree_lt_two_pow_57 : maxDegree < 2 ^ 57 := by decide
 
 /-- There is room for one search interval of the command line, which `read_input` of `main.c`
-fills without a check when `-u` comes before any `-l` (`main.c:471-490`). -/
+fills without a check when `-u` comes before any `-l` (`main.c:480-499`). -/
 theorem zero_lt_maxDegree : 0 < maxDegree := by decide
 
 /-! ### Examples -/

@@ -7,8 +7,8 @@
 # release 3.1.1 to release 3.2.0.
 [pin]
 repository = "https://github.com/MichaelStollBayreuth/ratpoints"
-tag = "v3.1.1-10-g083b09e"
-commit = "083b09eca6e05e728e35f7f0687f46ee96b13735"
+tag = "v3.1.1-12-gda48a67"
+commit = "da48a6774c6d83400e90ad77f4e3b51d4906988f"
 
 # Every line of code of these files lies in exactly one recorded range: modelled (a `C:`
 # paragraph of a docstring of the model) or excluded (an [[excluded]] table below), as
@@ -667,127 +667,133 @@ reason = "the release of the data that the program passed to the callback proces
 
 [[excluded]]
 file = "main.c"
-lines = "281-286"
+lines = "261-269"
+kind = "memory"
+reason = "error 10 with the hint on the option -s, which main prints when the library lacks memory and the Sturm step was on; the model has no failure for lack of memory"
+
+[[excluded]]
+file = "main.c"
+lines = "290-295"
 kind = "memory"
 reason = "the release of tmp and tmp2, of the GMP integers of the coefficients and of the rational ends of the intervals, and of the arrays c, ends and domain at the end of main"
 
 [[excluded]]
 file = "main.c"
-lines = "332-334"
+lines = "341-343"
 kind = "interface"
-reason = "the initialization of the fields of the arguments of the library that the model has no counterpart for: the pointer to the array c of the coefficients, which read_input sets once it has allocated the array (main.c:392), and the degree and the height, which it sets later (main.c:403 and main.c:407) and the model passes as values"
+reason = "the initialization of the fields of the arguments of the library that the model has no counterpart for: the pointer to the array c of the coefficients, which read_input sets once it has allocated the array (main.c:401), and the degree and the height, which it sets later (main.c:412 and main.c:416) and the model passes as values"
 
 [[excluded]]
 file = "main.c"
-lines = "353"
+lines = "362"
 kind = "threads"
 reason = "the default of the number of threads, one: the calling thread sieves; the model has no threads"
 
 [[excluded]]
 file = "main.c"
-lines = "368"
+lines = "377"
 kind = "memory"
 reason = "the pointer to the buffer with the contents of the file of the coefficients, which read_coeff_file allocates; the model passes the contents as a value"
 
 [[excluded]]
 file = "main.c"
-lines = "369"
+lines = "378"
 kind = "memory"
 reason = "the number of the words of the list of the coefficients, by which the array c of the coefficients is sized"
 
 [[excluded]]
 file = "main.c"
-lines = "371"
+lines = "380"
 kind = "memory"
 reason = "the index of the loop that initializes the GMP integers of the array c of the coefficients"
 
 [[excluded]]
 file = "main.c"
-lines = "379-392"
+lines = "388-401"
 kind = "memory"
 reason = "the array c of the coefficients from the heap: the count of the words of the list, the runs of characters that are no white space, an entry for each word and one entry for an empty list, error 10 when the allocation fails, the initialization of the GMP integers of the entries, and the pointer to the array in the arguments of the library; the model reads the coefficients into a list"
 
 [[excluded]]
 file = "main.c"
-lines = "400"
+lines = "409"
 kind = "memory"
 reason = "the release of the buffer with the contents of the file of the coefficients once the coefficients are read"
 
 [[excluded]]
 file = "main.c"
-lines = "439-443"
+lines = "448-452"
 kind = "memory"
 reason = "the arrays ends and domain of the search intervals from the heap, every entry 0, with error 10 when an allocation fails, and the initialization of the rational ends; the model makes arrays of the same sizes (Ratpoints.Cli.Intervals.sized)"
 
 [[excluded]]
 file = "main.c"
-lines = "760-761"
+lines = "769-770"
 kind = "memory"
 reason = "the buffer of read_coeff_file and its size; the model reads the file with the functions of the Lean runtime, which return its bytes"
 
 [[excluded]]
 file = "main.c"
-lines = "770-777"
+lines = "779-786"
 kind = "memory"
 reason = "the growth of the buffer of read_coeff_file, which doubles each time fread has filled it: the guard against an overflow of its size and its reallocation, each with error 10 when it fails, and the room that the buffer has for the next read, a byte being left for the zero at the end"
 
 [[excluded]]
 file = "main.c"
-lines = "864"
+lines = "873"
 kind = "memory"
 reason = "the initialization of the GMP rational t of outward"
 
 [[excluded]]
 file = "main.c"
-lines = "873"
+lines = "882"
 kind = "memory"
 reason = "the release of the GMP rational t of outward"
 
 [[excluded]]
 file = "main.c"
-lines = "919-920"
+lines = "928-929"
 kind = "memory"
 reason = "the allocation of the string of the digits of scan_end, and error 10 when it fails, which the model cannot meet"
 
 [[excluded]]
 file = "main.c"
-lines = "947"
+lines = "956"
 kind = "memory"
 reason = "the initialization of the GMP integer m of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "949"
+lines = "958"
 kind = "memory"
 reason = "the release of the string of the digits of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "966"
+lines = "975"
 kind = "memory"
 reason = "the initialization of the GMP integer p of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "973"
+lines = "982"
 kind = "memory"
 reason = "the release of the GMP integer p of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "976"
+lines = "985"
 kind = "memory"
 reason = "the release of the GMP integer m of scan_end"
 
 [[excluded]]
 file = "main.c"
-lines = "1077-1078"
+lines = "1086-1087"
 kind = "other"
-reason = "the text of message 1, the banner and the usage, which main prints only when read_input returns a value other than 0, which it never does: its only return is at main.c:744, and every other failure exits through error"
+reason = "the text of message 1, the banner and the usage, which main prints only when read_input returns a value other than 0, which it never does: its only return is at main.c:753, and every other failure exits through error"
 
 [[excluded]]
 file = "main.c"
-lines = "1149"
+lines = "1158"
 kind = "memory"
 reason = "the message of error 10, for lack of memory, which the model cannot meet"
 
