@@ -23,7 +23,9 @@ and compares it with the recorded outputs and with the C program:
           stop at once (difftest_cases.STOP_CASES); the usage; and failed writes: a standard output
           whose reader is gone, which ends the C program by SIGPIPE, where ratpoints-lean (the Lean
           runtime ignores SIGPIPE) is to exit quietly with the status 141 that the shell reports for
-          that, and a full device, whose failed writes both programs ignore;
+          that, and a full device and a closed standard output, on which both programs report
+          the failed write on their standard error and exit with status 13 when they write
+          anything, and exit as usual when they write nothing;
   fuzz    random command lines (scripts/difftest_cases.py) against the C program;
   params  the options that set the sieving parameters (-p -n -N -P -F -j), with values that
           give no moduli, all the primes of the default build, the cut points in several
@@ -117,6 +119,11 @@ filters are compared with the C program on the whole output of the command befor
 the other searches above --max-height, which the suites that run the C program compare when they
 have no search region and it prints nothing (a search with -q that finds no points, as when no class
 of the denominators modulo 64 admits a numerator).
+
+The runs of test4.sh's w(), on a standard output that refuses every write (/dev/full or a closed
+one), are compared with their record, the standard error and the exit status of the C program: the
+report of the failed write with status 13, or nothing with status 0 when the run writes nothing.
+Only on such a standard output may ratpoints-lean write to its standard error.
 
 options:
   --lean PATH        the ratpoints-lean executable (default: .lake/build/bin/ratpoints-lean)
@@ -373,6 +380,25 @@ def full_device(prog, args, env=None):
         p = subprocess.run([str(prog), *args], stdout=f, stderr=subprocess.PIPE, timeout=TIMEOUT,
                            env=env, preexec_fn=no_core)
     return p.returncode, p.stderr.decode('latin-1')
+
+
+def closed_output(prog, args, env=None):
+    """The return code and the standard error of `prog` on the command line `args` when its
+    standard output is closed, so that every write to it fails."""
+    def setup():
+        no_core()
+        os.close(1)
+    p = subprocess.run([str(prog), *args], stderr=subprocess.PIPE, timeout=TIMEOUT, env=env,
+                       preexec_fn=setup)
+    return p.returncode, p.stderr.decode('latin-1')
+
+
+# The runs of test4.sh's w(), whose standard output refuses every write: what stands after the
+# arguments in the announce line, and the function that runs a program in that way.
+WRITE_FAILS = {'>/dev/full': full_device, '>&-': closed_output}
+# What a program prints on its standard error when a write to its standard output has failed; it
+# then exits with status 13.
+WRITE_ERROR = '\nError writing to standard output.\n\n'
 
 
 def special(cfg, tally, label, ok, detail):
@@ -1044,7 +1070,14 @@ def suite_test4(cfg, tally, window=None):
                     (skip or not big)):
                 compare_search(cfg, tally, label, r.args, text, st)
             continue
-        if r.filt is not None:
+        if r.filt in WRITE_FAILS:  # recorded by w(): the standard error and the exit status
+            if r.filt == '>/dev/full' and not os.path.exists('/dev/full'):
+                tally.skip('no /dev/full')
+                continue
+            lean = WRITE_FAILS[r.filt](cfg.lean, r.args, LEAN_ENV)
+            special(cfg, tally, f'{label} | {r.filt}', lean == (code, text),
+                    f'ratpoints-lean gives {lean}, testbase4 records {(code, text)}')
+        elif r.filt is not None:
             if r.filt not in FILTERS:
                 tally.skip('output filtered')
             else:
@@ -1152,10 +1185,19 @@ def suite_errors(cfg, tally):
               c == lean == (0, ''))
         special(cfg, tally, f'a closed pipe: {args}', ok,
                 f'ratpoints-lean gives {lean}, the C program {c}')
-    if os.path.exists('/dev/full'):
-        for args in (['1 0 1', '10', '-q'], ['1 0 1', '300', '-q'], ['1 2 x', '10']):
-            lean, c = full_device(cfg.lean, args, LEAN_ENV), full_device(cfg.c, args)
-            special(cfg, tally, f'a full device: {args}', lean == c and c[1] == '',
+    # The same, and the usage, on a standard output that refuses every write: both programs
+    # report the failure with status 13 when they write anything, in place of the status of an
+    # error too, and exit with 0 when they write nothing.
+    for name, failing in (('a full device', full_device),
+                          ('a closed standard output', closed_output)):
+        if failing is full_device and not os.path.exists('/dev/full'):
+            continue
+        for args, writes in ((['1 0 1', '10', '-q'], True), (['1 0 1', '300', '-q'], True),
+                             (['1 2 x', '10'], True), ([], True), (['1 0 1', '10'], True),
+                             (['-1 0 -1', '10', '-q'], False)):
+            lean, c = failing(cfg.lean, args, LEAN_ENV), failing(cfg.c, args)
+            special(cfg, tally, f'{name}: {args}',
+                    lean == c == ((13, WRITE_ERROR) if writes else (0, '')),
                     f'ratpoints-lean gives {lean}, the C program {c}')
     for args, note in difftest_cases.CASES:
         against_c(cfg, tally, f'{note}: {args}', args)

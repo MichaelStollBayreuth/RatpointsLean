@@ -83,7 +83,7 @@ def dropSign : List Char → List Char
 also checks that white space or the end of the argument follows the digits, which a word of
 `Ratpoints.Cli.words` satisfies.
 
-C: `main.c:703-721`
+C: `main.c:704-722`
 
 Deviation: the number computed from the list of the digits (`Ratpoints.Cli.natOfDigits?`), for
 `mpz_set_str` on the digits in the argument, where the C code puts a zero byte after them for the
@@ -95,7 +95,7 @@ def intOfWord? (w : List Char) : Option Int :=
 `strtod` skip the white space before a number, and `only_space_after` of `main.c` checks that
 nothing but white space follows it.
 
-C: `main.c:728-732` -/
+C: `main.c:729-733` -/
 def onlyWord? (s : String) : Option (List Char) :=
   match words s.toList with
   | [w] => some w
@@ -106,7 +106,7 @@ integer as `Ratpoints.Cli.intOfWord?` reads it, with nothing but C white space b
 it (`Ratpoints.Cli.onlyWord?`), from `-2⁶³` to `2⁶³ - 1`; for a value beyond these bounds
 `strtol` reports the error `ERANGE`.
 
-C: `main.c:737-744`
+C: `main.c:738-745`
 
 Deviation: an `Int` for a `long`. -/
 def longOfString? (s : String) : Option Int :=
@@ -160,7 +160,7 @@ points among them, as the loop of `scan_end` of `main.c` reads them, `point` say
 point has been passed: the digits in their order, without the points, the number of those after
 a point, and the rest of `s` from the first character that is neither a digit nor a point.
 
-C: `main.c:826-838`
+C: `main.c:827-839`
 
 Deviation: a recursion over the characters, for the loop over the C string and the array `digits`,
 whose length is the number `n` of the digits. -/
@@ -257,7 +257,7 @@ def strtod (w : List Char) : Double :=
 (`Ratpoints.Cli.onlyWord?`), read by `Ratpoints.Cli.strtod`, so that a number beyond the range of
 the doubles is read as an infinity or as a zero; none for anything else, among them a NaN.
 
-C: `main.c:750-756`
+C: `main.c:751-757`
 
 Deviation: the NaN refused by its syntax, which `Ratpoints.Cli.isDoubleWord` does not accept, for
 the test `isnan` of the double that `strtod` reads. -/
@@ -287,7 +287,7 @@ upper one), the double next to it outward (`Ratpoints.Double.nextDown`, `Ratpoin
 so that the result is the largest double `≤ v`, or the smallest double `≥ v`, when `x` is a double
 nearest to `v`, or an infinity on the safe side of `v`.
 
-C: `main.c:765-767`, `main.c:770-777`, `main.c:779-780`
+C: `main.c:766-768`, `main.c:771-778`, `main.c:780-781`
 
 Deviation: the exact value of `x` (`Ratpoints.Double.toRat`) compared with `v` as rational numbers
 of core, for the GMP rational `t`, `mpq_set_d` and `mpq_cmp`; no `mpq_init` and `mpq_clear`. -/
@@ -312,8 +312,8 @@ the exponent `ex` that `scan_end` accumulates, which stops taking digits once it
 `LONG_MAX / 20` (it is then that of a number beyond the range of the doubles or of `0`); negated
 for the sign `-`. The double is that of `Ratpoints.Cli.outward` from `x` towards that number.
 
-C: `main.c:802-810`, `main.c:812-823`, `main.c:839-851`, `main.c:853`, `main.c:855-869`,
-`main.c:872-877`, `main.c:879-880`, `main.c:882-884`
+C: `main.c:803-811`, `main.c:813-824`, `main.c:840-852`, `main.c:854`, `main.c:856-870`,
+`main.c:873-878`, `main.c:880-881`, `main.c:883-885`
 
 Deviation: the end and the double returned, or none, for the `exact_end` and the double that
 `scan_end` writes through pointers with its return value, the end of an infinity with `q = 0`, which
@@ -348,7 +348,7 @@ last `-u`: the double of the height bound `H` (`Ratpoints.Double.ofInt64`), move
 next double when it is below `2 ^ 63` and its value below `H`, so that the interval holds every
 `x = a / b` with `|a| ≤ H`, as the default interval of the library does.
 
-C: `main.c:299-305`
+C: `main.c:300-306`
 
 Deviation: a natural number for the `long` `height`, at most `2 ^ 63 - 1`. -/
 def heightEnd (H : Nat) : Double :=
@@ -359,7 +359,7 @@ def heightEnd (H : Nat) : Double :=
 when one of them is infinite, so that two infinities of one sign are equal, and else the sign of
 `e.q - f.q`.
 
-C: `main.c:309-313`
+C: `main.c:310-314`
 
 Deviation: the sign as `-1`, `0` or `1`, for the value of `mpq_cmp`, of which `main.c` reads only
 the sign. -/
@@ -370,7 +370,7 @@ def cmpEnd (e f : ExactEnd) : Int :=
 /-- The sign of the end `e` minus `x = a / b`, for `b > 0`, as `cmp_end_x` of `main.c` computes it:
 `e.inf` when `e` is infinite, and else the sign of `e.q - a / b`.
 
-C: `main.c:116-120`
+C: `main.c:117-121`
 
 Deviation: the sign as `-1`, `0` or `1`, for the value of `mpq_cmp_si`, of which `main.c` reads
 only the sign; integers for the `long`s. -/
@@ -383,7 +383,7 @@ are `e[2 i] ≤ x ≤ e[2 i + 1]`, which are increasing and disjoint, as `in_reg
 decides it: the binary search finds the first interval that does not end below `x`, which must
 hold it.
 
-C: `main.c:126-137`
+C: `main.c:127-138`
 
 Deviation: natural numbers for the `long` indices, an array for the pointer `e`. -/
 def inRegion (a b : Int) (e : Array ExactEnd) (n : Nat) : Id Bool := do
@@ -400,7 +400,7 @@ most the upper end of the interval it may be joined to is joined to it, the leas
 and the greatest of the upper ends, and every other interval is the next one, to which the following
 may be joined, so that intervals whose doubles meet or overlap become one.
 
-C: `main.c:895-909`
+C: `main.c:896-910`
 
 Deviation: a list for the array `args->domain` and the number `args->num_inter` of its intervals,
 written back in place by `join_intervals`, and natural numbers for the `long` indices. -/

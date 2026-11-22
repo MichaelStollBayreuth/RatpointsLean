@@ -336,9 +336,10 @@ runs the model is not certified. What is checked is that the model contains no \
 \verb|unsafe|, \verb|implemented_by| or \verb|extern|, nor any experimental option, which could let
 the compiled code differ from the definitions that the proofs see, and that the program imports the
 model alone (Section~\ref{sec:ccodeCI}). The theorems on the program speak about its pure core
-\lname{Ratpoints.Cli.run}; the function \lname{Ratpoints.Cli.main} around it writes the text once
-and, where \ratpoints{} is ended by \verb|SIGPIPE| when the reader of its output is gone, exits with
-the status~$141$ that the shell reports for that (Chapter~\ref{chap:output}).
+\lname{Ratpoints.Cli.run}; the function \lname{Ratpoints.Cli.main} around it writes the text once,
+reports a failed write as \ratpoints{} does, with status~$13$, and, where \ratpoints{} is ended by
+\verb|SIGPIPE| when the reader of its output is gone, exits with the status~$141$ that the shell
+reports for that (Chapter~\ref{chap:output}).
 
 \emph{Sturm's theorem.} Membership, the order and the statement that every point appears without
 the exact check assume Sturm's theorem when the Sturm step is on, and so does the membership
@@ -367,7 +368,7 @@ kind and a reason, each range locked with the hash of its text and its owners an
 against the pinned commit, and in which paragraphs \verb|Deviation:| say where the model departs
 from the C code (Sections~\ref{sec:ccodeRecord} and~\ref{sec:ccodeDeviations}); and the
 differential tests, which run both programs on the same command lines and compare the points in
-their order, the output byte for byte, the reports and the exit statuses: $5397$ comparisons in the
+their order, the output byte for byte, the reports and the exit statuses: $5419$ comparisons in the
 default suites and~$13$ and~$92$ in two further suites, none of which fails
 (Section~\ref{sec:ccodeTests}). As glibc's \verb|log| and \verb|pow| are not correctly rounded and
 depend on the processor, the comparisons that depend on the choice of the moduli are made with both

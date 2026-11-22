@@ -110,7 +110,7 @@ initialization of the fields that the model passes as values, and the prototype 
 among them, and the prototypes; the inlining attributes and the pragma that unrolls the loops of
 \verb|tail_leg| (\csource{sift.c}{466}{472}); \verb|FLOOR|, \verb|RATPOINTS_DEFAULT_SP1| and
 \verb|RATPOINTS_DEFAULT_SP2|, which the C code reads nowhere, and a count stored that nothing reads;
-the text of message~1, which \verb|main| never prints (\csource{main.c}{982}{983}); the frames of
+the text of message~1, which \verb|main| never prints (\csource{main.c}{983}{984}); the frames of
 the \verb|main| functions of the generators of tables; and the arm of \verb|exact_scale| for a build
 without a 128-bit integer type (\csource{find_points.c}{3258}{3275}), since the default build
 compiles the arm with \verb|unsigned __int128|.
@@ -211,7 +211,8 @@ model chooses and corrects its moduli as \ratpoints{} does, and, without a forma
 the range of the height and in the search region, none repeated, and the points among them the
 same, in the same order, in both outputs. Exit statuses and messages are compared exactly, but for
 the banner and the usage; \verb|ratpoints-model| must write nothing to its standard error (a panic
-of the Lean runtime ends it); and failed writes are compared too.
+of the Lean runtime ends it) but the report of a failed write; and failed writes are compared too,
+on a full device and on a closed standard output.
 
 The default suites search up to the height~$30000$, and above it in narrow search regions. Since the
 choice of the moduli computes with the \verb|log| and \verb|pow| of the platform's C library, which
@@ -225,7 +226,7 @@ suites make these comparisons, none of which fails:
   suite & what it runs & comparisons \\
   \hline
   \verb|test4| & the runs of \verb|test4.sh|, against \verb|testbase4| and the C program, but
-    for~$13$ above the height~$30000$ & $590$ \\
+    for~$13$ above the height~$30000$ & $603$ \\
   \verb|test3| & the runs of \verb|test3.sh| & $21$ \\
   \verb|rptest| & the curves of \verb|testdata.h|, \verb|testdata-many.h| and
     \verb|testdata-degrees.h| at the height~$100$, against their recorded points & $1206$ \\
@@ -233,7 +234,7 @@ suites make these comparisons, none of which fails:
   \verb|outputs| & random options of the output, formats and strings & $300$ \\
   \verb|errors| & hand-written command lines for every check of \verb|main.c| and every option,
     the refusals, the report under \verb|-v|, searches stopped at once at the height~$10^{12}$,
-    failed writes & $384$ \\
+    failed writes & $393$ \\
   \verb|fuzz| & random command lines & $800$ \\
   \verb|params| & the options that set the moduli and the cut points & $272$ \\
   \verb|high| & point-rich curves up to the height~$30000$, and curves on which the C program
@@ -244,7 +245,7 @@ suites make these comparisons, none of which fails:
   \verb|threads| & the C program with \verb|-t 4| and \verb|-t 7| & $205$ \\
   \verb|verbose| & random searches under \verb|-v| & $300$ \\
   \hline
-  & the default suites & $5397$ \\
+  & the default suites & $5419$ \\
   \hline
   \verb|test4high| & the runs of \verb|test4.sh| at the heights $40000$ to~$100000$ & $13$ \\
   \verb|adapt| & searches at the heights $16383$ to~$50000$ on which the C program corrects its

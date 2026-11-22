@@ -92,13 +92,13 @@ and without the Sturm step the reversal check), what is delivered (the options o
 search region; under the first of the output, the reversal, the options of the sieve and the Sturm
 step change it too), and with its intervals what the search writes back (`Ratpoints.Outcome`).
 
-C: `main.c:348`, `main.c:352`, `ratpoints.h:359`, `ratpoints.h:363-364`, `ratpoints.h:369`,
+C: `main.c:349`, `main.c:353`, `ratpoints.h:359`, `ratpoints.h:363-364`, `ratpoints.h:369`,
 `ratpoints.h:403-405`
 
 Deviation: a structure for the fields of `ratpoints_args` that hold these options: Booleans for the
 bits `RATPOINTS_NO_CHECK`, `RATPOINTS_NO_Y` and `RATPOINTS_NO_REVERSE` of the flags, `noCheck` and
 `noY` true when their bits are set, `reverse` true when `RATPOINTS_NO_REVERSE` is clear, so that all
-three defaults are those of the cleared flags (`main.c:352`); of the other bits of the flags, which
+three defaults are those of the cleared flags (`main.c:353`); of the other bits of the flags, which
 `main.c` clears with these, the Jacobi switch is that of the options of the sieve
 (`Ratpoints.SieveOptions.jacobi`), and `RATPOINTS_VERBOSE` is the print channel of the search
 (`Ratpoints.findPointsVerbose`), which the program makes from `Ratpoints.Cli.Output.verbose`; an

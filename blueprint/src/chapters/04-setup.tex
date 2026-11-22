@@ -24,7 +24,7 @@ binary form of the refusals (Definition~\ref{def:binaryFormPoly}), and $f = \sum
 
 The program refuses more than $\mathrm{maxDegree} + 1$ coefficients with its error~3, fewer than two
 with error~5, and a height bound below~$1$ or one that is not a \verb|long| with error~4, before it
-calls the library (\csource{main.c}{362}{380}). The library refuses a degree above
+calls the library (\csource{main.c}{363}{381}). The library refuses a degree above
 $\mathrm{maxDegree}$ (\csource{find_points.c}{4604}{4605}), and then:
 \begin{enumerate}
   \item it drops the leading zero coefficients and refuses the form as not squarefree when that
@@ -50,7 +50,7 @@ $\mathrm{maxDegree}$ (\csource{find_points.c}{4604}{4605}), and then:
   \item it delivers the points at infinity (\csource{find_points.c}{5118}{5155}) and sieves.
 \end{enumerate}
 The program reports the refusal as not squarefree with its error~8, and the other negative codes of
-the library with its error~9, but for a lack of memory, error~10 (\csource{main.c}{256}{261}). All
+the library with its error~9, but for a lack of memory, error~10 (\csource{main.c}{257}{262}). All
 refusals come before the first call of the callback. Where the program and the library differ, the
 model follows the program: it refuses the coefficient list and the height bound before the leading
 zeros (so that \verb|5 0| with $H = 0$ is error~4, as in the program), and a height bound
