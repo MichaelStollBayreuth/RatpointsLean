@@ -7,8 +7,8 @@
 # release 3.1.1 to release 3.2.0.
 [pin]
 repository = "https://github.com/MichaelStollBayreuth/ratpoints"
-tag = "v3.1.1-16-g54ad719"
-commit = "54ad7192b8178611a83231ef279e9299804a1903"
+tag = "v3.1.1-17-gedd3bb3"
+commit = "edd3bb3f7c49a60a8c5c56ff65e277fd14199e6f"
 
 # Every line of code of these files lies in exactly one recorded range: modelled (a `C:`
 # paragraph of a docstring of the model) or excluded (an [[excluded]] table below), as

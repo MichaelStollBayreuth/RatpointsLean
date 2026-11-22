@@ -110,7 +110,7 @@ status:
     deliver them, give what the run delivers. Every line of code of the C files is recorded, with
     the declarations that model it or the reason for its exclusion, and CI checks the record against
     the C code at the pinned commit; the differential tests compare ratpoints-model with the C
-    program, built on the same machine (5507 comparisons in the default suites, 13 in the suite of the runs of test4.sh
+    program, built on the same machine (5514 comparisons in the default suites, 13 in the suite of the runs of test4.sh
     above height 30000 and 92 in the suite of the searches in which ratpoints corrects its moduli,
     none failed).
   sorry_count: 0

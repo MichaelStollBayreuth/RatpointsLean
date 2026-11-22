@@ -196,6 +196,25 @@ DEN_OPTS = ('l', 'u')  # the third character of -dl, -du
 POINT = re.compile(r'^\((-?\d+) : (-?\d+) : (\d+)\)$')
 PAIR = re.compile(r'^\((-?\d+) : (-?\d+)\)$')
 COUNT = re.compile(r'^-?\d+ rational point(?: pair)?s found\.$')
+
+
+def third_stage_filter(ls):
+    """The lines that awk '/for third stage/ { print; getline; print } / found/' prints of `ls`:
+    a line that announces the primes of the third stage with the line after it (the same line
+    again at the end of the input), and every line with ' found', read after that step."""
+    out, i = [], 0
+    while i < len(ls):
+        if 'for third stage' in ls[i]:
+            out.append(ls[i])
+            if i + 1 < len(ls):
+                i += 1
+            out.append(ls[i])
+        if ' found' in ls[i]:
+            out.append(ls[i])
+        i += 1
+    return out
+
+
 # The filters of test4.sh, under which ratpoints-lean is compared with the outputs that it records.
 FILTERS = {'grep found': lambda ls: [l for l in ls if 'found' in l],
            "grep 'Curve equation'": lambda ls: [l for l in ls if 'Curve equation' in l],
@@ -205,7 +224,8 @@ FILTERS = {'grep found': lambda ls: [l for l in ls if 'found' in l],
            "grep 'iterations for'": lambda ls: [l for l in ls if 'iterations for' in l],
            "grep 'moduli in the first stage\\|found' | sed 's/.*==> //'":
                lambda ls: [l.rsplit('==> ', 1)[-1] for l in ls
-                           if 'moduli in the first stage' in l or 'found' in l]}
+                           if 'moduli in the first stage' in l or 'found' in l],
+           "awk '/for third stage/ { print; getline; print } / found/'": third_stage_filter}
 # The params suite: the options that set the sieving parameters, with values that give no
 # moduli, all the primes of the default build and a cap above them, the cut points in several
 # positions, a third stage, the second and the third stage after few moduli or none in the first

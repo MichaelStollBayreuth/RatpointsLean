@@ -25,12 +25,12 @@ for (`Ratpoints.addModuli`); the first stage by its rule and the second by its o
 the candidates in the order of their keys and passing over one that shares a prime with one taken
 (`Ratpoints.takeEntries`, `Ratpoints.firstStages`); the sieve entries of the composite moduli taken
 (`Ratpoints.makeModulus`); the third stage by its cost rule, which may look at further primes
-(`Ratpoints.thirdStage`); and the reserve of the correction of the moduli during the run, the
-primes left, sorted with the third stage by their densities. It returns the first prime looked at
-modulo which the curve has no points, if there is one, and otherwise the result of the choice
-(`Ratpoints.Params`) with the sieve entries of all the moduli, their reciprocals, the forbidden
-divisors, the store of the tables of rows and the switch of the checked loop of the denominators.
-The search makes the choice after the 2-adic information (`Ratpoints.chooseAndSearch`).
+(`Ratpoints.thirdStage`); and the reserve of the correction of the moduli during the run, the primes
+left, sorted by their densities. It returns the first prime looked at modulo which the curve has no
+points, if there is one, and otherwise the result of the choice (`Ratpoints.Params`) with the sieve
+entries of all the moduli, their reciprocals, the forbidden divisors, the store of the tables of
+rows and the switch of the checked loop of the denominators. The search makes the choice after the
+2-adic information (`Ratpoints.chooseAndSearch`).
 
 ## Main definitions
 
@@ -739,10 +739,11 @@ Deviation: a `UInt64` for the `unsigned long`, `2 ^ 64 - 1` for `ULONG_MAX`. -/
 def adaptStart (s : SieveOptions) : UInt64 :=
   if s.adapt != 0 && s.sp1 < 0 && s.sp2 < 0 then adaptWords.toUInt64 else 0xFFFFFFFFFFFFFFFF
 
-/-- The end of the choice of the moduli, from the pool `pool` after the third stage `t`, which
-starts at `sp2`: the third stage and the reserve sorted by their densities from `sp2` on
-(`Ratpoints.ModulusCandidate.rLe`), the sieve entries of all the candidates in their order, their
-reciprocals and the store with the tables of rows of every entry and its factors
+/-- The end of the choice of the moduli, from the state `t` of the third stage: the reserve, the
+candidates of the pool from the end `t.sp3` of the third stage on, sorted by their densities
+(`Ratpoints.ModulusCandidate.rLe`), so that the primes of the third stage keep the order in which
+the stage took them; the sieve entries of all the candidates in their order, their reciprocals and
+the store with the tables of rows of every entry and its factors
 (`Ratpoints.Sieve.SieveEntry.addTables`). Every candidate has its sieve entry by then: a prime from
 its examination (`Ratpoints.ModulusCandidate.ofPrime`), a composite modulus of the first two stages
 from `Ratpoints.stageEntries`, and the composite moduli from the end of the second stage on have
@@ -752,15 +753,14 @@ position.
 C: `find_points.c:3042`, `find_points.c:3049-3059`, `find_points.c:3089-3095`
 
 Deviation: the sort by `qsort` with `compare_by_r` as Lean's stable merge sort
-(`Ratpoints.sortFrom`), from the end of the second stage on, as the C code sorts, which gives the
-order of glibc's `qsort`, stable when it can allocate its buffer, as always in the model; the
-entries, the reciprocals and the store returned, for the arrays `sieve_list` and `magics` of the
-arguments and the arrays `sieve` of the entries; `sp3_max` the length of the list of the entries,
-the larger of `sp3` and the size of the pool, which is never smaller; no enlargement of the buffer
-of the rows (`find_points.c:3067-3086`), which the model does not have. -/
-def choiceEnd (t : ThirdState) (sp2 : Nat) (store : RowStore) :
-    List SieveEntry × Array Nat × RowStore :=
-  let pool := if sp2 < t.pool.size then sortFrom t.pool sp2 ModulusCandidate.rLe else t.pool
+(`Ratpoints.sortFrom`), which gives the order of glibc's `qsort`, stable when it can allocate its
+buffer, as always in the model; the entries, the reciprocals and the store returned, for the arrays
+`sieve_list` and `magics` of the arguments and the arrays `sieve` of the entries; `sp3_max` the
+length of the list of the entries, the larger of `sp3` and the size of the pool, which is never
+smaller; no enlargement of the buffer of the rows (`find_points.c:3067-3086`), which the model does
+not have. -/
+def choiceEnd (t : ThirdState) (store : RowStore) : List SieveEntry × Array Nat × RowStore :=
+  let pool := if t.sp3 < t.pool.size then sortFrom t.pool t.sp3 ModulusCandidate.rLe else t.pool
   let entries := pool.toList.filterMap (·.ssp)
   (entries, (entries.map (·.magic)).toArray, entries.foldl (fun s e ↦ e.addTables s) store)
 
@@ -795,7 +795,7 @@ def choiceTail (c : List Int) (d : Nat) (useCLong mayExtend : Bool) (s : SieveOp
   match ← thirdOf c d useCLong mayExtend s checkRel est bpw pool sp2 st.pnLim with
   | .error p => return .error p
   | .ok t =>
-    let (entries, magics, store) := choiceEnd t sp2 st.store
+    let (entries, magics, store) := choiceEnd t st.store
     return .ok {
       entries, magics, forb, forbVal, store, checkDenom
       params := {
@@ -935,8 +935,10 @@ stages, the composite moduli, the third stage and the end of the choice against 
       (fun st ↦ (st.pnLim, st.pool.map (·.p), st.pool.all fun e ↦ e.key == e.r)) ==
       some (2, #[5], true)
 
--- The end of the choice: the candidates from the end of the second stage on sorted by their
--- densities, stably, the entries and the reciprocals in the order of the pool.
+-- The end of the choice: the reserve, the candidates from the end of the third stage on (the
+-- position 2), sorted by their densities, stably (13 before 11), where a prime of the third stage
+-- keeps its place before a prime of the reserve of smaller density (7 before 5); the entries and
+-- the reciprocals in the order of the pool.
 #guard
   let e (r : Float) (p : Nat) : ModulusCandidate :=
     let se : SieveEntry :=
@@ -944,8 +946,8 @@ stages, the composite moduli, the third stage and the end of the choice against 
         init := .sieve1, r, nf := 0 }
     { r, key := 0.0, cost := 0.0, p, mask := 0, ssp := some se, nf := 0, fac := [] }
   let (entries, magics, _) :=
-    choiceEnd ⟨#[e 0.9 3, e 0.1 5, e 0.5 7, e 0.3 11, e 0.5 13], 3, 1.0, 6⟩ 2 {}
-  entries.map (·.p) == [3, 5, 11, 7, 13] && magics.toList == [3, 5, 11, 7, 13].map magic
+    choiceEnd ⟨#[e 0.9 3, e 0.5 7, e 0.5 13, e 0.1 5, e 0.5 11, e 0.3 17], 2, 1.0, 7⟩ {}
+  entries.map (·.p) == [3, 7, 5, 17, 13, 11] && magics.toList == [3, 7, 5, 17, 13, 11].map magic
 
 end Ratpoints
 

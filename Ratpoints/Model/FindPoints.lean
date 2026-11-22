@@ -732,9 +732,9 @@ open Sieve in
 -- by `Ratpoints.ModulusCandidate.ofPrime` from its examination, a composite modulus by
 -- `Ratpoints.makeModulus` from the codes of the factors that `Ratpoints.offerModulus` finds for it,
 -- with the cost `0` of a row; then their reciprocals and the store of the tables of rows from the
--- end of the choice (`Ratpoints.choiceEnd`), with the whole pool as the first two stages. None when
--- the curve has no points modulo one of the first `k` primes, a prime says nothing or a composite
--- modulus is not offered.
+-- end of the choice (`Ratpoints.choiceEnd`), with the whole pool as the three stages, so that it
+-- sorts nothing. None when the curve has no points modulo one of the first `k` primes, a prime says
+-- nothing or a composite modulus is not offered.
 private def entriesOf (c : List Int) (d k : Nat) (ms : List Nat) :
     Id (Option (List SieveEntry × Array Nat × RowStore)) := do
   let .ok st ← tablesLoop c d true false false { numPrimes := k } 0 0.0 0.0 ⟨1.0, 1.0, 0.0, 1.0⟩
@@ -751,7 +751,7 @@ private def entriesOf (c : List Int) (d k : Nat) (ms : List Nat) :
         | return none
       tab := tab'
       pool := pool.push { e with ssp := some (← makeModulus e pool.size st.primeSe tab.pws) }
-  return some (choiceEnd ⟨pool, pool.size, 0.0, k⟩ pool.size st.store)
+  return some (choiceEnd ⟨pool, pool.size, 0.0, k⟩ st.store)
 
 -- The sieve entries of moduli of each kind for `1 2 3 4 5 6 7`, after the loop of the tables over
 -- the first six primes (`entriesOf`): the primes 3 and 67, the prime powers 9 and 243, the product

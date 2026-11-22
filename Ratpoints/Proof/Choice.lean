@@ -355,16 +355,18 @@ private theorem firstStages_value (pool : Array ModulusCandidate) (s : SieveOpti
     ⦃ fun r ↦ r = Id.run (firstStages pool s target ct est bpws sp2e) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
-theorem ChoicePoolWF.sortFrom {c : List ℤ} {sp2 : ℕ} {pool : Array ModulusCandidate}
-    (h : ChoicePoolWF c sp2 pool) (hs : sp2 ≤ pool.size)
+theorem ChoicePoolWF.sortFrom {c : List ℤ} {sp2 s : ℕ} {pool : Array ModulusCandidate}
+    (h : ChoicePoolWF c sp2 pool) (h2 : sp2 ≤ s) (hs : s ≤ pool.size)
     (le : ModulusCandidate → ModulusCandidate → Bool) :
-    ChoicePoolWF c sp2 (Ratpoints.sortFrom pool sp2 le) := by
+    ChoicePoolWF c sp2 (Ratpoints.sortFrom pool s le) := by
   refine ⟨fun n hn hk ↦ ?_, fun n hn hk ↦ ?_⟩
-  · rw [getElem_sortFrom_of_lt hs le hk]
+  · rw [getElem_sortFrom_of_lt hs le (hk.trans_le h2)]
     exact h.exists_isChoiceEntry_of_lt n _ hk
-  · obtain ⟨k, hk', hsk, he⟩ := exists_getElem_sortFrom_eq le hk hn
-    rw [he]
-    exact h.isPrime k hk' hsk
+  · by_cases hsn : s ≤ n
+    · obtain ⟨k, hk', hsk, he⟩ := exists_getElem_sortFrom_eq le hsn hn
+      exact he ▸ h.isPrime k hk' (h2.trans hsk)
+    · rw [getElem_sortFrom_of_lt hs le (by lia)]
+      exact h.isPrime n _ hk
 
 /-- Every candidate of the pool after the stages has its sieve entry, made for its position. -/
 theorem ChoicePoolWF.exists_isChoiceEntry {c : List ℤ} {sp2 : ℕ} {pool : Array ModulusCandidate}
@@ -406,13 +408,12 @@ theorem IsChoiceEntries.fits_foldl_addTables {c : List ℤ} {sp2 : ℕ} {es : Li
 each candidate of the pool, each made for its position (`Ratpoints.IsChoiceEntries`). -/
 theorem isChoiceEntries_choiceEnd {c : List ℤ} {sp2 : ℕ} {t : ThirdState} (ht : t.WF c sp2)
     (store : RowStore) :
-    IsChoiceEntries c sp2 (choiceEnd t sp2 store).1 ∧
-      (choiceEnd t sp2 store).1.length = t.pool.size := by
-  have hp : ChoicePoolWF c sp2 (if sp2 < t.pool.size then sortFrom t.pool sp2 ModulusCandidate.rLe
-      else t.pool) ∧ (if sp2 < t.pool.size then sortFrom t.pool sp2 ModulusCandidate.rLe
-      else t.pool).size = t.pool.size := by
+    IsChoiceEntries c sp2 (choiceEnd t store).1 ∧ (choiceEnd t store).1.length = t.pool.size := by
+  have hp : ChoicePoolWF c sp2 (if t.sp3 < t.pool.size then
+      sortFrom t.pool t.sp3 ModulusCandidate.rLe else t.pool) ∧ (if t.sp3 < t.pool.size then
+      sortFrom t.pool t.sp3 ModulusCandidate.rLe else t.pool).size = t.pool.size := by
     split
-    · exact ⟨ht.1.sortFrom (ht.2.1.trans ht.2.2) _, size_sortFrom (by lia) _⟩
+    · exact ⟨ht.1.sortFrom ht.2.1 ht.2.2 _, size_sortFrom ht.2.2 _⟩
     · exact ⟨ht.1, rfl⟩
   have h := length_filterMap_ssp_and_forall hp.1.exists_isChoiceEntry
   exact ⟨h.2, h.1.trans hp.2⟩
@@ -434,8 +435,8 @@ theorem isSievingInfo_choiceEnd {c : List ℤ} {bHigh sp1 sp2 : ℕ} {t : ThirdS
     (hcd : checkDenom = true → degree c % 2 = 0) {P : Params} (h1 : P.sp1 = sp1)
     (h2 : P.sp2 = sp2) (h3 : P.sp3 = t.sp3) :
     IsSievingInfo c bHigh
-      { params := P, entries := (choiceEnd t sp2 store).1, magics := (choiceEnd t sp2 store).2.1,
-        forb, forbVal, store := (choiceEnd t sp2 store).2.2, checkDenom } := by
+      { params := P, entries := (choiceEnd t store).1, magics := (choiceEnd t store).2.1,
+        forb, forbVal, store := (choiceEnd t store).2.2, checkDenom } := by
   obtain ⟨hE, hl⟩ := isChoiceEntries_choiceEnd ht store
   subst h1 h2
   refine ⟨⟨fun _ he ↦ (hE.isModulusEntry_of_mem he).isSound,
