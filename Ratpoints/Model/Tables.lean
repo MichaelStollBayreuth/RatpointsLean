@@ -272,21 +272,22 @@ chooses for each residue; the exit `-1` as `none`, and the codes `0`, `1` and `2
 entry, the coefficients and the density, as natural numbers, the entry made and returned for the
 code `0` too, where `examine_prime` makes none, and the density `0.0` for that code, which
 `examine_prime` does not compute; the fields `p`, `mask` and `nf` of the record `prec_entry` of the
-ranking, which `examine_prime` sets with the density (lines 1782-1785), made by the caller from the
-table, the position of the prime and the code (`Ratpoints.ModulusCandidate.ofPrime`); the entry is a
-fresh value, for the space that `examine_prime` takes from the buffer of the sieve entries
-(`se_next`), and returned, where `examine_prime` stores it in the field `ssp` of `prec_entry`; it
-keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows: the table of rows
-of the prime, with the row of `0` from the build and the others absent (lines 1820-1821,
-`Ratpoints.Sieve.primeRows`), is made in the store of the run by the loop of the tables when the
-prime says something (`Ratpoints.examineInLoop`), and for a prime that the third stage takes into
-the pool by the end of the choice (`Ratpoints.choiceEnd`, with
+ranking, which `examine_prime` sets with the density (`find_points.c:1782-1785`), made by the caller
+from the table, the position of the prime and the code (`Ratpoints.ModulusCandidate.ofPrime`); the
+entry is a fresh value, for the space that `examine_prime` takes from the buffer of the sieve
+entries (`se_next`), and returned, where `examine_prime` stores it in the field `ssp` of
+`prec_entry`; it keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows:
+the table of rows of the prime, with the row of `0` from the build and the others absent
+(`find_points.c:1820-1821`, `Ratpoints.Sieve.primeRows`), is made in the store of the run by the
+loop of the tables when the prime says something (`Ratpoints.examineInLoop`), and for a prime that
+the third stage takes into the pool by the end of the choice (`Ratpoints.choiceEnd`, with
 `Ratpoints.Sieve.SieveEntry.addTables`); the fields `init`, `nf` and `pw` that `examine_prime` sets
-(lines 1800 and 1817) and its reciprocal `magic` (line 1808) are those of the sieve entry of the
-prime (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by the entries
-that the choice of the moduli makes (`Ratpoints.primeEntry`), which set the reciprocal there, and so
-are the bias `bias`, the inverse `rbainv` of `Ratpoints.rbaLength`, the density and the count of
-factors (lines 1811 and 1815-1817), which they set there with the formulas of these lines. -/
+(`find_points.c:1800` and `find_points.c:1817`) and its reciprocal `magic` (`find_points.c:1808`)
+are those of the sieve entry of the prime (`Ratpoints.Sieve.SieveEntry`), of which the prime is the
+single factor, made by the entries that the choice of the moduli makes (`Ratpoints.primeEntry`),
+which set the reciprocal there, and so are the bias `bias`, the inverse `rbainv` of
+`Ratpoints.rbaLength`, the density and the count of factors (`find_points.c:1811` and
+`find_points.c:1815-1817`), which they set there with the formulas of these lines. -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) :
     Id (Option (Entry × Array Nat × Nat × Float)) := do
   let cm := (Array.range (d + 1)).map fun n ↦
@@ -489,11 +490,11 @@ C: `find_points.c:2267-2282`, `find_points.c:2285-2293`, `find_points.c:2301`, `
 
 Deviation: the tables returned as a fresh value, for the entry `pw` of the buffer of the prime
 powers that `examine_power` fills; `m` as `p ^ e`, for the product of `e` factors `p`; the bit
-arrays `sq`, `fsq` and `gsq` fresh arrays of `Ratpoints.modWords` words, which the loop at line 2282
-clears, for the local array that the function leaves unset and the arrays of the entry `pw`; natural
-numbers for the `long`s and `unsigned long`s, the variable `t` for the multiples of `p`, where the C
-code reuses `x`, and the steps `v x + c` of Horner's rule, with `v`, `x` and `c` below `m`, staying
-below `m ^ 2`, with the obligation stated as a lemma
+arrays `sq`, `fsq` and `gsq` fresh arrays of `Ratpoints.modWords` words, which the loop at
+`find_points.c:2282` clears, for the local array that the function leaves unset and the arrays of
+the entry `pw`; natural numbers for the `long`s and `unsigned long`s, the variable `t` for the
+multiples of `p`, where the C code reuses `x`, and the steps `v x + c` of Horner's rule, with `v`,
+`x` and `c` below `m`, staying below `m ^ 2`, with the obligation stated as a lemma
 (`Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`); the code that `examine_power` returns read
 from the density by `Ratpoints.Sieve.Power.useful`. -/
 def examinePower (c : List Int) (d p e : Nat) (useCLong pinf : Bool) : Id Power := do
@@ -523,13 +524,14 @@ def examinePower (c : List Int) (d p e : Nat) (useCLong pinf : Bool) : Id Power 
 up: with it, the remainder (`Ratpoints.Sieve.mulMod`) and the quotient (`Ratpoints.Sieve.mulDiv`) by
 `p` of every `u` with `u p < 2 ^ 64` are computed by multiplications. The C code computes it as
 `ULONG_MAX/p + 1` where it sets a field `magic`: in the sieve entries of the moduli, which
-`examine_prime`, `make_power` and `make_modulus` make (lines 1808, 2422 and 2454 of `find_points.c`;
-here `Ratpoints.primeEntry` and `Ratpoints.makeModulus`), in the tables of the Jacobi test (line
-700; here `Ratpoints.Sieve.jacobiSetup`), and in the entries of the forbidden divisors tested with
-words (lines 2648, 2668 and 2738; here `Ratpoints.Sieve.ForbiddenEntry.magic`), with which the C
-code reduces the word number of the first word of a block (`Ratpoints.Sieve.forbStarts`). For
-`p = 1`, which is no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps to `0` in the C code;
-the reductions, which read it as a 64-bit word, read `0` too. -/
+`examine_prime`, `make_power` and `make_modulus` make (`find_points.c:1808`, `find_points.c:2422`
+and `find_points.c:2454`; here `Ratpoints.primeEntry` and `Ratpoints.makeModulus`), in the tables of
+the Jacobi test (`find_points.c:700`; here `Ratpoints.Sieve.jacobiSetup`), and in the entries of the
+forbidden divisors tested with words (`find_points.c:2648`, `find_points.c:2668` and
+`find_points.c:2738`; here `Ratpoints.Sieve.ForbiddenEntry.magic`), with which the C code reduces
+the word number of the first word of a block (`Ratpoints.Sieve.forbStarts`). For `p = 1`, which is
+no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps to `0` in the C code; the reductions,
+which read it as a 64-bit word, read `0` too. -/
 def magic (p : Nat) : Nat := (2 ^ 64 - 1) / p + 1
 
 /-- The high 64 bits of the 128-bit product of the 64-bit words `a` and `b`, `⌊a b / 2 ^ 64⌋`, from
@@ -692,8 +694,8 @@ to a sieve entry of `ratpoints`, whose array `sieve` holds the rows of the resid
 itself, for the entry `prime_se[pn]` of the prime `p = prime[pn]` that `examine_prime` makes; a
 prime power `p ^ e` by its prime and its exponent, for the entry `power_se[idx]` that `make_power`
 makes once, when a modulus first needs it, and that the prime power as a modulus and as a factor of
-products shares, whose index `idx` `add_moduli` keeps in `pw_idx[pn][e]` (lines 2352-2354 and
-2387-2393 of `find_points.c`); and a product by the position `n` of its modulus among the moduli of
+products shares, whose index `idx` `add_moduli` keeps in `pw_idx[pn][e]` (`find_points.c:2352-2354`
+and `find_points.c:2387-2393`); and a product by the position `n` of its modulus among the moduli of
 the parameters, for the entry of its own that `make_modulus` makes. -/
 inductive EntryRef where
   /-- The entry of the prime `p`. -/
@@ -714,8 +716,8 @@ def Factor.ref : Factor → EntryRef
 
 /-- The kind of the builder of the rows of the entry of a factor (`Ratpoints.Sieve.RowInit`), the
 field `init` of that entry: for a prime the function that the build generates for it
-(`Ratpoints.Sieve.sieveInit`), which `examine_prime` sets (line 1800 of `find_points.c`), and for a
-prime power the builder of the rows of a prime power, which `make_power` sets (line 2420). -/
+(`Ratpoints.Sieve.sieveInit`), which `examine_prime` sets (`find_points.c:1800`), and for a prime
+power the builder of the rows of a prime power, which `make_power` sets (`find_points.c:2420`). -/
 def Factor.init : Factor → RowInit
   | .prime t => sieveInit t.p
   | .power _ => .power

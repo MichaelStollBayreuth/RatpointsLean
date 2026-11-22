@@ -306,10 +306,10 @@ intervals may be degenerate, `[a, a]`.
 C: `sturm.c:276`, `sturm.c:285-288`, `sturm.c:323`, `sturm.c:325`
 
 Deviation: the intervals of the caller read from the array it gives, where the C code reads them
-from a copy on the heap (lines 274-275, 286) and writes the intersection over them; the intersection
-returned as a new array, with no bound on its length, for the writes into `ivlist`, the caller's
-array, which must have room for `1 + ⌊degree / 2⌋` intervals more than it holds (lines 52-53), as
-the C code relies on and as suffices assuming Sturm's theorem
+from a copy on the heap (`sturm.c:274-275`, `sturm.c:286`) and writes the intersection over them;
+the intersection returned as a new array, with no bound on its length, for the writes into `ivlist`,
+the caller's array, which must have room for `1 + ⌊degree / 2⌋` intervals more than it holds
+(`sturm.c:52-53`), as the C code relies on and as suffices assuming Sturm's theorem
 (`Ratpoints.Sturm.size_run_computeSturm_le`), and for the number `num_inter` of the arguments that
 it sets; natural numbers for the `long` indices. -/
 def intersect (loc ivs : Array (Double × Double)) : Id (Array (Double × Double)) := do
@@ -336,13 +336,13 @@ C: `sturm.c:86-97`, `sturm.c:177-190`, `sturm.c:193-194`, `sturm.c:269-273`, `st
 
 Deviation: the coefficients, the degree, the depth and the search intervals as arguments, for the
 fields `cof`, `degree`, `sturm`, `domain` and `num_inter` of the arguments; natural numbers for the
-`long`s `degree` and `iter`, which is from `0` to `55` (the search clamps it,
-`find_points.c:4682`); the result as an option of an array, for the `long` that the C code returns
-and the intervals it writes into `domain` with their number `num_inter`: none for `-1`, the empty
-array for `0`, with `num_inter = 0`, and else the intervals, their number the return value; the
-table of the chain made by `Ratpoints.Sturm.chain`, whose rows the step reads, for the table on the
-stack with the degrees, which `_ratpoints_compute_sturm` fills itself, the index of the last row
-the size of the chain less one, for the `k` of line 163; the array of the intervals kept made by
+`long`s `degree` and `iter`, which is from `0` to `55` (the search clamps it, `find_points.c:4682`);
+the result as an option of an array, for the `long` that the C code returns and the intervals it
+writes into `domain` with their number `num_inter`: none for `-1`, the empty array for `0`, with
+`num_inter = 0`, and else the intervals, their number the return value; the table of the chain made
+by `Ratpoints.Sturm.chain`, whose rows the step reads, for the table on the stack with the degrees,
+which `_ratpoints_compute_sturm` fills itself, the index of the last row the size of the chain less
+one, for the `k` of `sturm.c:163`; the array of the intervals kept made by
 `Ratpoints.Sturm.iterate`, for the array `ivlocal` on the stack of `1 + ⌊degree / 2⌋` intervals,
 which suffice assuming Sturm's theorem (`Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`);
 integers for the GMP integers and `Int.sign` for `mpz_sgn`; no `mpz_init` and `mpz_clear`, no copy

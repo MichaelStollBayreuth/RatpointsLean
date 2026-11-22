@@ -188,10 +188,10 @@ C: `main.c:256-261`
 Deviation: no error 10, since the model has no failure for lack of memory; the refusals of the
 coefficients and of the height (`Ratpoints.Refusal.tooManyCoefficients`,
 `Ratpoints.Refusal.tooFewCoefficients`, `Ratpoints.Refusal.incorrectHeight`) mapped to the errors 3,
-5 and 4 with which `read_input` refuses those inputs before the library is called, where line 260
-gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it can be given
-(lines 4557-4558, 4633 and 4658 of `find_points.c`); no command line reaches them; no
-`mpz_clear`. -/
+5 and 4 with which `read_input` refuses those inputs before the library is called, where
+`main.c:260` gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it
+can be given (`find_points.c:4557-4558`, `find_points.c:4633` and `find_points.c:4658`); no command
+line reaches them; no `mpz_clear`. -/
 def Failure.ofRefusal : Refusal → Failure
   | .tooManyCoefficients => .tooManyCoefficients
   | .tooFewCoefficients => .tooFewCoefficients
@@ -549,10 +549,11 @@ doubles, and the exact ends those of the settings of the output, the format is t
 C: `main.c:210-214`, `main.c:315-316`, `main.c:333-336`, `main.c:380`, `main.c:679`,
 `main.c:688`, `main.c:691-692`
 
-Deviation: `read_input` never returns a value other than 0, so the usage that `main.c` prints
-then (lines 212 and 213) has no counterpart; the largest denominator `-1` of line 336, which line
-380 replaces by the height bound, not set; the search intervals a list of the intervals read, for
-the pointer `args->domain` to the array `domain` and the number `args->num_inter`. -/
+Deviation: `read_input` never returns a value other than 0, so the usage that `main.c` prints then
+(`main.c:212` and `main.c:213`) has no counterpart; the largest denominator `-1` of `main.c:336`,
+which `main.c:380` replaces by the height bound, not set; the search intervals a list of the
+intervals read, for the pointer `args->domain` to the array `domain` and the number
+`args->num_inter`. -/
 def input : List String → Except Failure (List Int × Nat × SieveOptions × Options × Output)
   | s :: h :: os => do
     let c ← coefficients s

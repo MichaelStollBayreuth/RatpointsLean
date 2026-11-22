@@ -117,8 +117,8 @@ C: `find_points.c:3231-3238`, `find_points.c:3257`
 Deviation: the 128-bit product, sum and shift on two 64-bit halves, the high half of the product by
 `Ratpoints.Sieve.mulHi`, for the `unsigned __int128` of the arm that the modelled builds compile
 (the compiler defines `__SIZEOF_INT128__`, and `RP_NO_INT128` is not set), which Lean core does not
-have; the other arm (lines 3239-3256), for a build without a 128-bit type, is excluded; the `long`
-`b` converted to a 64-bit word, as the C code converts it to an `unsigned long`. -/
+have; the other arm (`find_points.c:3239-3256`), for a build without a 128-bit type, is excluded;
+the `long` `b` converted to a 64-bit word, as the C code converts it to an `unsigned long`. -/
 def exactScale (b : Int64) (e : ExactEnd) : UInt64 :=
   let lo := b.toUInt64 * e.m + e.rl
   let hi := mulHi b.toUInt64 e.m + e.rh + (if lo < e.rl then 1 else 0)

@@ -212,13 +212,13 @@ reason = "RP_PHASE_TIMING and RP_PHASE_COUNTS, development instrumentation: the 
 file = "find_points.c"
 lines = "181-270"
 kind = "memory"
-reason = "pointer_align, which aligns the buffers and the survivors array; ba_buffer_need, alloc_ba_buffer and ensure_ba_buffer, which size, allocate and enlarge the buffer from which the builders take the rows of the tables; num_powers, the number of prime powers below RATPOINTS_MAX_PRIME_EVEN, which sizes the buffers of the sieve entries and of the prime powers (and gives add_moduli its bound on the prime powers it keeps, line 2351, which never binds); and hold_nothing, which clears the pointers to the buffers: the model allocates nothing itself and keeps the rows in tables of its own"
+reason = "pointer_align, which aligns the buffers and the survivors array; ba_buffer_need, alloc_ba_buffer and ensure_ba_buffer, which size, allocate and enlarge the buffer from which the builders take the rows of the tables; num_powers, the number of prime powers below RATPOINTS_MAX_PRIME_EVEN, which sizes the buffers of the sieve entries and of the prime powers (and gives add_moduli its bound on the prime powers it keeps, find_points.c:2351, which never binds); and hold_nothing, which clears the pointers to the buffers: the model allocates nothing itself and keeps the rows in tables of its own"
 
 [[excluded]]
 file = "find_points.c"
 lines = "272-375"
 kind = "interface"
-reason = "find_points_init, which a caller of the library calls before find_points_work: it answers a degree outside 0, ..., RATPOINTS_MAX_DEGREE with the work length -1, but find_points_work refuses such a degree itself (lines 4557-4558, which the model has), so the work length -1, refused at lines 4621-4622, matters only to a caller who changes the degree between the two calls; it allocates the scratch integers work and the buffers and arrays of the arguments, giving all of them back when one cannot be had, clears the pointer to the pool of threads, and prints messages under DEBUG; the model allocates nothing"
+reason = "find_points_init, which a caller of the library calls before find_points_work: it answers a degree outside 0, ..., RATPOINTS_MAX_DEGREE with the work length -1, but find_points_work refuses such a degree itself (find_points.c:4557-4558, which the model has), so the work length -1, refused at find_points.c:4621-4622, matters only to a caller who changes the degree between the two calls; it allocates the scratch integers work and the buffers and arrays of the arguments, giving all of them back when one cannot be had, clears the pointer to the pool of threads, and prints messages under DEBUG; the model allocates nothing"
 
 [[excluded]]
 file = "find_points.c"
@@ -320,7 +320,7 @@ reason = "run_clear, which releases the arrays of the run"
 file = "find_points.c"
 lines = "4129-4519"
 kind = "threads"
-reason = "the pool of threads (the lock of the tables of rows, the workers, the collection of the points of a block, run_threaded) and its stubs for a build without threads; the pool sieves the blocks apart and delivers them in their order, a block not starting before the block RP_ADAPT_LAG + 1 before it is folded, so that the decision of each block and the output are those of the blocks sifted in turn on one thread, which the model does, but for the failure of the search (RATPOINTS_NO_MEMORY) when a thread of the pool has no memory to store a point of its block before the delivery reaches it (lines 4245-4250, 4482, 4501), a failure that the model, allocating nothing, cannot meet"
+reason = "the pool of threads (the lock of the tables of rows, the workers, the collection of the points of a block, run_threaded) and its stubs for a build without threads; the pool sieves the blocks apart and delivers them in their order, a block not starting before the block RP_ADAPT_LAG + 1 before it is folded, so that the decision of each block and the output are those of the blocks sifted in turn on one thread, which the model does, but for the failure of the search (RATPOINTS_NO_MEMORY) when a thread of the pool has no memory to store a point of its block before the delivery reaches it (find_points.c:4245-4250, find_points.c:4482, find_points.c:4501), a failure that the model, allocating nothing, cannot meet"
 
 [[excluded]]
 file = "find_points.c"
@@ -356,7 +356,7 @@ reason = "the message under DEBUG at the start of find_points_work_1"
 file = "find_points.c"
 lines = "4618-4623"
 kind = "interface"
-reason = "the checks of the coefficient array and of the work array that find_points_init sets up, which only a caller of the library can fail (the work array is missing when find_points_init refused the degree and the caller then gave an admissible one, since find_points_work refuses an inadmissible degree first at lines 4557-4558, or for lack of memory, which the model cannot meet)"
+reason = "the checks of the coefficient array and of the work array that find_points_init sets up, which only a caller of the library can fail (the work array is missing when find_points_init refused the degree and the caller then gave an admissible one, since find_points_work refuses an inadmissible degree first at find_points.c:4557-4558, or for lack of memory, which the model cannot meet)"
 
 [[excluded]]
 file = "find_points.c"
@@ -626,7 +626,7 @@ reason = "the release of tmp and tmp2, of the GMP integers of the coefficients a
 file = "main.c"
 lines = "330-332"
 kind = "interface"
-reason = "the initialization of the fields of the arguments of the library that the model has no counterpart for: the pointer to the global array c of the coefficients, whose entries read_input fills later (line 368), and the degree and the height, which it sets later (lines 374 and 378) and the model passes as values"
+reason = "the initialization of the fields of the arguments of the library that the model has no counterpart for: the pointer to the global array c of the coefficients, whose entries read_input fills later (main.c:368), and the degree and the height, which it sets later (main.c:374 and main.c:378) and the model passes as values"
 
 [[excluded]]
 file = "main.c"
@@ -698,7 +698,7 @@ reason = "the release of the GMP integer m of scan_end"
 file = "main.c"
 lines = "977-978"
 kind = "other"
-reason = "the text of message 1, the banner and the usage, which main prints only when read_input returns a value other than 0, which it never does: its only return is at line 691, and every other failure exits through error"
+reason = "the text of message 1, the banner and the usage, which main prints only when read_input returns a value other than 0, which it never does: its only return is at main.c:691, and every other failure exits through error"
 
 [[excluded]]
 file = "main.c"

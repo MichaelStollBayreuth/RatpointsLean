@@ -84,7 +84,7 @@ C: `find_points.c:3812-3837`
 Deviation: the segments as an array of pairs, for the arrays `seg_lo` and `seg_hi` of the run;
 quotients by 64 for the shifts by `LONG_SHIFT`; natural numbers for the `long`s, the steps of a
 segment counted only when `lo ≤ hi`, as the C code counts them; the count of the segments read from
-the shape, for `nseg`, which `run_setup` counts before (line 3794). -/
+the shape, for `nseg`, which `run_setup` counts before (`find_points.c:3794`). -/
 def Shape.segments (s : Shape) (bLow bHigh : Nat) : Id (Array (Nat × Nat) × Nat) := do
   let nseg := match s with
     | .squares1 _ divisors => divisors.length
@@ -468,12 +468,13 @@ Deviation: the decision's entries and reciprocals cut as lists for each block, f
 and `sp3` that the sieving thread keeps and through which `sift` and `fill_bp_list` read the arrays
 `sieve_list` and `magics`; the report returned with the delivery and the store, for the fields of
 the sieving thread that `worker_stat` copies into it after the block; the counters and the index of
-the decision, which `worker_init` clears before the run (lines 3127-3128), set only here, for each
-block (lines 3911 and 3914-3915), before they are read; the arguments of the run passed explicitly,
-for the fields of the run and of the arguments that `run_block` reads; the delivery `r` passed and
-returned, for the pointers `info` and `wk->quit` and the count `total` that `run_block` keeps from
-zero and returns; the array `bp_list` of `sp3_max` entries on the stack, of which `fill_bp_list`
-fills the first `sp2`, a list made by `Ratpoints.Sieve.siftDen`; natural numbers for the `long`s. -/
+the decision, which `worker_init` clears before the run (`find_points.c:3127-3128`), set only here,
+for each block (`find_points.c:3911` and `find_points.c:3914-3915`), before they are read; the
+arguments of the run passed explicitly, for the fields of the run and of the arguments that
+`run_block` reads; the delivery `r` passed and returned, for the pointers `info` and `wk->quit` and
+the count `total` that `run_block` keeps from zero and returns; the array `bp_list` of `sp3_max`
+entries on the stack, of which `fill_bp_list` fills the first `sp2`, a list made by
+`Ratpoints.Sieve.siftDen`; natural numbers for the `long`s. -/
 def runBlock {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A : Nat)
     (fl : CheckFlags) (sp1 : Nat) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
@@ -726,8 +727,9 @@ C: `find_points.c:3755-3762`
 Deviation: the decisions an array of structures, for the three arrays `dec_block`, `dec_sp2` and
 `dec_sp3` and their count `ndec`; the fields `sp2`, `sp3` and `adapt_at` of the arguments, which
 `adapt_primes` writes and `run_fold` reads, kept here, since they are read only within the run, by
-`run_fold` and `adapt_primes`, after which line 5163 overwrites `sp2` and `sp3` with the ends of the
-last block folded; natural numbers for the `long`s and a `UInt64` for the `unsigned long`. -/
+`run_fold` and `adapt_primes`, after which `find_points.c:5163` overwrites `sp2` and `sp3` with the
+ends of the last block folded; natural numbers for the `long`s and a `UInt64` for the
+`unsigned long`. -/
 structure Correction where
   /-- The counters of the run. -/
   cnt : RunCounts
@@ -806,11 +808,11 @@ C: `find_points.c:5120`, `find_points.c:5152-5160`, `find_points.c:5163`
 Deviation: the blocks on the calling thread alone, without the pool of threads, which sifts them
 apart and delivers them in the same order, the decision of each block depending only on the folds of
 the blocks at least `Ratpoints.adaptLag + 1` before it (excluded with the threads); the ends of the
-last block returned, for the fields `sp2` and `sp3` of the arguments that line 5163 writes; the
-store of the tables of rows passed from one block to the next, for the arrays `sieve` of the entries
-of the arguments, its last state not returned, as nothing reads the tables of rows after the run;
-the delivery `r` passed and returned, for the pointers `info` and `wk.quit` and the count `total`;
-natural numbers for the `long`s. -/
+last block returned, for the fields `sp2` and `sp3` of the arguments that `find_points.c:5163`
+writes; the store of the tables of rows passed from one block to the next, for the arrays `sieve` of
+the entries of the arguments, its last state not returned, as nothing reads the tables of rows after
+the run; the delivery `r` passed and returned, for the pointers `info` and `wk.quit` and the count
+`total`; natural numbers for the `long`s. -/
 def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A : Nat)
     (fl : CheckFlags) (s : SieveOptions) (P : Params) (entries : List SieveEntry)
     (magics : Array Nat) (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64)

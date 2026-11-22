@@ -184,11 +184,11 @@ Deviation: the tables of rows made in the store of the run, by the reference to 
 (`Ratpoints.Sieve.EntryRef`), for the arrays `sieve` of the entries, after the choice for every
 entry, the reserve included (`Ratpoints.choiceEnd`), where `make_power` and `make_modulus` make them
 with the entry; a table of rows made only when its reference is absent, for the test of `power_se`
-(lines 2444 and 2466) by which the entry of a prime power is made once, and for the entry of a
-prime, which `examine_prime` makes once, with its table of rows, in the loop of the tables
-(`Ratpoints.examineInLoop`) or in the third stage (lines 2994-2995), where the model makes the table
-of a prime of the third stage after the choice, and none for a prime that the third stage examines
-and passes over, whose table nothing reads. -/
+(`find_points.c:2444` and `find_points.c:2466`) by which the entry of a prime power is made once,
+and for the entry of a prime, which `examine_prime` makes once, with its table of rows, in the loop
+of the tables (`Ratpoints.examineInLoop`) or in the third stage (`find_points.c:2994-2995`), where
+the model makes the table of a prime of the third stage after the choice, and none for a prime that
+the third stage examines and passes over, whose table nothing reads. -/
 def SieveEntry.addTables (e : SieveEntry) (s : RowStore) : RowStore :=
   let s := e.factors.foldl (fun s f ↦ s.insertIfNew f.ref f.newRows) s
   if e.init = .product then s.insertIfNew e.ref (.replicate e.p none) else s
@@ -468,7 +468,7 @@ def sieveInit2 (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore) :
 /-- The 64 bits of the packed words `E` from position `s` on, where bit `t` of word `q` is at
 position `64 q + t`: word `s / 64` shifted right by `r = s % 64`, and for `r ≠ 0` the lowest `r`
 bits of the next word above them, as `lay_out_pattern` cuts each word of a row out of the repeated
-pattern at line 291 of `init.c` (`Ratpoints.Sieve.layOutPattern`). -/
+pattern at `init.c:291` (`Ratpoints.Sieve.layOutPattern`). -/
 def window (E : Array UInt64) (s : Nat) : UInt64 :=
   let q := s / 64
   let r := s % 64

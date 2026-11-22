@@ -347,13 +347,13 @@ Deviation: the lowest set bit by the loop of `RP_CTZL` for a compiler without th
 first word of a bit array, the others, and a word of the arm of the second stage for one word at a
 time; natural numbers and integers for the `long`s; the delivery `r` passed and returned, for the
 pointers `info` and `wk->quit` and the count `total` of `_ratpoints_sift0`, to which
-`RP_CHECK_POINT` adds the count of the check (lines 1168, 1240, 1250, 1279, 1287); the return after
-a stop (lines 1169, 1241, 1251, 1280, 1288) a return from the walk, which its callers pass on,
-testing the flag after it (`Ratpoints.Sieve.siftBitArrayByWords`,
-`Ratpoints.Sieve.siftBitArrayWhole`, then `Ratpoints.Sieve.scanPiece` after the bit array), where
-the C code returns from `_ratpoints_sift0`; the counters passed and returned, for the field
-`n_bits` of the sieving thread (lines 1166, 1233, 1271); no counts under `RP_PHASE_COUNTS`; no
-output under `DEBUG`. -/
+`RP_CHECK_POINT` adds the count of the check (`sift.c:1168`, `sift.c:1240`, `sift.c:1250`,
+`sift.c:1279`, `sift.c:1287`); the return after a stop (`sift.c:1169`, `sift.c:1241`, `sift.c:1251`,
+`sift.c:1280`, `sift.c:1288`) a return from the walk, which its callers pass on, testing the flag
+after it (`Ratpoints.Sieve.siftBitArrayByWords`, `Ratpoints.Sieve.siftBitArrayWhole`, then
+`Ratpoints.Sieve.scanPiece` after the bit array), where the C code returns from `_ratpoints_sift0`;
+the counters passed and returned, for the field `n_bits` of the sieving thread (`sift.c:1166`,
+`sift.c:1233`, `sift.c:1271`); no counts under `RP_PHASE_COUNTS`; no output under `DEBUG`. -/
 def walkWord {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b : Nat) (fl : CheckFlags) (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int)
     (step : Nat) (r : Delivery σ) (cnt : Counters) :
@@ -515,7 +515,7 @@ index, where `ratpoints` recovers the word number from a pointer difference; the
 bit array a vector of `Ratpoints.rbaPack` words; the sentinel `~zero` of every build as
 `Ratpoints.rbaPack` words `~~~0`, written one at a time; natural numbers and integers for the
 `long`s; the counters `cnt` passed and returned, for the field `n_arrays` of the sieving thread,
-which counts one up for each bit array that is not zero (line 1092); the delivery `r` passed and
+which counts one up for each bit array that is not zero (`sift.c:1092`); the delivery `r` passed and
 returned, for the pointers `info` and `wk->quit` and the count `total` of `_ratpoints_sift0`, and
 the flag `quit` tested after each bit array, where the C code returns from `_ratpoints_sift0` within
 the walk through the set bits of a word (`Ratpoints.Sieve.walkWord`). -/
@@ -579,13 +579,13 @@ as the list `mgs`, for the array `magics` of the arguments, and the thunk `check
 `checks` of the third stage and its length `nchecks = sp3 - sp2`; the class `cl` as a value, for the
 pointer `cls`; integers for the `long`s of the test `small`, which stay `long`s, and a Boolean for
 its `int`; the counters `cnt` passed and returned, for the field `n_words` of the sieving thread,
-which counts the `n Ratpoints.rbaPack` words of the piece (line 548), the product of `UInt64`s as
-the C code multiplies the `unsigned long` by `RBA_PACK`; the thunk `w` of the products of the check
-as an argument, where `_ratpoints_check_point` computes the products when the first survivor of `b`
-reaches it; the delivery `r` passed and returned, for the pointers `info` and `wk->quit` and the
-count `total` that `_ratpoints_sift0` keeps from zero and returns, and its returns at a stop within
-the walk through the set bits of a word passed on by the scan (`Ratpoints.Sieve.scanPiece`); natural
-numbers and integers for the `long`s; no measurements of the phases (`RP_TIC`, `RP_TOC`,
+which counts the `n Ratpoints.rbaPack` words of the piece (`sift.c:548`), the product of `UInt64`s
+as the C code multiplies the `unsigned long` by `RBA_PACK`; the thunk `w` of the products of the
+check as an argument, where `_ratpoints_check_point` computes the products when the first survivor
+of `b` reaches it; the delivery `r` passed and returned, for the pointers `info` and `wk->quit` and
+the count `total` that `_ratpoints_sift0` keeps from zero and returns, and its returns at a stop
+within the walk through the set bits of a word passed on by the scan (`Ratpoints.Sieve.scanPiece`);
+natural numbers and integers for the `long`s; no measurements of the phases (`RP_TIC`, `RP_TOC`,
 `RP_PHASE_TIMING`) and no stop after one of them (`RP_STOP_AFTER`). -/
 def siftPiece {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b : Nat) (fl : CheckFlags) (sp1 : Nat) (specs : List SieveSpec) (mgs : List Nat)
@@ -779,19 +779,19 @@ C: `find_points.c:3563-3612`
 
 Deviation: a function of its own for the bits of one interval of the numerators, the part of the
 loop over the intervals of `sift` after the set-up; the size `A` of the pieces as an argument, for
-`args->array_size` (line 3571), which `sift` reads through the pointer `args` of the sieving thread;
-natural numbers and integers for the `long`s, the word numbers and the masks by the division and the
-remainder, rounding down, by `Ratpoints.rbaLength`, for the shift by `RBA_SHIFT` and the mask by
-`RBA_LENGTH - 1` (with `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift`), which gcc makes the floor
-division and the Euclidean remainder on a negative `long` too, the first bits of the bit arrays
-staying `long`s for the bits of a height bound below `2 ^ 63`
+`args->array_size` (`find_points.c:3571`), which `sift` reads through the pointer `args` of the
+sieving thread; natural numbers and integers for the `long`s, the word numbers and the masks by the
+division and the remainder, rounding down, by `Ratpoints.rbaLength`, for the shift by `RBA_SHIFT`
+and the mask by `RBA_LENGTH - 1` (with `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift`), which gcc
+makes the floor division and the Euclidean remainder on a negative `long` too, the first bits of the
+bit arrays staying `long`s for the bits of a height bound below `2 ^ 63`
 (`Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv`,
 `Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow`); the delivery `r` passed and returned, for
 the pointers `info` and `wk->quit` and the count `total` that `sift` keeps from zero and returns,
 and the counters `cnt` passed and returned, for those of the sieving thread; no test of the flag
-`stop` of a thread of the pool after a piece (line 3610), which is null on the calling thread (line
-5129, with the pool excluded with the threads), and no measurement (`RP_SIFT_TOC`) on the return at
-a stop. -/
+`stop` of a thread of the pool after a piece (`find_points.c:3610`), which is null on the calling
+thread (`find_points.c:5129`, with the pool excluded with the threads), and no measurement
+(`RP_SIFT_TOC`) on the return at a stop. -/
 def siftBits {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b A : Nat) (fl : CheckFlags) (sp1 : Nat) (specs : List SieveSpec) (mgs : List Nat)
     (checks : Thunk (List CheckSpec)) (cl : NumClass) (low high : Int) (r : Delivery σ)
@@ -846,32 +846,33 @@ C: `find_points.c:3112-3114`, `find_points.c:3123-3124`, `find_points.c:3129-313
 Deviation: the height bound converted to `Int64`, which is exact for `H < 2 ^ 63`, and the
 denominator too, and the bits back to integers; the bounds of the search intervals an array, for the
 struct `rp_intervals` with its pointers `bd` and `end`, which `sift` reaches through the field `iv`
-of the sieving thread, which `worker_init` clears (line 3130) and `run_block` sets for each block
-(line 3913; here `Ratpoints.Sieve.runBlock`, which passes the array of the run on); one call of
-`Ratpoints.Sieve.setRows`, for the two calls with the flag `shared` a constant, between which the
-pool of threads chooses, which the model does not have; the store of the tables of rows passed and
-returned, for the arrays `sieve` of the entries of the arguments, which `sift` reaches through
-`sieve_list` and which keep the rows built for the rest of the run; the end `sp1` of the first
-stage, the entries `es` and the reciprocals `mgs` of the first two stages, the entries `es3` of the
-third stage and their reciprocals `mgs3` as arguments, for the numbers `sp1`, `sp2` and `sp3` that
-the sieving thread keeps (`worker_init`), the entries `sieve_list[0], …, sieve_list[sp2 - 1]`, the
-array `magics` of the arguments, which `_ratpoints_sift0` reads, and the entries
-`sieve_list[sp2], …, sieve_list[sp3 - 1]` and the reciprocals `magics[sp2], …, magics[sp3 - 1]`,
-which `fill_checks` reads, the cut points of the decision of the block (`Ratpoints.Sieve.runBlock`);
-the residues `bp` and the class `cl` as values, for the pointers `bp_list` and `cls`, and the array
-`offsets` of the row offsets of the run as an argument, which the C code reaches through the pointer
-`offset` of the class; the thunk of `Ratpoints.Sieve.fillChecks`, for the table `checks` of the
-sieving thread, which `fill_checks` fills, and its flag `stage3_filled`, which `sift` clears; the
-thunk of the products `w`, for the flag `compute_bc`, which `sift` sets and `_ratpoints_check_point`
-clears when it computes the products; the counters `cnt` passed and returned, for those of the
-sieving thread, the count `sifts` one up at the start (line 3461); the delivery `r` passed and
-returned, for the pointers `info` and `wk->quit`, which `worker_init` clears, and the count `total`
-that `sift` keeps from zero and returns; the arguments of the run passed explicitly, for the pointer
-`args` of the sieving thread (`rp-private.h:574`), which `worker_init` sets and through which `sift`
-reads them; no pool, slot and stop flag of a thread of the pool, the flag by which the pool of
-threads tells it to abandon its block (`pool`, `slot`, `stop`, `rp-private.h:584`, excluded with the
-threads); natural numbers and integers for the `long`s; no measurements of the phases
-(`RP_SIFT_TIC`, `RP_SETUP_TIC` and their `TOC`) and no output under `DEBUG`. -/
+of the sieving thread, which `worker_init` clears (`find_points.c:3130`) and `run_block` sets for
+each block (`find_points.c:3913`; here `Ratpoints.Sieve.runBlock`, which passes the array of the run
+on); one call of `Ratpoints.Sieve.setRows`, for the two calls with the flag `shared` a constant,
+between which the pool of threads chooses, which the model does not have; the store of the tables of
+rows passed and returned, for the arrays `sieve` of the entries of the arguments, which `sift`
+reaches through `sieve_list` and which keep the rows built for the rest of the run; the end `sp1` of
+the first stage, the entries `es` and the reciprocals `mgs` of the first two stages, the entries
+`es3` of the third stage and their reciprocals `mgs3` as arguments, for the numbers `sp1`, `sp2` and
+`sp3` that the sieving thread keeps (`worker_init`), the entries
+`sieve_list[0], …, sieve_list[sp2 - 1]`, the array `magics` of the arguments, which
+`_ratpoints_sift0` reads, and the entries `sieve_list[sp2], …, sieve_list[sp3 - 1]` and the
+reciprocals `magics[sp2], …, magics[sp3 - 1]`, which `fill_checks` reads, the cut points of the
+decision of the block (`Ratpoints.Sieve.runBlock`); the residues `bp` and the class `cl` as values,
+for the pointers `bp_list` and `cls`, and the array `offsets` of the row offsets of the run as an
+argument, which the C code reaches through the pointer `offset` of the class; the thunk of
+`Ratpoints.Sieve.fillChecks`, for the table `checks` of the sieving thread, which `fill_checks`
+fills, and its flag `stage3_filled`, which `sift` clears; the thunk of the products `w`, for the
+flag `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when it computes the
+products; the counters `cnt` passed and returned, for those of the sieving thread, the count `sifts`
+one up at the start (`find_points.c:3461`); the delivery `r` passed and returned, for the pointers
+`info` and `wk->quit`, which `worker_init` clears, and the count `total` that `sift` keeps from zero
+and returns; the arguments of the run passed explicitly, for the pointer `args` of the sieving
+thread (`rp-private.h:574`), which `worker_init` sets and through which `sift` reads them; no pool,
+slot and stop flag of a thread of the pool, the flag by which the pool of threads tells it to
+abandon its block (`pool`, `slot`, `stop`, `rp-private.h:584`, excluded with the threads); natural
+numbers and integers for the `long`s; no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`
+and their `TOC`) and no output under `DEBUG`. -/
 def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A b : Nat)
     (fl : CheckFlags) (sp1 : Nat) (es : List SieveEntry) (mgs bp : List Nat) (cl : NumClass)
     (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat) (iv : Array IntervalBounds)

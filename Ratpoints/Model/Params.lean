@@ -184,9 +184,10 @@ with the normalized options (`Ratpoints.sievingInfo`).
 C: `find_points.c:4643-4649`, `find_points.c:4655-4656`, `find_points.c:4662-4665`
 
 Deviation: the normalized options returned, for the fields of the arguments that the C code
-normalizes in place and restores in `find_points_work` (lines 4542-4545 and 4560-4563); the array
-size normalized with the height bound where it is read (`Ratpoints.arraySizeAt`); no enlargement of
-the buffer of the rows (line 4654), which the model does not have; integers for the `long`s. -/
+normalizes in place and restores in `find_points_work` (`find_points.c:4542-4545` and
+`find_points.c:4560-4563`); the array size normalized with the height bound where it is read
+(`Ratpoints.arraySizeAt`); no enlargement of the buffer of the rows (`find_points.c:4654`), which
+the model does not have; integers for the `long`s. -/
 def SieveOptions.normalize (s : SieveOptions) : SieveOptions :=
   let numPrimes : Int :=
     min (if s.numPrimes < 0 then defaultNumPrimes else s.numPrimes) Ratpoints.numPrimes

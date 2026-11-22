@@ -110,10 +110,10 @@ Deviation: the classes and `den_bits` returned, for the array `cls` and the word
 `get_2adic_info` fills through its pointer arguments, from the words that `Ratpoints.Sieve.twoAdic`
 returns; the packed pattern of a class with `k ≥ 1` by a function of its own
 (`Ratpoints.Sieve.packPattern`); the pattern of a class as one word, for the vector `RBA(packed)` of
-line 1098; natural numbers for the `long`s `k`, `a0` and `a`, and the remainder by `2 ^ k` for the
-mask `(1L << k) - 1`; the mask of a stride read from the array of the masks with the default `0`
-beyond its seven entries, as the C code reads the zeros that it puts beyond them; the lowest set bit
-by the loop of `RP_CTZL` (`Ratpoints.Sieve.ctz`); no output under `DEBUG`. -/
+`find_points.c:1098`; natural numbers for the `long`s `k`, `a0` and `a`, and the remainder by
+`2 ^ k` for the mask `(1L << k) - 1`; the mask of a stride read from the array of the masks with the
+default `0` beyond its seven entries, as the C code reads the zeros that it puts beyond them; the
+lowest set bit by the loop of `RP_CTZL` (`Ratpoints.Sieve.ctz`); no output under `DEBUG`. -/
 def numClasses (nb : Vector UInt64 64) : Id (Vector NumClass 64 × UInt64) := do
   let mut cls : Vector NumClass 64 := .replicate 64 default
   let mut db : UInt64 := 0
