@@ -325,7 +325,9 @@ the settings of the output, it searches with the options~$s'$ of~$s$ with the ar
   with the callback gives the data and the count of the delivery of~$L$; without \verb|-v|, which
   \verb|-q| clears (\lname{Ratpoints.Cli.verbose\_eq\_false\_of\_input\_eq\_ok}), the print channel
   prints nothing. Items~(3) and~(4) rest on an invariant of the reading of the intervals
-  (\lname{Ratpoints.Cli.Intervals.ReadsWF}): the exact ends are those of increasing and disjoint
+  (\lname{Ratpoints.Cli.Intervals.ReadsWF}): the arrays of the ends, which the program sizes by the
+  number of the words of its options, have room for the intervals read and for those that the words
+  left to read can give, the exact ends are those of increasing and disjoint
   intervals, and the doubles of each interval hold it for $|x| \le H$. For arguments of fewer
   than~$2^{56}$ characters (\verb|scan_end| stops accumulating the digits of an exponent at
   \verb|LONG_MAX/20|) the doubles of the lower ends after the first are the largest doubles at most

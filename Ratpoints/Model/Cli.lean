@@ -92,7 +92,7 @@ def banner : String :=
 
 /-- The usage of `ratpoints-lean`: that of `ratpoints`, all options included.
 
-C: `main.c:78-91`
+C: `main.c:80-93`
 
 Deviation: the program is called `ratpoints-lean`, and the lines of the options below the first are
 indented to match. -/
@@ -130,8 +130,7 @@ inductive Failure where
   among the options, or an option whose argument is missing or malformed, but for `-l` and `-u`. -/
   | optionSyntax
   /-- Error 7 of `main.c`: an end of a search interval (`-l`, `-u`) that is missing or no number,
-  two lower or two upper ends in a row, more than `Ratpoints.maxDegree` intervals, or ends that are
-  not ordered. -/
+  two lower or two upper ends in a row, or ends that are not ordered. -/
   | intervals
   /-- Error 8 of `main.c`: a binary form that is not squarefree
   (`Ratpoints.Refusal.notSquarefree`). -/
@@ -152,7 +151,7 @@ for the same error, a blank line, the message and a blank line; for error 2 the 
 usage instead, which error 6 prints after its message, as its case falls through to that of
 error 2.
 
-C: `main.c:1097-1109`, `main.c:1111-1115`
+C: `main.c:1136-1148`, `main.c:1150-1154`
 
 Deviation: the banner and the usage are those of `ratpoints-lean`. -/
 def Failure.message : Failure → String
@@ -162,7 +161,7 @@ def Failure.message : Failure → String
   | .tooFewCoefficients => "\nThe polynomial must have degree at least 1.\n\n"
   | .optionSyntax => s!"\nWrong syntax for optional arguments:\n\n\n{banner}\n{usage}"
   | .intervals =>
-    "\nIncorrect interval arguments (not numbers, not alternating, too many, or not ordered).\n\n"
+    "\nIncorrect interval arguments (not numbers, not alternating, or not ordered).\n\n"
   | .notSquarefree => "\nPolynomial is not square-free.\n\n"
   | .badArgs => "\nBug no. 1 - please report!\n\n"
   | .incorrectCoefficients => "\nIncorrect coefficients (not integers separated by blanks).\n\n"
@@ -172,7 +171,7 @@ def Failure.message : Failure → String
 with which its function `error` exits, unless a write to the standard output has failed
 (`Ratpoints.Cli.main`).
 
-C: `main.c:1116-1117` -/
+C: `main.c:1155-1156` -/
 def Failure.status : Failure → UInt32
   | .tooFewArguments => 2
   | .tooManyCoefficients => 3
@@ -194,13 +193,13 @@ them `RATPOINTS_BAD_ARGS` (`Ratpoints.Refusal.badArgs`). The reading of the comm
 no search intervals that the library refuses, so that of the refusals of `Ratpoints.findPointsWith`,
 which `Ratpoints.Cli.run` maps by it, only `Ratpoints.Refusal.notSquarefree` can reach it.
 
-C: `main.c:261-266`
+C: `main.c:258-263`
 
 Deviation: no error 10, since the model has no failure for lack of memory; the refusals of the
 coefficients and of the height (`Ratpoints.Refusal.tooManyCoefficients`,
 `Ratpoints.Refusal.tooFewCoefficients`, `Ratpoints.Refusal.incorrectHeight`) mapped to the errors 3,
 5 and 4 with which `read_input` refuses those inputs before the library is called, where
-`main.c:265` gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it
+`main.c:262` gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it
 can be given (`find_points.c:4604-4605`, `find_points.c:4683` and `find_points.c:4708`); no command
 line reaches them; no `mpz_clear`. -/
 def Failure.ofRefusal : Refusal → Failure
@@ -219,11 +218,10 @@ before the first and after the last. A word that is not an integer fails with er
 stands; then more than `Ratpoints.maxDegree + 1` integers fail with error 3, and fewer than two with
 error 5.
 
-C: `main.c:55`, `main.c:323`, `main.c:370`, `main.c:372`, `main.c:378-384`, `main.c:386-389`
+C: `main.c:55`, `main.c:367`, `main.c:370`, `main.c:393-399`, `main.c:401-404`
 
-Deviation: a list of `Int`s for the global array `c` of `RATPOINTS_MAX_DEGREE + 1` GMP integers; the
-integers beyond these, which `main.c` reads into the variable `fff` only to check them, are read
-like the others. -/
+Deviation: a list of `Int`s for the array `c` of GMP integers, which `main.c` takes from the heap
+with an entry for each word of the list. -/
 def coefficients (s : String) : Except Failure (List Int) := do
   let some c := (words s.toList).mapM intOfWord? | throw .incorrectCoefficients
   if maxDegree + 1 < c.length then throw .tooManyCoefficients
@@ -234,7 +232,7 @@ def coefficients (s : String) : Except Failure (List Int) := do
 it: a C `long` as `Ratpoints.Cli.longOfString?` reads it, at least 1, so from 1 to `2⁶³ - 1`;
 anything else fails with error 4.
 
-C: `main.c:392-393` -/
+C: `main.c:407-408` -/
 def heightBound (s : String) : Except Failure Nat :=
   match (longOfString? s).filter fun h ↦ 1 ≤ h with
   | some h => return h.toNat
@@ -295,7 +293,7 @@ whether no point is printed (`-z`, and not `-Z`), the format of a point (`-f`), 
 `-fm`, `-fe`), none for none, and the exact ends of the search intervals of the command line, which
 `process` reads (`ends`, as the options `-l` and `-u` fill it: `Ratpoints.Cli.Intervals`).
 
-C: `main.c:58-65`, `main.c:397-404`, `ratpoints.h:407`
+C: `main.c:59-66`, `main.c:412-419`, `ratpoints.h:407`
 
 Deviation: a structure for the global variables; `Option String` for the strings and the format,
 `none` for the null pointer, and Lean strings for the C strings of the command line, which the Lean
@@ -331,16 +329,16 @@ structure Output where
 
 /-- The state of the reading of the search intervals by `read_input` of `main.c`: whether the last
 end read is a lower one (`l_seen`), the number of the intervals read (`num_inter`), and the arrays
-`domain` and `ends` of `main.c` as the options `-l` and `-u` fill them, of `2 maxDegree` entries,
-the doubles of the ends that the library is given and the exact ends,
-`ends[2 i] ≤ x ≤ ends[2 i + 1]` for the `i`-th interval.
+`domain` and `ends` of `main.c` as the options `-l` and `-u` fill them, the doubles of the ends that
+the library is given and the exact ends, `ends[2 i] ≤ x ≤ ends[2 i + 1]` for the `i`-th interval.
+The reading starts as `Ratpoints.Cli.Intervals.sized` gives it.
 
-C: `main.c:67`, `main.c:74`, `main.c:322`, `main.c:324`
+C: `main.c:68`, `main.c:75`, `main.c:78`, `main.c:320`, `main.c:321`
 
-Deviation: a structure for the two locals of `read_input` and the two global arrays, whose entries
-are zero (the doubles) and `0` (the exact ends, as `mpq_init` sets them, `main.c:210`) at the start;
-pairs of doubles for the entries of the type `ratpoints_interval`; a natural number for the `long`
-`num_inter`. -/
+Deviation: a structure for the two locals of `read_input` and the two global arrays, which
+`main.c` takes from the heap; pairs of doubles for the entries of the type `ratpoints_interval`; a
+natural number for the `long` `num_inter`; the size of the array `ends` for the `long`
+`num_ends`. -/
 structure Intervals where
   /-- `l_seen`: whether the last end read is a lower one, whose interval is not complete. -/
   lSeen : Bool := false
@@ -348,23 +346,37 @@ structure Intervals where
   numInter : Nat := 0
   /-- `domain`: the doubles of the ends of the intervals, the lower and the upper one, that the
   library is given. -/
-  domain : Array (Double × Double) := .replicate (2 * maxDegree) (.zero, .zero)
+  domain : Array (Double × Double)
   /-- `ends`: the exact ends of the intervals, `ends[2 i]` the lower and `ends[2 i + 1]` the upper
   end of the `i`-th. -/
-  ends : Array ExactEnd := .replicate (2 * maxDegree) {}
+  ends : Array ExactEnd
+
+/-- The reading of the search intervals at its start, before the options are read, for a command
+line with `words` words of options and a coefficient list of the degree `degree`, as `read_input`
+of `main.c` sets it up: no interval read, and the arrays sized by the number `words / 2` of the
+intervals that the options can give at most, since each interval has two words of its own: two
+entries of `ends` for each of them, and one entry when there is none, and an entry of `domain` for
+each of them and `degree` more, the room that the library asks for. Every entry is zero.
+
+C: `main.c:434-438`, `main.c:445`
+
+Deviation: arrays of these sizes with their entries, for the memory that `main.c` takes from the
+heap and clears (`main.c:439-443`), with error 10 when an allocation fails, which the model cannot
+meet. -/
+def Intervals.sized (words degree : Nat) : Intervals where
+  domain := .replicate (words / 2 + degree) (.zero, .zero)
+  ends := .replicate (if 0 < words / 2 then 2 * (words / 2) else 1) {}
 
 /-- The reading `iv` of the search intervals after a lower end `a` (`-l a`), as `read_input` of
-`main.c` reads it: error 7 after another lower end (`-l -l`), when `Ratpoints.maxDegree` intervals
-have been read, when `a` is not a number (`Ratpoints.Cli.scanEnd` with the direction `-1`), and when
-it is not above the upper end of the interval before, compared as the numbers they are
-(`Ratpoints.Cli.cmpEnd`); otherwise the exact end and its double as the lower end of the next
-interval, which is not complete.
+`main.c` reads it: error 7 after another lower end (`-l -l`), when `a` is not a number
+(`Ratpoints.Cli.scanEnd` with the direction `-1`), and when it is not above the upper end of the
+interval before, compared as the numbers they are (`Ratpoints.Cli.cmpEnd`); otherwise the exact end
+and its double as the lower end of the next interval, which is not complete.
 
-C: `main.c:415-427` -/
+C: `main.c:456-467` -/
 def Intervals.lower (iv : Intervals) (a : String) : Except Failure Intervals := do
   if iv.lSeen then throw .intervals
   let n := iv.numInter
-  if n = maxDegree then throw .intervals
   let some (e, d) ← scanEnd a (-1) | throw .intervals
   if 0 < n && 0 ≤ cmpEnd iv.ends[2 * n - 1]! e then throw .intervals
   return { iv with
@@ -380,7 +392,7 @@ that holds no `x` of the search, made `[-∞, u]` rather than turned around); er
 end is above the upper one, compared as the numbers they are (`Ratpoints.Cli.cmpEnd`); otherwise
 the interval is complete.
 
-C: `main.c:431-450` -/
+C: `main.c:471-490` -/
 def Intervals.upper (iv : Intervals) (H : Nat) (a : String) : Except Failure Intervals := do
   let n := iv.numInter
   let mut iv := iv
@@ -403,7 +415,7 @@ as `read_input` of `main.c` completes it: an interval with a lower end and no up
 `+∞`, with the double `Ratpoints.Cli.heightEnd H`, or `+∞` when that lies below its lower double
 (an interval that holds no `x` of the search, made `[l, +∞]` rather than turned around).
 
-C: `main.c:683`, `main.c:687-692` -/
+C: `main.c:723`, `main.c:727-732` -/
 def Intervals.complete (iv : Intervals) (H : Nat) : Intervals :=
   if iv.lSeen then
     let n := iv.numInter
@@ -501,8 +513,8 @@ word, whatever it is, as the format or the string, and `-q -v -z -Z -1 -i -I` se
 the output (`Ratpoints.Cli.Output.store`); of each setting the last one wins. It ignores `-t`, the
 number of threads of the C program.
 
-C: `main.c:407-414`, `main.c:428-430`, `main.c:451-546`, `main.c:547-591`, `main.c:592-607`,
-`main.c:608-615`, `main.c:616-651`, `main.c:652-663`, `main.c:664-682`
+C: `main.c:448-455`, `main.c:468-470`, `main.c:491-586`, `main.c:587-631`, `main.c:632-647`,
+`main.c:648-655`, `main.c:656-691`, `main.c:692-703`, `main.c:704-722`
 
 Deviation: the argument of `-t`, the number of threads, checked and then ignored, since the model
 sieves the blocks of the run in turn on one thread, which gives the output of every number of
@@ -542,7 +554,7 @@ where
 line feed when the points are not checked exactly or only one point of each pair is delivered
 (`Ratpoints.Options.noCheck`, `Ratpoints.Options.noY`), else `(%x : %y : %z)` and a line feed.
 
-C: `main.c:695-699` -/
+C: `main.c:735-739` -/
 def defaultFormat (o : Options) : String :=
   if o.noCheck || o.noY then "(%x : %z)\n" else "(%x : %y : %z)\n"
 
@@ -551,26 +563,29 @@ height bound, the options of the sieve (`Ratpoints.SieveOptions`), the options o
 settings of the output, or the first failure, in the order of `main.c`: fewer than two words fail
 with error 2; then come the coefficients (`Ratpoints.Cli.coefficients`), the height bound
 (`Ratpoints.Cli.heightBound`) and the options (`Ratpoints.Cli.checkOptions`), read from the defaults
-of `Ratpoints.SieveOptions`, `Ratpoints.Options` with the height bound as the largest denominator,
-`Ratpoints.Cli.Output` and `Ratpoints.Cli.Intervals`, the values of a command line without options;
-then an interval with a lower end and no upper one is completed
+of `Ratpoints.SieveOptions`, `Ratpoints.Options` with the height bound as the largest denominator
+and `Ratpoints.Cli.Output`, the values of a command line without options, and from the reading of
+the search intervals at its start, with its arrays sized by the number of the words of the options
+and the degree, the number of the coefficients less one (`Ratpoints.Cli.Intervals.sized`); then an
+interval with a lower end and no upper one is completed
 (`Ratpoints.Cli.Intervals.complete`), the search intervals of the options are those read, their
 doubles, and the exact ends those of the settings of the output, the format is the default
 (`Ratpoints.Cli.defaultFormat`) unless an option `-f` gave one, and `-q` cancels `-v`.
 
-C: `main.c:215-219`, `main.c:320-321`, `main.c:338-341`, `main.c:394`, `main.c:693`,
-`main.c:702`, `main.c:705-706`
+C: `main.c:212-216`, `main.c:318-319`, `main.c:335-338`, `main.c:409`, `main.c:444`,
+`main.c:733`, `main.c:742`, `main.c:744-745`
 
 Deviation: `read_input` never returns a value other than 0, so the usage that `main.c` prints then
-(`main.c:217` and `main.c:218`) has no counterpart; the largest denominator `-1` of `main.c:341`,
-which `main.c:394` replaces by the height bound, not set; the search intervals a list of the
+(`main.c:214` and `main.c:215`) has no counterpart; the largest denominator `-1` of `main.c:338`,
+which `main.c:409` replaces by the height bound, not set; the search intervals a list of the
 intervals read, for the pointer `args->domain` to the array `domain` and the number
 `args->num_inter`. -/
 def input : List String → Except Failure (List Int × Nat × SieveOptions × Options × Output)
   | s :: h :: os => do
     let c ← coefficients s
     let H ← heightBound h
-    let (s, o, u, iv) ← checkOptions H ({}, { bHigh := H }, {}, {}) os
+    let iv := Intervals.sized os.length (c.length - 1)
+    let (s, o, u, iv) ← checkOptions H ({}, { bHigh := H }, {}, iv) os
     let iv := iv.complete H
     let o := { o with domain := iv.domain.toList.take iv.numInter }
     let u := { u with
@@ -586,7 +601,7 @@ def input : List String → Except Failure (List Int × Nat × SieveOptions × O
 a tab for `t`, a line feed for `n`, a backslash for a backslash, a percent sign for `%`, and the
 backslash and `ch` as they are for every other character.
 
-C: `main.c:183-187`, `main.c:1022-1026`
+C: `main.c:185-189`, `main.c:1061-1065`
 
 Deviation: one function for the two switches of `process` and `print_string`, which agree. -/
 def escape (ch : Char) : String :=
@@ -601,7 +616,7 @@ def escape (ch : Char) : String :=
 characters as they are, but a backslash, which `Ratpoints.Cli.escape` prints with the character
 after it, and a backslash at the end, which prints itself and ends the string.
 
-C: `main.c:1013-1021`, `main.c:1027-1029`
+C: `main.c:1052-1060`, `main.c:1066-1068`
 
 Deviation: a recursion over the characters, for the loop over the C string. -/
 def printString (s : Option String) : String :=
@@ -621,7 +636,7 @@ sign before another character prints both, and one at the end prints itself and 
 backslash and the character after it print as `Ratpoints.Cli.escape` prints them, and one at the
 end prints itself and ends the format; every other character prints itself.
 
-C: `main.c:162-182`, `main.c:188-191`
+C: `main.c:164-184`, `main.c:190-193`
 
 Deviation: a recursion over the characters, for the loop over the C string; an `Int` for the GMP
 integer `y` and for the `long`s `x` and `z`, which print alike. -/
@@ -643,7 +658,7 @@ a point (`print_between`), the settings of the output that it reads, whether `%y
 (`no_y`), the number of the search intervals of the command line and their exact ends, against
 which `process` checks the points, and the text printed so far.
 
-C: `main.c:115-118`
+C: `main.c:117-120`
 
 Deviation: the text printed so far, for the standard output, to which `process` prints; an array
 for the pointer `ends` and a natural number for the `long` `num_inter`. -/
@@ -679,7 +694,7 @@ are not checked exactly or only one point of each pair is delivered, and the num
 intervals of the command line, as read before `Ratpoints.Cli.joinIntervals` joins them, with their
 exact ends.
 
-C: `main.c:240-247`, `main.c:251-252`
+C: `main.c:237-244`, `main.c:248-249`
 
 Deviation: the format the one that `Ratpoints.Cli.input` settled, `""` if none. -/
 def Data.ofOutput (u : Output) (o : Options) : Data where
@@ -705,7 +720,7 @@ weight `0` and leaves the flag clear, so that it is neither counted nor stops th
 printed unless no point is printed: after the string before the points if it is the first point
 printed, and else after the string between them, in the format (`Ratpoints.Cli.formatPoint`).
 
-C: `main.c:144-147`, `main.c:155-161`, `main.c:192-194`
+C: `main.c:146-149`, `main.c:157-163`, `main.c:194-196`
 
 Deviation: the data a value, for the pointer `info`, and returned with the weight and the flag, for
 the `int *quit` that the library passes, which is clear at every call; the text appended to that of
@@ -735,7 +750,7 @@ after `- ` if it is negative and the others after ` + ` or ` - `, each the absol
 coefficient, then `x` for the degree 1 and `x^i` for a degree `i ≥ 2`, the coefficient left out
 when it is `1` there; and a line feed.
 
-C: `main.c:973-1009`
+C: `main.c:1012-1048`
 
 Deviation: a fold over the coefficients, for the loop; no `fflush`. -/
 def printPoly (c : List Int) : String :=
@@ -789,7 +804,7 @@ def showIntervals (dom : List (Double × Double)) : String :=
 
 /-- The text of a message of the report, as `message` of `main.c` prints it.
 
-C: `main.c:1033-1037`, `main.c:1040-1094`
+C: `main.c:1072-1076`, `main.c:1079-1133`
 
 Deviation: the banner of `ratpoints-lean` (`Ratpoints.Cli.banner`); a constructor for each message
 that `ratpoints-lean` prints, with its data, for the number `n` and the arguments of the library:
@@ -824,7 +839,7 @@ report is that of `-v` the height bound `H` and a blank line, and the search reg
 the command line gives search intervals, their doubles `dom` before they are joined, also under
 `-v`.
 
-C: `main.c:220-225`, `main.c:229` -/
+C: `main.c:217-222`, `main.c:226` -/
 def preamble (c : List Int) (H : Nat) (u : Output) (dom : List (Double × Double)) : String :=
   if u.quiet then ""
   else Message.banner.text ++ (Message.curve c).text ++
@@ -839,7 +854,7 @@ of the exact check of the options `o`, and the search intervals as the search le
 8, from `r.domain`); then the count of the points found, the count `total` of the search, of the
 pairs under `-x` or `-y` (message 2).
 
-C: `main.c:273-281` -/
+C: `main.c:270-278` -/
 def report {σ : Type} (s : SieveOptions) (o : Options) (u : Output) (r : Outcome σ) : String :=
   let flags := Message.flags r.reversed r.useSquares r.useSquares1 (!s.jacobi) o.noCheck
   let moduli := Message.moduli r.sp1Used r.sp2Used r.sp3Used
@@ -869,8 +884,8 @@ report (`Ratpoints.Cli.report`, nothing under `-q`), and exits with status 0; on
 the command line it prints `f.message` and exits with `f.status` (`Ratpoints.Cli.Failure.message`,
 `Ratpoints.Cli.Failure.status`).
 
-C: `main.c:200-203`, `main.c:226-227`, `main.c:253`, `main.c:256-257`, `main.c:270`, `main.c:272`,
-`main.c:289-290`
+C: `main.c:202-205`, `main.c:223-224`, `main.c:250`, `main.c:253-254`, `main.c:267`, `main.c:269`,
+`main.c:287-288`
 
 Deviation: the text written once at the end (`Ratpoints.Cli.main`), where `main.c` prints as it
 goes; the bit `RATPOINTS_VERBOSE` of the flags, which the program sets under `-v` and leaves clear
@@ -895,7 +910,7 @@ def run (args : List String) : String × UInt32 :=
 `@`, which may be empty and where `-` stands for the standard input. A command line of fewer than
 two arguments names no file: it fails with error 2 before `main.c` looks at its first argument.
 
-C: `main.c:374-377` -/
+C: `main.c:373-376` -/
 def coefficientFile? : List String → Option String
   | s :: _ :: _ =>
     match s.toList with
@@ -909,7 +924,7 @@ each byte the character with its number, so that a word with a byte that is not 
 C white space fails as it does in `main.c`, the bytes from 128 on among them; error 11 when a byte
 is zero, at which the scan of `main.c` would stop as at the end of the list.
 
-C: `main.c:745-748`
+C: `main.c:784-787`
 
 Deviation: a string with the bytes as its characters, for the buffer with a zero byte after the
 contents. -/
@@ -927,7 +942,7 @@ the contents give in place of its first argument, which is then read as a list w
 with. On a command line that names no file it does what `Ratpoints.Cli.run` gives, and `file` is not
 looked at.
 
-C: `main.c:374-377`
+C: `main.c:373-376`
 
 Deviation: the contents of the file as an argument, which `Ratpoints.Cli.main` reads before the
 command line is looked at any further, where `read_input` reads the file when it comes to the
@@ -945,7 +960,7 @@ def runWithFile (args : List String) (file : Option ByteArray) : String × UInt3
 coefficients: all its bytes to its end, from the standard input when `path` is `-`; `none` when the
 file cannot be opened or a read fails (error 12 of `main.c`).
 
-C: `main.c:718-720`, `main.c:723-730`, `main.c:739-744`
+C: `main.c:757-759`, `main.c:762-769`, `main.c:778-783`
 
 Deviation: the functions of the Lean runtime that read a file or a stream to its end, for the loop
 of `fread` into a buffer that doubles; no error 10, since the model has no failure for lack of
@@ -970,7 +985,7 @@ failed write is not reported: when the reader of the output is gone, the write f
 `ratpoints` then, and the program exits quietly with the status 141 that the shell reports for
 `ratpoints`.
 
-C: `main.c:1126-1133`
+C: `main.c:1165-1172`
 
 Deviation: one write of the whole text and its flush, where `main.c` tests at its exit whether a
 write has failed since the program started; status 141 without a message when the reader of the
@@ -1072,38 +1087,38 @@ the library. -/
 #guard (run ["1 0 1", "5", "-q", "-r", "nan"]).2 == 6 && (run ["1 0 1", "5", "-d", "1"]).2 == 6
 
 -- `-p 10 -n 4 -N 7 -P 3 -j -F 200 -t 2 -p 12`: the last `-p` wins, and `-t` is ignored.
-#guard (checkOptions 5 ({}, {}, {}, {}) ["-p", "10", "-n", "4", "-N", "7", "-P", "3", "-j", "-F",
-    "200", "-t", "2", "-p", "12"]).toOption.map (fun (o, _) ↦ (o.numPrimes, o.sp1, o.sp2,
+#guard (checkOptions 5 ({}, {}, {}, .sized 0 1) ["-p", "10", "-n", "4", "-N", "7", "-P", "3", "-j",
+    "-F", "200", "-t", "2", "-p", "12"]).toOption.map (fun (o, _) ↦ (o.numPrimes, o.sp1, o.sp2,
     o.sp3Extra, o.maxForbidden, o.jacobi)) == some (12, 4, 7, 3, 200, false)
 
 -- The tuning options `-R 11 -A 2 -r 0.5 -U 1e3 -C 0 -Q inf -W -306 -A 0`: the `long`s and the bits
 -- of the doubles, the last `-A` winning; the fields of the options not given keep their defaults.
-#guard (checkOptions 5 ({}, {}, {}, {}) ["-R", "11", "-A", "2", "-r", "0.5", "-U", "1e3", "-C",
-    "0", "-Q", "inf", "-W", "-306", "-A", "0"]).toOption.map (fun (o, _) ↦ (o.sp2Extra, o.adapt,
-    o.survivorsPerWord.bits, o.sp2U0.bits, o.costTable.bits, o.sp3PerDenom.bits, o.checkCost.bits,
-    o.numPrimes, o.sp3Extra)) == some (11, 0, 0x3FE0000000000000, 0x408F400000000000, 0,
-    0x7FF0000000000000, 0xC073200000000000, -1, -1)
+#guard (checkOptions 5 ({}, {}, {}, .sized 0 1) ["-R", "11", "-A", "2", "-r", "0.5", "-U", "1e3",
+    "-C", "0", "-Q", "inf", "-W", "-306", "-A", "0"]).toOption.map (fun (o, _) ↦ (o.sp2Extra,
+    o.adapt, o.survivorsPerWord.bits, o.sp2U0.bits, o.costTable.bits, o.sp3PerDenom.bits,
+    o.checkCost.bits, o.numPrimes, o.sp3Extra)) == some (11, 0, 0x3FE0000000000000,
+    0x408F400000000000, 0, 0x7FF0000000000000, 0xC073200000000000, -1, -1)
 
 -- `-j` and `-J`: the last one wins.
 #guard [(["-j", "-J"], true), (["-J", "-j"], false)].all fun (os, b) ↦
-  (checkOptions 5 ({}, {}, {}, {}) os).toOption.map (·.1.jacobi) == some b
+  (checkOptions 5 ({}, {}, {}, .sized 0 1) os).toOption.map (·.1.jacobi) == some b
 
 -- `-k` and `-K`, `-s` and `-S`: the last of each pair wins, and `-S` takes the next word as its
 -- depth unless it starts with `-`.
 #guard [(["-k", "-S", "5", "-K", "-s"], true, -1), (["-s", "-S"], true, defaultSturm),
     (["-k", "-S", "-q"], false, defaultSturm), (["-s", "-S", " 0 "], true, 0)].all
-  fun (os, rev, st) ↦ (checkOptions 5 ({}, {}, {}, {}) os).toOption.map
+  fun (os, rev, st) ↦ (checkOptions 5 ({}, {}, {}, .sized 0 1) os).toOption.map
     (fun (_, o, _) ↦ (o.reverse, o.sturm)) == some (rev, st)
 
 -- `-x -X -y -Y -z -Z -i -I`: the last of each pair wins; `-1` has no counterpart; `-xfoo` is `-x`.
-#guard (checkOptions 5 ({}, {}, {}, {}) ["-xfoo", "-Y", "-y", "-z", "-Zap", "-I", "-i", "-1x"]
-    ).toOption.map (fun (_, o, u, _) ↦
+#guard (checkOptions 5 ({}, {}, {}, .sized 0 1)
+    ["-xfoo", "-Y", "-y", "-z", "-Zap", "-I", "-i", "-1x"]).toOption.map (fun (_, o, u, _) ↦
       (o.noCheck, o.noY, u.noOutput, u.pointsAtInfty, u.onePoint)) ==
   some (true, true, false, false, true)
 
 -- `-f`, `-fs`, `-fm` and `-fe` take the next word, whatever it is, the last one winning; `-fsfoo`
 -- is `-fs`; `-f` without its argument and `-ffoo` are error 6.
-#guard (checkOptions 5 ({}, {}, {}, {})
+#guard (checkOptions 5 ({}, {}, {}, .sized 0 1)
     ["-f", "-x", "-fsfoo", "S", "-fm", "", "-fe", "-y", "-f", "%x"]).toOption.map
     (fun (_, o, u, _) ↦ (o.noCheck, o.noY, u.printFormat, u.stringBefore,
       u.stringBetween, u.stringAfter)) ==
@@ -1298,20 +1313,24 @@ private def maskReport (r : String × UInt32) : String × UInt32 :=
     else got.map maskModuli == ls.map maskModuli
 
 -- Error 7: an end missing or not a number, two lower or two upper ends in a row, ends not
--- ordered (also `-u 0.75 -l 0.75`, though `[1, 1]` is an interval), and more than
--- `Ratpoints.maxDegree` intervals; error 6 for a missing or malformed bound of the denominators.
+-- ordered (also `-u 0.75 -l 0.75`, though `[1, 1]` is an interval); any number of intervals is
+-- read, also two intervals in four words, the most that words can give; error 6 for a missing or
+-- malformed bound of the denominators.
 #guard run ["1 0 1", "5", "-q", "-l"] == (Failure.intervals.message, 7) &&
   Failure.intervals.message ==
-    "\nIncorrect interval arguments (not numbers, not alternating, too many, or not ordered).\n\n"
+    "\nIncorrect interval arguments (not numbers, not alternating, or not ordered).\n\n"
 #guard [["-l", "x"], ["-l", "1", "-l", "2"], ["-u", "1", "-u", "2"], ["-l", "2", "-u", "1"],
     ["-u", "0.75", "-l", "0.75"], ["-l", "nan"], ["-l", "1", "-u", "2", "-l", "3", "-l", "4"]].all
   fun os ↦ (run (["1 0 1", "5", "-q"] ++ os)).2 == 7
 #guard (run (["1 0 1", "5", "-q", "-z", "-l", "1", "-u", "1"])).2 == 0
 #guard
-  let os := (List.range maxDegree).flatMap fun i ↦
+  let os := (List.range (maxDegree + 1)).flatMap fun i ↦
     ["-l", toString (2 * i), "-u", toString (2 * i + 1)]
-  (run (["1 0 1", "5", "-q", "-z"] ++ os)).2 == 0 &&
-    (run (["1 0 1", "5", "-q", "-z"] ++ os ++ ["-l", toString (2 * maxDegree + 100)])).2 == 7
+  (run (["1 0 1", "5", "-q", "-z"] ++ os ++ ["-l", toString (2 * maxDegree + 100)])).2 == 0
+#guard run ["1 0 1", "5", "-q", "-u", "0", "-l", "2"] == ("(1 : 1 : 0)\n(1 : -1 : 0)\n" ++
+    "(0 : 1 : 1)\n(0 : -1 : 1)\n(-4 : 5 : 3)\n(-4 : -5 : 3)\n(-3 : 5 : 4)\n(-3 : -5 : 4)\n", 0) &&
+  run ["1 0 1", "5", "-q", "-l", "1"] ==
+    ("(1 : 1 : 0)\n(1 : -1 : 0)\n(4 : 5 : 3)\n(4 : -5 : 3)\n", 0)
 #guard [["-dl"], ["-dl", "x"], ["-du", "1.5"]].all fun os ↦
   (run (["1 0 1", "5", "-q"] ++ os)).2 == 6
 

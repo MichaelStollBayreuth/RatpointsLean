@@ -392,8 +392,22 @@ CASES = [
     (['1 0 1', '0', '-l', 'x'], 'bad height before -l x: error 4 first'),
     (['1 2 1', '5', '-q', '-l', '0', '-u', '1'], 'a form that is not squarefree with an interval'),
     *[(['1 0 1', '5', '-q', '-z'] + [w for i in range(n) for w in ['-l', str(2 * i), '-u',
-       str(2 * i + 1)]], f'{n} intervals' + (': error 7' if n > 100 else ''))
-      for n in (99, 100, 101)],
+       str(2 * i + 1)]], f'{n} intervals') for n in (99, 100, 101, 102, 250)],
+    (['1 0 1', '5', '-q', '-u', '0', '-l', '2'],
+     'two intervals in four words, the most that words can give'),
+    (['1 0 1', '5', '-u', '0', '-l', '2', '-q'], 'two intervals in four of five words'),
+    (['1 0 1', '5', '-u', '0'], 'one interval in two words, without a lower end'),
+    (['1 0 1', '5', '-l', '1'], 'one interval in two words, without an upper end'),
+    (['1 0 126 0 441', '300', '-q'] + [w for k in range(-600, 600) for w in
+      ['-l', str(k / 4), '-u', str(k / 4 + 0.125)]], '1200 intervals with points in them'),
+    (['1 0 1', '20', '-v'] + [w for i in range(-60, 60) for w in
+      ['-l', str(i / 8), '-u', str(i / 8 + 0.0625)]], '120 intervals in the report of -v'),
+    (['1 0 1', '5', '-q'] + [w for i in range(150) for w in
+      ['-l', str(2 * i), '-u', str(2 * i + 1)]] + ['-l', '10'],
+     'an end out of order after 150 intervals: error 7'),
+    (['1 0 1', '5', '-q', '-u', '-1000'] + [w for i in range(150) for w in
+      ['-l', str(2 * i), '-u', str(2 * i + 1)]] + ['-l', '1000'],
+     '152 intervals, the first without a lower end and the last without an upper end'),
     # unknown options and other words
     (['1 0 1', '5', '-q', '-g'], '-g: error 6'),
     (['1 0 1', '5', '-q', '-w'], '-w: error 6'),
@@ -508,7 +522,7 @@ def random_coefficients(rng):
 
 # Formats and strings for -f, -fs, -fm and -fe: conversions, escapes, a percent sign or a backslash
 # at the end, words that look like options, and characters beyond ASCII in UTF-8, also after % and
-# a backslash, which main.c reads byte by byte (main.c:162-191 the format, main.c:1013-1029 the
+# a backslash, which main.c reads byte by byte (main.c:164-193 the format, main.c:1052-1068 the
 # strings) and ratpoints-lean character by character (the Lean runtime decodes the arguments, so
 # that bytes that are not UTF-8 are a deviation).
 FORMATS = ['%x %y %z\\n', '(%x : %z)\\n', '%x\\t%y\\n', '%', '\\', '%%', '%%%x', '\\%\\\\',

@@ -252,7 +252,7 @@ checks and ignores: the model sifts the blocks of the run in turn, and the threa
   \leanok
   The coefficient list, the height bound, the options of the sieve, the options of the search and
   the settings of the output that a command line gives, or its first failure, in the order of
-  \verb|main.c|. Fewer than two arguments fail with error~2 (\csource{main.c}{215}{219}). The first
+  \verb|main.c|. Fewer than two arguments fail with error~2 (\csource{main.c}{212}{216}). The first
   argument gives the coefficients, constant term first, integers separated by white space: a word
   that is not an integer fails with error~11 wherever it stands, then more than
   $\mathrm{maxDegree} + 1$ integers fail with error~3 and fewer than two with error~5. The second
@@ -260,40 +260,42 @@ checks and ignores: the model sifts the blocks of the run in turn, and the threa
   left to right, the last setting of each kind winning. An unknown option, an argument among the
   options that does not begin with \verb|-|, a missing or malformed argument of an option (but for
   \verb|-l| and \verb|-u|) and \verb|-f| or \verb|-d| followed by another character fail with
-  error~6 (\csource{main.c}{407}{414}, \csource{main.c}{451}{546}, \csource{main.c}{547}{591},
-  \csource{main.c}{652}{663}, \csource{main.c}{664}{682}); \verb|-l| and \verb|-u| read the ends of
+  error~6 (\csource{main.c}{448}{455}, \csource{main.c}{491}{586}, \csource{main.c}{587}{631},
+  \csource{main.c}{692}{703}, \csource{main.c}{704}{722}); \verb|-l| and \verb|-u| read the ends of
   the search intervals (Definition~\ref{def:cliNumbers}), with error~7 for ends that are missing, no
-  numbers, not alternating, too many or not ordered. Then a pending interval is completed, the
+  numbers, not alternating or not ordered. Then a pending interval is completed, the
   format is \verb|(%x : %z)\n| under \verb|-x| or \verb|-y| and \verb|(%x : %y : %z)\n| otherwise,
-  unless \verb|-f| gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{702}{702}). A failure
+  unless \verb|-f| gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{742}{742}). A failure
   prints the message of the function \verb|error| of \verb|main.c|, for errors~2 and~6 with the
-  banner and the usage (\csource{main.c}{1097}{1109}).
+  banner and the usage (\csource{main.c}{1136}{1148}).
 \end{definition}
 
 \begin{definition}[The numbers and the search region of the command line]\label{def:cliNumbers}
   \uses{def:Double}
-  \lean{Ratpoints.Cli.longOfString?, Ratpoints.Cli.strtod, Ratpoints.Cli.scanDouble?, Ratpoints.Cli.scanEnd, Ratpoints.Cli.Intervals, Ratpoints.Cli.inRegion, Ratpoints.Cli.joinIntervals}
+  \lean{Ratpoints.Cli.longOfString?, Ratpoints.Cli.strtod, Ratpoints.Cli.scanDouble?, Ratpoints.Cli.scanEnd, Ratpoints.Cli.Intervals, Ratpoints.Cli.Intervals.sized, Ratpoints.Cli.inRegion, Ratpoints.Cli.joinIntervals}
   \leanok
   The readers of the numbers, on the words of an argument, its maximal runs of characters other
   than C white space: an integer of the coefficient list as \verb|scan_mpz| reads it, with an
   optional sign and of any size; a C \verb|long| as \verb|scan_long| reads it, from~$-2^{63}$
-  to~$2^{63} - 1$, with only white space around it (\csource{main.c}{793}{800}); and a real number
+  to~$2^{63} - 1$, with only white space around it (\csource{main.c}{832}{839}); and a real number
   as \verb|scan_double| reads it, the double that \verb|strtod| of glibc reads in the C locale, none
-  for a NaN (\csource{main.c}{806}{812}): $\pm\infty$ for an infinity, and otherwise the double
+  for a NaN (\csource{main.c}{845}{851}): $\pm\infty$ for an infinity, and otherwise the double
   nearest to the exact value $\pm m\,10^{e - k}$ of the word, or $\pm m\,2^{e - 4k}$ for a
   hexadecimal word, with ties to even. An end of a search interval as \verb|scan_end| reads it: the
   number that the argument denotes, or an infinity, also for a number beyond the range of the
   doubles, and $\pm 2^{-1075}$ for a nonzero number that \verb|strtod| reads as~$0$, which lies
   between~$0$ and every other~$x$ of the search as the number does; with the double that the
   library is given for it, the double of \verb|strtod| moved outward to the largest double at most
-  a lower end, or the smallest double at least an upper end (\csource{main.c}{858}{866}). The
-  reading of the intervals of \verb|-l| and \verb|-u| into the doubles and the exact ends of at most
-  $\mathrm{maxDegree}$ intervals (\csource{main.c}{67}{67}, \csource{main.c}{74}{74}), a missing
+  a lower end, or the smallest double at least an upper end (\csource{main.c}{897}{905}). The
+  reading of the intervals of \verb|-l| and \verb|-u|, however many there are, into the arrays of
+  their doubles and of their exact ends (\csource{main.c}{68}{68}, \csource{main.c}{75}{75}), which
+  the program sizes by the number of the words of its options, an interval for every two of them
+  (\csource{main.c}{434}{438}), since each interval has two words of its own; a missing
   first lower end or last upper end standing for~$\mp\infty$ with the double~$\mp h$ of the height
   bound, or~$\mp\infty$ when that double would turn the interval round. The test whether~$a/b$ lies
   in one of these intervals, by the binary search of \verb|in_region| over their exact ends
-  (\csource{main.c}{131}{142}). And the intervals that the library is given, those of the command
-  line joined where their doubles meet or overlap (\csource{main.c}{951}{965}).
+  (\csource{main.c}{133}{144}). And the intervals that the library is given, those of the command
+  line joined where their doubles meet or overlap (\csource{main.c}{990}{1004}).
 \end{definition}
 
 \begin{lemma}[The numbers of the command line]\label{lem:cliNumbers}
@@ -329,10 +331,10 @@ checks and ignores: the model sifts the blocks of the run in turn, and the threa
   \uses{def:deliver, def:cliNumbers}
   \lean{Ratpoints.Cli.Data, Ratpoints.Cli.process, Ratpoints.Cli.formatPoint, Ratpoints.Cli.escape, Ratpoints.Cli.printString, Ratpoints.Cli.Data.keeps}
   \leanok
-  The data that \verb|main.c| passes to its callback \verb|process| (\csource{main.c}{115}{118}):
+  The data that \verb|main.c| passes to its callback \verb|process| (\csource{main.c}{117}{120}):
   whether a point was printed, the settings of the output that \verb|process| reads, the search
   intervals of the command line, before they are joined, with their exact ends, and the text printed
-  so far. The callback on $(x, z, y)$ (\csource{main.c}{144}{147}, \csource{main.c}{155}{161})
+  so far. The callback on $(x, z, y)$ (\csource{main.c}{146}{149}, \csource{main.c}{157}{163})
   passes over, with the weight~$0$ and the flag clear, a point at infinity under \verb|-i| and an
   affine point whose~$x/z$ lies in none of the search intervals of the command line, when it gives
   some (the library searches them with the doubles outward of the exact ends); every other point is
@@ -341,9 +343,9 @@ checks and ignores: the model sifts the blocks of the run in turn, and the threa
   first point printed and after the string between them otherwise. The format prints \verb|%x|,
   \verb|%y| and \verb|%z| as the coordinates in decimal (\verb|%y| as itself under \verb|-x| or
   \verb|-y|), \verb|\t|, \verb|\n|, \verb|\\| and \verb|\%| as a tab, a line feed, a backslash and a
-  percent sign, and every other character as itself (\csource{main.c}{162}{182},
-  \csource{main.c}{183}{187}, \csource{main.c}{188}{191}); a string prints in the same way, its
-  percent signs not special (\csource{main.c}{1013}{1021}).
+  percent sign, and every other character as itself (\csource{main.c}{164}{184},
+  \csource{main.c}{185}{189}, \csource{main.c}{190}{193}); a string prints in the same way, its
+  percent signs not special (\csource{main.c}{1052}{1060}).
 \end{definition}
 
 The delivery of a list to this callback prints, unless \verb|-z|, the points of the list that it
@@ -355,36 +357,36 @@ keeps, under \verb|-1| only the first of them, and its count is their number
   \uses{def:cliInput, def:cliProcess, def:cliNumbers, def:findPoints, def:Options, def:libraryReport}
   \lean{Ratpoints.Cli.run, Ratpoints.Cli.main, Ratpoints.Cli.preamble, Ratpoints.Cli.report, Ratpoints.Cli.Message.text, Ratpoints.Cli.runWithFile, Ratpoints.Cli.coefficientFile?, Ratpoints.Cli.fileList, Ratpoints.Cli.readCoefficientFile}
   \leanok
-  The messages of the report of \verb|main.c| (\csource{main.c}{1040}{1094}), among them the search
+  The messages of the report of \verb|main.c| (\csource{main.c}{1079}{1133}), among them the search
   region of the command line (message~3), the numbers of the moduli used (message~4), what the
   search did, from the bits written back (message~7), the search intervals as the search leaves
   them (message~8), and the count of the points, or of the point pairs under \verb|-x| or \verb|-y|
-  (message~2). The program on a command line (\csource{main.c}{200}{203}): on a failure of the
+  (message~2). The program on a command line (\csource{main.c}{202}{205}): on a failure of the
   command line, the message and the status of the failure. Otherwise, unless \verb|-q|, the head of
   the report: the banner, the curve, the height bound unless \verb|-v|
-  (\csource{main.c}{220}{225}), and message~3 when the command line gives intervals
-  (\csource{main.c}{229}{229}); then the search with a print channel
+  (\csource{main.c}{217}{222}), and message~3 when the command line gives intervals
+  (\csource{main.c}{226}{226}); then the search with a print channel
   (Definition~\ref{def:findPoints}), with the options of the sieve of the command line and the array
-  size that \verb|main.c| sets (\csource{main.c}{226}{227}), the options of the search on the joined
-  intervals (\csource{main.c}{253}{253}), the callback of the program on its data and, under
-  \verb|-v|, the print channel that appends to the text of the data (\csource{main.c}{256}{257}). On
+  size that \verb|main.c| sets (\csource{main.c}{223}{224}), the options of the search on the joined
+  intervals (\csource{main.c}{250}{250}), the callback of the program on its data and, under
+  \verb|-v|, the print channel that appends to the text of the data (\csource{main.c}{253}{254}). On
   a refusal it prints what the library printed and the message of the error that \verb|main.c| gives
   for it (\lname{Ratpoints.Cli.Failure.ofRefusal}: error~8 for a binary form that is not
   squarefree), and exits with that status. Otherwise it prints what the callback and the library
-  printed, the string before the points if no point was printed (\csource{main.c}{270}{270}), the
-  string after them (\csource{main.c}{272}{272}) and, unless \verb|-q|, the end of the report: two
-  line feeds and messages~4, 7 and~8 unless \verb|-v|, then message~2 (\csource{main.c}{273}{281});
-  its status is~$0$ (\csource{main.c}{289}{290}). The program writes this text once and flushes its
+  printed, the string before the points if no point was printed (\csource{main.c}{267}{267}), the
+  string after them (\csource{main.c}{269}{269}) and, unless \verb|-q|, the end of the report: two
+  line feeds and messages~4, 7 and~8 unless \verb|-v|, then message~2 (\csource{main.c}{270}{278});
+  its status is~$0$ (\csource{main.c}{287}{288}). The program writes this text once and flushes its
   standard output; when that fails, it says so on its standard error and exits with status~$13$,
   whatever the status of the run, as \verb|main.c| does when it finds at its exit that a write to
-  its standard output has failed (\csource{main.c}{1126}{1133}). On a command line of at least two
+  its standard output has failed (\csource{main.c}{1165}{1172}). On a command line of at least two
   arguments, a first argument \verb|@file| names a file that holds the coefficient list, and
-  \verb|@-| the standard input (\csource{main.c}{374}{377}): the program reads the file to its end
-  (\csource{main.c}{718}{720}) and then does what it does on the command line with the contents of
+  \verb|@-| the standard input (\csource{main.c}{373}{376}): the program reads the file to its end
+  (\csource{main.c}{757}{759}) and then does what it does on the command line with the contents of
   the file in place of its first argument, each byte read as the character with its number. A file
   that cannot be opened or read fails with error~12, and a zero byte in it, at which the scan of
   \verb|main.c| would stop as at the end of the list, with error~11
-  (\csource{main.c}{745}{748}), both before the height bound and the options are looked at.
+  (\csource{main.c}{784}{787}), both before the height bound and the options are looked at.
 \end{definition}
 
 The exit statuses are thus those of \verb|main.c|: $0$ after a search, $2$ to~$7$ and~$11$ for the
