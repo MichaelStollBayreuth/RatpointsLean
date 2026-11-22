@@ -235,9 +235,9 @@ C: `sift.c:405-413`, `sift.c:429-431`
 Deviation: a list, made by a map over the entries of the third stage and their reciprocals
 (`List.zipWith`), for the loop over the positions `sp2, …, sp3 - 1` of `sieve_list` and `magics`
 that fills the array `checks` of the sieving thread; no bound `RATPOINTS_NUM_PRIMES` on its length
-(`stage3_list` and the arrays of the pool, `find_points.c:339`, `find_points.c:4372`), which
+(`stage3_list` and the arrays of the pool, `find_points.c:352`, `find_points.c:4393`), which
 `ratpoints` never reaches since each entry of `sieve_list` owns its own prime
-(`find_points.c:329-331`), where the model takes any entries, which may repeat a prime; the thunk
+(`find_points.c:342-344`), where the model takes any entries, which may repeat a prime; the thunk
 that the sieve of one denominator makes of it (`Ratpoints.Sieve.sift`), for the flag `stage3_filled`
 of the sieving thread, which `sift` clears and `fill_checks` sets. -/
 def fillChecks (b H : Nat) (es : List SieveEntry) (mgs : List Nat) : List CheckSpec :=
@@ -304,7 +304,7 @@ C: `rp-private.h:579-581`
 
 Deviation: a structure of its own, which the components of the sieve that count pass and return
 beside the delivery, for the fields of the sieving thread `rp_worker`, which `run_block` clears for
-each block (`find_points.c:3914-3915`, `Ratpoints.Sieve.runBlock`); `UInt64` for the
+each block (`find_points.c:3935-3936`, `Ratpoints.Sieve.runBlock`); `UInt64` for the
 `unsigned long`s, wrapping as they wrap. -/
 structure Counters where
   /-- `n_words`: the words of the bit arrays that the first stage swept. -/
@@ -360,7 +360,7 @@ numerator prime to `b`, with the factor `b` for odd `d` and `1` for even `d`, in
 walk through the set bits of a word calls it (`Ratpoints.Sieve.walkWord`), only while the flag
 `quit` of `r` is clear, and returns when the flag is set after it.
 
-C: `sift.c:202-205`, `find_points.c:3122`, `find_points.c:5250-5338`, `rp-private.h:576`,
+C: `sift.c:202-205`, `find_points.c:3140`, `find_points.c:5300-5388`, `rp-private.h:576`,
 `rp-private.h:596-597`
 
 Deviation: the products `w` as a thunk, which the sieve of one denominator makes for each
@@ -425,22 +425,22 @@ it set of the same points mapped by `Ratpoints.Sieve.swapPoint`: after a reversa
 `(0 : y : 1)` of the caller's curve. The caller tests the flag `quit` after it and returns when it
 is set (`Ratpoints.chooseAndSearch`).
 
-C: `find_points.c:4634`, `find_points.c:4894-4896`, `find_points.c:4899`,
-`find_points.c:5068-5074`, `find_points.c:5078-5099`
+C: `find_points.c:4684`, `find_points.c:4944-4946`, `find_points.c:4949`,
+`find_points.c:5118-5124`, `find_points.c:5128-5149`
 
 Deviation: the flags `fl` as an argument, for the bits `RATPOINTS_REVERSED`, `RATPOINTS_NO_CHECK`
 and `RATPOINTS_NO_Y` of the flags of the search (`args->flags`); the delivery `r` passed and
 returned, for the pointer `info`, the local flag `quit` and the count `total` of
-`find_points_work_1`; the return when the callback stops the search (`find_points.c:5100-5103`) made
+`find_points_work_1`; the return when the callback stops the search (`find_points.c:5150-5153`) made
 by the caller (`Ratpoints.chooseAndSearch`), which also prints the line before them under
 `RATPOINTS_VERBOSE` (`Ratpoints.Report.atInfinity`), the line that there are points at infinity
 coming with the report of the tests on the denominators (`Ratpoints.Report.setup`); no output under
 `DEBUG`; the square test of `c_d` and the decision whether there are points at infinity are made on
 the list that it is given, after the reversal check, when the points are delivered, where the C code
-computes `lcfsq` before the check (`find_points.c:4634`), which clears it in case 2
-(`find_points.c:4770`), the only reversal after which the degree is even, and leaves it, unread,
+computes `lcfsq` before the check (`find_points.c:4684`), which clears it in case 2
+(`find_points.c:4820`), the only reversal after which the degree is even, and leaves it, unread,
 with the odd degree that cases 1 and 3 leave, and sets `point_at_infty` before the exits of the
-search (`find_points.c:4894-4899`); the square root by `Nat.sqrt`, for `mpz_sqrt`. -/
+search (`find_points.c:4944-4949`); the square root by `Nat.sqrt`, for `mpz_sqrt`. -/
 def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d : Nat)
     (fl : CheckFlags) (r : Delivery σ) :
     Delivery σ :=

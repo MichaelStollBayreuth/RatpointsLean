@@ -99,7 +99,7 @@ structure ModulusCandidate where
 the test of the merge sort of `qsort` that the comparison is at most `0`. On keys that are finite
 or `+∞`, never a NaN, it is a total preorder, `∞ - ∞` a NaN that compares as a tie.
 
-C: `find_points.c:1194-1198`
+C: `find_points.c:1207-1211`
 
 Deviation: the test of the merge sort, whether the comparison is at most `0`, for the comparison
 of the C code, which returns `1`, `-1` or `0`. -/
@@ -107,7 +107,7 @@ def ModulusCandidate.keyLe (a b : ModulusCandidate) : Bool := !(a.key - b.key > 
 
 /-- The order by density, `compare_by_r`: `a` before `b` unless `a.r - b.r > 0`.
 
-C: `find_points.c:1202-1206`
+C: `find_points.c:1215-1219`
 
 Deviation: the test of the merge sort, whether the comparison is at most `0`, for the comparison
 of the C code, which returns `1`, `-1` or `0`. -/
@@ -137,7 +137,7 @@ coefficient, at least `1`, the bits `fbits = cbits + d hbits` of `F(a, b)`, its 
 `d (CHECK_STEP + CHECK_LIMB mid) + CHECK_CALL + CHECK_ROOT (root - 1)`, with
 `CHECK_STEP + CHECK_LIMB limbs` more for odd `d`.
 
-C: `find_points.c:1285-1318`
+C: `find_points.c:1298-1331`
 
 Deviation: the coefficients, the degree and the height bound as arguments, for the fields of the
 arguments that `check_cost` reads; `log` the function of the C library of the platform that the Lean
@@ -171,7 +171,7 @@ stage, for the run of `U` words and `D` denominators: `perWord`, the part paid f
 `COST_SETUP D / U` for its sieve spec and, for a positive cost `ct` of a row of a table,
 `ct p min(D, p) / U` for its table.
 
-C: `find_points.c:1220-1235` -/
+C: `find_points.c:1233-1248` -/
 def primeCost (p : Nat) (perWord : Float) (tabled : Bool) (ct U D : Float) : Float :=
   let cost := perWord + costBp * D / U
   if !tabled then cost
@@ -183,7 +183,7 @@ def primeCost (p : Nat) (perWord : Float) (tabled : Bool) (ct U D : Float) : Flo
 /-- The key of a modulus `p` of density `r`: its cost (`Ratpoints.primeCost`) divided by what it
 says, `info = -log r`, and `10 ^ 300` when `info ≤ 0`.
 
-C: `find_points.c:1241-1247`
+C: `find_points.c:1254-1260`
 
 Deviation: `log` the function of the C library of the platform that the Lean runtime binds
 (`Float.log`), on glibc an older symbol version of the routine that `ratpoints` binds, which gives
@@ -200,7 +200,7 @@ of the sieve per word: the cost of a modulus of the first stage (`Ratpoints.prim
 denominator walks, `walk = min(p, U / (4 D))` bit arrays of 32 bytes; the key that cost divided by
 `-log r`, or `10 ^ 300` when that is not positive.
 
-C: `find_points.c:1256-1270`
+C: `find_points.c:1269-1283`
 
 Deviation: `log` the function of the C library of the platform that the Lean runtime binds
 (`Float.log`), on glibc an older symbol version of the routine that `ratpoints` binds, which gives
@@ -225,7 +225,7 @@ survivor that is left, `COST_PHASE2` for each and per surviving word and `COST_S
 survivor, `cost (1 - ρ) / COST_PHASE2` with `ρ` the geometric mean of the densities of the next
 `Ratpoints.sp2Extra` candidates (the density of `n` when there are none), at least `1`.
 
-C: `find_points.c:1539-1561`
+C: `find_points.c:1553-1575`
 
 Deviation: `pow` the function of the C library of the platform that the Lean runtime binds
 (`Float.pow`), on glibc an older symbol version of the routine that `ratpoints` binds, which gives
@@ -256,7 +256,7 @@ when it is the first (`taken = 0`), or when the survivors per word it removes, `
 weighted by what they cost downstream (`Ratpoints.downstreamFactor`), exceed the target times its
 cost.
 
-C: `find_points.c:1583-1589` -/
+C: `find_points.c:1597-1603` -/
 def phase1Wants (pool : Array ModulusCandidate) (n pnp taken : Nat) (bpw rate target : Float)
     (extra : Nat) : Id Bool := do
   if taken = 0 then return true
@@ -267,7 +267,7 @@ def phase1Wants (pool : Array ModulusCandidate) (n pnp taken : Nat) (bpw rate ta
 (`Ratpoints.phase1Wants`, with the product of the densities so far): the first that it refuses, or
 all of them, at least `1`.
 
-C: `find_points.c:1598-1609` -/
+C: `find_points.c:1612-1623` -/
 def primesForPhase1 (pool : Array ModulusCandidate) (bpw target : Float) (extra : Nat) :
     Id Nat := do
   let pnp := pool.size
@@ -282,7 +282,7 @@ scale `u0` and the run of `U` words: for `u0 ≤ 0` or `U ≤ 0` the offset itse
 `most = Ratpoints.numPrimes + Ratpoints.maxModuli`; else `e = extra / (1 + u0 / U)` rounded to the
 nearest integer when below `most`, and `most` otherwise.
 
-C: `find_points.c:1619-1626`
+C: `find_points.c:1633-1640`
 
 Deviation: natural numbers for the `long`s, which are not negative here; the conversion of
 `e + 0.5` to a `long`, which truncates, by `Float.toUInt64`, which truncates `e + 0.5 < most` as
@@ -301,7 +301,7 @@ the search intervals `domain`, the interval `[b l, b u]` clipped to `[-H, H]`, i
 it is not empty, with the number of such intervals and of their ends that the height bound cut,
 below and above.
 
-C: `find_points.c:1836-1854`
+C: `find_points.c:1850-1868`
 
 Deviation: the search intervals as an argument, for the fields `domain` and `num_inter` of the
 arguments, their ends doubles by their bits (`Ratpoints.Double.toFloat`); the sum and the three
@@ -323,7 +323,7 @@ an end that the height bound `H` cut, for the class `cl` of the stride `2 ^ k` a
 the first bit `lo = -(⌊(H - 2 ^ k + a₀) / 2 ^ k⌋ + 1)` and minus the one past the last,
 `hi = -⌊(H - a₀) / 2 ^ k⌋ - 1`, each modulo `Ratpoints.rbaLength`.
 
-C: `find_points.c:1863-1876`
+C: `find_points.c:1877-1890`
 
 Deviation: the two sums passed and returned, for the pointers; integers for the `long`s, the
 arithmetic shifts as divisions that round down and the masks by `RBA_LENGTH - 1` as Euclidean
@@ -338,7 +338,7 @@ def clippedPadding (cl : NumClass) (H : Nat) (padLo padHi : Float) : Float × Fl
 `m` for `v_p(b) = m`: the sum of `(1 / p ^ m) (1 - 1 / p)` over the bits `m ≥ 1` of the mask, while
 `m < 64` and bits are left.
 
-C: `find_points.c:1926-1937`
+C: `find_points.c:1940-1951`
 
 Deviation: natural numbers for the `long` and the `unsigned long` mask; `64` for `LONG_LENGTH`. -/
 def forbiddenFraction (p mask : Nat) : Id Float := do
@@ -357,8 +357,8 @@ test runs, the height bound, the range of the denominators, the search intervals
 classes of the denominators modulo 64 that admit a numerator, the classes, and the array size.
 
 It models no C code of its own: a structure for the fields of the arguments and the arguments of
-`run_shape` and `mean_bits_per_word` that describe the run (`find_points.c:1939-1943`,
-`find_points.c:2134-2136`), the bits `RATPOINTS_USE_SQUARES`, `RATPOINTS_USE_SQUARES1` (with
+`run_shape` and `mean_bits_per_word` that describe the run (`find_points.c:1953-1957`,
+`find_points.c:2148-2150`), the bits `RATPOINTS_USE_SQUARES`, `RATPOINTS_USE_SQUARES1` (with
 `args->divisors`) and `RATPOINTS_USE_JACOBI` of the flags as Booleans and an option, natural
 numbers for the `long`s, and the array size normalized for the height bound
 (`Ratpoints.arraySizeAt`). -/
@@ -389,7 +389,7 @@ the candidate denominators, the numerators they sweep, their nonempty intervals 
 those that the height bound cut, the classes kept, the sum of their shares `2 ^ -k` and the sums of
 what a cut end pads.
 
-C: `find_points.c:1945-1957`
+C: `find_points.c:1959-1971`
 
 Deviation: a structure for the local variables, with their initial values. -/
 structure ShapeAcc where
@@ -418,7 +418,7 @@ structure ShapeAcc where
 which padding, and the calls of the sieve.
 
 It models no C code of its own: a structure for the four results that `run_shape` hands back
-through its pointers (`find_points.c:1942-1943`). -/
+through its pointers (`find_points.c:1956-1957`). -/
 structure RunEstimate where
   /-- The denominators sifted, `run_denoms`. -/
   denoms : Float
@@ -434,7 +434,7 @@ for `square`, the denominators themselves otherwise): `count = hi - lo + 1` when
 numerators, intervals and cut ends of the 64 midpoint samples `k = lo + (hi - lo)(i + 0.5) / 64`
 (`Ratpoints.numeratorsFor`), each sum scaled by `count / 64`.
 
-C: `find_points.c:1964-1973`, `find_points.c:2028-2037`
+C: `find_points.c:1978-1987`, `find_points.c:2042-2051`
 
 Deviation: one function for the samples of the squares and of every denominator, which the C code
 writes out twice. -/
@@ -456,7 +456,7 @@ def sampleSteps (domain : List (Double × Double)) (H lo hi : Float) (square : B
 /-- The accumulators `acc` with the class `cl` kept: one class more, its share `2 ^ -k` of the
 numerators, and what its cut ends pad (`Ratpoints.clippedPadding`).
 
-C: `find_points.c:1980-1981`, `find_points.c:2017-2018`, `find_points.c:2045-2046`
+C: `find_points.c:1994-1995`, `find_points.c:2031-2032`, `find_points.c:2059-2060`
 
 Deviation: one function for the three places of the C code. -/
 def addClass (cl : NumClass) (H : Nat) (acc : ShapeAcc) : ShapeAcc :=
@@ -467,7 +467,7 @@ def addClass (cl : NumClass) (H : Nat) (acc : ShapeAcc) : ShapeAcc :=
 `⌈√bLow⌉, …, ⌊√bHigh⌋` (`Ratpoints.sampleSteps`), and the classes `k ^ 2 mod 64` for `k < 32`, those
 with a pattern kept, with `keep` the share of those kept.
 
-C: `find_points.c:1960-1962`, `find_points.c:1976-1979`, `find_points.c:1982-1985`
+C: `find_points.c:1974-1976`, `find_points.c:1990-1993`, `find_points.c:1996-1999`
 
 Deviation: `ceil` and `floor` the functions of the C library of the platform (`Float.ceil`,
 `Float.floor`), which are exact, where gcc compiles instructions. -/
@@ -484,7 +484,7 @@ def shapeSquares (a : ShapeArgs) : Id ShapeAcc := do
 `k = max(1, ⌈√(bLow / d)⌉), …, ⌊√(bHigh / d)⌋`: their count `c` and the numerators, intervals and
 cut ends of the 64 midpoint samples, each times `c / 64`.
 
-C: `find_points.c:1993-2009`
+C: `find_points.c:2007-2023`
 
 Deviation: `ceil` and `floor` the functions of the C library of the platform (`Float.ceil`,
 `Float.floor`), which are exact, where gcc compiles instructions. -/
@@ -510,7 +510,7 @@ def sampleDivisor (domain : List (Double × Double)) (H : Float) (bLow bHigh d :
 `d` its denominators (`Ratpoints.sampleDivisor`) and the classes `d k ^ 2 mod 64` for `k < 32`,
 those with a pattern kept; `keep` the share of the classes kept among those tried, when any were.
 
-C: `find_points.c:1987-1992`, `find_points.c:2010-2016`, `find_points.c:2019-2023`
+C: `find_points.c:2001-2006`, `find_points.c:2024-2030`, `find_points.c:2033-2037`
 
 Deviation: the divisors as a list, for the zero-terminated array `args->divisors`. -/
 def shapeSquares1 (a : ShapeArgs) (ds : List Nat) : Id ShapeAcc := do
@@ -531,7 +531,7 @@ forbidden divisor `p` tested with words, times `1 - f` for each tested by its va
 fraction `f` of its excluded valuations (`Ratpoints.forbiddenFraction`), and times `0.53` when the
 Jacobi test runs.
 
-C: `find_points.c:2051-2065`
+C: `find_points.c:2065-2079`
 
 Deviation: the forbidden divisors as lists, for the arrays of the arguments with their counts `fba`
 and `fdc`. -/
@@ -548,8 +548,8 @@ def keepChecked (keep : Float) (checkDenom useJacobi : Bool) (forb : List Forbid
 (`Ratpoints.sampleSteps`), the classes of the set bits of `den_bits` in increasing order, all kept,
 `keep` their share of the 64 classes, and that for the checked loop (`Ratpoints.keepChecked`).
 
-C: `find_points.c:2025-2027`, `find_points.c:2038-2044`, `find_points.c:2047-2050`,
-`find_points.c:2066`
+C: `find_points.c:2039-2041`, `find_points.c:2052-2058`, `find_points.c:2061-2064`,
+`find_points.c:2080`
 
 Deviation: the set bits of the word visited by the lowest set bit (`Ratpoints.Sieve.ctz`), as the C
 code visits them with `RP_CTZL`. -/
@@ -572,7 +572,7 @@ per interval and denominator and as many as `asz` bit arrays take; the denominat
 the words `keep (nums + pad) / 64`, the padding `keep pad / 64` and the calls
 `keep inters ⌈per / asz⌉`; each at least `1`, the padding `0` when the words are floored.
 
-C: `find_points.c:2074-2105`
+C: `find_points.c:2088-2119`
 
 Deviation: the estimate returned as a structure, for the four pointers of `run_shape`; `ceil` the
 function of the C library of the platform (`Float.ceil`), which is exact, where gcc compiles an
@@ -596,8 +596,8 @@ of the checked loop and the forbidden divisors `forb` and `forbVal` known so far
 (`Ratpoints.shapeSquares`, `Ratpoints.shapeSquares1`, `Ratpoints.shapeAll`), then the estimate
 (`Ratpoints.shapeEstimate`).
 
-C: `find_points.c:1939-1944`, `find_points.c:1959`, `find_points.c:1986`, `find_points.c:2024`,
-`find_points.c:2106`
+C: `find_points.c:1953-1958`, `find_points.c:1973`, `find_points.c:2000`, `find_points.c:2038`,
+`find_points.c:2120`
 
 Deviation: the switch `checkDenom` for the bit `RATPOINTS_CHECK_DENOM` of the flags, and the
 forbidden divisors as lists, for the arrays with their counts `fba` and `fdc`. -/
@@ -613,7 +613,7 @@ def runShape (a : ShapeArgs) (checkDenom : Bool) (forb : List ForbiddenEntry)
 
 /-- The number of the set bits of the word `w`, `__builtin_popcountl`.
 
-It models no C code of its own: the builtin of gcc at `find_points.c:2129`, in the range of
+It models no C code of its own: the builtin of gcc at `find_points.c:2143`, in the range of
 `Ratpoints.bpwAdd`, as a loop over the 64 bits. -/
 def popcount (w : UInt64) : Id Nat := do
   let mut n := 0
@@ -624,7 +624,7 @@ def popcount (w : UInt64) : Id Nat := do
 /-- The sums `tot` and `wsum` with the class `cl`, when its pattern has a set bit: its bits per word
 times its share `2 ^ -k` of the numerators, and that share.
 
-C: `find_points.c:2128-2132`
+C: `find_points.c:2142-2146`
 
 Deviation: the two sums passed and returned, for the pointers; the number of the set bits of the
 word a loop over its bits (`Ratpoints.popcount`), for gcc's builtin `__builtin_popcountl`. -/
@@ -637,7 +637,7 @@ def bpwAdd (cl : NumClass) (tot wsum : Float) : Id (Float × Float) := do
 /-- The sums of `Ratpoints.bpwAdd` over the classes that the divisors `ds` of the leading
 coefficient times squares visit: the classes `d k ^ 2 mod 64` for each divisor `d` and `k < 32`.
 
-C: `find_points.c:2143-2151` -/
+C: `find_points.c:2157-2165` -/
 def bpwSquares1 (cls : Vector NumClass 64) (ds : List Nat) : Id (Float × Float) := do
   let mut (tot, wsum) := (0.0, 0.0)
   for d in ds do
@@ -651,7 +651,7 @@ for `k < 32` for the squares, those of the divisors for the divisors times squar
 (`Ratpoints.bpwSquares1`), and those of the set bits of `den_bits` otherwise (`Ratpoints.bpwAdd`);
 `0` when no class has a pattern.
 
-C: `find_points.c:2134-2142`, `find_points.c:2152-2159`
+C: `find_points.c:2148-2156`, `find_points.c:2166-2173`
 
 Deviation: the set bits of the word visited by the lowest set bit (`Ratpoints.Sieve.ctz`), as the C
 code visits them with `RP_CTZL`. -/

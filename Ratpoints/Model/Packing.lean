@@ -54,7 +54,7 @@ seven strides `2 ^ k`, `k ≤ 6`, up to the modulus 64 of the 2-adic information
 `k` is read as `0`, which ends the loop over the strides of `Ratpoints.Sieve.numClasses` at `k = 7`
 at the latest, so that its stride exponent is at most 6 whatever `Ratpoints.numStrides` is.
 
-C: `find_points.c:1058-1062`
+C: `find_points.c:1071-1075`
 
 Deviation: an array of `UInt64`, for the array of `RP_NUM_STRIDES` `unsigned long`s, which the C
 code initializes with these seven words and zeros beyond them, and an array read with the default
@@ -69,7 +69,7 @@ the stride `2 ^ k`, `1 ≤ k ≤ 6`, and the residue `a₀ < 2 ^ k` of all of it
 `64 / 2 ^ k`; then the word doubled from that period up to 64 bits, `packed ||| packed <<< s` for
 `s = 64 / 2 ^ k, …, 32`. Bit `t` of the result is bit `(a₀ + 2 ^ k t) mod 64` of `w`.
 
-C: `find_points.c:1082-1094`
+C: `find_points.c:1095-1107`
 
 Deviation: a function of its own for the two loops of the packed pattern, which the loop over the
 classes of `get_2adic_info` calls for `k ≥ 1` (`Ratpoints.Sieve.numClasses`), as the loop of the
@@ -103,14 +103,14 @@ first `k` at which a set bit lies off the mask shifted by `a mod 2 ^ k`, then le
 (`Ratpoints.Sieve.packPattern`); and bit `b` set in `den_bits`. No class has row offsets yet
 (`Ratpoints.Sieve.classOffsets`). The word `den_bits` is that of `Ratpoints.Sieve.denBits`.
 
-C: `find_points.c:995`, `find_points.c:1064-1081`, `find_points.c:1095-1097`,
-`find_points.c:1099-1104`, `find_points.c:1106-1114`
+C: `find_points.c:1008`, `find_points.c:1077-1094`, `find_points.c:1108-1110`,
+`find_points.c:1112-1117`, `find_points.c:1119-1127`
 
 Deviation: the classes and `den_bits` returned, for the array `cls` and the word `den_bits` that
 `get_2adic_info` fills through its pointer arguments, from the words that `Ratpoints.Sieve.twoAdic`
 returns; the packed pattern of a class with `k ≥ 1` by a function of its own
 (`Ratpoints.Sieve.packPattern`); the pattern of a class as one word, for the vector `RBA(packed)` of
-`find_points.c:1098`; natural numbers for the `long`s `k`, `a0` and `a`, and the remainder by
+`find_points.c:1111`; natural numbers for the `long`s `k`, `a0` and `a`, and the remainder by
 `2 ^ k` for the mask `(1L << k) - 1`; the mask of a stride read from the array of the masks with the
 default `0` beyond its seven entries, as the C code reads the zeros that it puts beyond them; the
 lowest set bit by the loop of `RP_CTZL` (`Ratpoints.Sieve.ctz`); no output under `DEBUG`. -/
@@ -143,7 +143,7 @@ def numClasses (nb : Vector UInt64 64) : Id (Vector NumClass 64 × UInt64) := do
 (`Ratpoints.sieving`). The packings are told apart by the key `2 ^ k + a₀`, below
 `2 ^ Ratpoints.numStrides` and 128, marked in two words.
 
-C: `find_points.c:1119-1130`
+C: `find_points.c:1132-1143`
 
 Deviation: an array of two words, for the array `seen` of two `unsigned long`s; natural numbers for
 the `long`s `key` and `n`, the division by 64 and the remainder by 64 for the shift by 6 and the
@@ -162,7 +162,7 @@ def numPackings (cls : Vector NumClass 64) : Id Nat := do
 step of the chains of halvings of `class_offsets` (`Ratpoints.Sieve.classOffsets`): for `x < p` it
 is below `p`, and twice it is `x` modulo `p`.
 
-C: `find_points.c:1159-1160`
+C: `find_points.c:1172-1173`
 
 Deviation: a function of its own for the expression that the C code writes out for `d` and for `e`;
 the remainder by 2 for the mask `& 1` and the division by 2 for the shift `>> 1`; natural numbers
@@ -178,7 +178,7 @@ position `rows np`, the `n`-th the remainder of `a₀ rinv[n][k]` by a multiplic
 reciprocal of `p` (`Ratpoints.Sieve.mulMod`, exact since `a₀ rinv[n][k] p < 2 ^ 64`) plus the bias
 of `p`; the class gets the position of its row.
 
-C: `find_points.c:1164-1182`
+C: `find_points.c:1177-1195`
 
 Deviation: a function of its own for the loop over the classes of `class_offsets`
 (`Ratpoints.Sieve.classOffsets`); the classes and the array of the offsets returned, for the array
@@ -224,7 +224,7 @@ array `offsets` of the run, of `Ratpoints.Sieve.numPackings cls` rows of one off
 `p` is `a₀ (2 ^ k Ratpoints.rbaLength)⁻¹ mod p` plus the bias of `p`. The classes and the entries
 return with their offsets and their inverses, and the array of the offsets filled.
 
-C: `find_points.c:1142-1158`, `find_points.c:1161-1162`, `find_points.c:1183`
+C: `find_points.c:1155-1171`, `find_points.c:1174-1175`, `find_points.c:1196`
 
 Deviation: the classes, the entries and the array of the offsets returned, for the arrays that
 `class_offsets` writes through its pointer arguments; the number `np` of the moduli the number of
@@ -268,7 +268,7 @@ reduced by the helper `mod` of the C code (`Ratpoints.Sieve.modLong`), which div
 product. The branch is chosen once for `b`. The sieve of the denominator reads the rows of these
 residues (`Ratpoints.Sieve.setRows`).
 
-C: `find_points.c:3639-3679`
+C: `find_points.c:3660-3700`
 
 Deviation: a list, made by a map over the entries and their reciprocals (`List.zipWith`) in the
 branch that `b` chooses and returned, for the array `bp_list` that the loops over the positions
@@ -293,7 +293,7 @@ sieve entries of the moduli, and the sieve of one denominator in the packing of 
 examples of `Ratpoints.Model.FindPoints`. -/
 
 -- The packings of 64 words against those that the loop over the classes of `get_2adic_info`
--- (`find_points.c:1058-1095`, compiled apart at the pinned commit) gives for them: the pattern,
+-- (`find_points.c:1071-1108`, compiled apart at the pinned commit) gives for them: the pattern,
 -- the stride exponent `k` and the residue `a₀`, for every `k = 0, …, 6`; no class has row offsets
 -- yet, and the word of the classes that admit a numerator has bit `b` set exactly when `nb[b] ≠ 0`,
 -- as `Ratpoints.Sieve.denBits` has.

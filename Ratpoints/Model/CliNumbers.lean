@@ -83,7 +83,11 @@ def dropSign : List Char → List Char
 also checks that white space or the end of the argument follows the digits, which a word of
 `Ratpoints.Cli.words` satisfies.
 
-C: `main.c:700-717` -/
+C: `main.c:703-721`
+
+Deviation: the number computed from the list of the digits (`Ratpoints.Cli.natOfDigits?`), for
+`mpz_set_str` on the digits in the argument, where the C code puts a zero byte after them for the
+call and then the character back. -/
 def intOfWord? (w : List Char) : Option Int :=
   (natOfDigits? (dropSign w)).map fun n ↦ if w.head? = some '-' then -(n : Int) else n
 
@@ -91,7 +95,7 @@ def intOfWord? (w : List Char) : Option Int :=
 `strtod` skip the white space before a number, and `only_space_after` of `main.c` checks that
 nothing but white space follows it.
 
-C: `main.c:724-728` -/
+C: `main.c:728-732` -/
 def onlyWord? (s : String) : Option (List Char) :=
   match words s.toList with
   | [w] => some w
@@ -102,7 +106,7 @@ integer as `Ratpoints.Cli.intOfWord?` reads it, with nothing but C white space b
 it (`Ratpoints.Cli.onlyWord?`), from `-2⁶³` to `2⁶³ - 1`; for a value beyond these bounds
 `strtol` reports the error `ERANGE`.
 
-C: `main.c:733-740`
+C: `main.c:737-744`
 
 Deviation: an `Int` for a `long`. -/
 def longOfString? (s : String) : Option Int :=
@@ -156,7 +160,7 @@ points among them, as the loop of `scan_end` of `main.c` reads them, `point` say
 point has been passed: the digits in their order, without the points, the number of those after
 a point, and the rest of `s` from the first character that is neither a digit nor a point.
 
-C: `main.c:822-834`
+C: `main.c:826-838`
 
 Deviation: a recursion over the characters, for the loop over the C string and the array `digits`,
 whose length is the number `n` of the digits. -/
@@ -253,7 +257,7 @@ def strtod (w : List Char) : Double :=
 (`Ratpoints.Cli.onlyWord?`), read by `Ratpoints.Cli.strtod`, so that a number beyond the range of
 the doubles is read as an infinity or as a zero; none for anything else, among them a NaN.
 
-C: `main.c:746-752`
+C: `main.c:750-756`
 
 Deviation: the NaN refused by its syntax, which `Ratpoints.Cli.isDoubleWord` does not accept, for
 the test `isnan` of the double that `strtod` reads. -/
@@ -283,7 +287,7 @@ upper one), the double next to it outward (`Ratpoints.Double.nextDown`, `Ratpoin
 so that the result is the largest double `≤ v`, or the smallest double `≥ v`, when `x` is a double
 nearest to `v`, or an infinity on the safe side of `v`.
 
-C: `main.c:761-763`, `main.c:766-773`, `main.c:775-776`
+C: `main.c:765-767`, `main.c:770-777`, `main.c:779-780`
 
 Deviation: the exact value of `x` (`Ratpoints.Double.toRat`) compared with `v` as rational numbers
 of core, for the GMP rational `t`, `mpq_set_d` and `mpq_cmp`; no `mpq_init` and `mpq_clear`. -/
@@ -308,8 +312,8 @@ the exponent `ex` that `scan_end` accumulates, which stops taking digits once it
 `LONG_MAX / 20` (it is then that of a number beyond the range of the doubles or of `0`); negated
 for the sign `-`. The double is that of `Ratpoints.Cli.outward` from `x` towards that number.
 
-C: `main.c:798-806`, `main.c:808-819`, `main.c:835-847`, `main.c:849`, `main.c:851-865`,
-`main.c:868-873`, `main.c:875-876`, `main.c:878-880`
+C: `main.c:802-810`, `main.c:812-823`, `main.c:839-851`, `main.c:853`, `main.c:855-869`,
+`main.c:872-877`, `main.c:879-880`, `main.c:882-884`
 
 Deviation: the end and the double returned, or none, for the `exact_end` and the double that
 `scan_end` writes through pointers with its return value, the end of an infinity with `q = 0`, which
@@ -396,7 +400,7 @@ most the upper end of the interval it may be joined to is joined to it, the leas
 and the greatest of the upper ends, and every other interval is the next one, to which the following
 may be joined, so that intervals whose doubles meet or overlap become one.
 
-C: `main.c:891-905`
+C: `main.c:895-909`
 
 Deviation: a list for the array `args->domain` and the number `args->num_inter` of its intervals,
 written back in place by `join_intervals`, and natural numbers for the `long` indices. -/

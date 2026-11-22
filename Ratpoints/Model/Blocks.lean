@@ -79,12 +79,12 @@ shape in turn, a segment of its own, the `k` with `bLow ≤ s k ^ 2 ≤ bHigh`, 
 denominators for the word shape; and `bLow, …, bHigh` otherwise. A segment with `hi < lo` has no
 steps.
 
-C: `find_points.c:3812-3837`
+C: `find_points.c:3833-3858`
 
 Deviation: the segments as an array of pairs, for the arrays `seg_lo` and `seg_hi` of the run;
 quotients by 64 for the shifts by `LONG_SHIFT`; natural numbers for the `long`s, the steps of a
 segment counted only when `lo ≤ hi`, as the C code counts them; the count of the segments read from
-the shape, for `nseg`, which `run_setup` counts before (`find_points.c:3794`). -/
+the shape, for `nseg`, which `run_setup` counts before (`find_points.c:3815`). -/
 def Shape.segments (s : Shape) (bLow bHigh : Nat) : Id (Array (Nat × Nat) × Nat) := do
   let nseg := match s with
     | .squares1 _ divisors => divisors.length
@@ -109,7 +109,7 @@ the first block of each segment, with the number of the blocks at the end
 (`Ratpoints.Sieve.Shape.blockPlan`): segment `s` holds the blocks from `segBlock[s]` to
 `segBlock[s + 1] - 1`, the last of them possibly shorter.
 
-C: `find_points.c:3750-3754`
+C: `find_points.c:3771-3775`
 
 Deviation: the segments as an array of pairs, for the pointers `seg_lo` and `seg_hi`; the first
 blocks with the number of the blocks at the end of the array, for `seg_block` and `nblocks`, which
@@ -129,7 +129,7 @@ def BlockPlan.nblocks (plan : BlockPlan) : Nat := plan.segBlock.back!
 /-- The length of the blocks of a run of `steps` steps: `steps / Ratpoints.blocksWanted + 1`, at
 least `Ratpoints.blockMin`, and the fixed length of `Ratpoints.blockLen` when the build sets one.
 
-C: `find_points.c:3838-3842`
+C: `find_points.c:3859-3863`
 
 Deviation: the conditional compilation `#ifdef RP_BLOCK_LEN` a constant of type `Option Nat`
 (`Ratpoints.blockLen`), none in the default build. -/
@@ -143,7 +143,7 @@ def blockLength (steps : Nat) : Nat :=
 (`Ratpoints.Sieve.blockLength`), and the first block of each segment, each segment with steps
 holding `⌊(hi - lo) / len⌋ + 1` blocks, with the number of the blocks at the end.
 
-C: `find_points.c:3843-3850`
+C: `find_points.c:3864-3871`
 
 Deviation: the blocks returned as a structure (`Ratpoints.Sieve.BlockPlan`), for the fields of the
 run that `run_setup` fills; natural numbers for the `long`s. -/
@@ -162,7 +162,7 @@ holds it, the first with `i < segBlock[seg + 1]`, and its first and last steps `
 block being the `(i - segBlock[seg])`-th of its segment, of `len` steps or up to the end of the
 segment.
 
-C: `find_points.c:3900-3904`
+C: `find_points.c:3921-3925`
 
 Deviation: the segment and the steps returned, for the locals of `run_block`; natural numbers for
 the `long`s, the difference `hi - a` truncated at `0`, where the C code compares a `long` that is
@@ -190,8 +190,8 @@ row offsets `offsets` of the classes, the bounds `iv` of the search intervals, t
 pieces of at most `A` bit arrays, the end `sp1` of the first stage and the flags `fl`), delivered
 to the callback `process`.
 
-C: `find_points.c:3926-3927`, `find_points.c:3955-3956`, `find_points.c:4042-4043`,
-`find_points.c:4066-4067`
+C: `find_points.c:3947-3948`, `find_points.c:3976-3977`, `find_points.c:4063-4064`,
+`find_points.c:4087-4088`
 
 Deviation: a function of its own for the two calls that each shape makes for a denominator, the
 residues a list for the array `bp_list`, which `sift` reads through its pointer; the state of the
@@ -210,7 +210,7 @@ def siftDen {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c 
 `k`, the denominator `k ^ 2`, sifted by `step` when the pattern of its class modulo 64 among the
 classes `cls` is not `0`, after which the loop returns if the callback has stopped the search.
 
-C: `find_points.c:3919-3925`, `find_points.c:3928-3935`
+C: `find_points.c:3940-3946`, `find_points.c:3949-3956`
 
 Deviation: the denominator sifted by the argument `step`, for the two calls of each shape
 (`Ratpoints.Sieve.siftDen`); the pattern of the class read as its one word, for `EXT0(cl->bits)`;
@@ -233,7 +233,7 @@ of its class modulo 64 among the classes `cls` is not `0` and it passes the valu
 primes `info` (`Ratpoints.Sieve.denInfoTest`), after which the loop returns if the callback has
 stopped the search.
 
-C: `find_points.c:3937-3943`, `find_points.c:3954`, `find_points.c:3957-3965`
+C: `find_points.c:3958-3964`, `find_points.c:3975`, `find_points.c:3978-3986`
 
 Deviation: the denominator sifted by the argument `step`, for the two calls of each shape
 (`Ratpoints.Sieve.siftDen`); the valuation test a function of its own; the pattern of the class read
@@ -257,7 +257,7 @@ block: `a mod p` for each `p`, by a multiplication with the reciprocal of `p`
 (`Ratpoints.Sieve.mulMod`) when `a ≤ Ratpoints.mulModLimit`, and by the helper `mod` of the C code
 otherwise (`Ratpoints.Sieve.modLong`).
 
-C: `find_points.c:3981`, `find_points.c:3983-3988`
+C: `find_points.c:4002`, `find_points.c:4004-4009`
 
 Deviation: indices into the words of the divisors, for the pointers `cur` into the arrays from
 `start` to `end`; a Boolean for the `int` `small`; natural numbers for the `long`s. -/
@@ -272,7 +272,7 @@ position of each divisor of `forb`, whose position steps on by one, back to `0` 
 in the first word `lo0` of the run the bits below `bLow mod 64` cleared, and in its last word `hi0`
 those above `bHigh mod 64`. Returns the word and the positions at the next word.
 
-C: `find_points.c:3990`, `find_points.c:3993-4006`
+C: `find_points.c:4011`, `find_points.c:4014-4027`
 
 Deviation: indices into the words of the divisors, for the pointers `cur`, and the end of the
 words of a divisor its prime `p`, for the pointer `end`; the remainders by 64 for the masks by
@@ -294,7 +294,7 @@ def denWord (db : UInt64) (forb : Array ForbiddenEntry) (cur : Array Nat)
 sifted by `step` when it passes the tests `test` of the word shape (`Ratpoints.Sieve.wordsTest`),
 after which the walk returns if the callback has stopped the search.
 
-C: `find_points.c:4007-4009`, `find_points.c:4012`, `find_points.c:4044-4053`
+C: `find_points.c:4028-4030`, `find_points.c:4033`, `find_points.c:4065-4074`
 
 Deviation: the denominator sifted by the argument `step`, for the two calls of each shape
 (`Ratpoints.Sieve.siftDen`), and the tests of the word shape the argument `test`, for the code of
@@ -324,8 +324,8 @@ pass the class test and those divisors, with the masks of the first and the last
 that pass the tests `test` sifted by `step` (`Ratpoints.Sieve.walkDens`), after which the loop
 returns if the callback has stopped the search.
 
-C: `find_points.c:3967-3980`, `find_points.c:3982`, `find_points.c:3989`, `find_points.c:3991-3992`,
-`find_points.c:4054-4058`
+C: `find_points.c:3988-4001`, `find_points.c:4003`, `find_points.c:4010`, `find_points.c:4012-4013`,
+`find_points.c:4075-4079`
 
 Deviation: the denominator sifted by the argument `step`, for the two calls of each shape, and the
 tests of the word shape the argument `test` (`Ratpoints.Sieve.wordsTest`); the forbidden divisors an
@@ -352,7 +352,7 @@ def wordsBlock {σ : Type} (step : Nat → BlockState σ → Id (BlockState σ))
 block: each denominator `b`, sifted by `step` when the pattern of its class modulo 64 among the
 classes `cls` is not `0`, after which the loop returns if the callback has stopped the search.
 
-C: `find_points.c:4060-4065`, `find_points.c:4068-4074`
+C: `find_points.c:4081-4086`, `find_points.c:4089-4095`
 
 Deviation: the denominator sifted by the argument `step`, for the two calls of each shape
 (`Ratpoints.Sieve.siftDen`); the pattern of the class read as its one word; the state of the block
@@ -378,8 +378,8 @@ blocks `plan`, each denominator handed to the step `step` with the state `st`: t
 (`Ratpoints.Sieve.allBlock`), with the classes `cls`, the word `db` of the classes that admit a
 numerator and the range `bLow, …, bHigh` of the denominators.
 
-C: `find_points.c:3917-3918`, `find_points.c:3936`, `find_points.c:3966`, `find_points.c:4059`,
-`find_points.c:4075-4076`
+C: `find_points.c:3938-3939`, `find_points.c:3957`, `find_points.c:3987`, `find_points.c:4080`,
+`find_points.c:4096-4097`
 
 Deviation: a function of its own for the `switch` of `run_block` over the shapes, the step an
 argument, for the two lines of each shape that sift a denominator (`Ratpoints.Sieve.siftDen`); the
@@ -405,7 +405,7 @@ the next decision. The first is that of the choice, for block `0`
 (`Ratpoints.Sieve.Correction.start`).
 
 It models no C code of its own: a structure for the entries of the arrays `dec_block`, `dec_sp2`
-and `dec_sp3` of the run (`find_points.c:3761`, `Ratpoints.Sieve.Correction`), with natural numbers
+and `dec_sp3` of the run (`find_points.c:3782`, `Ratpoints.Sieve.Correction`), with natural numbers
 for the `long`s. -/
 structure Decision where
   /-- The first block that the decision is for. -/
@@ -419,7 +419,7 @@ structure Decision where
 /-- The decision in force for block `i`, among the decisions `decs`, whose first is for block `0`:
 the last whose first block is at most `i`, found from the last decision back.
 
-C: `find_points.c:3908-3910`, `find_points.c:3912`
+C: `find_points.c:3929-3931`, `find_points.c:3933`
 
 Deviation: the decisions an array of structures (`Ratpoints.Sieve.Decision`), for the three arrays
 `dec_block`, `dec_sp2` and `dec_sp3` and their count `ndec`, which the C code reads with an acquire
@@ -435,7 +435,7 @@ def findDecision (decs : Array Decision) (i : Nat) : Id Nat := do
 counters (`Ratpoints.Sieve.Counters`), the index `dec` of the decision that it was sifted with and
 the ends `sp2` and `sp3` of the second and the third stage of that decision.
 
-C: `find_points.c:4082-4086`
+C: `find_points.c:4103-4107`
 
 Deviation: the counters as a structure, for the six fields; natural numbers for the `long`s. -/
 structure BlockStat where
@@ -461,15 +461,15 @@ with the classes `cls`, the row offsets `offsets`, the bounds `iv` of the search
 height `H`, pieces of at most `A` bit arrays and the flags `fl`. Returns the delivery, the store and
 the report of the block (`Ratpoints.Sieve.BlockStat`).
 
-C: `find_points.c:3127-3128`, `find_points.c:3889-3898`, `find_points.c:3911`,
-`find_points.c:3913-3915`, `find_points.c:4077-4078`, `find_points.c:4088-4093`, `rp-private.h:582`
+C: `find_points.c:3145-3146`, `find_points.c:3910-3919`, `find_points.c:3932`,
+`find_points.c:3934-3936`, `find_points.c:4098-4099`, `find_points.c:4109-4114`, `rp-private.h:582`
 
 Deviation: the decision's entries and reciprocals cut as lists for each block, for the numbers `sp2`
 and `sp3` that the sieving thread keeps and through which `sift` and `fill_bp_list` read the arrays
 `sieve_list` and `magics`; the report returned with the delivery and the store, for the fields of
 the sieving thread that `worker_stat` copies into it after the block; the counters and the index of
-the decision, which `worker_init` clears before the run (`find_points.c:3127-3128`), set only here,
-for each block (`find_points.c:3911` and `find_points.c:3914-3915`), before they are read; the
+the decision, which `worker_init` clears before the run (`find_points.c:3145-3146`), set only here,
+for each block (`find_points.c:3932` and `find_points.c:3935-3936`), before they are read; the
 arguments of the run passed explicitly, for the fields of the run and of the arguments that
 `run_block` reads; the delivery `r` passed and returned, for the pointers `info` and `wk->quit` and
 the count `total` that `run_block` keeps from zero and returns; the array `bp_list` of `sp3_max`
@@ -498,7 +498,7 @@ blocks (`Ratpoints.Sieve.RunCounts.fold`), with the words swept when the counter
 stage on were last restarted, `words2`, and the end `sp2` of the second stage that those were
 counted under: they restart when a block sifted with another `sp2` is folded.
 
-C: `find_points.c:1363-1367`
+C: `find_points.c:1377-1381`
 
 Deviation: the six counters of the sieving thread extended (`Ratpoints.Sieve.Counters`), for the
 six fields; a `UInt64` for the `unsigned long` `n_words_2` and a natural number for the `long`
@@ -514,7 +514,7 @@ second stage and counted `k`: when `sp2` is not the end that the counters of the
 under, those of the second stage on (`bits`, `coprime`, `checks`, `sifts`) restart from zero, with
 the words swept so far as `words2` and `sp2` as the end; then the counters of the block are added.
 
-C: `find_points.c:4107-4113`
+C: `find_points.c:4128-4134`
 
 Deviation: a function of its own for this part of `run_fold`; the end `sp2` passed, for the entry
 `dec_sp2[st->dec]` that `run_fold` reads; the sums of `UInt64`s, wrapping as the `unsigned long`s
@@ -536,7 +536,7 @@ second stage restarted; and otherwise the survivors of the first stage per word 
 second per word since the restart `s2`, the product `r1` of the densities of the first stage and
 the product `r2` of those of the first two, none unless `r2 < r1` and `s2 < s1`.
 
-C: `find_points.c:1389`, `find_points.c:1400-1420`
+C: `find_points.c:1403`, `find_points.c:1414-1434`
 
 Deviation: a function of its own for this part of `adapt_primes`, its returns the result none;
 `Float`s for the doubles, in the order of the C code, the conversions of the `UInt64` counters to
@@ -570,7 +570,7 @@ entry whose survivors removed, `s - next`, times the cost `costSurv` of a surviv
 its cost, and otherwise takes it: `rate` times `r`, `s` the new survivors per word. Returns the new
 end of the second stage, the rate and the survivors per word.
 
-C: `find_points.c:1449-1457`
+C: `find_points.c:1463-1471`
 
 Deviation: a function of its own for this loop of `adapt_primes`; the entries an array, for
 `sieve_list` up to `sp3_max`, its size; `Float`s for the doubles, in the order of the C code;
@@ -599,7 +599,7 @@ without it, `level + chance rate / r`, and its cost (`Ratpoints.primeCost` with
 `rate` divided by `r`, `s` the survivors per word without it. Returns the new end of the second
 stage and the survivors per word.
 
-C: `find_points.c:1460-1472`
+C: `find_points.c:1474-1486`
 
 Deviation: a function of its own for this loop of `adapt_primes`; the entries an array, for
 `sieve_list`; `Float`s for the doubles, in the order of the C code; natural numbers for the
@@ -631,7 +631,7 @@ reach the exact check times `Ratpoints.costCheck (checkRel - 1)`; the walk up
 from `c.sp2`, never below the end `sp1` of the first stage. Returns the new end of the second stage
 and the survivors per word with it.
 
-C: `find_points.c:1439-1448`, `find_points.c:1458-1459`, `find_points.c:1473-1476`
+C: `find_points.c:1453-1462`, `find_points.c:1472-1473`, `find_points.c:1487-1490`
 
 Deviation: a function of its own for this part of `adapt_primes`; `Float`s for the doubles, in the
 order of the C code; natural numbers for the `long`s. -/
@@ -655,7 +655,7 @@ word with the old one, `old = level + chance r2` (when `old > 0`); for the entri
 `sp2` on in turn, the stage stops at the first of density `r` with `S (1 - perSurv - r) ≤ perDenom`,
 and otherwise takes it, `S` times `r`. Returns the end of the third stage.
 
-C: `find_points.c:1487-1505`
+C: `find_points.c:1501-1519`
 
 Deviation: a function of its own for this part of `adapt_primes`, the fields `sp3_per_denom` (its
 double read by its bits by the caller) and `check_rel` of the arguments that it reads and the local
@@ -690,8 +690,8 @@ unless `-P` gives the third stage, when the run sifted denominators, the end of 
 end of the third stage at least that of the second. Returns the ends of the second and the third
 stage and the words of the next correction.
 
-C: `find_points.c:1383-1388`, `find_points.c:1390-1398`, `find_points.c:1421-1438`,
-`find_points.c:1477-1486`, `find_points.c:1506-1509`, `find_points.c:1515`
+C: `find_points.c:1397-1402`, `find_points.c:1404-1412`, `find_points.c:1435-1452`,
+`find_points.c:1491-1500`, `find_points.c:1520-1523`, `find_points.c:1529`
 
 Deviation: the fields of the arguments that `adapt_primes` reads passed as the options, the result
 of the choice and the entries, and those that it writes, `sp2`, `sp3` and `adapt_at`, returned; the
@@ -722,12 +722,12 @@ def adaptPrimes (s : SieveOptions) (P : Params) (es : Array SieveEntry) (c : Run
 and the latest decision of the correction with the words of the next one, which the C code keeps in
 the arguments.
 
-C: `find_points.c:3755-3762`
+C: `find_points.c:3776-3783`
 
 Deviation: the decisions an array of structures, for the three arrays `dec_block`, `dec_sp2` and
 `dec_sp3` and their count `ndec`; the fields `sp2`, `sp3` and `adapt_at` of the arguments, which
 `adapt_primes` writes and `run_fold` reads, kept here, since they are read only within the run, by
-`run_fold` and `adapt_primes`, after which `find_points.c:5163` overwrites `sp2` and `sp3` with the
+`run_fold` and `adapt_primes`, after which `find_points.c:5213` overwrites `sp2` and `sp3` with the
 ends of the last block folded; natural numbers for the `long`s and a `UInt64` for the
 `unsigned long`. -/
 structure Correction where
@@ -753,7 +753,7 @@ stage of the choice and the words `adaptAt` of the first correction: nothing cou
 of the second stage on counted under `sp2`, no block folded, one decision, that of the choice for
 block `0`, and the ends of the choice as those of the last block folded.
 
-C: `find_points.c:3853-3856`, `find_points.c:3861-3863`
+C: `find_points.c:3874-3877`, `find_points.c:3882-3884`
 
 Deviation: the state returned, for the fields of the run that `run_setup` sets. -/
 def Correction.start (sp2 sp3 : Nat) (adaptAt : UInt64) : Correction :=
@@ -768,7 +768,7 @@ those of the last block folded; and when the run has swept the words of the next
 correction (`Ratpoints.Sieve.adaptPrimes`), whose result, when it changes an end, is a decision for
 the blocks from `j + Ratpoints.adaptLag + 1` on.
 
-C: `find_points.c:4102-4106`, `find_points.c:4114-4127`
+C: `find_points.c:4123-4127`, `find_points.c:4135-4148`
 
 Deviation: the state of the correction passed and returned (`Ratpoints.Sieve.Correction`), for the
 fields of the run and of the arguments; the decision appended to the array, for the store into the
@@ -803,12 +803,12 @@ the fold of its report (`Ratpoints.Sieve.runFold`), after which the run returns 
 stopped the search. Returns the delivery and the ends of the second and the third stage of the last
 block folded, which the search reports as used.
 
-C: `find_points.c:5120`, `find_points.c:5152-5160`, `find_points.c:5163`
+C: `find_points.c:5170`, `find_points.c:5202-5210`, `find_points.c:5213`
 
 Deviation: the blocks on the calling thread alone, without the pool of threads, which sifts them
 apart and delivers them in the same order, the decision of each block depending only on the folds of
 the blocks at least `Ratpoints.adaptLag + 1` before it (excluded with the threads); the ends of the
-last block returned, for the fields `sp2` and `sp3` of the arguments that `find_points.c:5163`
+last block returned, for the fields `sp2` and `sp3` of the arguments that `find_points.c:5213`
 writes; the store of the tables of rows passed from one block to the next, for the arrays `sieve` of
 the entries of the arguments, its last state not returned, as nothing reads the tables of rows after
 the run; the delivery `r` passed and returned, for the pointers `info` and `wk.quit` and the count

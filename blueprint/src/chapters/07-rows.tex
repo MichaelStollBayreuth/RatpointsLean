@@ -12,13 +12,13 @@ $\mathrm{chunk}$ (Chapter~\ref{chap:sieve}) are positive, never their values.
 
 \section{The tables as \ratpoints{} computes them}\label{sec:rowsResidues}
 
-\verb|examine_prime| (\csource{find_points.c}{1683}{1826}) computes the table of a prime~$p$
+\verb|examine_prime| (\csource{find_points.c}{1697}{1840}) computes the table of a prime~$p$
 (Definition~\ref{def:tableOfPrime}) by Horner's rule in \verb|unsigned long|s with Barrett's
-reduction, on a fixed schedule (\csource{find_points.c}{1628}{1655},
-\csource{find_points.c}{1716}{1747}): below $\mathrm{maxPrimeEven} = 2^{\mathrm{maxBitsInPrime}}$
+reduction, on a fixed schedule (\csource{find_points.c}{1642}{1669},
+\csource{find_points.c}{1730}{1761}): below $\mathrm{maxPrimeEven} = 2^{\mathrm{maxBitsInPrime}}$
 an accumulator below~$p$ survives $\mathrm{hornerSteps} = 64/\mathrm{maxBitsInPrime} - 1$ steps
 $s \mapsto s a + c$ within 64 bits, and \ratpoints{} examines no larger prime. For a factor $q = p^e$
-with $e \ge 2$, \verb|examine_power| (\csource{find_points.c}{2254}{2331}) computes the tables of
+with $e \ge 2$, \verb|examine_power| (\csource{find_points.c}{2269}{2347}) computes the tables of
 Definition~\ref{def:sieveEntry}.
 
 \begin{lemma}[The table of a prime as \ratpoints{} computes it]\label{lem:hornerBarrett}
@@ -27,12 +27,12 @@ Definition~\ref{def:sieveEntry}.
   \leanok
   Barrett's reduction of~$u$ modulo~$p$ with the reciprocal~$m$ is
   $r = u - \lfloor u m / 2^{64} \rfloor\, p$, and $r - p$ when $r \ge p$
-  (\csource{find_points.c}{1639}{1650}); the value of~$f$ at~$a$ modulo~$p$ is Horner's rule
+  (\csource{find_points.c}{1653}{1664}); the value of~$f$ at~$a$ modulo~$p$ is Horner's rule
   from~$c_d$ on the coefficients reduced modulo~$p$, with Barrett's reduction at the end and, for
   $d > \mathrm{hornerSteps}$, after every $\mathrm{hornerSteps}$ steps
-  (\csource{find_points.c}{1726}{1731}, \csource{find_points.c}{1737}{1744}); the table is made of
+  (\csource{find_points.c}{1740}{1745}, \csource{find_points.c}{1751}{1758}); the table is made of
   these values and handed back with the coefficients modulo~$p$, or none, the exit, when no entry
-  of it is true (\csource{find_points.c}{1683}{1697}). Then:
+  of it is true (\csource{find_points.c}{1697}{1711}). Then:
   \begin{enumerate}
     \item for $p > 0$ and $u < 2^{64}$, Barrett's reduction with
       $m = \lfloor (2^{64} - 1)/p \rfloor$ gives $u \bmod p$;
@@ -62,14 +62,14 @@ Definition~\ref{def:sieveEntry}.
   \lean{Ratpoints.Sieve.examinePower, Ratpoints.Sieve.examinePower_spec, Ratpoints.Sieve.modinv, Ratpoints.Sieve.ModinvInvariant, Ratpoints.Sieve.modinv_spec, Ratpoints.Sieve.unitInverses, Ratpoints.Sieve.unitInverses_spec, Ratpoints.modWords, Ratpoints.Sieve.setBitAt, Ratpoints.Sieve.setSquareBits, Ratpoints.Sieve.setSquareBits_spec, Ratpoints.maxPrimeEven_le_sixty_four_mul_modWords}
   \leanok
   The tables of $m = p^e$ as \verb|examine_power| makes them from the coefficients reduced
-  modulo~$m$ (\csource{find_points.c}{2267}{2282}), in bit arrays of
+  modulo~$m$ (\csource{find_points.c}{2282}{2298}), in bit arrays of
   $\mathrm{modWords} = \lceil \mathrm{maxPrimeEven}/64 \rceil$ words, bit~$x$ in bit $x \bmod 64$
   of word $\lfloor x/64 \rfloor$ (\csource{rp-private.h}{523}{523}): the bits of the squares
-  $x^2 \bmod m$, $x < m$, set in a bit array~\verb|sq| (\csource{find_points.c}{2283}{2284}); the
+  $x^2 \bmod m$, $x < m$, set in a bit array~\verb|sq| (\csource{find_points.c}{2299}{2300}); the
   bits of \verb|fsq| and \verb|gsq| set where the values of~$f$ and of the reversed polynomial, by
   Horner's rule, are marked in~\verb|sq|; and the inverses by the extended Euclidean algorithm
-  \verb|modinv| (\csource{find_points.c}{2241}{2252}), $0$ for the residues divisible by~$p$
-  (\csource{find_points.c}{2302}{2303}). Then:
+  \verb|modinv| (\csource{find_points.c}{2256}{2267}), $0$ for the residues divisible by~$p$
+  (\csource{find_points.c}{2318}{2319}). Then:
   \begin{enumerate}
     \item for $1 < m$ and~$x$ prime to~$m$, \verb|modinv| gives the inverse of~$x$ modulo~$m$ in
       $[0, m)$; for a prime~$p$ and $e \ge 1$, every entry of the inverses is below~$p^e$, and the
@@ -138,9 +138,9 @@ numerator a bit stands for is the business of the packing (Chapter~\ref{chap:sie
 A sieve entry of \ratpoints{} (\csource{rp-private.h}{542}{555}) holds the array \verb|sieve| of the
 rows of its residues, \verb|NULL| for a row not built, and the pointer \verb|init| to its builder.
 A prime has its row of~$0$ from the table \verb|sieves0| that the build generates
-(\csource{gen_find_points_h.c}{102}{134}, \csource{find_points.c}{1820}{1821}) and the others
+(\csource{gen_find_points_h.c}{102}{134}, \csource{find_points.c}{1834}{1835}) and the others
 absent; a prime power has one entry, made when a modulus first needs it, and a product an entry of
-its own that points to the entries of its factors (\csource{find_points.c}{2414}{2475}). The
+its own that points to the entries of its factors (\csource{find_points.c}{2430}{2491}). The
 builders are generated for each prime from \verb|CODE_INIT_SIEVE1| for $p < 64$
 (\csource{init.c}{118}{183}) and from \verb|CODE_INIT_SIEVE2| for $p > 64$
 (\csource{init.c}{186}{244}); a prime power has \verb|_ratpoints_sieve_init_power|
@@ -274,11 +274,11 @@ builders are generated for each prime from \verb|CODE_INIT_SIEVE1| for $p < 64$
 
 \section{The rows of a run}\label{sec:runRows}
 
-The sieve sets up a denominator by \verb|set_rows| (\csource{find_points.c}{3149}{3170}), the row
+The sieve sets up a denominator by \verb|set_rows| (\csource{find_points.c}{3168}{3189}), the row
 of the residue of each modulus of the first two stages from its entry, perhaps absent. It builds
 each absent row by the function of the entry, under the lock of the tables when threads share them
 and after reading the pointer again, since another thread may have built it in the meantime
-(\csource{find_points.c}{3522}{3554}); the model, which has no threads, reads it again as well.
+(\csource{find_points.c}{3541}{3573}); the model, which has no threads, reads it again as well.
 Within a run the moduli of the first two stages are pairwise coprime (Chapter~\ref{chap:moduli}),
 so that each table of rows is reached through one modulus; the contracts also admit entries that
 share a table. The run hands the store on from one denominator and one block to the next.
@@ -288,16 +288,16 @@ share a table. The run hands the store on from one denominator and one block to 
   \lean{Ratpoints.Sieve.primeRows, Ratpoints.Sieve.SieveEntry.addTables, Ratpoints.Sieve.SieveEntry.fetchRow, Ratpoints.Sieve.setRows, Ratpoints.Sieve.buildRows}
   \leanok
   The table of rows of a prime~$p$: its row of~$0$ that of Lemma~\ref{lem:primeRows}, the other
-  $p - 1$ rows absent (\csource{find_points.c}{1820}{1821}). The tables of rows of a sieve entry,
+  $p - 1$ rows absent (\csource{find_points.c}{1834}{1835}). The tables of rows of a sieve entry,
   each made only when its reference is absent: that of each factor, and for a product its own
-  (\csource{find_points.c}{2427}{2427}, \csource{find_points.c}{2471}{2471}). The row of a
+  (\csource{find_points.c}{2443}{2443}, \csource{find_points.c}{2487}{2487}). The row of a
   residue~$b$ of a sieve entry \emph{read or built}: the row in its table when it is there, and
   otherwise the row that its builder builds into it. The sieve specs of a denominator, as
-  \verb|set_rows| makes them (\csource{find_points.c}{3149}{3170}): for each entry of the first two
+  \verb|set_rows| makes them (\csource{find_points.c}{3168}{3189}): for each entry of the first two
   stages its modulus, the offset of the row of the class and its row at its residue of~$b$, absent
   when it is not built, with the end~$p$. The missing rows of a denominator: each sieve spec of the
   first two stages without a row gets the row read or built of its entry at its residue
-  (\csource{find_points.c}{3522}{3554}).
+  (\csource{find_points.c}{3541}{3573}).
 \end{definition}
 
 \begin{lemma}[The rows of a run are closed forms]\label{lem:runRows}

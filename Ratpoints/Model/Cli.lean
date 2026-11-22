@@ -144,7 +144,7 @@ for the same error, a blank line, the message and a blank line; for error 2 the 
 usage instead, which error 6 prints after its message, as its case falls through to that of
 error 2.
 
-C: `main.c:1036-1048`, `main.c:1050-1053`
+C: `main.c:1041-1053`, `main.c:1055-1058`
 
 Deviation: the banner and the usage are those of `ratpoints-lean`. -/
 def Failure.message : Failure → String
@@ -162,7 +162,7 @@ def Failure.message : Failure → String
 /-- The exit status of `ratpoints-lean` on a failure: the number of the error of `main.c`,
 with which its function `error` exits.
 
-C: `main.c:1054-1056` -/
+C: `main.c:1059-1061` -/
 def Failure.status : Failure → UInt32
   | .tooFewArguments => 2
   | .tooManyCoefficients => 3
@@ -190,7 +190,7 @@ coefficients and of the height (`Ratpoints.Refusal.tooManyCoefficients`,
 `Ratpoints.Refusal.tooFewCoefficients`, `Ratpoints.Refusal.incorrectHeight`) mapped to the errors 3,
 5 and 4 with which `read_input` refuses those inputs before the library is called, where
 `main.c:260` gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it
-can be given (`find_points.c:4557-4558`, `find_points.c:4633` and `find_points.c:4658`); no command
+can be given (`find_points.c:4604-4605`, `find_points.c:4683` and `find_points.c:4708`); no command
 line reaches them; no `mpz_clear`. -/
 def Failure.ofRefusal : Refusal → Failure
   | .tooManyCoefficients => .tooManyCoefficients
@@ -574,7 +574,7 @@ def input : List String → Except Failure (List Int × Nat × SieveOptions × O
 a tab for `t`, a line feed for `n`, a backslash for a backslash, a percent sign for `%`, and the
 backslash and `ch` as they are for every other character.
 
-C: `main.c:178-182`, `main.c:961-965`
+C: `main.c:178-182`, `main.c:966-970`
 
 Deviation: one function for the two switches of `process` and `print_string`, which agree. -/
 def escape (ch : Char) : String :=
@@ -589,7 +589,7 @@ def escape (ch : Char) : String :=
 characters as they are, but a backslash, which `Ratpoints.Cli.escape` prints with the character
 after it, and a backslash at the end, which prints itself and ends the string.
 
-C: `main.c:952-960`, `main.c:966-968`
+C: `main.c:957-965`, `main.c:971-973`
 
 Deviation: a recursion over the characters, for the loop over the C string. -/
 def printString (s : Option String) : String :=
@@ -723,7 +723,7 @@ after `- ` if it is negative and the others after ` + ` or ` - `, each the absol
 coefficient, then `x` for the degree 1 and `x^i` for a degree `i ≥ 2`, the coefficient left out
 when it is `1` there; and a line feed.
 
-C: `main.c:913-949`
+C: `main.c:917-953`
 
 Deviation: a fold over the coefficients, for the loop; no `fflush`. -/
 def printPoly (c : List Int) : String :=
@@ -777,7 +777,7 @@ def showIntervals (dom : List (Double × Double)) : String :=
 
 /-- The text of a message of the report, as `message` of `main.c` prints it.
 
-C: `main.c:972-976`, `main.c:979-1033`
+C: `main.c:977-981`, `main.c:984-1038`
 
 Deviation: the banner of `ratpoints-lean` (`Ratpoints.Cli.banner`); a constructor for each message
 that `ratpoints-lean` prints, with its data, for the number `n` and the arguments of the library:

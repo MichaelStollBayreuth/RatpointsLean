@@ -61,7 +61,7 @@ the reference to its own table of rows, the builder of the build for `p`
 (`Ratpoints.Sieve.sieveInit`), the density and the count `0` of factors.
 
 It models no C code of its own: it is the part of `examine_prime` that makes the sieve entry
-(`find_points.c:1795-1819`, in the range of `Ratpoints.Sieve.examinePrime?`), as a value. -/
+(`find_points.c:1809-1833`, in the range of `Ratpoints.Sieve.examinePrime?`), as a value. -/
 def primeEntry (t : Entry) (r : Float) : SieveEntry :=
   let p := t.p
   { p, factors := [.prime t], magic := magic p, bias := p * ((rowBias + p - 1) / p),
@@ -74,7 +74,7 @@ density, the prime, the mask `2 ^ pn` for `pn < 64` and `0` otherwise, the count
 the code `2`, when the prime says only that numerator and denominator are coprime, and `0`
 otherwise, and its sieve entry (`Ratpoints.primeEntry`); the key and the cost are set by the caller.
 
-C: `find_points.c:1782-1785`
+C: `find_points.c:1796-1799`
 
 Deviation: the record returned, for the record `prec_entry` that `examine_prime` fills, its key and
 cost `0.0` until the caller sets them, where the C code leaves them as they are; the count `-1` read
@@ -89,7 +89,7 @@ def ModulusCandidate.ofPrime (pn : Nat) (t : Entry) (r : Float) (code : Nat) : M
 (`pws`), and for each prime power `p ^ e` examined, by the position `pn` of `p` and the exponent
 `e`, its index, or none when it says nothing (`pw_idx`).
 
-C: `find_points.c:2350`, `find_points.c:2352-2354`, `find_points.c:2358-2359`
+C: `find_points.c:2366`, `find_points.c:2368-2370`, `find_points.c:2374-2375`
 
 Deviation: a structure for the buffer `pws`, the count `npw` of its records and the array `pw_idx`
 of indices with its markers `-1` (not examined) and `-2` (useless): an array of the records, and a
@@ -106,10 +106,10 @@ prime powers of `tab`, examining it when it is examined for the first time
 (`Ratpoints.Sieve.examinePower`, with `pinf` whether denominators divisible by `p` occur), and none
 when it says nothing (`Ratpoints.Sieve.Power.useful`).
 
-C: `find_points.c:2387-2394`
+C: `find_points.c:2403-2410`
 
 Deviation: the table passed and returned, for the buffer `pws`, the count `npw` and the array
-`pw_idx` of `add_moduli`; no test of room in the buffer (`find_points.c:2390`), which never fails,
+`pw_idx` of `add_moduli`; no test of room in the buffer (`find_points.c:2406`), which never fails,
 since `add_moduli` examines each prime power at most once and `num_powers` counts them all. -/
 def powerIndex (c : List Int) (d : Nat) (useCLong pinf : Bool) (pn p e : Nat) (tab : PowerTable) :
     Id (Option Nat × PowerTable) := do
@@ -126,7 +126,7 @@ def powerIndex (c : List Int) (d : Nat) (useCLong pinf : Bool) (pn p e : Nat) (t
 position of the next prime, whether the candidate is still possible, the product of the densities
 of the factors, the mask of their primes, their codes and the table of the prime powers examined.
 
-C: `find_points.c:2362`, `find_points.c:2364-2365`
+C: `find_points.c:2378`, `find_points.c:2380-2381`
 
 Deviation: a structure for the local variables of the loop over the candidates. -/
 structure FacState where
@@ -151,7 +151,7 @@ for `e = 1` the density of the prime from the loop of the tables (`primeSe`), re
 says nothing; for `e > 1` that of the prime power (`Ratpoints.powerIndex`), refused when it says
 nothing; the code of the factor and the bit of its prime.
 
-C: `find_points.c:2381-2386`, `find_points.c:2395-2398`
+C: `find_points.c:2397-2402`, `find_points.c:2411-2414`
 
 Deviation: the densities of the primes from the array `primeSe` of the tables and densities of the
 loop of the tables, for the entries `prime_se` and their fields `r`. -/
@@ -178,7 +178,7 @@ among the primes from `p` on and refused when it is not among the first `pnLim`;
 not divide the cofactor is passed over; else it is divided off as often as it divides and taken as
 a factor (`Ratpoints.takeFactor`).
 
-C: `find_points.c:2370-2380`, `find_points.c:2399`
+C: `find_points.c:2386-2396`, `find_points.c:2415`
 
 Deviation: a `while` loop with the position of the prime in the state, for the loop `for` whose
 variable `pn` the search for the prime below `p ^ 2` advances; natural numbers for the `long`s. -/
@@ -209,7 +209,7 @@ the primes looked at into factors that say something (`Ratpoints.factorCandidate
 prime, and when the product of the densities of its factors is not below `1`; else its density, its
 mask and the codes of its factors, and its count of factors.
 
-C: `find_points.c:2363`, `find_points.c:2368`, `find_points.c:2400-2402`, `find_points.c:2404-2406`
+C: `find_points.c:2379`, `find_points.c:2384`, `find_points.c:2416-2418`, `find_points.c:2420-2422`
 
 Deviation: the candidate returned, for the record `prec[pnp]` that `add_moduli` fills, with the key
 and the cost `0.0`, which the caller sets, and no sieve entry. -/
@@ -231,15 +231,15 @@ the odd `m` from 9 below `Ratpoints.maxPrimeEven` and up to `Ratpoints.composite
 the first stage (`Ratpoints.phase1Key`), until the pool holds `Ratpoints.numPrimes +
 Ratpoints.maxModuli` candidates; with the useful prime powers examined, by their index.
 
-C: `find_points.c:2346-2349`, `find_points.c:2351`, `find_points.c:2355-2356`, `find_points.c:2361`,
-`find_points.c:2403`, `find_points.c:2407-2411`
+C: `find_points.c:2362-2365`, `find_points.c:2367`, `find_points.c:2371-2372`, `find_points.c:2377`,
+`find_points.c:2419`, `find_points.c:2423-2427`
 
 Deviation: the pool passed and returned, for the array `prec` and the count `pnp`, and the records
 of the prime powers returned, for the buffer `pws` of the arguments; the tables and the densities of
 the primes of the loop of the tables (`primeSe`) and whether denominators divisible by them occur
 (`pinf`) as arrays by their positions; the estimates of the run as arguments, for the fields of the
 arguments; a `while` loop over the candidates; natural numbers for the `long`s; no bound `npw_max`
-(`num_powers`, `find_points.c:2351`), which never binds. -/
+(`num_powers`, `find_points.c:2367`), which never binds. -/
 def addModuli (c : List Int) (d : Nat) (useCLong : Bool) (pool : Array ModulusCandidate)
     (primeSe : Array (Option (Entry × Float))) (pinf : Array Bool) (pnLim : Nat)
     (ct cc U D : Float) : Id (Array ModulusCandidate × Array Power) := do
@@ -264,8 +264,8 @@ its position and the builder of a product; the reciprocal, the bias, the inverse
 `Ratpoints.rbaLength` by the extended Euclidean algorithm (`Ratpoints.Sieve.modinv`), the density of
 the candidate and its count of factors.
 
-C: `find_points.c:2414-2426`, `find_points.c:2428-2429`, `find_points.c:2434-2470`,
-`find_points.c:2472-2475`
+C: `find_points.c:2430-2442`, `find_points.c:2444-2445`, `find_points.c:2450-2486`,
+`find_points.c:2488-2491`
 
 Deviation: the entry returned as a fresh value, for the space that `make_power` and `make_modulus`
 take from the buffer of the sieve entries, and the entry of a prime power made for each modulus that
@@ -273,7 +273,7 @@ needs it, where `make_modulus` makes it once and keeps it by its index (`power_s
 density of the first modulus that makes it, the density of the prime power in both cases; the
 factors as a list (`Ratpoints.Sieve.Factor`), the tables of a prime from the loop of the tables and
 the records of the prime powers, for the pointers `factor` to their entries; the tables of rows,
-which `make_power` (`find_points.c:2427`) and `make_modulus` (`find_points.c:2471`) clear, made in
+which `make_power` (`find_points.c:2443`) and `make_modulus` (`find_points.c:2487`) clear, made in
 the store of the run after the choice (`Ratpoints.Sieve.SieveEntry.addTables`). -/
 def makeModulus (e : ModulusCandidate) (n : Nat) (primeSe : Array (Option (Entry × Float)))
     (pws : Array Power) : Id SieveEntry := do
@@ -291,7 +291,7 @@ def makeModulus (e : ModulusCandidate) (n : Nat) (primeSe : Array (Option (Entry
 /-- The pool `pool` with the candidates whose mask meets `used` dropped from the position `start`
 on, in their order.
 
-C: `find_points.c:2509-2518` -/
+C: `find_points.c:2525-2534` -/
 def dropUsed (pool : Array ModulusCandidate) (start : Nat) (used : UInt64) :
     Id (Array ModulusCandidate) := do
   let mut pool := pool
@@ -310,7 +310,7 @@ second stage); then every later candidate that shares a prime with one taken is 
 (`Ratpoints.dropUsed`). Returns the pool, the mask, the product of the densities and the number
 taken.
 
-C: `find_points.c:2490-2508`, `find_points.c:2519-2520`
+C: `find_points.c:2506-2524`, `find_points.c:2535-2536`
 
 Deviation: the pool, the mask and the product passed and returned, for the pointers `prec`, `pnp`,
 `used` and `rate`; an integer for the `long` `want` and natural numbers for the other `long`s; the
@@ -340,7 +340,7 @@ swept `bpws`, and the key of each candidate left (`Ratpoints.primeKey` with the 
 rate` per word, its table and the run of `U` words and `D` denominators), then those sorted by
 their keys; with the product.
 
-C: `find_points.c:2853-2863`
+C: `find_points.c:2871-2881`
 
 Deviation: the sort by `qsort` with `compare_entries` as Lean's stable merge sort
 (`Ratpoints.sortFrom`), which gives the order of glibc's `qsort`, stable when it can allocate its
@@ -358,7 +358,7 @@ def rankSecond (pool : Array ModulusCandidate) (sp1 : Nat) (rate bpws ct U D : F
 than coprimality dropped (count of factors not `0`): the composite moduli not taken and the primes
 that say only that numerator and denominator are coprime.
 
-C: `find_points.c:2879-2890` -/
+C: `find_points.c:2897-2908` -/
 def dropComposites (pool : Array ModulusCandidate) (sp2 : Nat) : Id (Array ModulusCandidate) := do
   let mut pool := pool
   let mut n := sp2
@@ -370,10 +370,10 @@ def dropComposites (pool : Array ModulusCandidate) (sp2 : Nat) : Id (Array Modul
 /-- The pool `pool` with the sieve entries of the composite moduli among its first `sp2` candidates
 made (`Ratpoints.makeModulus`), each at its position.
 
-C: `find_points.c:2894-2900`
+C: `find_points.c:2912-2918`
 
 Deviation: the entries kept in the candidates, for the array `sieve_list` into which `sieving_info`
-puts them (`find_points.c:2898`), which the caller reads from the candidates. -/
+puts them (`find_points.c:2916`), which the caller reads from the candidates. -/
 def stageEntries (pool : Array ModulusCandidate) (sp2 : Nat)
     (primeSe : Array (Option (Entry × Float))) (pws : Array Power) :
     Id (Array ModulusCandidate) := do
@@ -393,7 +393,7 @@ otherwise as many as its rule wants (`Ratpoints.takeEntries`); the rest keyed ag
 from the end of the second stage on (`Ratpoints.dropComposites`). Returns the pool and the two cut
 points.
 
-C: `find_points.c:2843-2846`, `find_points.c:2864-2871`
+C: `find_points.c:2861-2864`, `find_points.c:2882-2889`
 
 Deviation: integers for the `long`s that may be negative. -/
 def firstStages (pool : Array ModulusCandidate) (s : SieveOptions) (target ct : Float)
@@ -412,7 +412,7 @@ long run, the value of `-R` when `≥ 0` and `Ratpoints.sp2Extra` otherwise; its
 `-U` when `≥ 0` and `Ratpoints.sp2U0` otherwise; and the cost of a row of a table, the value of `-C`
 when `≥ 0` and `Ratpoints.costTable` otherwise.
 
-C: `find_points.c:2569-2575`
+C: `find_points.c:2586-2592`
 
 Deviation: the four values as a quadruple, for the local variables of `sieving_info`; the doubles of
 the options by their bits (`Ratpoints.Double.toFloat`). -/
@@ -429,7 +429,7 @@ per word `bpw`, the scale `u0` and the offset `extra` of a long run: the estimat
 calls of the sieve per word `COST_CALL calls / U`, the bits per word swept `bpw (U - pad) / U`, and
 the offset of the second stage (`Ratpoints.phase2Offset`).
 
-C: `find_points.c:2597-2599`, `find_points.c:2813-2815`
+C: `find_points.c:2614-2616`, `find_points.c:2831-2833`
 
 Deviation: one function for the two places of the C code, the values returned. -/
 def choiceEstimate (est : RunEstimate) (bpw u0 : Float) (extra : Nat) :
@@ -442,7 +442,7 @@ at, the primes among the candidates that say only coprimality, the table and the
 prime that says something by its position, whether denominators divisible by each prime occur, the
 forbidden divisors found and the store of the tables of rows.
 
-C: `find_points.c:2537-2539`, `find_points.c:2545`, `find_points.c:2547`, `find_points.c:2566-2567`
+C: `find_points.c:2554-2556`, `find_points.c:2562`, `find_points.c:2564`, `find_points.c:2583-2584`
 
 Deviation: a structure for the local variables of `sieving_info` that the loop changes: arrays, for
 `prec` with its count `pnp`, `prime_se`, `pinf` and the arrays of the forbidden divisors with their
@@ -475,7 +475,7 @@ say only coprimality, and its table of rows in the store (`Ratpoints.Sieve.prime
 forbidden divisor for the checked loop, while fewer than `maxForbidden` are found
 (`Ratpoints.Sieve.forbiddenOfPrime`).
 
-C: `find_points.c:2606-2626`, `find_points.c:2677`
+C: `find_points.c:2623-2643`, `find_points.c:2695`
 
 Deviation: the exit as `none`, for the prime that `sieving_info` returns, which the loop of the
 tables returns (`Ratpoints.tablesLoop`); the store with the table of rows of the prime, for the
@@ -508,7 +508,7 @@ the target and the offset `sp2e` of the second stage), at most `Ratpoints.numPri
 second stage it wants, the value of `-N` when given and else `s1 + sp2e`; one more prime when the
 candidates that say more than coprimality are fewer.
 
-C: `find_points.c:2694-2705`
+C: `find_points.c:2712-2723`
 
 Deviation: the sort by `qsort` with `compare_entries` as Lean's stable merge sort
 (`Ratpoints.sortFrom`), which gives the order of glibc's `qsort`, stable when it can allocate its
@@ -530,12 +530,12 @@ no points modulo one of them; and when the caller left the number to the library
 the last prime to look at has just been looked at, while fewer than `Ratpoints.numPrimes` are, the
 decision to look at one more (`Ratpoints.raiseLimit`). The exit returns the prime.
 
-C: `find_points.c:2601-2605`, `find_points.c:2693`, `find_points.c:2707`
+C: `find_points.c:2618-2622`, `find_points.c:2711`, `find_points.c:2725`
 
 Deviation: a loop over the first `Ratpoints.numPrimes` positions that ends when the position reaches
 the number to look at, for the loop `for` whose bound the body raises, which never passes
 `Ratpoints.numPrimes`; no clearing of the arrays `prime_se`, `power_se` and `pinf`
-(`find_points.c:2601-2602`), which the state starts empty. -/
+(`find_points.c:2618-2619`), which the state starts empty. -/
 def tablesLoop (c : List Int) (d : Nat) (useCLong checkDenom mayExtend : Bool) (s : SieveOptions)
     (bHigh : Nat) (target ct : Float) (est : RunEstimate) (cc bpws : Float) (sp2e : Nat) :
     Id (Except Nat TableLoop) := do
@@ -554,7 +554,7 @@ def tablesLoop (c : List Int) (d : Nat) (useCLong checkDenom mayExtend : Bool) (
 /-- The position of the candidate of least density in the pool `pool` from the position `sp3` on,
 the first of them on ties; none when there is none.
 
-C: `find_points.c:2955-2961` -/
+C: `find_points.c:2973-2979` -/
 def bestByR (pool : Array ModulusCandidate) (sp3 : Nat) : Id (Option Nat) := do
   if pool.size ≤ sp3 then return none
   let mut best := sp3
@@ -565,7 +565,7 @@ def bestByR (pool : Array ModulusCandidate) (sp3 : Nat) : Id (Option Nat) := do
 /-- The mean density of the candidates of the pool that say more than coprimality (count of factors
 `≥ 0`), `1` when there are none, the quality of a prime that the third stage expects to find.
 
-C: `find_points.c:2982-2991` -/
+C: `find_points.c:3000-3009` -/
 def rTyp (pool : Array ModulusCandidate) : Id Float := do
   if pool.size = 0 then return 1.0
   let mut sum := 0.0
@@ -579,7 +579,7 @@ def rTyp (pool : Array ModulusCandidate) : Id Float := do
 /-- The state of the third stage: the pool, the end `sp3` of the stage, the survivors `S` expected
 per denominator, and the number of primes looked at.
 
-C: `find_points.c:2922`, `find_points.c:2933`
+C: `find_points.c:2940`, `find_points.c:2951`
 
 Deviation: a structure for the local variables of the stage. -/
 structure ThirdState where
@@ -597,7 +597,7 @@ table, when the stage finds no prime in the pool that pays for itself: none when
 points modulo it; the pool as it is when it says nothing or only coprimality; else its candidate
 with its density as its key and the cost `0`.
 
-C: `find_points.c:2976-2978`, `find_points.c:2994-3008` -/
+C: `find_points.c:2994-2996`, `find_points.c:3012-3026` -/
 def lookFurther (c : List Int) (d : Nat) (useCLong : Bool) (st : ThirdState) :
     Id (Option ThirdState) := do
   let pn := st.pnLim
@@ -620,12 +620,12 @@ with `-P` absent a prime of the mean density of the pool (`Ratpoints.rTyp`) woul
 either, one more prime is looked at (`Ratpoints.lookFurther`); otherwise the stage ends. The exit,
 when the curve has no points modulo a prime looked at, returns that prime.
 
-C: `find_points.c:2949-2950`, `find_points.c:2973-2975`, `find_points.c:2980-2981`,
-`find_points.c:2992-2993`, `find_points.c:3009-3016`
+C: `find_points.c:2967-2968`, `find_points.c:2991-2993`, `find_points.c:2998-2999`,
+`find_points.c:3010-3011`, `find_points.c:3027-3034`
 
 Deviation: a `while` loop over the state, the candidates swapped by `Array.swapIfInBounds`; the
 sieve entry of the prime taken kept in its candidate, for the array `sieve_list`
-(`find_points.c:3014`). -/
+(`find_points.c:3032`). -/
 def thirdStage (c : List Int) (d : Nat) (useCLong mayExtend : Bool) (sp3Extra : Int)
     (sp3Want : Nat) (perSurv perDenom : Float) (st : ThirdState) : Id (Except Nat ThirdState) := do
   let mut st := st
@@ -651,7 +651,7 @@ the numerators per denominator `(U - pad) 64 / D`, times the bits per word `bpw 
 densities of the moduli of the first two stages, times `Ratpoints.sp3Coprime` for the test for
 common factors.
 
-C: `find_points.c:2941-2947`
+C: `find_points.c:2959-2965`
 
 Deviation: `64` for `LONG_LENGTH`. -/
 def survivorsAtThird (est : RunEstimate) (bpw : Float) (pool : Array ModulusCandidate) (sp2 : Nat) :
@@ -668,7 +668,7 @@ primes for the value `P` of `-P` when that is given and below `Ratpoints.numPrim
 `checkRel`; the survivors at its start (`Ratpoints.survivorsAtThird`); then the stage
 (`Ratpoints.thirdStage`).
 
-C: `find_points.c:2926-2932`
+C: `find_points.c:2944-2950`
 
 Deviation: integers for the comparison of the `long`s; the double of `-Q` by its bits. -/
 def thirdOf (c : List Int) (d : Nat) (useCLong mayExtend : Bool) (s : SieveOptions)
@@ -697,7 +697,7 @@ and `magics` (`ratpoints.h:389`) and `forb_ba` and `forbidden` (`ratpoints.h:391
 arrays with their counts, the bit `RATPOINTS_CHECK_DENOM` of the flags as a Boolean and the fields
 of the result (`Ratpoints.Params`), and into the entries, the arrays `sieve` as the store of the
 tables of rows; no field for the array `stage3_list` (`ratpoints.h:389`), the buffer of the table of
-the third stage that the sieving thread fills for each denominator (`find_points.c:5127`), which the
+the third stage that the sieving thread fills for each denominator (`find_points.c:5177`), which the
 model replaces by the thunk of the checks (`Ratpoints.Sieve.fillChecks`, `Ratpoints.Sieve.sift`). -/
 structure SievingInfo where
   /-- The result of the choice. -/
@@ -718,7 +718,7 @@ structure SievingInfo where
 /-- The cost of one exact check relative to `Ratpoints.checkReference`: that of the curve
 (`Ratpoints.checkCost`, with the value of `-W`) divided by it, and `1` when that is not positive.
 
-C: `find_points.c:2587-2588`
+C: `find_points.c:2604-2605`
 
 Deviation: the value returned, for the field `check_rel` of the arguments; the double of `-W` by its
 bits. -/
@@ -730,7 +730,7 @@ def checkRelOf (c : List Int) (d H : Nat) (s : SieveOptions) : Id Float := do
 when the options `s` let the search correct its choice, `-A` not `0` and neither `-n` nor `-N`
 given, and `2 ^ 64 - 1`, which no run reaches, otherwise.
 
-C: `find_points.c:2580-2581`
+C: `find_points.c:2597-2598`
 
 Deviation: a `UInt64` for the `unsigned long`, `2 ^ 64 - 1` for `ULONG_MAX`. -/
 def adaptStart (s : SieveOptions) : UInt64 :=
@@ -746,7 +746,7 @@ from `Ratpoints.stageEntries`, and the composite moduli from the end of the seco
 been dropped (`Ratpoints.dropComposites`), so that the entries are those of the pool, position by
 position.
 
-C: `find_points.c:3017`, `find_points.c:3024-3034`, `find_points.c:3064-3070`
+C: `find_points.c:3035`, `find_points.c:3042-3052`, `find_points.c:3082-3088`
 
 Deviation: the sort by `qsort` with `compare_by_r` as Lean's stable merge sort
 (`Ratpoints.sortFrom`), from the end of the second stage on, as the C code sorts, which gives the
@@ -754,7 +754,7 @@ order of glibc's `qsort`, stable when it can allocate its buffer, as always in t
 entries, the reciprocals and the store returned, for the arrays `sieve_list` and `magics` of the
 arguments and the arrays `sieve` of the entries; `sp3_max` the length of the list of the entries,
 the larger of `sp3` and the size of the pool, which is never smaller; no enlargement of the buffer
-of the rows (`find_points.c:3042-3061`), which the model does not have. -/
+of the rows (`find_points.c:3060-3079`), which the model does not have. -/
 def choiceEnd (t : ThirdState) (sp2 : Nat) (store : RowStore) :
     List SieveEntry × Array Nat × RowStore :=
   let pool := if sp2 < t.pool.size then sortFrom t.pool sp2 ModulusCandidate.rLe else t.pool
@@ -771,7 +771,7 @@ the sieve entries of the composite moduli taken (`Ratpoints.stageEntries`); the 
 (`Ratpoints.thirdOf`); and the end of the choice (`Ratpoints.choiceEnd`). The exit of the third
 stage, when the curve has no points modulo a prime that it looks at, returns that prime.
 
-C: `find_points.c:2808-2812`, `find_points.c:2816-2823`, `find_points.c:2826`
+C: `find_points.c:2826-2830`, `find_points.c:2834-2841`, `find_points.c:2844`
 
 Deviation: the sort by `qsort` with `compare_entries` as Lean's stable merge sort
 (`Ratpoints.sortFrom`), which gives the order of glibc's `qsort`, stable when it can allocate its
@@ -812,17 +812,17 @@ prime looked at; for the checked loop, the further forbidden divisors (`Ratpoint
 the switch of the checked loop cleared when there is no forbidden divisor and no Jacobi test; and
 the rest of the choice (`Ratpoints.choiceTail`).
 
-C: `find_points.c:2522-2532`, `find_points.c:2546`, `find_points.c:2548-2559`,
-`find_points.c:2595-2596`, `find_points.c:2794-2795`, `find_points.c:3102-3103`
+C: `find_points.c:2538-2549`, `find_points.c:2563`, `find_points.c:2565-2576`,
+`find_points.c:2612-2613`, `find_points.c:2812-2813`, `find_points.c:3120-3121`
 
 Deviation: the result as the prime that `sieving_info` returns when the curve has no points modulo
 it, the error of the result, and as a structure (`Ratpoints.SievingInfo`) otherwise, for the code
 `0` that it returns and the fields of the arguments that it sets; the arrays `prime_se`, `power_se`
 and `pinf` of the loop of the tables in its state (`Ratpoints.TableLoop`), the entries of the prime
 powers made where a modulus needs them (`Ratpoints.makeModulus`); no failure for lack of memory
-(`find_points.c:2801` and `find_points.c:3061`), which the model cannot meet; no output under
+(`find_points.c:2819` and `find_points.c:3079`), which the model cannot meet; no output under
 `RP_PRIME_STATS` or `DEBUG`, and the report under `RATPOINTS_VERBOSE` at its end
-(`find_points.c:3089-3095`) printed by the search after it returns (`Ratpoints.Report.choice`). -/
+(`find_points.c:3107-3113`) printed by the search after it returns (`Ratpoints.Report.choice`). -/
 def sievingInfo (c : List Int) (d : Nat) (useCLong checkDenom mayExtend : Bool) (s : SieveOptions)
     (a : ShapeArgs) (bpw : Float) : Id (Except Nat SievingInfo) := do
   let (target, e, u0, ct) := s.tuning

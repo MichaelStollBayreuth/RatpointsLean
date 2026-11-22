@@ -92,7 +92,7 @@ beyond the table: all ones, then for `i < 64` the bit of the position `p i` clea
 `N` being bit `N mod 64` of word `⌊N / 64⌋`. The pattern `sieves0` repeats them
 (`Ratpoints.Sieve.sieves0`).
 
-C: `find_points.c:2773-2777`, `gen_find_points_h.c:118-120`
+C: `find_points.c:2791-2795`, `gen_find_points_h.c:118-120`
 
 Deviation: one function for the two codes that make these words, the array `work` of the generator
 of `find_points.h`, for the primes of the table, and the words that `sieving_info` makes in the
@@ -157,7 +157,7 @@ def RowStore.publish (s : RowStore) (ref : EntryRef) (r : Nat) (row : Array UInt
 `sieves0` of the build (`Ratpoints.Sieve.sieves0`), and the rows of the residues `1, …, p - 1`
 absent until they are built.
 
-C: `find_points.c:1820-1821`
+C: `find_points.c:1834-1835`
 
 Deviation: the table returned, for the array `sieve` of the entry, which `examine_prime` fills; the
 row of `0` the words of the pattern, for the pointer to them. -/
@@ -178,15 +178,15 @@ its reference is absent: the table of rows of the entry of each factor
 `make_power` makes it, and for a product the `m` rows absent of its own entry, as `make_modulus`
 makes them.
 
-C: `find_points.c:2427`, `find_points.c:2471`
+C: `find_points.c:2443`, `find_points.c:2487`
 
 Deviation: the tables of rows made in the store of the run, by the reference to the entry
 (`Ratpoints.Sieve.EntryRef`), for the arrays `sieve` of the entries, after the choice for every
 entry, the reserve included (`Ratpoints.choiceEnd`), where `make_power` and `make_modulus` make them
 with the entry; a table of rows made only when its reference is absent, for the test of `power_se`
-(`find_points.c:2444` and `find_points.c:2466`) by which the entry of a prime power is made once,
+(`find_points.c:2460` and `find_points.c:2482`) by which the entry of a prime power is made once,
 and for the entry of a prime, which `examine_prime` makes once, with its table of rows, in the loop
-of the tables (`Ratpoints.examineInLoop`) or in the third stage (`find_points.c:2994-2995`), where
+of the tables (`Ratpoints.examineInLoop`) or in the third stage (`find_points.c:3012-3013`), where
 the model makes the table of a prime of the third stage after the choice, and none for a prime that
 the third stage examines and passes over, whose table nothing reads. -/
 def SieveEntry.addTables (e : SieveEntry) (s : RowStore) : RowStore :=

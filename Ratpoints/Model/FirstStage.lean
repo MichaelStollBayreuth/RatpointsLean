@@ -42,7 +42,7 @@ denominator at hand and the start and the end of the walk of the chunked arm thr
 * `Ratpoints.Sieve.SieveSpec`: a modulus with its row, its offset and the start and the end of the
   walk of the chunked first stage through the row.
 * `Ratpoints.Sieve.andRows`: the first stage over a piece, one row at a time, the arm of the builds
-  with a chunk of 1 or above 16.
+  with the chunk 1.
 * `Ratpoints.Sieve.chunkStarts`, `Ratpoints.Sieve.wrapStart`: the starts of the rows at the first
   word number of a piece, and a start stepped back by the modulus.
 * `Ratpoints.Sieve.chunkSieve`, `Ratpoints.Sieve.andChunks`: one chunk of `Ratpoints.chunk` bit
@@ -140,28 +140,29 @@ structure SieveSpec where
 /-! ### The first stage, one row at a time -/
 
 /-- The first stage over a piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, which
-are the first `n` bit arrays of `surv`, one row at a time, the arm of `_ratpoints_sift0` for a chunk
-`Ratpoints.chunk` of 1 or above 16 (for the others, `Ratpoints.Sieve.andRowsChunked`): the bit
-arrays are set to the class word `cw` (`Ratpoints.Sieve.fillBitArray`), from the last, the pattern
-of the class of the denominator in its packing (`Ratpoints.Sieve.NumClass`; bit `t` of every word
-stands for a numerator `a₀ + 2 ^ k t'` with `t' ≡ t (mod 64)`, since `64` divides
-`Ratpoints.rbaLength`); then for each modulus `p` of `specs` with its row and its offset, and its
-reciprocal `mg` from `mgs`, and for `r = (-w0 - offset) mod p`, the remainder by a multiplication
-with `mg` (`Ratpoints.Sieve.modMul`) when `small` says that the word numbers of the piece allow it
-and by the helper `mod` of the C code otherwise (`Ratpoints.Sieve.modLong`), bit array `j` is and-ed
-with bit array `(w0 + offset + j) mod p` of the row (`Ratpoints.Sieve.andBitArray`), in three loops:
-if `n < r`, with the `n` bit arrays of the row from `p - r` on, and otherwise with the `r` bit
-arrays from `p - r` on, then with whole periods of `p` bit arrays from `0`, then with the rest from
-`0`. It reads only the first `p` bit arrays of a row. The last bit array of `surv`, the place of the
+are the first `n` bit arrays of `surv`, one row at a time, the arm of `_ratpoints_sift0` for the
+chunk `Ratpoints.chunk` of 1 (for the others, up to 16, `Ratpoints.Sieve.andRowsChunked`; the C code
+refuses a chunk above 16 when it is compiled, `Ratpoints.chunk_le_sixteen`): the bit arrays are set
+to the class word `cw` (`Ratpoints.Sieve.fillBitArray`), from the last, the pattern of the class of
+the denominator in its packing (`Ratpoints.Sieve.NumClass`; bit `t` of every word stands for a
+numerator `a₀ + 2 ^ k t'` with `t' ≡ t (mod 64)`, since `64` divides `Ratpoints.rbaLength`); then
+for each modulus `p` of `specs` with its row and its offset, and its reciprocal `mg` from `mgs`, and
+for `r = (-w0 - offset) mod p`, the remainder by a multiplication with `mg`
+(`Ratpoints.Sieve.modMul`) when `small` says that the word numbers of the piece allow it and by the
+helper `mod` of the C code otherwise (`Ratpoints.Sieve.modLong`), bit array `j` is and-ed with bit
+array `(w0 + offset + j) mod p` of the row (`Ratpoints.Sieve.andBitArray`), in three loops: if
+`n < r`, with the `n` bit arrays of the row from `p - r` on, and otherwise with the `r` bit arrays
+from `p - r` on, then with whole periods of `p` bit arrays from `0`, then with the rest from `0`. It
+reads only the first `p` bit arrays of a row. The last bit array of `surv`, the place of the
 sentinel, is left as it is.
 
-C: `sift.c:943-1022`, `find_points.c:1098`, `rp-private.h:129-132`, `rp-private.h:203-204`,
+C: `sift.c:943-1022`, `find_points.c:1111`, `rp-private.h:129-132`, `rp-private.h:203-204`,
 `rp-private.h:235`, `rp-private.h:261`, `rp-private.h:285`
 
 Deviation: the bit arrays set to the class word by a loop that counts up, bit array `n - 1 - i` at
 the step `i`, for the loop that counts down from the last; the class word written into each word of
 a bit array, for the vector `RBA(packed)` that `get_2adic_info` makes once per class
-(`find_points.c:1098`) and `_ratpoints_sift0` copies into each bit array (`bits64`, `sift.c:519`,
+(`find_points.c:1111`) and `_ratpoints_sift0` copies into each bit array (`bits64`, `sift.c:519`,
 `sift.c:954`); the moduli of the stage with their rows and their reciprocals as two lists, for the
 first `sp1` sieve specs and the array `magics` from position `0` on; the value `-w_low - offset`
 written out in both reductions, for the `long` `a`, which stays a `long` where the helper `mod`
@@ -201,7 +202,7 @@ def andRows (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (cw : UInt6
 helper `mod` of the C code otherwise (`Ratpoints.Sieve.modLong`): the bit array of the row that the
 bit array with the word number `w0` reads.
 
-C: `sift.c:596-606`
+C: `sift.c:599-609`
 
 Deviation: a local array of the sieve specs, in which the starts are set, for the sieve specs
 `sieves` of the sieving thread, whose field `start` the C code writes and nothing reads after the
@@ -225,7 +226,7 @@ def chunkStarts (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (w0 : I
 `p > 0`, `st mod p`, the start of the row moved back into its first `p` bit arrays after a chunk of
 the first stage.
 
-C: `sift.c:683`, `sift.c:805`
+C: `sift.c:686`, `sift.c:808`
 
 Deviation: one definition for the loop at its two places, after the first modulus of a chunk and
 after each further one; indices into the row for the pointers. -/
@@ -244,7 +245,7 @@ bit arrays from its start on (`Ratpoints.Sieve.andBitArray`), and its start move
 back in the same way. A start below `p` reads up to bit array `p + chunk - 2` of the row, one of the
 copies of its first bit arrays. Returns the registers and the sieve specs with the new starts.
 
-C: `sift.c:625-681`, `sift.c:684-804`, `sift.c:806-863`
+C: `sift.c:628-684`, `sift.c:687-807`, `sift.c:809-866`
 
 Deviation: the registers `reg0, …, reg15` a vector of `chunk` bit arrays, made of zeros and then
 loaded, and the loads and the ands of the registers loops over its bit arrays, for the variables
@@ -277,7 +278,7 @@ bit arrays `c, …, c + chunk - 1` of `surv` (`Ratpoints.Sieve.storeBitArray`), 
 on for the next one. Returns the bit arrays and the sieve specs with the starts after the last
 chunk, from which the tail reads.
 
-C: `sift.c:624`, `sift.c:864-913`
+C: `sift.c:627`, `sift.c:867-916`
 
 Deviation: the index `c` of the first bit array of the chunk in `surv`, from `0`, for the word
 number `w_low_new`, from `w_low`, and the pointer `surv` into the survivors, which the loop steps on
@@ -342,14 +343,10 @@ three only for a chunk above 8, 4 and 2, below which `t` cannot have that bit; f
 the rows of the local sieve specs `sv` after the whole chunks, the first bit array of the tail being
 `full`.
 
-C: `sift.c:915-940`
+C: `sift.c:918-940`
 
 Deviation: the conditions on the chunk tested with those on `t`, for the conditional compilation
-`#if (RATPOINTS_CHUNK > 8)`, `> 4` and `> 2`; no check at compile time that the chunk is at most 16,
-the `#error` of the C code, which its place inside the conditional compilation of the chunked first
-stage for a chunk up to 16 makes dead code: a chunk above 16 compiles the first stage one row at a
-time, and the model chooses the arm by the same test (`Ratpoints.Sieve.siftPiece`,
-`Ratpoints.Sieve.andRows`); natural numbers for the `long`s. -/
+`#if (RATPOINTS_CHUNK > 8)`, `> 4` and `> 2`; natural numbers for the `long`s. -/
 def tailLegs (sv : Array SieveSpec) (cw : UInt64) (full n : Nat) {m : Nat}
     (surv : Vector UInt64 m) :
     Id (Vector UInt64 m) := do
@@ -373,13 +370,13 @@ the class word and-ed with bit array `(w0 + offset + j) mod p` of the row of eac
 `specs`. The rows must have their copies of the first `chunk - 1` bit arrays after the first `p`.
 The last bit array of `surv`, the place of the sentinel, is left as it is.
 
-C: `sift.c:575`, `sift.c:608-620`, `sift.c:941`, `find_points.c:1098`, `rp-private.h:129-132`,
+C: `sift.c:578`, `sift.c:611-623`, `sift.c:941`, `find_points.c:1111`, `rp-private.h:129-132`,
 `rp-private.h:203-204`, `rp-private.h:235`, `rp-private.h:261`, `rp-private.h:285`
 
 Deviation: no moduli tested by the size of the local array of the sieve specs, for `sp1 == 0`; the
 bit arrays set to the class word by a loop that counts up, bit array `n - 1 - i` at the step `i`,
 for the loop that counts down from the last; the class word written into each word of a bit array,
-for the vector `RBA(packed)` that `get_2adic_info` makes once per class (`find_points.c:1098`) and
+for the vector `RBA(packed)` that `get_2adic_info` makes once per class (`find_points.c:1111`) and
 `_ratpoints_sift0` copies into each bit array (`bits64`, `sift.c:519`); the end of the whole chunks
 the index `full`, for the word number `w_high_full`, which is also the index of the first bit array
 of the tail, for the pointer `surv` after the chunks; natural numbers and integers for the

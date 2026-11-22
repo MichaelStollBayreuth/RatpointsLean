@@ -329,9 +329,9 @@ theorem HornerInvariant.pos {cm : Array ℕ} {d p a i k s : ℕ} (h : HornerInva
   Nat.pos_of_ne_zero fun hp ↦ by simpa [hp] using h.2
 
 /-- The range obligation of the accumulator of Horner's rule in `examine_prime`: for
-`p < maxPrimeEven`, the values `s a + c` of the steps (`find_points.c:1729`, `find_points.c:1741`)
-and the values that Barrett's reduction takes (`find_points.c:1731`, `find_points.c:1742`,
-`find_points.c:1744`) are below `p ^ (k + 1)` with `k ≤ hornerSteps`, so below `2 ^ 64`: the
+`p < maxPrimeEven`, the values `s a + c` of the steps (`find_points.c:1743`, `find_points.c:1755`)
+and the values that Barrett's reduction takes (`find_points.c:1745`, `find_points.c:1756`,
+`find_points.c:1758`) are below `p ^ (k + 1)` with `k ≤ hornerSteps`, so below `2 ^ 64`: the
 `unsigned long` does not wrap. -/
 theorem HornerInvariant.lt_two_pow_64 {cm : Array ℕ} {d p a i k s : ℕ}
     (h : HornerInvariant cm d p a i k s) (hp : p < maxPrimeEven) (hk : k ≤ hornerSteps) :
@@ -763,8 +763,8 @@ theorem fitsLong_neg {a : ℤ} (ha : |a| < 2 ^ 63) : fitsLong (-a) = true := by
   grind [fitsLong, abs_lt.mp ha]
 
 /-- The value `-f` that `jacobi1` forms from a negative `long` leading coefficient `f`, after it
-replaces `LONG_MIN` by `LONG_MIN / 4` (`find_points.c:579-584`), is a `long`. The helper `mod` that
-`jacobi1` then calls for `b < 2 ^ 59` (`find_points.c:585`) keeps its values in the range of a
+replaces `LONG_MIN` by `LONG_MIN / 4` (`find_points.c:592-597`), is a `long`. The helper `mod` that
+`jacobi1` then calls for `b < 2 ^ 59` (`find_points.c:598`) keeps its values in the range of a
 `long` (`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_neg`,
 `Ratpoints.fitsLong_add_sixteen_mul`), and the other values of `jacobi1` and `jacobi` lie between
 `0` and the larger of `b` and `|f|`. -/

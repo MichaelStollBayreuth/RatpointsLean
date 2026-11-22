@@ -93,25 +93,24 @@ GUARD_DIR = 'Ratpoints'
 LIBRARY = 'Ratpoints'
 MAX_ERRORS = 5
 
-# The built-in variants: a name and the values of the constants it changes. The constants keep
-# the facts that Constants.lean checks by `decide`: `rbaPack`, `chunk` and `defaultArraySize` stay
-# positive, and `chunk` at most `2 ^ 20`, so that the derived `maxArraySize = 2 ^ 20 / chunk *
-# chunk` is positive, `maxBitsInPrime` at most 10, `mulModLimit` below `2 ^ 32`, `stage3Limit` at
-# most `2 ^ 32`, `rbaLength = 2 ^ rbaShift` with `rbaShift < 32`, `2 rowBias - 1 <= mulModLimit`
-# (so `rowBias = 0` where `mulModLimit = 0`) and `numStrides >= 1` (`numStrides = 8` reads the
-# mask table beyond its seven entries, as the C code would). A new constant joins both variants
-# A and B; a Boolean constant takes both values among the variants. Derived
-# constants (`numPrimes`, `maxPrimeEven`, `modWords`, `maxArraySize`, ...) are not set: they
-# follow the others. The chunk takes the unchunked first stage in A (1) and B (17, above 16, with
-# the copies at the end of the rows that the C code makes for any chunk), and the chunked first
-# stage in the variants C2, C3, C5 and C12, which change it alone: C2 runs none of the legs over
-# the tail that the conditional compilation guards (`chunk > 2`, `> 4`, `> 8`), C3 the first,
-# C5 the first two, C12 all three, and 3, 5 and 12 are not powers of 2. A and B change `rbaPack`
-# only with chunks outside 2 to 16, so the variants P8, P2 and P1C5 pair the chunked first stage
-# with the other widths of the bit arrays of the C builds, each with the `rbaShift` of its
-# `rbaPack` (`rbaLength = 64 rbaPack = 2 ^ rbaShift`): P8 the default of USE_AVX512 (`RBA_PACK` 8)
-# with the chunk 16, P2 that of USE_AVX128 and USE_SSE (`RBA_PACK` 2) with the chunk 16, and P1C5
-# the 64-bit build (`RBA_PACK` 1) with a chunk given by `-DRATPOINTS_CHUNK`, here 5.
+# The built-in variants: a name and the values of the constants it changes. The constants keep the
+# facts that Constants.lean checks by `decide`: `rbaPack`, `chunk` and `defaultArraySize` stay
+# positive, and `chunk` at most 16, `maxBitsInPrime` from 5 to 10, as the C code checks when it is
+# compiled, `mulModLimit` below `2 ^ 32`, `stage3Limit` at most `2 ^ 32`, `rbaLength = 2 ^ rbaShift`
+# with `rbaShift < 32`, `2 rowBias - 1 <= mulModLimit` (so `rowBias = 0` where `mulModLimit = 0`)
+# and `numStrides >= 1` (`numStrides = 8` reads the mask table beyond its seven entries, as the C
+# code would). A new constant joins both variants A and B; a Boolean constant takes both values
+# among the variants. Derived constants (`numPrimes`, `maxPrimeEven`, `modWords`, `maxArraySize`,
+# ...) are not set: they follow the others. The chunk takes the unchunked first stage in A (1, the
+# only chunk that the C code compiles to it), and the chunked first stage in B (13) and in the
+# variants C2, C3, C5 and C12, which change it alone: C2 runs none of the legs over the tail that
+# the conditional compilation guards (`chunk > 2`, `> 4`, `> 8`), C3 the first, C5 the first two,
+# C12 all three, and 3, 5, 12 and 13 are not powers of 2. A and B change every constant at once, so
+# the variants P8, P2 and P1C5 pair the chunked first stage, and nothing else, with the other widths
+# of the bit arrays of the C builds, each with the `rbaShift` of its `rbaPack` (`rbaLength = 64
+# rbaPack = 2 ^ rbaShift`): P8 the default of USE_AVX512 (`RBA_PACK` 8) with the chunk 16, P2 that
+# of USE_AVX128 and USE_SSE (`RBA_PACK` 2) with the chunk 16, and P1C5 the 64-bit build (`RBA_PACK`
+# 1) with a chunk given by `-DRATPOINTS_CHUNK`, here 5.
 class Opt:
     """A value of a constant of type `Option Nat`: `Opt(None)` for `none`, `Opt(n)` for `some n`;
     for `blockLen` never `Opt(0)`, which no build can set (the C code divides by RP_BLOCK_LEN) and
@@ -135,7 +134,7 @@ VARIANTS = {
           'adaptArrays': 0, 'adaptBits': 0, 'adaptLag': 0, 'blocksWanted': 1, 'blockMin': 1,
           'blockLen': Opt(1)},
     'B': {'maxDegree': 200, 'maxBitsInPrime': 10, 'defaultNumPrimes': 60,
-          'defaultMaxForbidden': 200, 'rbaPack': 8, 'chunk': 17, 'defaultArraySize': 1000,
+          'defaultMaxForbidden': 200, 'rbaPack': 8, 'chunk': 13, 'defaultArraySize': 1000,
           'defaultSturm': 62, 'veryBig': 7, 'maxDivisors': 100000,
           'jacobiPrimes': 200, 'jacobiTable': 100000, 'mulModLimit': 2 ** 31 + 11,
           'stage3Limit': 2 ** 31 + 5, 'useLongInPhase2': False,

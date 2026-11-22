@@ -154,7 +154,7 @@ theorem getElem!_primeTable_lt_maxPrimeEven {pn : ℕ} (h : pn < numPrimes) :
 /-! ### The moduli in the range of the C types -/
 
 /-- The range obligation of the steps of Horner's rule in `examine_power`: for a modulus
-`m < maxPrimeEven`, the steps `v x + c` (`find_points.c:2291`, `find_points.c:2298`), with `v`, `x`
+`m < maxPrimeEven`, the steps `v x + c` (`find_points.c:2307`, `find_points.c:2314`), with `v`, `x`
 and `c` below `m`, are below `m ^ 2 ≤ 2 ^ 64` (`Ratpoints.maxPrimeEven_le_two_pow_32`): the
 `unsigned long`s do not wrap. The square of a residue, a product of `long`s, is
 `Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`. -/
@@ -166,7 +166,7 @@ theorem mul_add_lt_two_pow_64_of_lt_maxPrimeEven {m v x c : ℕ} (hm : m < maxPr
     _ = 2 ^ 64 := by norm_num
 
 /-- The range obligation of the square `x x` of a residue in `examine_power`
-(`find_points.c:2284`), a product of `long`s: for `x` below a modulus, so below
+(`find_points.c:2300`), a product of `long`s: for `x` below a modulus, so below
 `maxPrimeEven ≤ 2 ^ 10` (`Ratpoints.maxPrimeEven_le_two_pow_10`), it is below `2 ^ 20`, so below
 `2 ^ 63`: the signed product does not overflow. -/
 theorem mul_self_lt_two_pow_63_of_lt_maxPrimeEven {x : ℕ} (hx : x < maxPrimeEven) :

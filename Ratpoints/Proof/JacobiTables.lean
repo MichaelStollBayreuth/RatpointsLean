@@ -726,7 +726,7 @@ theorem IsJacobiInfo.prod_filter_primeFactorsList_eq {lcf : ℤ} {ji : JacobiInf
 
 /-- **The test by tables.** It decides whether `(lcf / b*) = 1`, `b*` the largest divisor of `b`
 prime to `2 lcf`, for `1 ≤ b ≤ bHigh` when the set-up gives tables. The C code refuses the tables
-for a `b_high` above `Ratpoints.mulModLimit`, `RP_MULMOD_LIMIT` (`find_points.c:688`), so that
+for a `b_high` above `Ratpoints.mulModLimit`, `RP_MULMOD_LIMIT` (`find_points.c:701`), so that
 `jacobi_test` divides only numbers below `2 ^ 32`, where its multiplication by the reciprocal
 `RP_MULDIV` is exact (`rp-private.h:389-393`). -/
 theorem run_jacobiTest {lcf : ℤ} {bHigh : ℕ} {ji : JacobiInfo}

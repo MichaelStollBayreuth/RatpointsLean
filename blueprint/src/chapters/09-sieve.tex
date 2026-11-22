@@ -25,10 +25,10 @@ from Chapter~\ref{chap:region}.
 
 \section{The sieve in the C code and in the model}\label{sec:sieveC}
 
-In the C code the sieve of a denominator is \verb|sift| (\csource{find_points.c}{3442}{3617}), which
+In the C code the sieve of a denominator is \verb|sift| (\csource{find_points.c}{3461}{3636}), which
 cuts the bits of each search interval into pieces for \verb|_ratpoints_sift0|
 (\csource{sift.c}{498}{1305}), and each numerator that survives goes through \verb|accepted|
-(\csource{sift.c}{438}{446}) to the exact check (\csource{find_points.c}{5250}{5338}). The model has
+(\csource{sift.c}{438}{446}) to the exact check (\csource{find_points.c}{5300}{5388}). The model has
 a component for each step, in the sections below, with the data and the loops of the default build.
 
 A C \verb|long| is an integer or a natural number, with a lemma that it stays in range, except in
@@ -142,22 +142,22 @@ offset computed once per run for each packing and each modulus.
   \leanok
   A class (\csource{rp-private.h}{494}{495}) has a pattern, a stride exponent~$k$, a
   residue~$a_0$ and the position of its row of offsets. The class of a word~$w$ of the 2-adic
-  information (\csource{find_points.c}{1064}{1081}): for $w = 0$ the stride~$1$ and the pattern~$0$;
+  information (\csource{find_points.c}{1077}{1094}): for $w = 0$ the stride~$1$ and the pattern~$0$;
   otherwise, for the lowest set bit~$a$ of~$w$, the largest $k \le 6$ below $\mathrm{numStrides}$
   such that every set bit of~$w$ is $\equiv a \bmod 2^k$, $a_0 = a \bmod 2^k$, and the pattern whose
-  bit~$t$ is bit $(a_0 + 2^k t) \bmod 64$ of~$w$ (\csource{find_points.c}{1082}{1094}); with the
+  bit~$t$ is bit $(a_0 + 2^k t) \bmod 64$ of~$w$ (\csource{find_points.c}{1095}{1107}); with the
   classes the word \verb|den_bits| of the classes whose word is not~$0$. The offsets
-  (\csource{find_points.c}{1142}{1158}): for each entry of an odd modulus~$p$ the inverses
+  (\csource{find_points.c}{1155}{1171}): for each entry of an odd modulus~$p$ the inverses
   $\mathrm{dinv}[k] = 2^{-k} \bmod p$ and $(2^k\,\mathrm{rbaLength})^{-1} \bmod p$, by halvings, and
   for each packing $(k, a_0)$ of a class with a nonzero pattern a row with the offset
   $a_0\,(2^k\,\mathrm{rbaLength})^{-1} \bmod p$ plus the bias of~$p$, the least multiple of~$p$ from
-  $\mathrm{rowBias} = 2^{31}$ on (\csource{find_points.c}{1164}{1182}). The residues
+  $\mathrm{rowBias} = 2^{31}$ on (\csource{find_points.c}{1177}{1195}). The residues
   $b\,\mathrm{dinv}[k] \bmod p$ of a denominator for the moduli of the first two stages, in three
-  branches by the size of~$b$ (\csource{find_points.c}{3639}{3679}). The bits
+  branches by the size of~$b$ (\csource{find_points.c}{3660}{3700}). The bits
   $\lceil (\mathrm{low} - a_0)/2^k \rceil$ to $\lfloor (\mathrm{high} - a_0)/2^k \rfloor$ of an
   interval of numerators, by arithmetic shifts of signed 64-bit words, in a plain form and in a form
   that splits each end into its multiple of~$2^k$ and its rest, which cannot overflow
-  (\csource{find_points.c}{3355}{3370}).
+  (\csource{find_points.c}{3374}{3389}).
 \end{definition}
 
 \begin{lemma}[What the packing computes]\label{lem:packing}
@@ -231,13 +231,13 @@ piece. The model has both and chooses between them by the same test.
   reciprocal, and otherwise by \verb|mod|. The arm one row at a time (\csource{sift.c}{943}{1022})
   sets every bit array to the class pattern and then, for each modulus, and-s bit array~$j$ with bit
   array $(w_0 + \mathrm{offset} + j) \bmod p$ of the row. The chunked arm sets the start of each
-  row to $(w_0 + \mathrm{offset}) \bmod p$ (\csource{sift.c}{596}{606}); with no modulus in the
+  row to $(w_0 + \mathrm{offset}) \bmod p$ (\csource{sift.c}{599}{609}); with no modulus in the
   stage ($s_1 = 0$) it writes the class pattern into every bit array, and otherwise it finds where
-  the whole chunks end (\csource{sift.c}{608}{620}). A whole chunk is loaded into registers as the
+  the whole chunks end (\csource{sift.c}{611}{623}). A whole chunk is loaded into registers as the
   class pattern and-ed with the first row from its start on, and-ed with the other rows and stored,
   each start moving on by the chunk modulo~$p$; the $t < \mathrm{chunk}$ bit arrays after the whole
   chunks go in legs of~$8$, $4$, $2$ and~$1$ registers, one for each set bit of~$t$
-  (\csource{sift.c}{915}{940}). The contract of each arm (of the chunked one under
+  (\csource{sift.c}{918}{940}). The contract of each arm (of the chunked one under
   $\mathrm{chunk} \le 16$): for specs that fit, the reciprocals of their moduli and the bounds of
   \verb|small|, word $y < n\,\mathrm{rbaPack}$ of the piece is the class pattern and-ed, for each
   spec, with word $y \bmod \mathrm{rbaPack}$ of bit array $(w_0 + \mathrm{offset} + \lfloor
@@ -308,7 +308,7 @@ the word smaller, the scan since the sentinel is not zero.
   $a\, b^{-1}$, reduced with the reciprocal after adding the bias if there is one, and by division
   otherwise (\csource{sift.c}{291}{301}). The test of a candidate: $a$ is prime to~$b$ and passes
   the third stage (\csource{sift.c}{438}{446}). The exact check
-  (\csource{find_points.c}{5250}{5338}): unless~$\mathrm{noCheck}$, for the value~$v$ of Horner's
+  (\csource{find_points.c}{5300}{5388}): unless~$\mathrm{noCheck}$, for the value~$v$ of Horner's
   rule at~$a$ on the products $c_k b^{d - k}$ (a thunk made once per denominator), times~$b$ for
   odd~$d$, so that $v = F_c(a, b)$ (Definition~\ref{def:binaryForm}), and
   $y = \lfloor \sqrt{v} \rfloor$: when $v = y^2$, the call with $(a : y : b)$ and then, unless that
@@ -365,10 +365,10 @@ correction of the moduli (Chapter~\ref{chap:moduli}), and these are prime entrie
   sentinel, the first stage with the first~$s_1$ moduli in the arm that $1 < \mathrm{chunk} \le 16$
   chooses, the masks of the ends (\csource{sift.c}{1030}{1041}) and the scan with the moduli of the
   second stage. The bits from~$\mathrm{low}$ to~$\mathrm{high}$ of an interval
-  (\csource{find_points.c}{3563}{3612}): the word numbers from
+  (\csource{find_points.c}{3582}{3631}): the word numbers from
   $\lfloor \mathrm{low}/\mathrm{rbaLength} \rfloor$ to
   $\lfloor \mathrm{high}/\mathrm{rbaLength} \rfloor$ in pieces of at most~$A$ bit arrays, the first
-  and the last masked. One denominator (\csource{find_points.c}{3442}{3488}): for each search
+  and the last masked. One denominator (\csource{find_points.c}{3461}{3507}): for each search
   interval the bits of its numerators within the height bound (Chapter~\ref{chap:region}); at the
   first interval that the height bound does not rule out (also one without numerators) the sieve
   specs (Definition~\ref{def:runTables}), the modulus, the offset of the row of the class and the

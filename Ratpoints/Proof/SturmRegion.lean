@@ -159,7 +159,7 @@ theorem run_sturmRegion_covers {c : List ℤ} {d : ℕ} {s : ℤ} {dom : List (D
 /-- The search intervals, over the values of their ends, of the search that
 `Ratpoints.findPointsWith` runs for the options `o` and the height bound `H` on the polynomial `c`
 of degree `d` that the reversal check hands on, after the Sturm step: none when the step returns
-before the search (`find_points.c:4889`), no intervals when it leaves none (`sturm_empty`, the
+before the search (`find_points.c:4939`), no intervals when it leaves none (`sturm_empty`, the
 search delivering the points at infinity only), and otherwise the values of the intervals that it
 leaves, inside those of the caller or the default interval (`Ratpoints.searchIntervals`). Junk
 (none) for the search intervals and the polynomials that `Ratpoints.findPointsWith` refuses. -/

@@ -199,7 +199,7 @@ theorem findPointsWith_eq (c : List ℤ) (H : ℕ) (s : SieveOptions) (o : Optio
 
 /-- `Ratpoints.findPointsWith` returns the outcome `out` exactly when it refuses none of its inputs,
 in the order of the program, and `out` is, for the result `r` of the Sturm step, either, when the
-step returns before the search (`find_points.c:4889`), the data `info` with the count `0`, the flag
+step returns before the search (`find_points.c:4939`), the data `info` with the count `0`, the flag
 of the reversal and no search intervals, or the outcome of the search of the polynomial `c'` of
 degree `d'` that the reversal check of the normalized options hands on, with the flag of the
 reversal and the options of the output, the normalized range of the denominators and the search

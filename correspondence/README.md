@@ -24,7 +24,7 @@ which is either
   ```lean
   /-- The helper `mod` of the C code, the remainder of the `long` `a` modulo the `long` `b > 0`: …
 
-  C: `find_points.c:477-492`, `sift.c:370-389`
+  C: `find_points.c:490-505`, `sift.c:370-389`
 
   Deviation: one definition for the two copies of the function, in `find_points.c` and in `sift.c`,
   …; integers for the `long`s, with the obligations that the values it computes stay in the range

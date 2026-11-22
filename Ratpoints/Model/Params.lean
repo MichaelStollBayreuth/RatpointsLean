@@ -107,7 +107,7 @@ for `0`, capped at `2 ⌈H / 64⌉` and at `Ratpoints.maxArraySize`, then rounde
 `Ratpoints.chunk`, which stays at most the cap `Ratpoints.maxArraySize`, a multiple of the chunk; at
 least 1 for `H ≥ 1` (`Ratpoints.one_le_arraySizeAt`).
 
-C: `rp-private.h:87`, `find_points.c:4666-4677`
+C: `rp-private.h:87`, `find_points.c:4716-4727`
 
 Deviation: a `Nat` for the `long` field, so that only `0` stands for the default, which the library
 takes for every value `≤ 0`; `64` for `LONG_LENGTH`; and the macro `CEIL` of a natural number `x` by
@@ -181,12 +181,12 @@ the number of primes to the search (`np_is_default`) is read from `s` before thi
 The search normalizes the options so (`Ratpoints.findPointsWork`) and makes the choice of the moduli
 with the normalized options (`Ratpoints.sievingInfo`).
 
-C: `find_points.c:4643-4649`, `find_points.c:4655-4656`, `find_points.c:4662-4665`
+C: `find_points.c:4693-4699`, `find_points.c:4705-4706`, `find_points.c:4712-4715`
 
 Deviation: the normalized options returned, for the fields of the arguments that the C code
-normalizes in place and restores in `find_points_work` (`find_points.c:4542-4545` and
-`find_points.c:4560-4563`); the array size normalized with the height bound where it is read
-(`Ratpoints.arraySizeAt`); no enlargement of the buffer of the rows (`find_points.c:4654`), which
+normalizes in place and restores in `find_points_work` (`find_points.c:4587-4590` and
+`find_points.c:4609-4612`); the array size normalized with the height bound where it is read
+(`Ratpoints.arraySizeAt`); no enlargement of the buffer of the rows (`find_points.c:4704`), which
 the model does not have; integers for the `long`s. -/
 def SieveOptions.normalize (s : SieveOptions) : SieveOptions :=
   let numPrimes : Int :=

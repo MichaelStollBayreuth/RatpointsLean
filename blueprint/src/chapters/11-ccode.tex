@@ -76,7 +76,7 @@ An excluded range has one of the kinds \verb|threads|, \verb|memory|, \verb|inst
 \verb|interface| and \verb|other|.
 
 \verb|threads|: the pool of threads, with which \ratpoints{} sieves the blocks of its loop over the
-denominators apart (\csource{find_points.c}{4129}{4519}), its set-up in the search, the atomic loads
+denominators apart (\csource{find_points.c}{4150}{4540}), its set-up in the search, the atomic loads
 and stores of the fields that the threads share (\csource{rp-private.h}{76}{84}), the fields of the
 arguments that hold the number of threads and the pool, and the default of one thread in
 \verb|main.c|. The model sieves the blocks in turn. The thread lemma (Theorem~\ref{thm:threads})
@@ -85,7 +85,7 @@ code meets its hypotheses is read off the C code (Chapter~\ref{chap:theorems}).
 
 \verb|memory|: the buffers of the sieve entries, the rows, the tables, the words of the forbidden
 divisors and the prime powers, with their alignment and enlargement
-(\csource{find_points.c}{181}{270}) and their release (\csource{find_points.c}{377}{416}), the
+(\csource{find_points.c}{194}{283}) and their release (\csource{find_points.c}{390}{429}), the
 arrays of the run and of a worker, the copy of the caller's intervals in the Sturm step, the GMP
 variables that \verb|main.c| initializes and releases, and the failures for lack of memory,
 error~10 of the program among them. The model allocates nothing itself and cannot fail for lack of
@@ -101,18 +101,18 @@ modelled block goes with the block, whose deviation says that the model prints n
 report under \verb|RATPOINTS_VERBOSE| (\verb|-v|) is modelled (Chapter~\ref{chap:output}).
 
 \verb|interface|: what only another caller of the library meets: \verb|find_points_init|
-(\csource{find_points.c}{272}{375}) and its prototype, the input fields of the arguments that
+(\csource{find_points.c}{285}{388}) and its prototype, the input fields of the arguments that
 \verb|find_points_work| saves and puts back, the checks of arrays that only such a caller can fail
-(\csource{find_points.c}{4618}{4623}), the declaration of the arguments in \verb|main.c| and the
+(\csource{find_points.c}{4668}{4673}), the declaration of the arguments in \verb|main.c| and the
 initialization of the fields that the model passes as values, and the prototype of the Sturm step.
 
 \verb|other|: lines without meaning for the model: the includes, those of the vector intrinsics
 among them, and the prototypes; the inlining attributes and the pragma that unrolls the loops of
 \verb|tail_leg| (\csource{sift.c}{466}{472}); \verb|FLOOR|, \verb|RATPOINTS_DEFAULT_SP1| and
 \verb|RATPOINTS_DEFAULT_SP2|, which the C code reads nowhere, and a count stored that nothing reads;
-the text of message~1, which \verb|main| never prints (\csource{main.c}{977}{978}); the frames of
+the text of message~1, which \verb|main| never prints (\csource{main.c}{982}{983}); the frames of
 the \verb|main| functions of the generators of tables; and the arm of \verb|exact_scale| for a build
-without a 128-bit integer type (\csource{find_points.c}{3239}{3256}), since the default build
+without a 128-bit integer type (\csource{find_points.c}{3258}{3275}), since the default build
 compiles the arm with \verb|unsigned __int128|.
 
 \section{The deviations}\label{sec:ccodeDeviations}
@@ -143,9 +143,8 @@ such as the delivery of the points, the tables of rows (\lname{Ratpoints.Sieve.R
 counters, is passed and returned. A search gives back what the program reads
 (Definition~\ref{def:Options}), not the other fields that the C code leaves in the arguments. The
 end of a row that is not built yet is~$p$ (\lname{Ratpoints.Sieve.setRows}), where \verb|set_rows|
-adds~$p$ to the null pointer (\csource{find_points.c}{3149}{3170}), which the C standard leaves
-undefined; this happens in ordinary runs, whenever \verb|set_rows| reports a row as missing, and the
-end is set again when the row is built, before it is read.
+gives the end the null pointer of the row (\csource{find_points.c}{3168}{3189}); the end is set when
+the row is built, before it is read.
 
 \emph{Generated tables.} The squares, the inverses and the rows of~$0$ of the primes, which the
 build generates into \verb|find_points.h|, are functions of the prime, computed when they are
@@ -269,22 +268,23 @@ reciprocal, the doubles that tune the cost model and the constants of the blocks
 (\lname{Ratpoints.adaptLag}, \lname{Ratpoints.blockLen}). No proof depends on their values beyond a
 few facts that the file decides: that the width, the chunk and the array sizes are positive, that
 the limits of the reductions are at most~$2^{32}$, that a bit array has $2^{\mathrm{rbaShift}}$ bits
-with $\mathrm{rbaShift} < 32$, that $\mathrm{maxBitsInPrime} \le 10$, that the bound on the degree
-is positive and below~$2^{57}$, that a fixed length of the blocks is positive, and a few more of
-that kind.
+with $\mathrm{rbaShift} < 32$, that $\mathrm{chunk} \le 16$ and
+$5 \le \mathrm{maxBitsInPrime} \le 10$, which the C code checks when it is compiled, that the bound
+on the degree is positive and below~$2^{57}$, that a fixed length of the blocks is positive, and a
+few more of that kind.
 
 The script \verb|scripts/constants_check.py| checks this by building copies of the committed
 project, with all its proofs and without the \verb|#guard| examples of the model, which test the
-default values, for eleven other sets of values, each of which builds: two that change every constant, one to small values (among them bit
-arrays of~$64$~bits, the chunk~$1$, the lag~$0$ and blocks of length~$1$) and one to large values
-(bit arrays of~$512$~bits, the chunk~$17$, which compiles the other arm of the first stage, the
+default values, for eleven other sets of values, each of which builds: two that change every
+constant, one to small values (among them bit arrays of~$64$~bits, the chunk~$1$, the lag~$0$ and
+blocks of length~$1$) and one to large values (bit arrays of~$512$~bits, the chunk~$13$, the
 lag~$1000$); four that change the chunk alone, to~$2$, $3$, $5$ and~$12$; three that pair the
 chunked first stage with the widths of the other builds, $512$, $128$ and~$64$~bits; one with the
 lag~$1$ and blocks of length~$3$; and one with one block wanted. So the proofs hold for the models
 of the configurations of the C code that differ in these constants, the widths of the bit arrays of
-all its builds among them. The script builds the copies one after the other, with the built
-packages of the repository, and runs on demand, outside CI; the sets of values are a table in it,
-and \verb|--variant| gives others.
+all its builds among them. The script builds the copies one after the other, with the built packages
+of the repository, and runs on demand, outside CI; the sets of values are a table in it, and
+\verb|--variant| gives others.
 
 \section{Continuous integration}\label{sec:ccodeCI}
 

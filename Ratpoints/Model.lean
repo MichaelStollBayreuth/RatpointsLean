@@ -42,6 +42,6 @@ callers bind with `←`; `Id.run` appears only in `Ratpoints.findPointsVerbose`,
 lines.
 
 The docstring of every public declaration that models C code names that code in a paragraph of
-the form ``C: `find_points.c:812-845` `` (lines at the `ratpoints` commit the project pins), which
+the form ``C: `find_points.c:825-858` `` (lines at the `ratpoints` commit the project pins), which
 `scripts/correspondence.py` reads; `correspondence/README.md` describes the record.
 -/

@@ -31,7 +31,7 @@ class Variants(unittest.TestCase):
 
     def test_set_constants_examples(self):
         text = cc.set_constants(CONSTANTS, cc.VARIANTS['B'])
-        for line in ('def chunk : Nat := 17', 'def useLongInPhase2 : Bool := false',
+        for line in ('def chunk : Nat := 13', 'def useLongInPhase2 : Bool := false',
                      'def defaultSturm : Int := 62', 'def blockLen : Option Nat := none',
                      'def costSetup : Float := 0.0', 'def survivorsPerWord : Float := 1e-12'):
             self.assertIn(line + '\n', text)

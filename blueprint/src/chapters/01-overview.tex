@@ -389,7 +389,7 @@ in compile-time constants, such as the width of the bit arrays and the number of
 first stage keeps in registers, which choose among the arms of the code. The model has these
 constants as definitions with the values of the default build, and both arms where the C code has
 two, but for the arm of \verb|exact_scale| for a build without a 128-bit integer type, which the
-record excludes (\csource{find_points.c}{3239}{3256}). No proof depends on the values of the
+record excludes (\csource{find_points.c}{3258}{3275}). No proof depends on the values of the
 constants beyond a few facts that are decided; a script checks this, outside CI, by building
 copies of the whole project with eleven other sets of values (Section~\ref{sec:ccodeConstants}). So
 the proofs cover the models of the builds that have \verb|unsigned __int128|, while the tests run
@@ -435,7 +435,7 @@ theorem an ellipse; an arrow leads from a node to each node that uses it, dashed
 uses it and solid when only the proof does. Every node is green, and every statement dark green: its
 proof and the proofs of all the nodes it rests on are formalized.
 
-\emph{Links to the C code.} A link such as \csource{find_points.c}{4624}{4632} shows the
+\emph{Links to the C code.} A link such as \csource{find_points.c}{4674}{4682} shows the
 lines~$4624$ to~$4632$ of \verb|find_points.c| at the pinned commit. Inside a node, every link is
 one of the ranges that the docstrings of its declarations record, as
 \verb|scripts/correspondence.py| checks. The docstrings carry all the ranges and deviations of each

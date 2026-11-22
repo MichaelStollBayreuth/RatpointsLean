@@ -77,12 +77,15 @@ coefficients, whose loop stops when the gcd is `1`, and the chain ends when `s_k
 row is the array of its coefficients up to its degree, constant term first; for `d = 1` the loop
 over `k` does not run, and the chain is `f, f'`.
 
-C: `sturm.c:99-163`
+C: `sturm.c:138-194`
 
-Deviation: the rows as arrays of their coefficients up to their degree, for the table of `(d + 1)^2`
-GMP integers and the array of degrees, with no `mpz_init` and `mpz_clear` (a chain has at most
-`d + 1` rows, `Ratpoints.Sturm.IsChain.size_le`, and its row `k + 1` at most `d - k` entries,
-`Ratpoints.Sturm.IsChain.size_getElem!_add_one_add_le`): an array has one entry more than the degree
+Deviation: the rows as arrays of their coefficients up to their degree, for the triangular table of
+GMP integers on the heap and the array of degrees, with no `mpz_init` and no `clear_sturm`
+(`sturm.c:93-105`, `sturm.c:123-137`): the row `k ≥ 2` of the table has `d + 3 - k` entries, for the
+copy of the row `k - 2` that the division reduces in place, and the rows `0` and `1` have `d + 1`,
+which the rows of a chain fit (a chain has at most `d + 1` rows, `Ratpoints.Sturm.IsChain.size_le`,
+and its row `k + 1` at most `d - k` entries,
+`Ratpoints.Sturm.IsChain.size_getElem!_add_one_add_le`); an array has one entry more than the degree
 of its row, and a remainder that becomes zero is the empty array, where the degree in the C code
 reaches `-1`; a reduction step drops the leading coefficient, which it makes `0`, where the C code
 lowers the degree; the rows are handed back, and `none` for the return of `-1`, where
@@ -119,7 +122,7 @@ rule in integers, from the leading coefficient `w = c_deg`, for `n = deg - 1, �
 `w = w num + c_n 2 ^ e` with `e = denexp, 2 denexp, …`, so that `w` is `2 ^ (deg denexp)` times the
 value, `deg` the size of `row` less one.
 
-C: `sturm.c:67-84`
+C: `sturm.c:68-85`
 
 Deviation: the row as an array of integers, for the GMP integers `cofs` and the `long` `degree`,
 which is the size of the array less one; integers for the GMP integers `work[0]` and `work[1]`, the
@@ -140,7 +143,7 @@ pair `(count1, count2)`, from the signs of their leading coefficients: two neigh
 at `+∞` when their leading coefficients have different signs, and at `-∞` when they do after the
 sign of each row of odd degree is flipped.
 
-C: `sturm.c:165-175`
+C: `sturm.c:196-206`
 
 Deviation: natural numbers for the `long` counts, which stay at most `k`; the rows as arrays, their
 degrees the sizes less one, for the arrays `sturm` and `sturm_degs`, and `Int.sign` for `mpz_sgn`;
@@ -164,7 +167,7 @@ shifted right by one bit: the numerator of the end at `+∞` of the bisection, a
 of the end at `-∞`; converted to doubles, they become `±2 ^ 63`, beyond every `x = a / b` with
 `|a| ≤ LONG_MAX`.
 
-C: `sturm.c:191-192`
+C: `sturm.c:219-220`
 
 Deviation: one constant for the two locals `max` and `min = -max`. -/
 def longMax : Int64 := ((~~~0 : UInt64) >>> 1).toInt64
@@ -177,7 +180,7 @@ then both `0`, the half of `nl + nr`, with `dem = 0` when the sum is even and `d
 and else the sum of the ends over the larger denominator, divided by `2`, so with the larger
 exponent plus `1`.
 
-C: `sturm.c:234-251`
+C: `sturm.c:262-279`
 
 Deviation: the point returned as a pair, for the locals `nm` and `dem` of `iterate`; `Int64` for
 the `long`s, `>>>` on `Int64` the arithmetic shift of the C code; the arithmetic of `Int64`
@@ -198,7 +201,7 @@ first two rows count when their signs are opposite; then the sign `s` of the las
 zero, `s0` when `s1 = 0`, and each further row counts when its sign is `-s`, and replaces `s` when
 it is not zero.
 
-C: `sturm.c:252-260`
+C: `sturm.c:280-288`
 
 Deviation: a function of its own for the evaluation of the chain at the midpoint in `iterate`, the
 signs and the count returned, for its locals `s0`, `s1` and `cmid`; integers for the `long` signs
@@ -223,10 +226,10 @@ bisection keeps: its ends converted to doubles, `ldexp((double)n, -e)` (`Ratpoin
 infinity; the interval appended, or, when the last interval kept ends at its lower end (`==` of the
 doubles, `Ratpoints.Double.beq`), that interval extended to its upper end.
 
-C: `sturm.c:209-227`
+C: `sturm.c:237-255`
 
 Deviation: a function of its own for the branch of `iterate` that keeps an interval; the intervals
-kept as an array, passed and returned, for the array `ivlocal` on the stack and the pointer `iptr`
+kept as an array, passed and returned, for the array `ivlocal` on the heap and the pointer `iptr`
 of `_ratpoints_compute_sturm`, which `iterate` reaches as a nested function of gcc, with no bound
 `1 + ⌊degree / 2⌋` on their number, the size of `ivlocal`, which the C code relies on and which
 holds assuming Sturm's theorem (`Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`); the doubles
@@ -252,14 +255,14 @@ the sign of `f` at `m` handed to both halves, and when `m` is a root of `f`, the
 `-f'(m)` to the left half and the sign of `f'(m)` to the right half, the count and the sign just
 left and just right of the simple root `m`.
 
-C: `sturm.c:197-208`, `sturm.c:228-233`, `sturm.c:261-267`
+C: `sturm.c:225-236`, `sturm.c:256-261`, `sturm.c:289-295`
 
 Deviation: a recursive function of its own, for the nested function of gcc, with the intervals kept
 passed and returned (`Ratpoints.Sturm.addInterval`), for the array `ivlocal` and the pointer `iptr`
 that it reaches, and the chain, the index of its last row and the depth of the step as arguments,
 for the arrays `sturm` and `sturm_degs`, `k` and `iter` that it reaches; natural numbers for the
 `long` counts, depths and the `long` `iter`, which is from `0` to `55` (the search clamps it,
-`find_points.c:4682`), integers for the `long` signs, and `Int64` for the other `long`s; the
+`find_points.c:4732`), integers for the `long` signs, and `Int64` for the other `long`s; the
 recursion ends since the depth grows towards `iter`. -/
 def iterate (rows : Array (Array Int)) (k iter : Nat) (nl nr del der : Int64) (cleft cright : Nat)
     (sl sr : Int) (depth : Nat) (iv : Array (Double × Double)) : Id (Array (Double × Double)) :=
@@ -283,7 +286,7 @@ forgotten if it ends before `b` begins, and otherwise `[b.low, a.up]` is noted w
 compared as doubles (`Ratpoints.Double.le`, `Ratpoints.Double.lt`) and copied, so that a `-0.0` of
 the caller can stay.
 
-C: `sturm.c:289-322`
+C: `sturm.c:314-347`
 
 Deviation: a function of its own for the body of the loop, the interval noted and the cursor to
 move returned, for the write into `ivlist[n]` and the increments of `n`, `n1` and `n2`. -/
@@ -303,10 +306,10 @@ each, while both lists have one left, a step (`Ratpoints.Sturm.meet`) notes thei
 they meet, and goes on with the next interval of the list whose interval ends first. The noted
 intervals may be degenerate, `[a, a]`.
 
-C: `sturm.c:276`, `sturm.c:285-288`, `sturm.c:323`, `sturm.c:325`
+C: `sturm.c:304`, `sturm.c:310-313`, `sturm.c:348`, `sturm.c:350`
 
 Deviation: the intervals of the caller read from the array it gives, where the C code reads them
-from a copy on the heap (`sturm.c:274-275`, `sturm.c:286`) and writes the intersection over them;
+from a copy on the heap (`sturm.c:302-303`, `sturm.c:311`) and writes the intersection over them;
 the intersection returned as a new array, with no bound on its length, for the writes into `ivlist`,
 the caller's array, which must have room for `1 + ⌊degree / 2⌋` intervals more than it holds
 (`sturm.c:52-53`), as the C code relies on and as suffices assuming Sturm's theorem
@@ -332,22 +335,23 @@ keeps from `[-∞, +∞]` (`Ratpoints.Sturm.iterate`, with the counts at `∓∞
 of `c_d`, negated at `-∞` for odd `d`, as the signs just inside them) intersected with `ivlist`
 (`Ratpoints.Sturm.intersect`), which is empty when they do not meet.
 
-C: `sturm.c:86-97`, `sturm.c:177-190`, `sturm.c:193-194`, `sturm.c:269-273`, `sturm.c:326-332`
+C: `sturm.c:107-121`, `sturm.c:208-218`, `sturm.c:221-222`, `sturm.c:297-301`, `sturm.c:351-354`
 
 Deviation: the coefficients, the degree, the depth and the search intervals as arguments, for the
 fields `cof`, `degree`, `sturm`, `domain` and `num_inter` of the arguments; natural numbers for the
-`long`s `degree` and `iter`, which is from `0` to `55` (the search clamps it, `find_points.c:4682`);
+`long`s `degree` and `iter`, which is from `0` to `55` (the search clamps it, `find_points.c:4732`);
 the result as an option of an array, for the `long` that the C code returns and the intervals it
 writes into `domain` with their number `num_inter`: none for `-1`, the empty array for `0`, with
 `num_inter = 0`, and else the intervals, their number the return value; the table of the chain made
-by `Ratpoints.Sturm.chain`, whose rows the step reads, for the table on the stack with the degrees,
+by `Ratpoints.Sturm.chain`, whose rows the step reads, for the table on the heap with the degrees,
 which `_ratpoints_compute_sturm` fills itself, the index of the last row the size of the chain less
-one, for the `k` of `sturm.c:163`; the array of the intervals kept made by
-`Ratpoints.Sturm.iterate`, for the array `ivlocal` on the stack of `1 + ⌊degree / 2⌋` intervals,
+one, for the `k` of `sturm.c:194`; the array of the intervals kept made by
+`Ratpoints.Sturm.iterate`, for the array `ivlocal` on the heap of `1 + ⌊degree / 2⌋` intervals,
 which suffice assuming Sturm's theorem (`Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`);
-integers for the GMP integers and `Int.sign` for `mpz_sgn`; no `mpz_init` and `mpz_clear`, no copy
-of the caller's intervals on the heap and no failure for lack of memory (`RATPOINTS_NO_MEMORY`),
-which the model cannot meet. -/
+integers for the GMP integers and `Int.sign` for `mpz_sgn`; no allocation of the table, of the
+degrees and of the intervals (`sturm.c:123-137`), no `mpz_init` and no `clear_sturm`, no copy of the
+caller's intervals on the heap and no failure for lack of memory (`RATPOINTS_NO_MEMORY`), which the
+model cannot meet. -/
 def computeSturm (c : List Int) (d iter : Nat) (ivlist : Array (Double × Double)) :
     Id (Option (Array (Double × Double))) := do
   let some rows ← chain c d | return none

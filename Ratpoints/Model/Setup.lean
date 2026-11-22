@@ -97,15 +97,15 @@ In each case the reversed list is the reflection of `c` in the even degree `d + 
 form, so that its binary form is that of `c` with `x` and `z` exchanged
 (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`).
 
-C: `find_points.c:4732-4739`, `find_points.c:4744-4756`, `find_points.c:4759-4770`,
-`find_points.c:4775-4790`, `find_points.c:4802-4803`
+C: `find_points.c:4782-4789`, `find_points.c:4794-4806`, `find_points.c:4809-4820`,
+`find_points.c:4825-4840`, `find_points.c:4852-4853`
 
 Deviation: a new list for the reversal in place, and nothing written back to the caller: the
 reversed coefficients, the degree and the flag `RATPOINTS_REVERSED` are returned instead; the switch
 for the test of the flags `RATPOINTS_NO_REVERSE` and `RATPOINTS_NO_REVERSE_AUTO`, which is on when
 neither is set, as the normalized options give it (`Ratpoints.Options.normalize`: off for a search
 region or a range of the denominators); the square test of `c_d` made here, where the C code reads
-the flag `lcfsq` that the set-up computes before (`find_points.c:4634`), and no flag `lcfsq` for the
+the flag `lcfsq` that the set-up computes before (`find_points.c:4684`), and no flag `lcfsq` for the
 reversed list, which case 2 clears, since `Ratpoints.Sieve.pointsAtInfinity` tests the leading
 coefficient of the list it is given; integers and their absolute values for the GMP integers, with
 no scratch integers `work[0]` and `work[1]`; the report under `RATPOINTS_VERBOSE` printed by the
@@ -129,7 +129,7 @@ by the helper `mod` of the C code (`Ratpoints.Sieve.modLong`), and otherwise on 
 GMP integers (`Ratpoints.Sieve.examinePrime?`); on the first path the inputs of `mod` are `long`s
 (`Ratpoints.Setup.fitsLong_getD_of_useCLong`).
 
-C: `find_points.c:4599-4600`, `find_points.c:4814-4823`
+C: `find_points.c:4649-4650`, `find_points.c:4864-4873`
 
 Deviation: no array `c_long`: the coefficients stay integers, which `Ratpoints.Sieve.modLong` reads
 as `long`s, as `mpz_get_si` gives them exactly when they fit; the flag is returned, for the `int`
@@ -143,7 +143,7 @@ pair `(v, r)` with `p ^ v ∣ |n|`, `p ∤ |n| / p ^ v` and `r = (|n| / p ^ v) m
 division with remainder; for `n = 0`, `(Ratpoints.veryBig, 0)`. For `p = 1` and `n ≠ 0` the loop
 does not end, as in the C code.
 
-C: `find_points.c:424-454`
+C: `find_points.c:437-467`
 
 Deviation: one function for `valuation` on GMP integers, with its scratch integer `vvv`, and
 `valuation1` on `long`s, which gives `v` alone and is the first component; natural numbers for
@@ -188,12 +188,12 @@ a `long`, which it always is) and leaves the cofactor `1`, and otherwise `p` is 
 valuation when it divides. The factorization is complete exactly when the cofactor is `1`: when the
 part of `w` prime to `2 · 3 ⋯ 1019` is below `1021 ^ 2` or a power of `1021`.
 
-C: `find_points.c:777-860`
+C: `find_points.c:790-873`
 
 Deviation: the valuations by `Ratpoints.Setup.valuation`, for `mpz_scan1` at `2` and for the loop of
 divisions with remainder at the odd primes, the power then divided off at once; natural numbers for
 the GMP integers `work[0]` and `work[1]`, the `long`s, and the `int` `p` with its square `p * p`
-(`find_points.c:800`), which is below `2 ^ 31` (`Ratpoints.Setup.mul_self_lt_of_mem_primeTable`); a
+(`find_points.c:813`), which is below `2 ^ 31` (`Ratpoints.Setup.mul_self_lt_of_mem_primeTable`); a
 list of pairs of natural numbers and the cofactor returned, for the `int` fields `p` and `val` of
 the entries of `den_info` (they hold the primes, the cofactor below `p ^ 2` and, for coefficients
 below `2 ^ (2 ^ 31 - 1)`, the valuations: `Ratpoints.Setup.DenInfo`), for their count, the
@@ -224,7 +224,7 @@ lists them: from `[1]`, for each prime `p` in turn, each divisor `x` found so fa
 `Ratpoints.maxDivisors` entries. So it lists the products at most `bHigh` of the subsets of the
 primes in the order of binary counting, the first prime the lowest bit, unless it stops.
 
-C: `find_points.c:864-880`
+C: `find_points.c:877-893`
 
 Deviation: a list, for the array `divisors` and its pointers `div`, `div0` and `div1`; natural
 numbers for the `long`s, the products `x p` being formed only for `x ≤ ⌊bHigh / p⌋`, so that they
@@ -247,7 +247,7 @@ rounds up for every sign: the least `n ≥ 1` with `(d - k) n > val - v_p(c_k)` 
 with `v_p(0) = Ratpoints.veryBig`, so that a zero coefficient imposes nothing when
 `val ≤ Ratpoints.veryBig`.
 
-C: `find_points.c:894-912`, `rp-private.h:87`
+C: `find_points.c:907-925`, `rp-private.h:87`
 
 Deviation: integers for the `int`s, and the slope as a natural number; no output under `DEBUG`. -/
 def slope (c : List Int) (d p val : Nat) : Id Nat := do
@@ -269,11 +269,11 @@ odd primes of the table is not complete (`Ratpoints.Setup.factorLcf`) or there a
 times squares, which the divisor shape of the loop over the denominators visits divisor by divisor
 (`Ratpoints.Sieve.squares1Block`).
 
-C: `find_points.c:766-776`, `find_points.c:863`, `find_points.c:881-893`, `find_points.c:914-935`,
+C: `find_points.c:779-789`, `find_points.c:876`, `find_points.c:894-906`, `find_points.c:927-948`,
 `ratpoints.h:390`
 
 Deviation: the leading coefficient read from the list, for the integer `work[0]` that the caller
-sets to `|c_d|` (`find_points.c:4911-4912`); lists, for the arrays `den_info` and `divisors` of the
+sets to `|c_d|` (`find_points.c:4961-4962`); lists, for the arrays `den_info` and `divisors` of the
 arguments (`ratpoints.h:390`) with their terminating zeros; `none` for a factorization that is not
 complete or too many divisors, where `setup_us1` leaves the flag `RATPOINTS_USE_SQUARES1` clear, and
 the lists returned, where it sets the flag; no output under `DEBUG`. -/

@@ -26,7 +26,7 @@ loop over the denominators into blocks (Chapter~\ref{chap:moduli}); the class of
 its first pattern and the packing of its numerators (Chapter~\ref{chap:sieve}).
 
 In the C code, \verb|find_points_work_1| sets the flags of the tests
-(\csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4905}{4943}): for even~$d$ the
+(\csource{find_points.c}{4657}{4657}, \csource{find_points.c}{4955}{4993}): for even~$d$ the
 checked loop and, when~$c_d$ is not a square and the caller does not forbid it (the
 option~\verb|-j| of the program), the Jacobi test; for odd~$d$ the squares when $|c_d| = 1$ and the
 divisors of \verb|setup_us1| otherwise. The model keeps the order of the C code
@@ -46,12 +46,12 @@ and the even residues~$t$ at which $\tilde f(t)$ is one.
   \lean{Ratpoints.Sieve.fsq, Ratpoints.Sieve.gsq, Ratpoints.Sieve.twoAdic, Ratpoints.Sieve.denBits, Ratpoints.Sieve.twoAdic_spec, Ratpoints.Sieve.getLsbD_run_twoAdic, Ratpoints.Sieve.getLsbD_fsq_coeffsMod64, Ratpoints.Sieve.getLsbD_gsq_coeffsMod64}
   \leanok
   The words~$\mathrm{fsq}$ and~$\mathrm{gsq}$, by Horner's rule on~$64$-bit words
-  (\csource{find_points.c}{1006}{1014}, \csource{find_points.c}{1015}{1021}): bit~$k$
+  (\csource{find_points.c}{1019}{1027}, \csource{find_points.c}{1028}{1034}): bit~$k$
   of~$\mathrm{fsq}$ is set exactly when $k < 64$ and $\sum_{i \le d} c_i k^i$ is a square
   in~$\mathbb{Z}/64$, bit~$t$ of~$\mathrm{gsq}$ exactly when $t < 64$ is even and
   $\sum_{i \le d} c_i t^{D - i}$ is a square in~$\mathbb{Z}/64$. The words~$\mathrm{nb}[b]$ for
-  $b < 64$, scattered from these (\csource{find_points.c}{983}{994},
-  \csource{find_points.c}{1023}{1050}): bit~$a$ of~$\mathrm{nb}[b]$ is set exactly when~$b$ is odd
+  $b < 64$, scattered from these (\csource{find_points.c}{996}{1007},
+  \csource{find_points.c}{1036}{1063}): bit~$a$ of~$\mathrm{nb}[b]$ is set exactly when~$b$ is odd
   and $a = k b \bmod 64$ for a set bit~$k$ of~$\mathrm{fsq}$, or $a < 64$ is odd and
   $b = t a \bmod 64$ for a set bit~$t$ of~$\mathrm{gsq}$. And~$\mathrm{den\_bits}$, with bit~$b$
   set exactly when $\mathrm{nb}[b] \ne 0$. These descriptions are the contracts.
@@ -108,8 +108,8 @@ least valuation in $G(a, b)$, so that $v_p(b) + v_p(c_d) = v_p(y^2)$ is even.
   \leanok
   The valuation~$v$ of an integer $n \ne 0$ at~$p$ with the unit part $(|n| / p^v) \bmod p$, by
   repeated division with remainder, and $(\mathrm{veryBig}, 0)$ for $n = 0$, with
-  $\mathrm{veryBig} = 1000$ (\csource{find_points.c}{422}{422}): one function for \verb|valuation|
-  on GMP integers and \verb|valuation1| on \verb|long|s (\csource{find_points.c}{424}{454}). The
+  $\mathrm{veryBig} = 1000$ (\csource{find_points.c}{435}{435}): one function for \verb|valuation|
+  on GMP integers and \verb|valuation1| on \verb|long|s (\csource{find_points.c}{437}{467}). The
   contract: for $p > 1$ the loop ends, and for $n \ne 0$, $v$ is the~$p$-adic valuation of~$|n|$
   and the unit part is not~$0$.
 \end{definition}
@@ -120,13 +120,13 @@ least valuation in $G(a, b)$, so that $v_p(b) + v_p(c_d) = v_p(y^2)$ is even.
   \leanok
   For odd~$d$ and $|c_d| \ne 1$, as \verb|setup_us1| computes them: the factorization of~$|c_d|$ by
   trial division over the primes of the table, a cofactor below the square of the next prime taken
-  as a prime (\csource{find_points.c}{777}{860}); the squarefree divisors at
+  as a prime (\csource{find_points.c}{790}{873}); the squarefree divisors at
   most~$b_{\mathrm{high}}$ by a doubling loop, at most $\mathrm{maxDivisors} = 512$ of them
-  (\csource{find_points.c}{864}{880}); and for each prime~$p$ of~$c_d$ a record of~$p$, $v_p(c_d)$
+  (\csource{find_points.c}{877}{893}); and for each prime~$p$ of~$c_d$ a record of~$p$, $v_p(c_d)$
   and the slope, the least $n \ge 1$ with $(d - k)\, n > v_p(c_d) - v_p(c_k)$ for all $k < d$
-  (\csource{find_points.c}{894}{912}). The records and the divisors are returned exactly when the
+  (\csource{find_points.c}{907}{925}). The records and the divisors are returned exactly when the
   factorization ends with the cofactor~$1$ and there are fewer than~$\mathrm{maxDivisors}$ divisors
-  (\csource{find_points.c}{914}{935}). The contracts say so, and: for $c_d \ne 0$ the factorization
+  (\csource{find_points.c}{927}{948}). The contracts say so, and: for $c_d \ne 0$ the factorization
   ends with the cofactor~$1$ exactly when \ratpoints{} factors~$|c_d|$ completely in the sense of the
   specification ($\mathrm{FactorsByTrialDivision}$, Definition~\ref{def:orderedPoints}), and then
   lists the primes of~$|c_d|$ in increasing order with their valuations; the slope satisfies
@@ -192,16 +192,16 @@ once (\lname{Ratpoints.Sieve.ForbiddenEntry}), and primes with a mask of exclude
   Let~$d$ be even. The test of a valuation~$m$ at a prime~$p$ is true when, for the valuations~$w_j$
   and the unit parts~$r_j$ modulo~$p$, signs included, of the nonzero~$c_{d-j}$, the least
   $w_j + j m$ is taken at one~$j_0$ only and is odd, or~$j_0$ is even and~$r_{j_0}$ is not a square
-  modulo~$p$ (\csource{find_points.c}{2218}{2228}); the mask of the forbidden valuations at~$p$, a
+  modulo~$p$ (\csource{find_points.c}{2233}{2243}); the mask of the forbidden valuations at~$p$, a
   natural number, has bit~$m$ set for the $m \ge 1$ with $p^m \le b_{\mathrm{high}}$ that the test
-  excludes (\csource{find_points.c}{2229}{2234}). The forbidden divisor of an examined prime~$p$
-  (\csource{find_points.c}{2642}{2676}): for $p \mid c_d$ and a nonzero mask, $p$ with its words
+  excludes (\csource{find_points.c}{2244}{2249}). The forbidden divisor of an examined prime~$p$
+  (\csource{find_points.c}{2660}{2694}): for $p \mid c_d$ and a nonzero mask, $p$ with its words
   when the mask holds every $m \ge 1$ with $p^m \le b_{\mathrm{high}}$, and~$p$ with its mask
   otherwise; for $p \nmid c_d$, $p$ with its words when~$c_d$ is not a square modulo~$p$, as the
   entry at infinity of its table says. Then, unless~$c_d$ is a square, the further primes~$p$ of the
   table, from the first one not examined, with $p^2 \le b_{\mathrm{high}}$ and~$c_d$ not a square
   modulo~$p$, with their words, while fewer than~$\mathrm{maxForbidden}$ forbidden divisors are
-  found (\csource{find_points.c}{2709}{2772}). The contracts: a true test means that one term of
+  found (\csource{find_points.c}{2727}{2790}). The contracts: a true test means that one term of
   least valuation excludes~$m$, and the mask is as described. A forbidden divisor is
   \emph{admissible} when it is the forbidden divisor of a prime of the table, made from the residues
   of the coefficients and the entry at infinity of its table, or, with words, a prime of the table
@@ -214,7 +214,7 @@ of word~$r$ clear exactly when $p \mid 64 r + j$, read from the generated patter
 the first~$\mathrm{numPrimes}$ primes of the table and made as \verb|sieving_info| makes them for
 the others (\lname{Ratpoints.Sieve.extract\_sieves0}). For even~$d$, and while fewer
 than~$\mathrm{maxForbidden}$ forbidden divisors have been found, the loop of the tables records the
-forbidden divisor of each examined prime (\csource{find_points.c}{2624}{2626}); these are admissible
+forbidden divisor of each examined prime (\csource{find_points.c}{2641}{2643}); these are admissible
 (\lname{Ratpoints.Sieve.isForbiddenEntry\_of\_run\_examinePrime?\_eq\_some} and its companion), so
 that the choice of the moduli hands on admissible forbidden divisors only
 (\lname{Ratpoints.IsSievingInfo}, Chapter~\ref{chap:moduli}).
@@ -254,17 +254,17 @@ the non-squares modulo its odd primes and quadratic reciprocity.
   \uses{def:valuation, def:reciprocal, def:tableOfPrime, def:bitArrays, lem:reciprocal}
   \lean{Ratpoints.Sieve.jacobi, Ratpoints.Sieve.jacobi_spec, Ratpoints.Sieve.JacobiInfo, Ratpoints.Sieve.jacobiSetup, Ratpoints.Sieve.jacobiTest, Ratpoints.Sieve.IsJacobiInfo, Ratpoints.Sieve.jacobiSetup_spec, Ratpoints.Sieve.jacobiTest_spec}
   \leanok
-  The binary algorithm (\csource{find_points.c}{498}{566}, \csource{find_points.c}{568}{641}) for
+  The binary algorithm (\csource{find_points.c}{511}{579}, \csource{find_points.c}{581}{654}) for
   $b \ge 1$ and an integer~$\ell$: subtraction and halving on $\ell \bmod b$ and~$b$, with the signs
   of $J(2 \mid m)$ and of the reciprocity, the gcd divided out of~$b$ when it is not~$1$. Its
   contract: the result is $J(\ell \mid b^*)$, where~$b^*$ is the largest divisor of~$b$ prime
-  to~$2\ell$. The tables (\csource{find_points.c}{683}{708}), for $\ell = \pm 2^v \prod_i q_i^{e_i}$
+  to~$2\ell$. The tables (\csource{find_points.c}{696}{721}), for $\ell = \pm 2^v \prod_i q_i^{e_i}$
   and $b_{\mathrm{high}} \le \mathrm{mulModLimit} = 2^{32} - 1$: the odd primes~$q_i$, at most
   $\mathrm{jacobiPrimes} = 16$, each with its reciprocal and, for odd~$e_i$, the table of the
   non-squares modulo~$q_i$, at most $\mathrm{jacobiTable} = 8192$ entries in all; and the sign for
   each $b^* \bmod 8$, the product of $J(-1 \mid b^*)$ for negative~$\ell$, $J(2 \mid b^*)^v$ and the
   signs of the reciprocity of the $q_i \equiv 3 \bmod 4$ with odd~$e_i$; none when a prime of~$\ell$
-  lies beyond the table or a bound is passed. The test of~$b$ (\csource{find_points.c}{734}{759})
+  lies beyond the table or a bound is passed. The test of~$b$ (\csource{find_points.c}{747}{772})
   divides~$2$ and the~$q_i$ out of~$b$ with the reciprocals and passes when the sign of the result
   times its entries modulo the~$q_i$ of odd exponent is~$1$. The contracts: tables exist only for
   $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ and $\ell \ne 0$, and then describe~$\ell$ as above,
@@ -305,9 +305,9 @@ The contract of the binary algorithm rests on invariants of its loops; $b^*$ is
   \uses{def:setupUs1, def:valuation, def:jacobi, def:Double, def:packing, def:bitArrays, def:exactBounds}
   \lean{Ratpoints.Sieve.Shape, Ratpoints.Sieve.runSetup, Ratpoints.Sieve.fst_run_runSetup, Ratpoints.Sieve.denInfoTest, Ratpoints.Sieve.wordsTest, Ratpoints.Sieve.Shape.dens, Ratpoints.Sieve.Shape.keep, Ratpoints.Sieve.wordsDens, Ratpoints.searchDens}
   \leanok
-  The four shapes with their data (\csource{find_points.c}{3725}{3728},
-  \csource{find_points.c}{3736}{3749}), which \verb|run_setup| chooses from the flags and returns
-  with the bounds of the search intervals (\csource{find_points.c}{3778}{3806}), and their
+  The four shapes with their data (\csource{find_points.c}{3746}{3749},
+  \csource{find_points.c}{3757}{3770}), which \verb|run_setup| chooses from the flags and returns
+  with the bounds of the search intervals (\csource{find_points.c}{3799}{3827}), and their
   denominators from~$b_{\mathrm{low}}$ to~$b_{\mathrm{high}}$ in the order of the loop, each with
   its test of a single denominator:
   \begin{enumerate}
@@ -318,13 +318,13 @@ The contract of the binary algorithm rests on invariants of its loops; $b^*$ is
       Definition~\ref{def:setupUs1}, the divisors times squares: for each divisor~$s$ in turn,
       the~$s k^2$ of the range in increasing order of~$k$, with the class test and the valuation
       test, which~$b$ fails when the record of a prime excludes it
-      (\csource{find_points.c}{3944}{3953});
+      (\csource{find_points.c}{3965}{3974});
     \item otherwise, under the flag of the checked loop, the words, with the forbidden divisors, the
       switch of the Jacobi test, its tables when the test is on and they exist, and~$c_d$: word by
       word, the $64 w + j$ of the range for the set bits~$j$, lowest first, of~$\mathrm{den\_bits}$
       and-ed with word $w \bmod p$ of each forbidden divisor~$p$ with words, tested by the tables,
       then by the forbidden divisors with masks, and, with the Jacobi test on and no tables, by the
-      binary algorithm (\csource{find_points.c}{4013}{4041});
+      binary algorithm (\csource{find_points.c}{4034}{4062});
     \item otherwise every denominator, $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, with the class
       test.
   \end{enumerate}
@@ -343,7 +343,7 @@ visit the denominators of the list of the shape in its order
 (\lname{Ratpoints.Sieve.Shape.flatMap\_blockDens}). In the shape of the words they reduce the number
 of the first word of a block modulo each forbidden divisor, with its reciprocal while that number is
 at most~$\mathrm{mulModLimit}$ and by division otherwise, and step on from there
-(\csource{find_points.c}{3981}{4006}).
+(\csource{find_points.c}{4002}{4027}).
 
 \begin{lemma}[The shapes keep every point]\label{lem:shapes}
   \uses{def:Shape, def:twoAdic, def:setupUs1, def:forbidden, def:jacobi, def:binaryForm, def:packing}

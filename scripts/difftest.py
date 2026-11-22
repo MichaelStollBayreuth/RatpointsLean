@@ -211,7 +211,7 @@ CORRECTION_HEIGHT = 16383
 # decides a correction of the moduli (on 1 2 3 4 5 6 7).
 THREADS_HEIGHT = 30000
 # The adapt suite: searches on which the C program corrects its moduli during the run
-# (find_points.c:4115-4125, RP_ADAPT_LAG), as (the coefficient list, the height bound, further
+# (find_points.c:4136-4146, RP_ADAPT_LAG), as (the coefficient list, the height bound, further
 # options), each run under -x without -A and with -A 0, 1 and 2: curves of testdata.h,
 # testdata-many.h and testdata-degrees.h at 16383 and 50000 on which a correction takes effect (in
 # the words shape at 50000 within the last blocks), and point-rich curves of test4.sh, also with
@@ -262,7 +262,7 @@ MAX_DIVISORS = 512
 STOP_TIMEOUT = 30
 STOP_MEMORY = 12 * 10 ** 9  # the address space, as BIG_MEMORY
 # The numerator words after which the C program may first correct its choice of the moduli
-# (RP_ADAPT_WORDS, find_points.c:1354), and the bit arrays of the default build: RBA_LENGTH bits,
+# (RP_ADAPT_WORDS, find_points.c:1368), and the bit arrays of the default build: RBA_LENGTH bits,
 # RBA_PACK words each (correction_possible, which counts the runs where a correction may come).
 ADAPT_WORDS = 10 ** 6
 RBA_LENGTH = 256
@@ -618,7 +618,7 @@ def big_search(args, st, out):
         k += 1
     per = min(2 * H + 1, hi * width + k) if st.ends else 2 * H + 1
     numerators = n * per
-    # a search region suppresses the reversal unless it is the whole box (find_points.c:4686)
+    # a search region suppresses the reversal unless it is the whole box (find_points.c:4736)
     first = first_point(out) if st.one and (st.ends or lo > 1 or hi < H) else None
     if first is not None and first[1] == 0:
         numerators = 0
@@ -905,7 +905,7 @@ def live_mode(mode):
 def correction_possible(args, st):
     """Whether the C program may correct its choice of the moduli during the run on the command line
     `args` with the settings `st` (adapt_primes), for the count of such runs: neither -n nor -N
-    gives a value >= 0 and -A does not give 0 (find_points.c:2580), and the run can pass
+    gives a value >= 0 and -A does not give 0 (find_points.c:2597), and the run can pass
     RP_ADAPT_WORDS = 10^6 numerator words, by an upper bound: the denominators of the range times
     the number of search intervals (at least one) times the words of the bit arrays of the
     numerators of the height bound, two bit arrays more per interval for the rounding."""

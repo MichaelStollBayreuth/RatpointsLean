@@ -20,14 +20,15 @@ is `2 ^ Ratpoints.rbaShift` with `Ratpoints.rbaShift < 32`
 `2 Ratpoints.rowBias - 1` is at most `Ratpoints.mulModLimit`
 (`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`), that `Ratpoints.numStrides` is at least 1
 (`Ratpoints.one_le_numStrides`), that `Ratpoints.hornerSteps` is at least 1
-(`Ratpoints.one_le_hornerSteps`), that `Ratpoints.maxBitsInPrime` is at most 10
-(`Ratpoints.maxBitsInPrime_le_ten`), that `Ratpoints.stage3Limit` is at most `2 ^ 32`
-(`Ratpoints.stage3Limit_le_two_pow_32`), that `Ratpoints.maxDegree` is positive and below `2 ^ 57`
-(`Ratpoints.zero_lt_maxDegree`, `Ratpoints.maxDegree_lt_two_pow_57`) and that a block length that
-`Ratpoints.blockLen` fixes is positive (`Ratpoints.blockLen_pos`), and of the table the proofs use
-only that its entries are the odd primes below 1022, in increasing order
-(`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
-`Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
+(`Ratpoints.one_le_hornerSteps`), that `Ratpoints.maxBitsInPrime` is from 5 to 10
+(`Ratpoints.five_le_maxBitsInPrime`, `Ratpoints.maxBitsInPrime_le_ten`) and `Ratpoints.chunk` at
+most 16 (`Ratpoints.chunk_le_sixteen`), as the C code checks when it is compiled, that
+`Ratpoints.stage3Limit` is at most `2 ^ 32` (`Ratpoints.stage3Limit_le_two_pow_32`), that
+`Ratpoints.maxDegree` is positive and below `2 ^ 57` (`Ratpoints.zero_lt_maxDegree`,
+`Ratpoints.maxDegree_lt_two_pow_57`) and that a block length that `Ratpoints.blockLen` fixes is
+positive (`Ratpoints.blockLen_pos`), and of the table the proofs use only that its entries are the
+odd primes below 1022, in increasing order (`Ratpoints.prime_of_mem_primeTable`, which checks them
+one by one, and `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
 `Ratpoints.pairwise_lt_toList_primeTable`, which `decide` checks).
 
 ## Main definitions
@@ -107,20 +108,21 @@ def primeTable : Array Nat :=
 /-- The size in bits of the moduli, `RATPOINTS_MAX_BITS_IN_PRIME`: the sieve chooses its moduli
 among the primes of `Ratpoints.primeTable` below `2 ^ maxBitsInPrime`.
 
-C: `rp-private.h:321-323`
+C: `rp-private.h:324-326`
 
-Deviation: 8, the value of the default build, which the Makefile of `ratpoints` passes to the
-compiler (its variable `PRIME_SIZE`), for the value 7 that the header takes when it is given
-none. -/
+Deviation: the value set here, 8, the default of the header and of the Makefile of `ratpoints`,
+where a build may give the compiler another value from 5 to 10 (the variable `PRIME_SIZE` of the
+Makefile). -/
 def maxBitsInPrime : Nat := 8
 
 /-- The number of primes of `Ratpoints.primeTable` below `2 ^ Ratpoints.maxBitsInPrime`, among
 which the sieve chooses its moduli, `RATPOINTS_NUM_PRIMES`: 53 in the default build.
 
-C: `rp-private.h:325-361`
+C: `rp-private.h:328-361`
 
 Deviation: computed from `Ratpoints.maxBitsInPrime`, where the header lists the values for 5 to 10
-bits, the numbers that the computation gives, and takes 7 bits for any other value; the largest such
+bits, the numbers that the computation gives, and stops the compilation for any other value
+(`#error`; `Ratpoints.five_le_maxBitsInPrime`, `Ratpoints.maxBitsInPrime_le_ten`); the largest such
 prime, `RATPOINTS_MAX_PRIME`, has no counterpart; the power of 2 above it is
 `Ratpoints.maxPrimeEven`. -/
 def numPrimes : Nat := (primeTable.toList.filter (· < 2 ^ maxBitsInPrime)).length
@@ -129,10 +131,11 @@ def numPrimes : Nat := (primeTable.toList.filter (· < 2 ^ maxBitsInPrime)).leng
 prime powers and products of them, are below it, as are the primes of `Ratpoints.primeTable` among
 which the sieve chooses its moduli.
 
-C: `rp-private.h:325-361`
+C: `rp-private.h:328-361`
 
-Deviation: computed from `Ratpoints.maxBitsInPrime`, where the header lists the values for 5 to
-10 bits, the powers of 2 that the computation gives, and takes 7 bits for any other value. -/
+Deviation: computed from `Ratpoints.maxBitsInPrime`, where the header lists the values for 5 to 10
+bits, the powers of 2 that the computation gives, and stops the compilation for any other value
+(`#error`; `Ratpoints.five_le_maxBitsInPrime`, `Ratpoints.maxBitsInPrime_le_ten`). -/
 def maxPrimeEven : Nat := 2 ^ maxBitsInPrime
 
 /-- The number of 64-bit words of a pattern of `Ratpoints.maxPrimeEven` bits, `RP_MODWORDS`: the
@@ -151,7 +154,7 @@ from a value below `p` with coefficients and argument below `p`, the accumulator
 steps. The schedule reduces at all only for `1 ≤ hornerSteps`, that is for `maxBitsInPrime ≤ 32`
 (`Ratpoints.one_le_hornerSteps`).
 
-C: `find_points.c:1652-1655`
+C: `find_points.c:1666-1669`
 
 Deviation: computed from `Ratpoints.maxBitsInPrime` as the macro computes it from
 `RATPOINTS_MAX_BITS_IN_PRIME`, with `64` for `LONG_LENGTH`. -/
@@ -241,11 +244,13 @@ only the last one can end in a partial chunk, which the tail legs take. The proo
 is positive (`Ratpoints.chunk_pos`).
 
 C: `rp-private.h:160-165`, `rp-private.h:222-224`, `rp-private.h:248-250`,
-`rp-private.h:274-276`, `rp-private.h:293-295`
+`rp-private.h:274-276`, `rp-private.h:293-295`, `sift.c:575-577`
 
 Deviation: 16, the value of the default build (`USE_AVX`), set here, where the C code chooses the
 value by the macros that the compiler is given, each build with vector registers taking 16 and the
-build with 64-bit bit arrays 1 unless `RATPOINTS_CHUNK` is given. -/
+build with 64-bit bit arrays 1 unless `RATPOINTS_CHUNK` is given; the check at compile time that the
+chunk is at most 16, an `#error` otherwise, a theorem checked by `decide`
+(`Ratpoints.chunk_le_sixteen`). -/
 def chunk : Nat := 16
 
 /-- The largest number of bit arrays of a piece of the numerators, `RP_ARRAY_SIZE_MAX`: the largest
@@ -268,19 +273,19 @@ def maxDivisors : Nat := 512
 the divisors of the leading coefficient (`Ratpoints.Setup.slope`), where any value can only make a
 slope larger.
 
-C: `find_points.c:422` -/
+C: `find_points.c:435` -/
 def veryBig : Nat := 1000
 
 /-- At most how many odd prime factors the leading coefficient may have for the Jacobi test by
 tables, `RP_JACOBI_PRIMES` (`Ratpoints.Sieve.jacobiSetup`).
 
-C: `find_points.c:669` -/
+C: `find_points.c:682` -/
 def jacobiPrimes : Nat := 16
 
 /-- At most how many entries the tables of the non-squares of the Jacobi test by tables have in
 all, `RP_JACOBI_TABLE` (`Ratpoints.Sieve.jacobiSetup`).
 
-C: `find_points.c:670` -/
+C: `find_points.c:683` -/
 def jacobiTable : Nat := 8192
 
 /-- The largest value that the C code reduces by a multiplication with a reciprocal,
@@ -465,20 +470,20 @@ def maxFactors : Nat := 3
 /-- The largest cost of the table of a composite modulus per numerator word at which it is offered,
 `RP_MODULUS_TABLE_MAX` (`Ratpoints.offerModulus`).
 
-C: `find_points.c:2337` -/
+C: `find_points.c:2353` -/
 def modulusTableMax : Float := 2.0
 
 /-- The number of the samples of the denominators by which the run is estimated,
 `RUN_SHAPE_SAMPLES` (`Ratpoints.runShape`).
 
-C: `find_points.c:1917` -/
+C: `find_points.c:1931` -/
 def runShapeSamples : Nat := 64
 
 /-- The share of the numerators of a class of the stride `2 ^ k` that its bit arrays hold, `2 ^ -k`,
 the table `rp_inv_stride` of the strides `k < Ratpoints.numStrides` (`Ratpoints.runShape`,
 `Ratpoints.bpwAdd`).
 
-C: `find_points.c:1921-1922`
+C: `find_points.c:1935-1936`
 
 Deviation: an array of the seven doubles of the table, which `rp_inv_stride` sizes by
 `RP_NUM_STRIDES`, read by `getD` with `0.0`, the value of the entries beyond the seven initializers
@@ -489,19 +494,19 @@ def invStride : Array Float := #[1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.01562
 `RP_ADAPT_WORDS`: the field `adapt_at` of the arguments, when the search may correct its choice
 (`Ratpoints.adaptStart`).
 
-C: `find_points.c:1354` -/
+C: `find_points.c:1368` -/
 def adaptWords : Nat := 1000000
 
 /-- How many bit arrays that survive the first stage the run must have counted before it corrects
 the moduli, `RP_ADAPT_ARRAYS` (`Ratpoints.Sieve.adaptRates`).
 
-C: `find_points.c:1355` -/
+C: `find_points.c:1369` -/
 def adaptArrays : Nat := 1000
 
 /-- How many numerators that survive the second stage the run must have counted before it corrects
 the moduli, `RP_ADAPT_BITS` (`Ratpoints.Sieve.adaptRates`).
 
-C: `find_points.c:1356` -/
+C: `find_points.c:1370` -/
 def adaptBits : Nat := 200
 
 /-- How many blocks after the block at whose fold a correction of the moduli is decided the
@@ -510,18 +515,18 @@ the blocks from `j + adaptLag + 1` on (`Ratpoints.Sieve.runFold`), so that the d
 depends only on the folds of the blocks at least `adaptLag + 1` before it, whatever the number of
 threads.
 
-C: `find_points.c:1379-1381` -/
+C: `find_points.c:1393-1395` -/
 def adaptLag : Nat := 32
 
 /-- About how many blocks the steps of a run are cut into, `RP_BLOCKS_WANTED`
 (`Ratpoints.Sieve.blockLength`).
 
-C: `find_points.c:3729-3731` -/
+C: `find_points.c:3750-3752` -/
 def blocksWanted : Nat := 1024
 
 /-- The least number of steps of a block, `RP_BLOCK_MIN` (`Ratpoints.Sieve.blockLength`).
 
-C: `find_points.c:3732-3734` -/
+C: `find_points.c:3753-3755` -/
 def blockMin : Nat := 16
 
 /-- The fixed length of the blocks that a build of `ratpoints` may set, `RP_BLOCK_LEN`, to test the
@@ -563,7 +568,7 @@ theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
 
 /-- The fixed length of the blocks, when a build sets one (`Ratpoints.blockLen`), is positive, as
-the C code assumes when it divides by it (`find_points.c:3847`): so the length of the blocks of a
+the C code assumes when it divides by it (`find_points.c:3868`): so the length of the blocks of a
 run is at least 1 (`Ratpoints.Sieve.blockLength`), and the loops of the shapes over the steps of a
 block end. -/
 theorem blockLen_pos : ∀ n ∈ blockLen, 0 < n := by decide
@@ -572,6 +577,11 @@ theorem blockLen_pos : ∀ n ∈ blockLen, 0 < n := by decide
 arrays of a piece of the numerators is rounded up to a multiple of it
 (`Ratpoints.Params.arraySizeAt`), which is then positive. -/
 theorem chunk_pos : 0 < chunk := by decide
+
+/-- The check at compile time of `sift.c:575-577`: the chunk is at most 16, so that the tail of a
+piece of the numerators, fewer bit arrays than the chunk, has a length that the legs of 8, 4, 2 and
+1 bit arrays cover (`Ratpoints.Sieve.tailLegs`). -/
+theorem chunk_le_sixteen : chunk ≤ 16 := by decide
 
 /-- The bound `Ratpoints.mulModLimit` on the denominators of the Jacobi test by tables is below
 `2 ^ 64`, so that `Ratpoints.Sieve.jacobiTest` reads them as words. -/
@@ -587,10 +597,16 @@ theorem mulModLimit_lt_two_pow_32 : mulModLimit < 2 ^ 32 := by decide
 (`Ratpoints.hornerSteps`), as the C code would check at compile time: `maxBitsInPrime ≤ 32`. -/
 theorem one_le_hornerSteps : 1 ≤ hornerSteps := by decide
 
-/-- The moduli have at most 10 bits (`Ratpoints.maxBitsInPrime`), as the C code assumes: the
-header knows only the sizes 5 to 10 and takes 7 for any other (`rp-private.h:321-361`), and the
-comment on Horner's rule in `examine_power` relies on `m < 2 ^ 10` (`find_points.c:2286-2287`). -/
+/-- The moduli have at most 10 bits (`Ratpoints.maxBitsInPrime`), which the C code checks at
+compile time: the header knows only the sizes 5 to 10 and stops the compilation for any other
+(`rp-private.h:324-361`), and the comment on Horner's rule in `examine_power` relies on
+`m < 2 ^ 10` (`find_points.c:2302-2303`). -/
 theorem maxBitsInPrime_le_ten : maxBitsInPrime ≤ 10 := by decide
+
+/-- The moduli have at least 5 bits (`Ratpoints.maxBitsInPrime`), which the C code checks at compile
+time: the header knows only the sizes 5 to 10 and stops the compilation for any other
+(`rp-private.h:324-361`). -/
+theorem five_le_maxBitsInPrime : 5 ≤ maxBitsInPrime := by decide
 
 /-- The third stage of the sieve reduces by a multiplication only values below `2 ^ 32`
 (`Ratpoints.stage3Limit`), the bound below which the reciprocal of every modulus below `2 ^ 32`
@@ -603,7 +619,7 @@ theorem rbaLength_eq_two_pow_rbaShift : rbaLength = 2 ^ rbaShift := by decide
 
 /-- The number of bits of a bit array is below `2 ^ 32`, so that its product with a modulus below
 `2 ^ 32` is below `2 ^ 64` and its remainder by the multiplication with the reciprocal exact, as the
-C code assumes at `find_points.c:1816`. -/
+C code assumes at `find_points.c:1830`. -/
 theorem rbaShift_lt_thirty_two : rbaShift < 32 := by decide
 
 /-- The check at compile time of `rp-private.h:426-427`: the values that the first two stages of the
@@ -615,7 +631,7 @@ theorem two_mul_rowBias_sub_one_le_mulModLimit : 2 * rowBias - 1 ≤ mulModLimit
 theorem one_le_numStrides : 1 ≤ numStrides := by decide
 
 /-- The degree is below `2 ^ 57`, so that the exponents `denexp (deg + 1)` of Horner's rule in
-`eval_sign` (`sturm.c:67-84`) stay within a `long` at the depths up to `55` of the Sturm step, as
+`eval_sign` (`sturm.c:68-85`) stay within a `long` at the depths up to `55` of the Sturm step, as
 the C code assumes of `RATPOINTS_MAX_DEGREE` without a check. -/
 theorem maxDegree_lt_two_pow_57 : maxDegree < 2 ^ 57 := by decide
 

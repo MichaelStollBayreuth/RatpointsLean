@@ -99,7 +99,7 @@ namespace Ratpoints
 
 /-- The moduli below `Ratpoints.maxPrimeEven` are below `2 ^ 10`, since `maxBitsInPrime ≤ 10`
 (`Ratpoints.maxBitsInPrime_le_ten`), as the comment on Horner's rule in `examine_power` assumes
-(`find_points.c:2286-2287`). -/
+(`find_points.c:2302-2303`). -/
 theorem maxPrimeEven_le_two_pow_10 : maxPrimeEven ≤ 2 ^ 10 :=
   Nat.pow_le_pow_right Nat.two_pos maxBitsInPrime_le_ten
 

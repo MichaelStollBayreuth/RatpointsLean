@@ -307,13 +307,13 @@ def IsFactorization (w : ℕ) (fac : List (ℕ × ℕ)) : Prop :=
     ∀ q, q.Prime → q ∣ w → q ∈ fac.map Prod.fst
 
 /-- The square `p * p` of a prime of the table, which `setup_us1` computes as an `int`
-(`find_points.c:800`), is below `2 ^ 31`. -/
+(`find_points.c:813`), is below `2 ^ 31`. -/
 theorem mul_self_lt_of_mem_primeTable {p : ℕ} (hp : p ∈ primeTable) : p * p < 2 ^ 31 := by
   lia [Nat.mul_self_le_mul_self (Nat.le_of_lt_succ (lt_of_mem_primeTable hp))]
 
 /-- A cofactor below the square of a prime of the table is a `long`, so that the test of
 `Ratpoints.Setup.factorLcf` before it takes the cofactor as a prime always passes
-(`find_points.c:808`). -/
+(`find_points.c:821`). -/
 theorem fitsLong_of_lt_mul_self {w p : ℕ} (hp : p ∈ primeTable) (hw : w < p * p) :
     fitsLong (w : ℤ) = true := by
   simp [fitsLong]
@@ -963,7 +963,7 @@ theorem nodup_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List De
   eq_binaryDivisors_of_setupUs1_eq_some h hc hb ▸ nodup_binaryDivisors _ _
 
 /-- The products `x p` that the doubling loop of the C code computes, only for `x ≤ ⌊bHigh / p⌋`
-(`find_points.c:876`), are at most `bHigh`, and so `long`s for a `long` `bHigh`. -/
+(`find_points.c:889`), are at most `bHigh`, and so `long`s for a `long` `bHigh`. -/
 theorem fitsLong_mul_of_le_div {x p bHigh : ℕ} (h : x ≤ bHigh / p) (hH : bHigh < 2 ^ 63) :
     fitsLong ((x * p : ℕ) : ℤ) = true := by
   simp [fitsLong]
