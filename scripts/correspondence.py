@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The correspondence record between the Lean model and the C code of ratpoints.
 
-usage: scripts/correspondence.py [command] [options]
+usage: scripts/correspondence.py [command] [commit] [options]
 
 commands:
   check     run every check (the default); exit 1 on an error
@@ -11,6 +11,8 @@ commands:
   table     regenerate the blueprint chapter blueprint/src/generated/correspondence.tex
   coverage  list the stretches of non-comment C lines that lie in no recorded range
   pin       print one field of the pin (--field commit|tag|repository), for CI
+  repin     move the pin to the commit given: rewrite every line reference of the tracked files
+            to the lines at that commit, and report the references whose text changed
 
 options:
   --repo PATH    a git clone of ratpoints that contains the pinned commit (default: the
@@ -18,6 +20,9 @@ options:
   --decls FILE   the JSON file written by scripts/Correspondence.lean; without it, the script
                  builds the model and runs scripts/Correspondence.lean itself
   --complete     (check) also fail when a non-comment line of a C file lies in no range
+  --tag TAG      (repin) the tag of the new pin (default: what `git describe --tags` calls the
+                 commit)
+  --dry-run      (repin) report only, write nothing
 
 The record (correspondence/README.md has the details):
 - the ranges the model covers are in the docstrings of the public declarations of the model, in
@@ -40,6 +45,14 @@ and the same owners (after a move of the pin: has the text and the owners of som
 link, so that exactly the new and changed ones are reported); the generated blueprint chapter is
 up to date; the blueprint's \\ratpointscommit is the pin; the C links of the nodes are as above;
 with --complete, every non-comment line lies in a range.
+
+Moving the pin (`repin`): the lines of the C files are carried from the old pin to the new commit
+through `git diff -U0`, and every line reference of the tracked files is rewritten: an item
+`file:first-last` or `file:line` anywhere in a file (the `C:` paragraphs, and prose that cites a
+line), the `lines` of the [[excluded]] tables, the \\csource links, the pin itself and
+\\ratpointscommit. The lock is left as it is, so that `check` then reports exactly the ranges and
+links whose text changed; `repin` reports those and the changed references in prose, which no lock
+covers.
 """
 
 import argparse
@@ -582,6 +595,236 @@ def check_blueprint(pin, bp, decl_ranges, errors):
 
 
 # ---------------------------------------------------------------------------------------------
+# Moving the pin
+
+HUNK = re.compile(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@', re.M)
+LOST = (0, 0)  # what a reference to lines that are gone is rewritten to: no line of any file
+
+
+def parse_hunks(diff):
+    """The hunks of the output of `git diff -U0` as (s, e, s2, e2): the lines s+1, ..., e of the
+    old text are replaced by the lines s2+1, ..., e2 of the new one, where either stretch may be
+    empty (an insertion, a deletion)."""
+    out = []
+    for a, b, c, d in HUNK.findall(diff):
+        a, b, c, d = int(a), int(b or 1), int(c), int(d or 1)
+        s, s2 = (a - 1 if b else a), (c - 1 if d else c)
+        out.append((s, s + b, s2, s2 + d))
+    return out
+
+
+def move_bound(hunks, k, start):
+    """Where the boundary after line `k` of the old text (0: before the first line) lies in the
+    new text. `start` says that a range begins there: lines inserted at the boundary come before
+    such a range, and after a range that ends there, so that they belong to neither. A boundary
+    inside a replaced stretch moves as far into the replacement, or to its end."""
+    delta = 0
+    for s, e, s2, e2 in hunks:
+        if s < k < e:
+            return s2 + min(k - s, e2 - s2)
+        if e <= k and (s < k or start):
+            delta = e2 - e
+    return k + delta
+
+
+def move_range(hunks, first, last):
+    """The lines that the lines first, ..., last of the old text became, or `None` when none of
+    them is left."""
+    a, b = move_bound(hunks, first - 1, True), move_bound(hunks, last, False)
+    return (a + 1, b) if a < b else None
+
+
+class Mover:
+    """Carries the line ranges of the files of ratpoints from the commit `old` to the commit
+    `new`."""
+
+    def __init__(self, repo, old, new):
+        self.repo, self.old, self.new = repo, old, new
+        self.paths = git(repo, 'ls-tree', '-r', '--name-only', old).stdout.split('\n')
+        self.paths = [p for p in self.paths if p]
+        self.cache = {}
+
+    def lines(self, commit, path):
+        r = git(self.repo, 'show', f'{commit}:{path}')
+        if r.returncode != 0:
+            return None
+        lines = r.stdout.split('\n')
+        return lines[:-1] if lines and lines[-1] == '' else lines
+
+    def file(self, path):
+        if path not in self.cache:
+            r = git(self.repo, 'diff', '-U0', '--no-color', '--no-ext-diff', self.old, self.new,
+                    '--', path)
+            if r.returncode != 0:
+                raise RecordError(f'`git diff` failed for {path}: {r.stderr.strip()}')
+            self.cache[path] = (parse_hunks(r.stdout), self.lines(self.old, path),
+                                self.lines(self.new, path))
+        return self.cache[path]
+
+    def move(self, path, first, last):
+        """The new range and a verdict: 'same' (the text is the same; the lines may have moved),
+        'changed' (another text), 'lost' (no line is left, or the file is gone; the range is
+        `LOST`), 'invalid' (not a range of the old file; returned as it is)."""
+        hunks, old, new = self.file(path)
+        if not 1 <= first <= last <= len(old):
+            return (first, last), 'invalid'
+        moved = move_range(hunks, first, last) if new is not None else None
+        if moved is None:
+            return LOST, 'lost'
+        same = old[first - 1:last] == new[moved[0] - 1:moved[1]]
+        return moved, 'same' if same else 'changed'
+
+
+def text_files():
+    """The tracked files of this repository that may refer to lines of the C code: all but the
+    lock, the generated chapter and the tests of the scripts, which make up their own files."""
+    r = subprocess.run(['git', '-C', str(ROOT), 'ls-files', '-z'], capture_output=True,
+                       text=True, check=True)
+    out = []
+    for name in r.stdout.split('\0'):
+        p = ROOT / name
+        if (not name or p in (LOCK, TABLE) or not p.is_file()
+                or (p.parent == ROOT / 'scripts' and p.name.startswith('test_'))):
+            continue
+        out.append(p)
+    return out
+
+
+@dataclass
+class Moved:
+    where: str      # file and line of the reference
+    path: str       # the C file
+    old: tuple      # (first, last) at the old pin
+    new: tuple      # (first, last) at the new pin, or LOST
+    verdict: str    # as `Mover.move`
+
+    def show(self):
+        return (f'{self.where}: {self.path}:{span_text(*self.old)} -> '
+                f'{self.path}:{span_text(*self.new)}')
+
+
+def span_text(first, last):
+    """`first-last`, or `first` alone for a single line."""
+    return str(first) if first == last else f'{first}-{last}'
+
+
+def repin_text(where, text, mover, names, log, record=False, tex=False):
+    """`text` with its line references moved, each logged as a `Moved`. `names` are the files of
+    ratpoints that an item `file:first-last` may name; `record` says that the text is the record
+    (the `lines` of its [[excluded]] tables move too), `tex` that it is a source of the blueprint
+    (so do its \\csource links)."""
+    def move(m, path, a, b):
+        new, verdict = mover.move(path, int(a), int(b))
+        line = text.count('\n', 0, m.start()) + 1
+        log.append(Moved(f'{where}:{line}', path, (int(a), int(b)), new, verdict))
+        return new
+
+    def item(m):
+        a, b = m.group(2), m.group(3) or m.group(2)
+        return f'{m.group(1)}:{span_text(*move(m, m.group(1), a, b))}'
+
+    if names:
+        alt = '|'.join(re.escape(n) for n in sorted(names, key=len, reverse=True))
+        text = re.sub(rf'(?<![\w.-])({alt}):(\d+)(?:-(\d+))?(?![\w-])', item, text)
+    if tex:
+        def cite(m):
+            f, a, b = m.group(2), m.group(4), m.group(6)
+            if f not in mover.paths or not (a.isdigit() and b.isdigit()):
+                return m.group(0)
+            new = move(m, f, a, b)
+            return f'{m.group(1)}{f}{m.group(3)}{new[0]}{m.group(5)}{new[1]}{m.group(7)}'
+        text = re.sub(r'(\\csource' + SP + r'\{)([^}]*)(\}' + SP + r'\{)([^}]*)(\}' + SP
+                      + r'\{)([^}]*)(\})', cite, text)
+    if record:
+        parts = re.split(r'(?m)^(\[\[excluded\]\][ \t]*\n)', text)
+        offset = 0
+        for i, part in enumerate(parts):
+            file = re.search(r'(?m)^file[ \t]*=[ \t]*"([^"]*)"', part)
+            lines = re.search(r'(?m)^(lines[ \t]*=[ \t]*")(\d+)(?:-(\d+))?(")', part)
+            if i >= 2 and parts[i - 1].startswith('[[excluded]]') and file and lines \
+                    and file.group(1) in mover.paths:
+                a, b = lines.group(2), lines.group(3) or lines.group(2)
+                new, verdict = mover.move(file.group(1), int(a), int(b))
+                line = text.count('\n', 0, offset + lines.start()) + 1
+                log.append(Moved(f'{where}:{line}', file.group(1), (int(a), int(b)), new,
+                                 verdict))
+                parts[i] = (part[:lines.start()] + lines.group(1) + span_text(*new)
+                            + lines.group(4) + part[lines.end():])
+            offset += len(part)
+        text = ''.join(parts)
+    return text
+
+
+def set_once(text, pattern, value, what):
+    """`text` with the group 2 of the one match of `pattern` replaced by `value`."""
+    found = re.findall(pattern, text)
+    if len(found) != 1:
+        raise RecordError(f'expected one {what}, found {len(found)}')
+    return re.sub(pattern, lambda m: m.group(1) + value + m.group(3), text)
+
+
+def repin(repo, pin, target, tag, dry_run):
+    old = pin['commit']
+    r = git(repo, 'rev-parse', '-q', '--verify', f'{target}^{{commit}}')
+    if r.returncode != 0:
+        raise RecordError(f'{repo} has no commit {target}')
+    new = r.stdout.strip()
+    if not tag:
+        r = git(repo, 'describe', '--tags', new)
+        if r.returncode != 0:
+            raise RecordError(f'`git describe --tags` finds no name for {new[:12]}: give --tag')
+        tag = r.stdout.strip()
+    mover = Mover(repo, old, new)
+    names = [n for n in mover.paths if '/' not in n and not (ROOT / n).exists()]
+    sources = set(blueprint_sources())
+    log, texts, long_lines, old_pin = [], {}, [], []
+    for p in dict.fromkeys([RECORD, *sorted(sources), *text_files()]):
+        try:
+            text = p.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        out = repin_text(str(rel(p)), text, mover, names, log, record=p == RECORD,
+                         tex=p in sources)
+        if p == RECORD:
+            out = set_once(out, r'(?m)^(commit[ \t]*=[ \t]*")([0-9a-f]{40})(")', new,
+                           'commit of the pin')
+            out = set_once(out, r'(?m)^(tag[ \t]*=[ \t]*")([^"]*)(")', tag, 'tag of the pin')
+        if p in sources and r'\newcommand{\ratpointscommit}' in out:
+            out = set_once(out, r'(\\newcommand\{\\ratpointscommit\}\{)([0-9a-f]*)(\})', new,
+                           r'definition of \ratpointscommit')
+        if out != text:
+            texts[p] = out
+        if p.suffix == '.lean':
+            long_lines += [f'{rel(p)}:{i}' for i, line in enumerate(out.split('\n'), 1)
+                           if len(line) > 100]
+        old_pin += [f'{rel(p)}:{i}' for i, line in enumerate(out.split('\n'), 1)
+                    if old[:7] in line]
+    count = {v: sum(m.verdict == v for m in log) for v in ('same', 'changed', 'lost', 'invalid')}
+    moved = sum(m.verdict == 'same' and m.old != m.new for m in log)
+    print(f'repin {old[:12]} -> {new[:12]} (tag {tag}): {len(log)} references in '
+          f'{len({m.where.rsplit(":", 1)[0] for m in log})} files, {count["same"] - moved} '
+          f'unmoved, {moved} moved, {count["changed"]} changed, {count["lost"]} lost, '
+          f'{count["invalid"]} invalid; {len(texts)} files {"would be " if dry_run else ""}'
+          f'rewritten')
+    for verdict, note in (('changed', 'the text changed: review'),
+                          ('lost', 'no line is left: rewritten to line 0, fix by hand'),
+                          ('invalid', 'no range of the file at the old pin: left as it is')):
+        for m in log:
+            if m.verdict == verdict:
+                print(f'{verdict.upper()} {m.show()} ({note})')
+    for w in long_lines:
+        print(f'LONG {w}: more than 100 columns')
+    for w in old_pin:
+        print(f'OLD PIN {w}: still names {old[:7]}')
+    if not dry_run:
+        for p, out in texts.items():
+            p.write_text(out, encoding='utf-8')
+        print('next: `correspondence.py table`, then `check`, the review of what it reports, and '
+              '`lock`')
+    return 1 if count['lost'] or count['invalid'] else 0
+
+
+# ---------------------------------------------------------------------------------------------
 # Driver
 
 
@@ -614,11 +857,14 @@ def check_pin(repo, pin):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('command', nargs='?', default='check',
-                    choices=['check', 'lock', 'table', 'coverage', 'pin'])
+                    choices=['check', 'lock', 'table', 'coverage', 'pin', 'repin'])
+    ap.add_argument('target', nargs='?', default=None)
     ap.add_argument('--repo', type=Path, default=None)
     ap.add_argument('--decls')
     ap.add_argument('--complete', action='store_true')
     ap.add_argument('--field', default='commit')
+    ap.add_argument('--tag')
+    ap.add_argument('--dry-run', action='store_true')
     args = ap.parse_args(argv)
     record = tomllib.loads(RECORD.read_text())
     pin = record['pin']
@@ -631,6 +877,15 @@ def main(argv=None):
         return 1
     repo = Path(repo)
     errors = []
+    if args.command == 'repin':
+        if not args.target:
+            print('ERROR repin needs the commit to move the pin to')
+            return 1
+        try:
+            return repin(repo, pin, args.target, args.tag, args.dry_run)
+        except RecordError as e:
+            print(f'ERROR {e}')
+            return 1
     try:
         check_pin(repo, pin)
         files = load_c_files(repo, pin['commit'], record['files']['paths'])

@@ -84,19 +84,27 @@ environment variable `RATPOINTS_REPO`.
 
 ## Moving the pin
 
-When the project moves to a new `ratpoints` release, the line numbers move with the C code:
+When the project moves to another commit of `ratpoints`, the line numbers move with the C code:
 
-1. set the new commit and tag in `ratpoints.toml` and `\ratpointscommit` in
-   `blueprint/src/macros/common.tex`;
-2. move every range, in the docstrings and in `ratpoints.toml`, and every `\csource` link of the
-   blueprint (nodes, remarks and prose alike) to its lines at the new commit
-   (`git diff <old> <new> -- <file>` shows how the lines moved);
-3. run `scripts/correspondence.py table` and then `check`: since the lock still names the old
+1. `scripts/correspondence.py repin <commit>` sets the new commit and its tag in `ratpoints.toml`
+   (the tag is that of `--tag`, or the name that `git describe --tags` gives the commit) and
+   `\ratpointscommit` in `blueprint/src/macros/common.tex`, and carries every line reference of
+   the tracked files to the lines at the new commit, through `git diff -U0 <old> <new>`: the items
+   `` `file:first-last` `` and `` `file:line` `` wherever they stand (the `C:` paragraphs, and
+   prose that cites a line of the C code, which therefore always names the file in this form), the
+   `lines` of the excluded ranges, and the `\csource` links of the blueprint. Lines inserted next
+   to a range belong to neither of its neighbours. The command reports the references whose lines
+   no longer have the same text (`CHANGED`) and those of which no line is left (`LOST`, rewritten
+   to line 0, which no check accepts), the lines of Lean that the new numbers make longer than 100
+   columns, and the places that still name the old commit in words. With `--dry-run` it reports
+   and writes nothing;
+2. run `scripts/correspondence.py table` and then `check`: since the lock still names the old
    commit, `check` accepts a range whose text and owners some locked range has (it moved but did
    not change) and a link whose text some locked link has, and reports exactly the others, which
    are new or changed;
-4. review those against their Lean counterparts (and fix the model where the C code changed),
-   record the new lines of code, which `scripts/correspondence.py coverage` lists, in the model or
-   as exclusions, and then run `scripts/correspondence.py lock`.
+3. review those against their Lean counterparts (and fix the model where the C code changed),
+   with the changed references in prose, which only `repin` reports; record the new lines of
+   code, which `scripts/correspondence.py coverage` lists, in the model or as exclusions; and then
+   run `scripts/correspondence.py lock`.
 
 Until the last step `check` fails, naming the lock's old commit.

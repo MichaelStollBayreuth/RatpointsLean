@@ -88,6 +88,56 @@ class TexText(unittest.TestCase):
         self.assertEqual(c.tex_text('`a_b` `x'), r'\texttt{a\_b} `x')
 
 
+class MoveLines(unittest.TestCase):
+    """The lines of an old text carried to a new one through the hunks of `git diff -U0`."""
+
+    def test_parse_hunks(self):
+        diff = ('diff --git a/a.c b/a.c\n--- a/a.c\n+++ b/a.c\n'
+                '@@ -3 +3,2 @@ int f\n-x\n+y\n+z\n'   # line 3 replaced by two lines
+                '@@ -7,0 +9 @@\n+new\n'                # a line inserted after line 7
+                '@@ -9,2 +10,0 @@\n-a\n-b\n')          # lines 9 and 10 deleted
+        self.assertEqual(c.parse_hunks(diff), [(2, 3, 2, 4), (7, 7, 8, 9), (8, 10, 10, 10)])
+
+    def test_insertions(self):
+        hunks = [(4, 4, 4, 6)]  # two lines inserted after line 4
+        self.assertEqual(c.move_range(hunks, 1, 3), (1, 3))    # before: unmoved
+        self.assertEqual(c.move_range(hunks, 2, 4), (2, 4))    # ends at the insertion
+        self.assertEqual(c.move_range(hunks, 5, 8), (7, 10))   # begins at it: moved, not grown
+        self.assertEqual(c.move_range(hunks, 3, 6), (3, 8))    # around it: grown
+        self.assertEqual(c.move_range([(0, 0, 0, 1)], 1, 2), (2, 3))  # a new first line
+
+    def test_deletions_and_replacements(self):
+        hunks = [(4, 6, 4, 4)]  # lines 5 and 6 deleted
+        self.assertEqual(c.move_range(hunks, 5, 6), None)
+        self.assertEqual(c.move_range(hunks, 5, 5), None)
+        self.assertEqual(c.move_range(hunks, 3, 5), (3, 4))
+        self.assertEqual(c.move_range(hunks, 6, 8), (5, 6))
+        self.assertEqual(c.move_range(hunks, 7, 9), (5, 7))
+        hunks = [(4, 8, 4, 6)]  # lines 5 to 8 replaced by two lines
+        # two ranges that met inside the old lines meet inside the new ones
+        self.assertEqual(c.move_range(hunks, 3, 5), (3, 5))
+        self.assertEqual(c.move_range(hunks, 6, 9), (6, 7))
+        self.assertEqual(c.move_range(hunks, 8, 8), None)      # beyond the replacement
+
+    def test_partition_stays_a_partition(self):
+        # for every way of cutting ten old lines into ranges, under a mix of hunks, the images
+        # are disjoint and in order, and a range that no hunk touches keeps its length
+        hunks = [(1, 1, 1, 3), (3, 5, 5, 6), (7, 8, 8, 8), (9, 10, 9, 12)]
+        for cuts in range(1 << 9):
+            bounds = [0] + [k for k in range(1, 10) if cuts >> (k - 1) & 1] + [10]
+            last = 0
+            for a, b in zip(bounds, bounds[1:]):
+                new = c.move_range(hunks, a + 1, b)
+                if new is None:
+                    continue
+                self.assertGreater(new[0], last)
+                self.assertLessEqual(new[0], new[1])
+                last = new[1]
+                if all(e <= a or b <= s for s, e, _, _ in hunks):
+                    self.assertEqual(new[1] - new[0], b - a - 1)
+            self.assertLessEqual(last, 12)
+
+
 class EndToEnd(unittest.TestCase):
     """The checks on a temporary C repository with one file, `a.c` (C_FILE), and a temporary
     record, lock and blueprint."""
@@ -100,7 +150,8 @@ class EndToEnd(unittest.TestCase):
         self.git('init', '-q')
         (self.repo / 'a.c').write_text(C_FILE)
         self.commit = self.git_commit('one')
-        self.saved = {k: getattr(c, k) for k in ('RECORD', 'LOCK', 'BLUEPRINT', 'TABLE')}
+        self.saved = {k: getattr(c, k)
+                      for k in ('RECORD', 'LOCK', 'BLUEPRINT', 'TABLE', 'text_files')}
         self.place_blueprint(self.root / 'bp')
         c.RECORD, c.LOCK = self.root / 'ratpoints.toml', self.root / 'lock.json'
         self.decls_path = self.root / 'decls.json'
@@ -353,6 +404,81 @@ class EndToEnd(unittest.TestCase):
                       '\\texttt{long}.', t)
         self.assertIn('excluded (interface): the \\texttt{stdio} header', t)
         self.assertIn('\\csource{a.c}{8}{9}: not recorded (2 lines of code)', t)
+
+    def repin_fixture(self):
+        """A model file, a record and a blueprint at the first commit, locked, and a second
+        commit: a line inserted at the top, and the body of `f` changed."""
+        lean = self.root / 'X.lean'
+        lean.write_text('/-- The head.\n\nC: `a.c:3-5`\n\nDeviation: no comment (`a.c:1-2`). -/\n'
+                        'def f := 1\n\n/-- The body, with the return at `a.c:8`.\n\n'
+                        'C: `a.c:6`,\n`a.c:8-9` -/\ndef g := 2\n-- other.c:3 and xa.c:4 stay\n')
+        c.text_files = lambda: [lean]
+        self.excluded = ('[[excluded]]\nfile = "a.c"\nlines = "7"\nkind = "other"\n'
+                         'reason = "a comment, after a.c:6"\n')
+        self.write_record()
+        self.decl('Ratpoints.Model.f', 'C: `a.c:3-5`')
+        self.decl('Ratpoints.Model.g', 'C: `a.c:6`, `a.c:8-9`')
+        self.write_blueprint(self.node('Ratpoints.Model.f', (3, 5))
+                             + 'See \\csource {a.c}\n{8}{9}.')
+        self.lock_and_table()
+        (self.repo / 'a.c').write_text('/* new */\n' + C_FILE.replace('x + 1', 'x + 2'))
+        return lean, self.git_commit('two')
+
+    def test_repin(self):
+        lean, new = self.repin_fixture()
+        before = lean.read_text()
+        code, out = self.run_main('repin', new, '--tag', 'v2', '--dry-run')
+        self.assertEqual(code, 0, out)
+        self.assertEqual(lean.read_text(), before)
+        code, out = self.run_main('repin', new, '--tag', 'v2')
+        self.assertEqual(code, 0, out)
+        self.assertIn('9 references in 3 files, 0 unmoved, 6 moved, 3 changed, 0 lost', out)
+        self.assertIn('CHANGED X.lean:11: a.c:8-9 -> a.c:9-10',
+                      out.replace(str(self.root) + '/', ''))
+        text = lean.read_text()
+        self.assertIn('C: `a.c:4-6`\n\nDeviation: no comment (`a.c:2-3`). -/', text)
+        self.assertIn('return at `a.c:9`.\n\nC: `a.c:7`,\n`a.c:9-10` -/', text)
+        self.assertIn('-- other.c:3 and xa.c:4 stay', text)
+        record = c.RECORD.read_text()
+        self.assertIn(f'tag = "v2"\ncommit = "{new}"', record)
+        self.assertIn('lines = "8"\nkind = "other"\nreason = "a comment, after a.c:7"', record)
+        self.assertIn('\\csource{a.c}{4}{6}', (c.BLUEPRINT / 'content.tex').read_text())
+        self.assertIn('\\csource {a.c}\n{9}{10}.', (c.BLUEPRINT / 'content.tex').read_text())
+        self.assertIn(new, (c.BLUEPRINT / 'macros' / 'common.tex').read_text())
+        # the check then reports exactly what changed, and a second move is none
+        self.decls = []
+        self.decl('Ratpoints.Model.f', 'C: `a.c:4-6`')
+        self.decl('Ratpoints.Model.g', 'C: `a.c:7`, `a.c:9-10`')
+        self.assertEqual(self.run_main('table')[0], 0)
+        code, out = self.run_main('check')
+        self.assertEqual(code, 1)
+        self.assertIn('a.c:9-10 is new or changed since the review', out)
+        self.assertNotIn('a.c:4-6 is new', out)
+        self.assertNotIn('a.c:7 is new', out)
+        code, out = self.run_main('repin', new, '--tag', 'v2')
+        self.assertIn('9 unmoved, 0 moved, 0 changed', out)
+
+    def test_repin_lost_lines_and_unknown_commit(self):
+        lean, _ = self.repin_fixture()
+        (self.repo / 'a.c').write_text(C_FILE.replace('#include <stdio.h>\n\n', ''))
+        new = self.git_commit('three')
+        code, out = self.run_main('repin', new, '--tag', 'v3')
+        self.assertEqual(code, 0, out)
+        self.assertIn('C: `a.c:3`\n', lean.read_text())          # the range lost its first lines
+        self.assertIn('a.c:3-5 -> a.c:3 (the text changed', out)
+        (self.repo / 'a.c').write_text('int g;\n')
+        last = self.git_commit('four')
+        lean.write_text('/-- C: `a.c:3-4`, `a.c:40` -/\n')
+        code, out = self.run_main('repin', last, '--tag', 'v4')
+        self.assertEqual(code, 1, out)
+        self.assertIn('C: `a.c:0`, `a.c:40`', lean.read_text())
+        self.assertIn('LOST', out)
+        self.assertIn('INVALID', out)
+        code, out = self.run_main('repin', 'nonsense')
+        self.assertEqual(code, 1)
+        self.assertIn('has no commit nonsense', out)
+        code, out = self.run_main('repin')
+        self.assertIn('repin needs the commit', out)
 
     def test_checkout_below_a_directory_named_generated(self):
         self.place_blueprint(self.root / 'generated' / 'clone' / 'bp')
