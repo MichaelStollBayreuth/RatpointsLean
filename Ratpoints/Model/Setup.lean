@@ -97,15 +97,15 @@ In each case the reversed list is the reflection of `c` in the even degree `d + 
 form, so that its binary form is that of `c` with `x` and `z` exchanged
 (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`).
 
-C: `find_points.c:4811-4818`, `find_points.c:4823-4835`, `find_points.c:4838-4849`,
-`find_points.c:4854-4869`, `find_points.c:4886-4887`
+C: `find_points.c:4878-4885`, `find_points.c:4890-4902`, `find_points.c:4905-4916`,
+`find_points.c:4921-4936`, `find_points.c:4953-4954`
 
 Deviation: a new list for the reversal in place, and nothing written back to the caller: the
 reversed coefficients, the degree and the flag `RATPOINTS_REVERSED` are returned instead; the switch
 for the test of the flags `RATPOINTS_NO_REVERSE` and `RATPOINTS_NO_REVERSE_AUTO`, which is on when
 neither is set, as the normalized options give it (`Ratpoints.Options.normalize`: off for a search
 region or a range of the denominators); the square test of `c_d` made here, where the C code reads
-the flag `lcfsq` that the set-up computes before (`find_points.c:4708`), and no flag `lcfsq` for the
+the flag `lcfsq` that the set-up computes before (`find_points.c:4775`), and no flag `lcfsq` for the
 reversed list, which case 2 clears, since `Ratpoints.Sieve.pointsAtInfinity` tests the leading
 coefficient of the list it is given; integers and their absolute values for the GMP integers, with
 no scratch integers `work[0]` and `work[1]`; the report under `RATPOINTS_VERBOSE` printed by the
@@ -129,7 +129,7 @@ by the helper `mod` of the C code (`Ratpoints.Sieve.modLong`), and otherwise on 
 GMP integers (`Ratpoints.Sieve.examinePrime?`); on the first path the inputs of `mod` are `long`s
 (`Ratpoints.Setup.fitsLong_getD_of_useCLong`).
 
-C: `find_points.c:4673-4674`, `find_points.c:4898-4907`
+C: `find_points.c:4740-4741`, `find_points.c:4965-4974`
 
 Deviation: no array `c_long`: the coefficients stay integers, which `Ratpoints.Sieve.modLong` reads
 as `long`s, as `mpz_get_si` gives them exactly when they fit; the flag is returned, for the `int`
@@ -271,11 +271,11 @@ times squares, which the divisor shape of the loop over the denominators visits 
 (`Ratpoints.Sieve.squares1Block`).
 
 C: `find_points.c:779-789`, `find_points.c:876`, `find_points.c:894-906`, `find_points.c:927-948`,
-`ratpoints.h:425`
+`ratpoints.h:460`
 
 Deviation: the leading coefficient read from the list, for the integer `work[0]` that the caller
-sets to `|c_d|` (`find_points.c:4995-4996`); lists, for the arrays `den_info` and `divisors` of the
-arguments (`ratpoints.h:425`) with their terminating zeros; `none` for a factorization that is not
+sets to `|c_d|` (`find_points.c:5062-5063`); lists, for the arrays `den_info` and `divisors` of the
+arguments (`ratpoints.h:460`) with their terminating zeros; `none` for a factorization that is not
 complete or too many divisors, where `setup_us1` leaves the flag `RATPOINTS_USE_SQUARES1` clear, and
 the lists returned, where it sets the flag; no output under `DEBUG`. -/
 def setupUs1 (c : List Int) (d bHigh : Nat) : Id (Option (List DenInfo × List Nat)) := do

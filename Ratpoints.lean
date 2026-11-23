@@ -54,6 +54,7 @@ public import Ratpoints.Model.Denominators
 public import Ratpoints.Model.Double
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
+public import Ratpoints.Model.Jacobi
 public import Ratpoints.Model.Packing
 public import Ratpoints.Model.Params
 public import Ratpoints.Model.Report
@@ -93,6 +94,7 @@ public import Ratpoints.Proof.FirstStage
 public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Jacobi
 public import Ratpoints.Proof.JacobiTables
+public import Ratpoints.Proof.ModTest
 public import Ratpoints.Proof.Moduli
 public import Ratpoints.Proof.Order
 public import Ratpoints.Proof.Output

@@ -76,7 +76,7 @@ An excluded range has one of the kinds \verb|threads|, \verb|memory|, \verb|inst
 \verb|interface| and \verb|other|.
 
 \verb|threads|: the pool of threads, with which \ratpoints{} sieves the blocks of its loop over the
-denominators apart (\csource{find_points.c}{4157}{4547}), its set-up in the search, the atomic loads
+denominators apart (\csource{find_points.c}{4222}{4612}), its set-up in the search, the atomic loads
 and stores of the fields that the threads share (\csource{rp-private.h}{76}{84}), the fields of the
 arguments that hold the number of threads and the pool, and the default of one thread in
 \verb|main.c|. The model sieves the blocks in turn. The thread lemma (Theorem~\ref{thm:threads})
@@ -103,7 +103,7 @@ report under \verb|RATPOINTS_VERBOSE| (\verb|-v|) is modelled (Chapter~\ref{chap
 \verb|interface|: what only another caller of the library meets: \verb|find_points_init|
 (\csource{find_points.c}{285}{388}) and its prototype, the input fields of the arguments that
 \verb|find_points_work| saves and puts back, the checks of arrays that only such a caller can fail
-(\csource{find_points.c}{4692}{4697}), the declaration of the arguments in \verb|main.c| and the
+(\csource{find_points.c}{4759}{4764}), the declaration of the arguments in \verb|main.c| and the
 initialization of the fields that the model passes as values, and the prototype of the Sturm step.
 
 \verb|other|: lines without meaning for the model: the includes, those of the vector intrinsics
@@ -112,7 +112,7 @@ among them, and the prototypes; the inlining attributes and the pragma that unro
 \verb|RATPOINTS_DEFAULT_SP2|, which the C code reads nowhere, and a count stored that nothing reads;
 the text of message~1, which \verb|main| never prints (\csource{main.c}{1086}{1087}); the frames of
 the \verb|main| functions of the generators of tables; and the arm of \verb|exact_scale| for a build
-without a 128-bit integer type (\csource{find_points.c}{3265}{3282}), since the default build
+without a 128-bit integer type (\csource{find_points.c}{3308}{3325}), since the default build
 compiles the arm with \verb|unsigned __int128|.
 
 \section{The deviations}\label{sec:ccodeDeviations}
@@ -143,7 +143,7 @@ such as the delivery of the points, the tables of rows (\lname{Ratpoints.Sieve.R
 counters, is passed and returned. A search gives back what the program reads
 (Definition~\ref{def:Options}), not the other fields that the C code leaves in the arguments. The
 end of a row that is not built yet is~$p$ (\lname{Ratpoints.Sieve.setRows}), where \verb|set_rows|
-gives the end the null pointer of the row (\csource{find_points.c}{3175}{3196}); the end is set when
+gives the end the null pointer of the row (\csource{find_points.c}{3218}{3239}); the end is set when
 the row is built, before it is read.
 
 \emph{Generated tables.} The squares, the inverses and the rows of~$0$ of the primes, which the
@@ -234,7 +234,7 @@ suites make these comparisons, none of which fails:
   suite & what it runs & comparisons \\
   \hline
   \verb|test4| & the runs of \verb|test4.sh|, against \verb|testbase4| and the C program, but
-    for~$13$ above the height~$30000$ and one on a list of coefficients of $2$~MB & $632$ \\
+    for~$13$ above the height~$30000$ and one on a list of coefficients of $2$~MB & $657$ \\
   \verb|test3| & the runs of \verb|test3.sh| & $21$ \\
   \verb|rptest| & the curves of \verb|testdata.h|, \verb|testdata-many.h| and
     \verb|testdata-degrees.h| at the height~$100$, against their recorded points & $1206$ \\
@@ -244,7 +244,7 @@ suites make these comparisons, none of which fails:
     error~3, and for every option,
     the refusals, the report under \verb|-v|, searches stopped at once at the height~$10^{12}$,
     failed writes, the list of the coefficients from a file, up to $1200$ search intervals
-    & $459$ \\
+    & $476$ \\
   \verb|fuzz| & random command lines & $800$ \\
   \verb|params| & the options that set the moduli and the cut points & $272$ \\
   \verb|high| & point-rich curves up to the height~$30000$, and curves on which the C program
@@ -255,7 +255,7 @@ suites make these comparisons, none of which fails:
   \verb|threads| & the C program with \verb|-t 4| and \verb|-t 7| & $205$ \\
   \verb|verbose| & random searches under \verb|-v| & $300$ \\
   \hline
-  & the default suites & $5514$ \\
+  & the default suites & $5556$ \\
   \hline
   \verb|test4high| & the runs of \verb|test4.sh| at the heights $40000$ to~$100000$ & $13$ \\
   \verb|adapt| & searches at the heights $16383$ to~$50000$ on which the C program corrects its
@@ -272,18 +272,19 @@ program, gcc and glibc, none of which depends on the \verb|log| or \verb|pow| of
 
 The file \verb|Ratpoints/Model/Constants.lean| holds the constants that the C code fixes when it is
 compiled, each a definition with the value of the default build and a docstring that names its
-macro: among them the bound on the degree (\lname{Ratpoints.maxDegree}), the degree from which
-the polynomial is no longer printed (\lname{Ratpoints.printDegree}), the number of bits of the
-moduli, the width of a bit array (\lname{Ratpoints.rbaPack}), the chunk of the first stage
+macro: among them the bound on the degree (\lname{Ratpoints.maxDegree}), the degree from which the
+polynomial is no longer printed (\lname{Ratpoints.printDegree}), the number of bits of the moduli,
+the width of a bit array (\lname{Ratpoints.rbaPack}), the chunk of the first stage
 (\lname{Ratpoints.chunk}), the default depth of the Sturm step, the limits of the reductions by a
-reciprocal, the doubles that tune the cost model and the constants of the blocks
-(\lname{Ratpoints.adaptLag}, \lname{Ratpoints.blockLen}). No proof depends on their values beyond a
-few facts that the file decides: that the width, the chunk and the array sizes are positive, that
-the limits of the reductions are at most~$2^{32}$, that a bit array has $2^{\mathrm{rbaShift}}$ bits
-with $\mathrm{rbaShift} < 32$, that $\mathrm{chunk} \le 16$ and
-$5 \le \mathrm{maxBitsInPrime} \le 10$, which the C code checks when it is compiled, that the bound
-on the degree is positive and below~$2^{57}$, that a fixed length of the blocks is positive, and a
-few more of that kind.
+reciprocal, the doubles that tune the cost model, the moduli of the modular test before the exact
+check (\lname{Ratpoints.testModuli}) and the constants of the blocks (\lname{Ratpoints.adaptLag},
+\lname{Ratpoints.blockLen}). No proof depends on their values beyond a few facts that the file
+decides: that the width, the chunk and the array sizes are positive, that the limits of the
+reductions are at most~$2^{32}$, that a bit array has $2^{\mathrm{rbaShift}}$ bits with
+$\mathrm{rbaShift} < 32$, that $\mathrm{chunk} \le 16$ and $5 \le \mathrm{maxBitsInPrime} \le 10$,
+which the C code checks when it is compiled, that the bound on the degree is positive and
+below~$2^{57}$, that a fixed length of the blocks is positive, that no modulus of the modular test
+is~$0$, and a few more of that kind.
 
 The script \verb|scripts/constants_check.py| checks this by building copies of the committed
 project, with all its proofs and without the \verb|#guard| examples of the model, which test the

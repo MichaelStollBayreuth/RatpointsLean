@@ -48,8 +48,8 @@ that it is the table of Definition~\ref{def:tableOfPrime} is shown in Chapter~\r
   \lean{Ratpoints.TableLoop, Ratpoints.examineInLoop, Ratpoints.raiseLimit, Ratpoints.tablesLoop, Ratpoints.TableLoop.WF, Ratpoints.tablesLoop_spec}
   \leanok
   The loop of \verb|sieving_info| over the primes of the table while fewer than the number to look
-  at, the normalized value of \verb|-p|, have been looked at (\csource{find_points.c}{2625}{2629}).
-  The examination of a prime (\csource{find_points.c}{2630}{2650}) gives its table, the coefficients
+  at, the normalized value of \verb|-p|, have been looked at (\csource{find_points.c}{2667}{2671}).
+  The examination of a prime (\csource{find_points.c}{2672}{2692}) gives its table, the coefficients
   modulo~$p$, its density (the share of the numerators that its rows let through) and a code: $-1$,
   the exit, when the curve has no points modulo~$p$ (Chapter~\ref{chap:setup}); $0$ when the prime
   says nothing; $2$ when it says only that numerator and denominator are coprime; $1$ otherwise. A
@@ -58,7 +58,7 @@ that it is the table of Definition~\ref{def:tableOfPrime} is shown in Chapter~\r
   modulo~$p$ give the forbidden divisor of~$p$ (Chapter~\ref{chap:denominators}). When the caller
   left the number of primes to the library, the loop looks at one more prime, at most
   $\mathrm{numPrimes}$ in all, while the first two stages would be short of candidates that say
-  more than coprimality (\csource{find_points.c}{2719}{2730}).
+  more than coprimality (\csource{find_points.c}{2761}{2772}).
 
   The contract: for options that look at no more than $\mathrm{numPrimes}$ primes, an exit means
   that the curve has no points of any height; otherwise at most $\mathrm{numPrimes}$ primes are to
@@ -101,10 +101,10 @@ its modulus divides the product.
 The composite moduli that the choice offers (\lname{Ratpoints.addModuli}) are the odd~$m$ from~$9$
 up to $\mathrm{compositeMax} = 64$ and below $2^{\mathrm{maxBitsInPrime}}$ whose table the run can
 pay for and that factor into at most three powers of primes looked at, each among the first~$64$
-primes of the table and each saying something (\csource{find_points.c}{2362}{2365}); the entry of
+primes of the table and each saying something (\csource{find_points.c}{2391}{2394}); the entry of
 one that the choice takes is made from the codes of its factors (\lname{Ratpoints.makeModulus}),
 with the inverse of $\mathrm{rbaLength}$ modulo~$m$ by the extended Euclidean algorithm
-(\csource{find_points.c}{2430}{2442}, \csource{find_points.c}{2450}{2486}).
+(\csource{find_points.c}{2459}{2471}, \csource{find_points.c}{2479}{2515}).
 
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_sound}
   \uses{def:tableOfPrime, def:sieveEntry, def:binaryForm, def:bitArrays, def:reciprocal, def:rowStore, lem:modinv}
@@ -148,24 +148,29 @@ with the inverse of $\mathrm{rbaLength}$ modulo~$m$ by the extended Euclidean al
 what it says: a modulus of density~$r$ says $-\log r$.
 
 \begin{definition}[The cost model]\label{def:costModel}
-  \uses{def:sieveEntry, def:Double, def:bitArrays, def:packing}
-  \lean{Ratpoints.ModulusCandidate, Ratpoints.primeCost, Ratpoints.primeKey, Ratpoints.phase1Key, Ratpoints.phase1Wants, Ratpoints.phase2Offset, Ratpoints.checkCost, Ratpoints.runShape}
+  \uses{def:sieveEntry, def:Double, def:bitArrays, def:packing, def:Options}
+  \lean{Ratpoints.ModulusCandidate, Ratpoints.primeCost, Ratpoints.primeKey, Ratpoints.phase1Key, Ratpoints.phase1Wants, Ratpoints.phase2Offset, Ratpoints.checkCost, Ratpoints.checkRelOf, Ratpoints.runShape}
   \leanok
-  A candidate modulus carries its density, key and cost, its mask of primes, its sieve entry and
-  the codes of its factors (\csource{find_points.c}{147}{149}). Its cost per word swept, in units of
-  an \verb|and| of the first stage, is a part for every word, the cost of its entry in the list of
-  the moduli of a denominator and, in the first two stages, the costs of its set-up and, for a
-  positive cost of a row, of its table of rows, spread over the~$U$ words and the~$V$ denominators
-  of the run (\csource{find_points.c}{1233}{1248}); its key is that cost over $-\log r$
+  A candidate modulus carries its density, key and cost, its mask of primes, its sieve entry and the
+  codes of its factors (\csource{find_points.c}{147}{149}). Its cost per word swept, in units of an
+  \verb|and| of the first stage, is a part for every word, the cost of its entry in the list of the
+  moduli of a denominator and, in the first two stages, the costs of its set-up and, for a positive
+  cost of a row, of its table of rows, spread over the~$U$ words and the~$V$ denominators of the run
+  (\csource{find_points.c}{1233}{1248}); its key is that cost over $-\log r$
   (\csource{find_points.c}{1254}{1260}), with a variant for the first stage
   (\csource{find_points.c}{1269}{1283}). The rule of the first stage always takes the first
   candidate and then the next while the survivors per word that it removes, weighted by what a
   surviving word costs further on, exceed a target times its cost
-  (\csource{find_points.c}{1597}{1603}); the second stage adds as many moduli as an offset, $11$ by
-  default, scaled by $1/(1 + u_0/U)$ (\csource{find_points.c}{1633}{1640}). The run is estimated
+  (\csource{find_points.c}{1626}{1632}); the second stage adds as many moduli as an offset, $11$ by
+  default, scaled by $1/(1 + u_0/U)$ (\csource{find_points.c}{1662}{1669}). The run is estimated
   from~$64$ samples of each segment of the loop over the denominators
-  (\csource{find_points.c}{1953}{1958}), and the cost of an exact check from the bit lengths of the
-  coefficients and of~$H$ (\csource{find_points.c}{1298}{1331}). Every expression is computed in
+  (\csource{find_points.c}{1982}{1987}), and the cost of an exact check from the bit lengths of the
+  coefficients and of~$H$ (\csource{find_points.c}{1327}{1360}). A survivor that is no point costs
+  the modular test before the exact check (Definition~\ref{def:modTest})
+  $\mathrm{testTried}\,(d\,\mathrm{testStep} + \mathrm{testCall})$ cycles, with the constants $2$,
+  $16$ and~$650$; where that is less than the cost of the exact check, and the search has the exact
+  check, the test is switched on for the search, and the third stage is told the cost of the test in
+  place of that of the check (\csource{find_points.c}{2646}{2654}). Every expression is computed in
   \verb|Float|, in the order of the operations of the C code; there is no contract.
 \end{definition}
 
@@ -187,7 +192,7 @@ what it says: a modulus of density~$r$ says $-\log r$.
 
 \section{The choice of the moduli and of the cut points}\label{sec:moduliChoice}
 
-In \verb|sieving_info| (\csource{find_points.c}{2545}{3128}) the first stage takes candidates in
+In \verb|sieving_info| (\csource{find_points.c}{2574}{3170}) the first stage takes candidates in
 the order of their keys, and so does the second, after the rest is keyed again by the cost of a word
 that survives the first; each drops every candidate that shares a prime with one taken, so that the
 moduli of the first two stages are pairwise coprime. The third stage takes the prime of least
@@ -199,32 +204,33 @@ density left while each pays for itself; the primes left after it are the reserv
   \lean{Ratpoints.Params, Ratpoints.SievingInfo, Ratpoints.SieveOptions.tuning, Ratpoints.addModuli, Ratpoints.makeModulus, Ratpoints.takeEntries, Ratpoints.firstStages, Ratpoints.thirdStage, Ratpoints.choiceEnd, Ratpoints.choiceTail, Ratpoints.sievingInfo}
   \leanok
   The choice for the curve, with the options of the sieve as the search normalizes them
-  (Definition~\ref{def:Options}), takes these steps:
+  (Definition~\ref{def:Options}) and the flag of the exact check, which only the switch of the
+  modular test reads (Definition~\ref{def:costModel}), takes these steps:
   \begin{enumerate}
     \item the tuning, from \verb|-r|, \verb|-R|, \verb|-U| and \verb|-C| or the defaults
-      (\csource{find_points.c}{2593}{2599});
+      (\csource{find_points.c}{2623}{2629});
     \item the first estimate, the loop of the tables with its exit, which returns the prime, and
-      the further forbidden divisors (\csource{find_points.c}{2545}{2556});
+      the further forbidden divisors (\csource{find_points.c}{2574}{2586});
     \item the estimate and the keys again, the composite moduli with their entries (\verb|add_moduli|,
       Section~\ref{sec:moduliComposite}) and the sort
-      (\csource{find_points.c}{2833}{2837}, \csource{find_points.c}{2841}{2848},
-      \csource{find_points.c}{2851}{2851});
+      (\csource{find_points.c}{2875}{2879}, \csource{find_points.c}{2883}{2890},
+      \csource{find_points.c}{2893}{2893});
     \item the first stage, the value of \verb|-n| or as many as its rule wants, at most the value
       of \verb|-N| when that is given, and the second, the value of \verb|-N| or the offset, each
       taking candidates in their order
-      (\csource{find_points.c}{2511}{2531}, \csource{find_points.c}{2868}{2871},
-      \csource{find_points.c}{2889}{2896});
+      (\csource{find_points.c}{2540}{2560}, \csource{find_points.c}{2910}{2913},
+      \csource{find_points.c}{2931}{2938});
     \item the third stage, up to the value of \verb|-P| more or while each prime pays for itself,
       looking at further primes, with the exit, when no prime left pays
-      (\csource{find_points.c}{2998}{3000}, \csource{find_points.c}{3034}{3041});
+      (\csource{find_points.c}{3040}{3042}, \csource{find_points.c}{3076}{3083});
     \item the end: the reserve, the candidates after the third stage, sorted by density, the entries
       of all the candidates, their reciprocals and the store with the tables of rows of every entry
-      (\csource{find_points.c}{3049}{3059}).
+      (\csource{find_points.c}{3091}{3101}).
   \end{enumerate}
   The result holds the cut points $s_1 \le s_2 \le s_3$, the ends of the three stages, the number of
-  primes looked at and the estimates of the run (\csource{ratpoints.h}{430}{432}), with the sieve
-  entries of all the moduli, the reserve included, their reciprocals, the forbidden divisors, the
-  store of the tables of rows and the switch of the checked loop.
+  primes looked at, the estimates of the run (\csource{ratpoints.h}{465}{467}) and the switch of the
+  modular test, with the sieve entries of all the moduli, the reserve included, their reciprocals,
+  the forbidden divisors, the store of the tables of rows and the switch of the checked loop.
 \end{definition}
 
 \begin{lemma}[The choice is what the run needs]\label{lem:choiceOfModuli}
@@ -281,23 +287,23 @@ of a block length that the build fixes (\lname{Ratpoints.blockLen\_pos}).
   \uses{def:Shape, def:sift, def:deliver, def:callback, def:counters}
   \lean{Ratpoints.Sieve.Shape.segments, Ratpoints.Sieve.BlockPlan, Ratpoints.Sieve.blockLength, Ratpoints.Sieve.Shape.blockPlan, Ratpoints.Sieve.BlockPlan.steps, Ratpoints.Sieve.Shape.blockLoop, Ratpoints.Sieve.Decision, Ratpoints.Sieve.Decision.InForce, Ratpoints.Sieve.findDecision, Ratpoints.Sieve.runBlock}
   \leanok
-  The steps of a shape form segments (\csource{find_points.c}{3840}{3865}): the~$k$ of the squares
+  The steps of a shape form segments (\csource{find_points.c}{3891}{3916}): the~$k$ of the squares
   $k^2$, for each divisor~$s$ of the divisor shape the~$k$ of $s k^2$, both within
   $[b_{\mathrm{low}}, b_{\mathrm{high}}]$, or the words of~$64$ denominators, or the denominators.
   The blocks have length
   $\lfloor \mathrm{steps}/1024 \rfloor + 1$, at least~$16$, or the length that the build fixes
-  (\csource{find_points.c}{3866}{3870}), and cut each segment into consecutive pieces
-  (\csource{find_points.c}{3871}{3878}). A decision of the correction is the first block that it is
+  (\csource{find_points.c}{3917}{3921}), and cut each segment into consecutive pieces
+  (\csource{find_points.c}{3922}{3929}). A decision of the correction is the first block that it is
   for, with the ends~$s_2$ and~$s_3$ from that block on; the decision in force for block~$i$ is the
-  last whose first block is at most~$i$ (\csource{find_points.c}{3936}{3938}). Block~$i$
-  (\csource{find_points.c}{3917}{3926}) hands each denominator of its steps that passes the tests
+  last whose first block is at most~$i$ (\csource{find_points.c}{4000}{4002}). Block~$i$
+  (\csource{find_points.c}{3981}{3990}) hands each denominator of its steps that passes the tests
   of the shape to the sieve of one denominator, with the sieve entries cut by the decision in force
   into the first two stages, the first ending at~$s_1$, and the third; it returns when the callback
   stops the search, and reports its counters with its decision.
 \end{definition}
 
 \begin{lemma}[A block delivers the points of its denominators]\label{lem:blocks}
-  \uses{def:blocks, lem:choiceOfModuli, lem:runRows, def:deliver, def:callback, def:checkNumWith, def:exactBounds, def:counters}
+  \uses{def:blocks, lem:choiceOfModuli, lem:runRows, def:deliver, def:callback, def:checkNumWith, def:exactBounds, def:counters, lem:modTest}
   \lean{Ratpoints.Sieve.BlockPlan.WF, Ratpoints.Sieve.Shape.blockPlan_spec, Ratpoints.Sieve.Shape.flatMap_blockDens, Ratpoints.Sieve.findDecision_spec, Ratpoints.Sieve.runBlock_spec}
   \leanok
   The plan of the blocks is well formed, with blocks of at least one step, and the denominators of
@@ -310,12 +316,13 @@ of a block length that the build fixes (\lname{Ratpoints.blockLen\_pos}).
   word of the classes have bit~$j$ set exactly when class~$j$ admits a numerator, the decision in
   force be well formed, the forbidden divisors be as the shape of the words needs them, $i$ be below
   the number of the blocks, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$,
-  and the store fit all the entries. Then block~$i$ keeps the store so and delivers, in order, over
-  the denominators of its steps that pass the tests of the shape, the points that the exact check
-  finds among the numerators that survive the first~$s_3$ entries of its decision, for every choice
-  of the words of the classes and the ranges of the numerators that the packing and the bounds
-  give; and when the callback has not stopped the search within it, its report is a closed form in
-  the arguments of the run, which reads neither the callback nor the flags of the output.
+  the flags have a sound test (Lemma~\ref{lem:modTest}), and the store fit all the entries. Then
+  block~$i$ keeps the store so and delivers, in order, over the denominators of its steps that pass
+  the tests of the shape, the points that the exact check finds among the numerators that survive
+  the first~$s_3$ entries of its decision, for every choice of the words of the classes and the
+  ranges of the numerators that the packing and the bounds give; and when the callback has not
+  stopped the search within it, its report is a closed form in the arguments of the run, which reads
+  neither the callback nor the flags of the output.
 \end{lemma}
 
 \begin{proof}
@@ -342,7 +349,7 @@ default) it walks the end~$s_2$ of the second stage up through the entries beyon
 above~$s_1$ and not past a composite modulus; and without \verb|-P| it computes the end~$s_3$ of
 the third stage again from the new~$s_2$. A decision made at the fold of block~$j$ is for the
 blocks from $j + \mathrm{adaptLag} + 1$ on, with the lag $\mathrm{adaptLag} = 32$ of
-\verb|RP_ADAPT_LAG| (\csource{find_points.c}{1393}{1395}).
+\verb|RP_ADAPT_LAG| (\csource{find_points.c}{1422}{1424}).
 
 \begin{definition}[The correction of the moduli]\label{def:correction}
   \uses{def:Options, def:blocks, def:choiceOfModuli, def:costModel, def:callback}
@@ -350,16 +357,16 @@ blocks from $j + \mathrm{adaptLag} + 1$ on, with the lag $\mathrm{adaptLag} = 32
   \leanok
   The counters of the run, the sums of the counters of the blocks folded
   (Definition~\ref{def:counters}), those from the extracted numerators on restarted when a block sifted with another~$s_2$ is folded
-  (\csource{find_points.c}{1377}{1381}). The correction (\csource{find_points.c}{1397}{1402}), when
+  (\csource{find_points.c}{1406}{1410}). The correction (\csource{find_points.c}{1426}{1431}), when
   the run has swept enough words, sets the next one at twice the words swept and computes the
   rates, the walk of~$s_2$ under \verb|-A 2| or more and the end of the third stage, every double
   in the order of the C code.
-  The fold of block~$j$ (\csource{find_points.c}{4142}{4155}) adds its counters to the state of the
+  The fold of block~$j$ (\csource{find_points.c}{4207}{4220}) adds its counters to the state of the
   correction and appends a decision for the blocks from $j + \mathrm{adaptLag} + 1$ on when the
   correction changes an end. The run starts from the decision of the choice for
   block~$0$, sifts each block with the decisions made before it and folds its report, returns after
   the block in which the callback stopped the search, and gives the ends~$s_2$ and~$s_3$ of the
-  last block folded, the moduli used (\csource{find_points.c}{5236}{5244}).
+  last block folded, the moduli used (\csource{find_points.c}{5313}{5321}).
 \end{definition}
 
 \begin{lemma}[The correction keeps the decisions well formed]\label{lem:correction}
@@ -390,18 +397,21 @@ blocks from $j + \mathrm{adaptLag} + 1$ on, with the lag $\mathrm{adaptLag} = 32
 
 \section{Why the choice does not change the output}\label{sec:moduliOutput}
 
-By the block lemma (Theorem~\ref{thm:blocks}) and Lemma~\ref{lem:correction}, the run delivers,
-over each denominator~$b$, the points that the exact check finds among the numerators that survive
-the first $s_3(b)$ entries, with $s_3(b)$ independent of the callback and the flags
+By the block lemma (Theorem~\ref{thm:blocks}) and Lemma~\ref{lem:correction}, the run delivers, over
+each denominator~$b$, the points that the exact check finds among the numerators that survive the
+first $s_3(b)$ entries, with $s_3(b)$ independent of the callback and the flags
 (\lname{Ratpoints.Sieve.exists\_run\_sieveRun\_eq\_deliver}); every entry is sound
 (Lemma~\ref{lem:choiceOfModuli}), so every point survives, whatever the choice and the corrections.
 The choice changes only which candidates reach the exact check, and so the output under
 \verb|RATPOINTS_NO_CHECK|, the numbers of the moduli used and the report under \verb|-v|
 (Chapter~\ref{chap:output}). The statement under \verb|RATPOINTS_NO_CHECK| that compares its output
-with that of the exact check (Theorem~\ref{thm:noCheck}) compares two searches with the same
-options of the sieve and the same region, which differ only in the flags of the output (the second
-has the exact check on and \verb|NO_Y| set); neither the choice nor the decisions read these flags
-or the callback.
+with that of the exact check (Theorem~\ref{thm:noCheck}) compares two searches with the same options
+of the sieve and the same region, which differ only in the flags of the output (the second has the
+exact check on and \verb|NO_Y| set). The decisions of the correction read neither these flags nor
+the callback, and the choice reads of them only the flag of the exact check, for the switch of the
+modular test and the cost that it tells the third stage; so the two searches may sieve with
+different moduli. The second delivers the points whatever its moduli are, and each of them survives
+the sieve of the first.
 
 With threads (\verb|-t|) \ratpoints{} sifts the blocks apart in a pool, which the model leaves out
 (Chapter~\ref{chap:ccode}). The lag and thread lemmas (Theorems~\ref{thm:lag}

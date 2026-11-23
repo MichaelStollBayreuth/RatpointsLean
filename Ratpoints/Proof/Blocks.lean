@@ -136,13 +136,14 @@ those up to `sp3` in the third, delivers the points of `Ratpoints.Sieve.denPoint
 `Ratpoints.Sieve.RunWords`, keeps a store of the tables of rows that fits all the entries, and adds
 the counts of `Ratpoints.Sieve.siftCounts` to the counters, for a denominator between `bLow ≥ 1` and
 `bHigh < 2 ^ 63` whose class has a pattern, entries with what the run needs of them
-(`Ratpoints.Sieve.IsRunEntries`) that count no factors from `sp2` on. -/
+(`Ratpoints.Sieve.IsRunEntries`) that count no factors from `sp2` on, and flags whose modular test
+before the exact check rejects no numerator of a point (`Ratpoints.CheckFlags.HasSoundTest`). -/
 theorem siftDen_spec {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int)
     (d H A : Nat) (fl : CheckFlags) (sp1 : Nat) (entries : List SieveEntry) (magics : Array Nat)
     (sp2 sp3 : Nat) (cls : Vector NumClass 64) (offsets : Array Nat) (iv : Array IntervalBounds)
     (bLow bHigh : Nat) (hA : 1 ≤ A) (hw : IsRunEntries entries magics cls offsets) (h23 : sp2 ≤ sp3)
     (hnf : ∀ e ∈ entries.drop sp2, e.nf = 0) (hbLow : 1 ≤ bLow) (hbHigh : bHigh < 2 ^ 63)
-    (hH : H < 2 ^ 63) (b : Nat) (st : BlockState σ) :
+    (hH : H < 2 ^ 63) (ht : fl.HasSoundTest c d) (b : Nat) (st : BlockState σ) :
     ⦃ (bLow ≤ b ∧ b ≤ bHigh ∧ cls[b % 64]!.bits ≠ 0) ∧ st.1.quit = false ∧ st.2.1.Fits entries ⦄
     siftDen process c d H A fl sp1 (entries.take sp2) (magics.toList.take sp2)
       ((entries.drop sp2).take (sp3 - sp2)) ((magics.toList.drop sp2).take (sp3 - sp2)) cls offsets
@@ -161,7 +162,7 @@ theorem siftDen_spec {σ : Type} (process : Int → Int → Int → σ → Answe
     st.1 st.2.2).le_wp
       ⟨hq, hA, by lia, by lia, hH, fun e he ↦ hw.isPrimeEntry_of_nf e (List.mem_of_mem_drop
         (List.mem_of_mem_take he)) (hnf e (List.mem_of_mem_take he)), by simp [hw.magics_eq], hmgs,
-        hbp, fun e he ↦ hw.hasInverses e (List.mem_of_mem_take he), hQ.take sp2⟩
+        hbp, fun e he ↦ hw.hasInverses e (List.mem_of_mem_take he), hQ.take sp2, ht⟩
   refine ⟨fun x hx ↦ ?_, hQ.fits_run_sift process c d H A fl sp1 _ offsets _ _ iv _ _ hbp,
     fun hq' ↦ ?_⟩
   · rw [List.flatMap_singleton, denPoints, ← List.take_append_take_drop entries h23]
@@ -345,7 +346,8 @@ decision (`Ratpoints.Sieve.DecisionWF`), entries with what the run needs of them
 (`Ratpoints.Sieve.IsRunEntries`), the word `db` whose bits mark the classes with a pattern, the
 blocks of the shape (`Ratpoints.Sieve.Shape.blockPlan`) with `i` one of them, forbidden divisors of
 the word shape that have what its loop needs (`Ratpoints.Sieve.Shape.ForbFits`), the denominators
-from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the height below `2 ^ 63`. -/
+from `bLow ≥ 1` to `bHigh < 2 ^ 63`, the height below `2 ^ 63`, and flags whose modular test before
+the exact check rejects no numerator of a point (`Ratpoints.CheckFlags.HasSoundTest`). -/
 @[spec]
 theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int)
     (d H A : Nat) (fl : CheckFlags) (sp1 : Nat) (entries : List SieveEntry) (magics : Array Nat)
@@ -356,7 +358,7 @@ theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answ
         (∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) ∧
         DecisionWF entries sp1 decs[Id.run (findDecision decs i)]! ∧
         plan = Id.run (shape.blockPlan bLow bHigh) ∧ shape.ForbFits ∧ i < plan.nblocks ∧
-        1 ≤ bLow ∧ bHigh < 2 ^ 63 ∧ H < 2 ^ 63 ∧ store.Fits entries ⦄
+        1 ≤ bLow ∧ bHigh < 2 ^ 63 ∧ H < 2 ^ 63 ∧ store.Fits entries ∧ fl.HasSoundTest c d ⦄
     runBlock process c d H A fl sp1 entries magics cls offsets db shape iv bLow bHigh plan decs i
       store r
     ⦃ fun res ↦ res.2.1.Fits entries ∧
@@ -365,7 +367,7 @@ theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answ
             (denPoints c d H fl (entries.take decs[Id.run (findDecision decs i)]!.sp3) x))) ∧
         (res.1.quit = false →
           res.2.2 = blockReport H sp1 entries magics cls db shape iv bLow bHigh decs i) ⦄ :=
-  ⟨fun ⟨hr, hA, hw, hdb, hdec, hplan, hforb, hi, hbLow, hbHigh, hH, hs⟩ ↦ by
+  ⟨fun ⟨hr, hA, hw, hdb, hdec, hplan, hforb, hi, hbLow, hbHigh, hH, hs, ht⟩ ↦ by
     subst hplan
     have hwf := (Std.WP.Id.of_run_eq_wp rfl _ ((shape.blockPlan_spec bLow bHigh).le_wp trivial)).1
     have h := (Shape.blockLoop_spec process shape _ _ (RunWords cls iv H bLow bHigh)
@@ -373,7 +375,7 @@ theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answ
       (denCounts H sp1 entries magics cls iv decs[Id.run (findDecision decs i)]!.sp2
         decs[Id.run (findDecision decs i)]!.sp3) (·.Fits entries)
       (siftDen_spec process c d H A fl sp1 entries magics _ _ cls offsets iv bLow bHigh hA hw
-        hdec.sp2_le_sp3 hdec.nf_eq_zero hbLow hbHigh hH) cls db _ _ _ _ bLow bHigh
+        hdec.sp2_le_sp3 hdec.nf_eq_zero hbLow hbHigh hH ht) cls db _ _ _ _ bLow bHigh
         (r, store, {})).le_wp
       ⟨hr, hs, hwf.run_steps_le hi, Shape.loopFits_run_blockPlan hforb bLow bHigh,
         fun b hb ↦ le_and_le_and_bits_ne_zero_of_mem hdb hbLow hi hb⟩

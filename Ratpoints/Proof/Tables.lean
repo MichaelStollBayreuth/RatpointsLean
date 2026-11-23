@@ -329,9 +329,9 @@ theorem HornerInvariant.pos {cm : Array ℕ} {d p a i k s : ℕ} (h : HornerInva
   Nat.pos_of_ne_zero fun hp ↦ by simpa [hp] using h.2
 
 /-- The range obligation of the accumulator of Horner's rule in `examine_prime`: for
-`p < maxPrimeEven`, the values `s a + c` of the steps (`find_points.c:1743`, `find_points.c:1755`)
-and the values that Barrett's reduction takes (`find_points.c:1745`, `find_points.c:1756`,
-`find_points.c:1758`) are below `p ^ (k + 1)` with `k ≤ hornerSteps`, so below `2 ^ 64`: the
+`p < maxPrimeEven`, the values `s a + c` of the steps (`find_points.c:1772`, `find_points.c:1784`)
+and the values that Barrett's reduction takes (`find_points.c:1774`, `find_points.c:1785`,
+`find_points.c:1787`) are below `p ^ (k + 1)` with `k ≤ hornerSteps`, so below `2 ^ 64`: the
 `unsigned long` does not wrap. -/
 theorem HornerInvariant.lt_two_pow_64 {cm : Array ℕ} {d p a i k s : ℕ}
     (h : HornerInvariant cm d p a i k s) (hp : p < maxPrimeEven) (hk : k ≤ hornerSteps) :

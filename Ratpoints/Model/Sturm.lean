@@ -262,7 +262,7 @@ passed and returned (`Ratpoints.Sturm.addInterval`), for the array `ivlocal` and
 that it reaches, and the chain, the index of its last row and the depth of the step as arguments,
 for the arrays `sturm` and `sturm_degs`, `k` and `iter` that it reaches; natural numbers for the
 `long` counts, depths and the `long` `iter`, which is from `0` to `55` (the search clamps it,
-`find_points.c:4756`), integers for the `long` signs, and `Int64` for the other `long`s; the
+`find_points.c:4823`), integers for the `long` signs, and `Int64` for the other `long`s; the
 recursion ends since the depth grows towards `iter`. -/
 def iterate (rows : Array (Array Int)) (k iter : Nat) (nl nr del der : Int64) (cleft cright : Nat)
     (sl sr : Int) (depth : Nat) (iv : Array (Double × Double)) : Id (Array (Double × Double)) :=
@@ -339,7 +339,7 @@ C: `sturm.c:107-121`, `sturm.c:208-218`, `sturm.c:221-222`, `sturm.c:297-301`, `
 
 Deviation: the coefficients, the degree, the depth and the search intervals as arguments, for the
 fields `cof`, `degree`, `sturm`, `domain` and `num_inter` of the arguments; natural numbers for the
-`long`s `degree` and `iter`, which is from `0` to `55` (the search clamps it, `find_points.c:4756`);
+`long`s `degree` and `iter`, which is from `0` to `55` (the search clamps it, `find_points.c:4823`);
 the result as an option of an array, for the `long` that the C code returns and the intervals it
 writes into `domain` with their number `num_inter`: none for `-1`, the empty array for `0`, with
 `num_inter = 0`, and else the intervals, their number the return value; the table of the chain made

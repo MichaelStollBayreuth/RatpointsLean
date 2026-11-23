@@ -62,7 +62,7 @@ counts them in base 2, `⌊log₂ |x|⌋ + 1` for `x ≠ 0` and `1` for a zero: 
 place of the coefficients of a polynomial of a degree from `Ratpoints.printDegree` on. It is `0` for
 no integers.
 
-C: `find_points.c:4627-4638`
+C: `find_points.c:4692-4703`
 
 Deviation: the list of the integers, for the array and the degree; a natural number for the
 `unsigned long`. -/
@@ -82,7 +82,7 @@ or that there is none for a negative depth; whether the points are not checked (
 the polynomial is not reversed (`reverse` clear) and whether the Jacobi test is off; and a blank
 line.
 
-C: `find_points.c:4765-4804`
+C: `find_points.c:4832-4871`
 
 Deviation: the fields of the arguments as arguments, as the search normalizes them: the options of
 the sieve as `Ratpoints.SieveOptions.normalize` gives them, the range of the denominators, the
@@ -114,8 +114,8 @@ the reversed coefficients `c'₀, …, c'_d` for case 3, or for `d` from `Ratpoi
 number of bits of the largest of them (`Ratpoints.Report.coeffBits`), and otherwise that it does
 not, also with the switch off.
 
-C: `find_points.c:4819-4822`, `find_points.c:4836-4837`, `find_points.c:4850-4853`,
-`find_points.c:4870-4885`, `find_points.c:4888-4891`
+C: `find_points.c:4886-4889`, `find_points.c:4903-4904`, `find_points.c:4917-4920`,
+`find_points.c:4937-4952`, `find_points.c:4955-4958`
 
 Deviation: one text, from the result of the check, for the messages that the C code prints in its
 course, the case of a reversal read from the degree and the constant term as the check decides it:
@@ -143,7 +143,7 @@ step refuses it, that it is negative on the search region when the step keeps no
 the intervals that it keeps, each as `[l, u] `, its ends under `%lf`
 (`Ratpoints.Double.printFixed`), and a blank line.
 
-C: `find_points.c:4944-4945`, `find_points.c:4948-4962`
+C: `find_points.c:5011-5012`, `find_points.c:5015-5029`
 
 Deviation: one text, from the result of the step, for the line before the step and the message
 after it, which the C code decides by the code that `_ratpoints_compute_sturm` returns: negative
@@ -169,8 +169,8 @@ and otherwise that they are squares times divisors of `lcf`, with the divisors, 
 when the divisor set-up `us1` has succeeded (`Ratpoints.Setup.setupUs1`), and that it has not
 otherwise; and a line before the 2-adic information.
 
-C: `find_points.c:4981-4982`, `find_points.c:4999-5002`, `find_points.c:5005-5010`,
-`find_points.c:5012-5025`, `find_points.c:5030-5031`
+C: `find_points.c:5048-5049`, `find_points.c:5066-5069`, `find_points.c:5072-5077`,
+`find_points.c:5079-5092`, `find_points.c:5097-5098`
 
 Deviation: one text for the messages between the Sturm step and the 2-adic information, the lines
 before the divisor set-up printed with those after it, from its result: the set-up prints nothing;
@@ -193,7 +193,7 @@ def setup (d : Nat) (lcf : Int) (us1 : Option (List Setup.DenInfo × List Nat)) 
 numerator and there is no point at infinity, which `find_points_work_1` prints under
 `RATPOINTS_VERBOSE`.
 
-C: `find_points.c:5044-5045` -/
+C: `find_points.c:5111-5112` -/
 def noClasses : String := "  no denominator admits a numerator mod 64 ==> no points\n\n"
 
 /-- The report of the packing of the numerators, which `find_points_work_1` prints under
@@ -203,7 +203,7 @@ stride `2 ^ k` of the packing of its numerators under ` %ld`, or ` -` when the c
 numerator, its pattern being `0`, from the classes `cls` (`Ratpoints.Sieve.NumClass`); then the
 number `numPrimes` of the primes to look at.
 
-C: `find_points.c:5053-5069`, `find_points.c:5072-5075`
+C: `find_points.c:5120-5136`, `find_points.c:5139-5142`
 
 Deviation: the pattern of a class, one word in the model, for the first word of its bit array
 (`EXT0`), which repeats the pattern; a list for the array `rep`. -/
@@ -220,7 +220,7 @@ def packing (cls : Vector NumClass 64) (numPrimes : Int) : String :=
 the choice of the moduli looks at (`Ratpoints.sievingInfo`), which `find_points_work_1` prints under
 `RATPOINTS_VERBOSE`.
 
-C: `find_points.c:5091-5093` -/
+C: `find_points.c:5158-5160` -/
 def noPoints (p : Nat) : String := s!"  no points mod p = {p} ==> no rational points\n\n"
 
 /-- The report at the end of the choice of the moduli `P`, which `sieving_info` prints under
@@ -228,7 +228,7 @@ def noPoints (p : Nat) : String := s!"  no points mod p = {p} ==> no rational po
 (`Ratpoints.meanBitsPerWord`), the number of the primes looked at, the ends of the first two stages
 and the length of the third.
 
-C: `find_points.c:3114-3120`
+C: `find_points.c:3156-3162`
 
 Deviation: the result of the choice as an argument, for the local `pn_lim` and the fields of the
 arguments that `sieving_info` prints, which the search prints after it returns, nothing being
@@ -246,7 +246,7 @@ valuations up to `M`, the least `f ≥ 1` with the bits `f, …, M` of `mask` se
 `M` is clear: the valuations `m < f` excluded, each as ` v_p(b)=m`, and the tail as ` p^f|b` when
 `f ≤ M`.
 
-C: `find_points.c:5133-5142`
+C: `find_points.c:5209-5218`
 
 Deviation: natural numbers for the `long`s and for the mask, a `while` loop for each of the two
 loops `for`, the first with the power and the valuation in the order of its body. -/
@@ -271,7 +271,7 @@ excluded at each prime of `forbVal`, tested by its valuations
 (`Ratpoints.Report.excludedValuations`, with the largest denominator `bHigh`); ` (lcf/b) = -1` when
 the Jacobi test runs (`useJacobi`); and a line feed.
 
-C: `find_points.c:5127-5132`, `find_points.c:5143-5147`
+C: `find_points.c:5203-5208`, `find_points.c:5219-5223`
 
 Deviation: loops over the lists, for the loops over the zero-terminated arrays `forb_ba` and
 `forbidden`; the switch of the Jacobi test as a Boolean, for the bit `RATPOINTS_USE_JACOBI` of the
@@ -287,39 +287,52 @@ def excluded (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal) (useJaco
   return out ++ "\n"
 
 /-- The report of the moduli of the three stages, which `find_points_work_1` prints under
-`RATPOINTS_VERBOSE` after the choice of the moduli `si` (`Ratpoints.sievingInfo`): for each stage
-the number of its moduli and its moduli, each under ` %ld`; the cost of one exact check under
-`%.0f`, its ratio `checkRel` to `Ratpoints.checkReference` times that reference, and the ratio under
-`%.2f`; the forbidden divisors of the checked loop of the denominators when it runs
-(`Ratpoints.Report.excluded`, with the switch `useJacobi` of the Jacobi test and the largest
-denominator `bHigh`); and a blank line.
+`RATPOINTS_VERBOSE` after the choice of the moduli `si` (`Ratpoints.sievingInfo`), for the
+polynomial of degree `d` with the coefficient list `c`, the height bound `H` and the options `s`:
+for each stage the number of its moduli and its moduli, each under ` %ld`; the cost of one check
+under `%.0f`, its ratio `checkRel` to `Ratpoints.checkReference` times that reference, and the ratio
+under `%.2f`, and in a search with the modular test before the exact check, whose cost that is,
+before it the cost of one exact check (`Ratpoints.checkCost`, with the value of `-W`) under `%.0f`
+and the number of the moduli of the test; the forbidden divisors of the checked loop of the
+denominators when it runs (`Ratpoints.Report.excluded`, with the switch `useJacobi` of the Jacobi
+test and the largest denominator `bHigh`); and a blank line.
 
-C: `find_points.c:5111-5126`, `find_points.c:5148-5150`
+C: `find_points.c:5178-5202`, `find_points.c:5224-5226`
 
 Deviation: the moduli of the stages as the moduli of the sieve entries in their order, for the
 fields `p` of the entries of `sieve_list`; the doubles as values of Lean's `Float`
 (`Ratpoints.Double.ofFloat`), the product with the reference computed in its arithmetic; the
 numbers of the moduli of the second and the third stage integers, for the differences of the
-`long`s. -/
-def moduli (si : SievingInfo) (useJacobi : Bool) (bHigh : Nat) : Id String := do
+`long`s; the switch of the modular test read from the result of the choice
+(`Ratpoints.Params.modular`), for the local variable of `find_points_work_1`; the coefficients, the
+degree, the height bound and the value of `-W` as arguments, for the arguments of the search from
+which `check_cost` computes the cost of the exact check once more; the number of the moduli of the
+test the length of `Ratpoints.testModuli`, for the macro `RATPOINTS_TEST_MODULI`. -/
+def moduli (c : List Int) (d H : Nat) (s : SieveOptions) (si : SievingInfo) (useJacobi : Bool)
+    (bHigh : Nat) : Id String := do
   let P := si.params
   let ms := si.entries.map fun e ↦ (e.p : Int)
   let stage (a b : Nat) : String := longs ((ms.drop a).take (b - a))
   let cost := (Double.ofFloat (P.checkRel * checkReference)).printFixed 0
+  let rel := (Double.ofFloat P.checkRel).printFixed 2
+  let check ← if P.modular then do
+      let exact := (Double.ofFloat (← checkCost c d H s.checkCost.toFloat)).printFixed 0
+      pure (s!"  one exact check is put at {exact} cycles; survivors are tested modulo " ++
+        s!"{testModuli.length}\n    primes first, at {cost} cycles, {rel} times what a check " ++
+        "costs\n")
+    else pure s!"  one exact check is put at {cost} cycles, {rel} times what it costs\n"
   let ex ← if si.checkDenom then excluded si.forb si.forbVal useJacobi bHigh else pure ""
   return s!"  use {P.sp1} moduli for first stage:\n   {stage 0 P.sp1}\n" ++
     s!"  use {(P.sp2 : Int) - P.sp1} moduli for second stage:\n   {stage P.sp1 P.sp2}\n" ++
     s!"  use {(P.sp3 : Int) - P.sp2} primes for third stage:\n   {stage P.sp2 P.sp3}\n" ++
-    s!"  one exact check is put at {cost} cycles, " ++
-    s!"{(Double.ofFloat P.checkRel).printFixed 2} times what it costs\n" ++
-    "    on the curves the third stage was tuned on\n" ++ ex ++ "\n"
+    check ++ "    on the curves the third stage was tuned on\n" ++ ex ++ "\n"
 
 /-! ### The points -/
 
 /-- The line before the points at infinity, which `find_points_work_1` prints under
 `RATPOINTS_VERBOSE` when there are points at infinity.
 
-C: `find_points.c:5159-5161` -/
+C: `find_points.c:5235-5237` -/
 def atInfinity : String := "Points at infinity:\n"
 
 /-- The lines after the points at infinity, which `find_points_work_1` prints under
@@ -328,7 +341,7 @@ at infinity, when there are points at infinity (`atInf`), and, unless the Sturm 
 interval (`sturmEmpty`), in which case the search returns there, a line before the sieve and a blank
 line.
 
-C: `find_points.c:5188`, `find_points.c:5195-5197`
+C: `find_points.c:5264`, `find_points.c:5271-5273`
 
 Deviation: one text for the line feed after the points at infinity and the line before the sieve,
 between which the C code returns when the Sturm step has left no interval. -/

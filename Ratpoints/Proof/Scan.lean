@@ -184,13 +184,13 @@ theorem WalkDeliveryInvariant.and_sub_one_of_accepted
     (h : x.toNat = mb ∧ o = none ∧ WalkWhileInvariant x0
       (WalkDeliveryInvariant process (acceptedPoints w d b fl checks) x0 a0 step r0) false (r, x))
     (hx : (x != 0) = true)
-    (hq : ¬(checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r).quit = true)
+    (hq : ¬(Id.run (checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r)).quit = true)
     (ha : true = (Id.run (accepted (a0 + step * x.toBitVec.ctz.toNat) b checks cnt)).1) :
     (x &&& x - 1).toNat < mb ∧ WalkWhileInvariant x0
       (WalkDeliveryInvariant process (acceptedPoints w d b fl checks) x0 a0 step r0) false
-        (checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r, x &&& x - 1) :=
+        (Id.run (checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r), x &&& x - 1) :=
   WalkDeliveryInvariant.and_sub_one h hx
-    (checkPoint_eq_deliver_acceptedPoints process w d b fl ha.symm)
+    (run_checkPoint_eq_deliver_acceptedPoints process w d b fl ha.symm)
     fun _ ↦ Bool.eq_false_iff.mpr hq
 
 /-- A step of the walk at a numerator that does not pass the test of a candidate. -/
@@ -211,13 +211,13 @@ theorem WalkDeliveryInvariant.eq_deliver_of_accepted_of_quit
     (h : x.toNat = mb ∧ o = none ∧ WalkWhileInvariant x0
       (WalkDeliveryInvariant process (acceptedPoints w d b fl checks) x0 a0 step r0) false (r, x))
     (hx : (x != 0) = true)
-    (hq : (checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r).quit = true)
+    (hq : (Id.run (checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r)).quit = true)
     (ha : true = (Id.run (accepted (a0 + step * x.toBitVec.ctz.toNat) b checks cnt)).1) :
-    checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r =
+    Id.run (checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r) =
       r0.deliver process ((((List.range 64).filter (x0.toBitVec.getLsbD ·)).map
         fun t : Nat ↦ a0 + step * t).flatMap (acceptedPoints w d b fl checks)) :=
   WalkDeliveryInvariant.eq_deliver_of_quit h hx
-    (checkPoint_eq_deliver_acceptedPoints process w d b fl ha.symm) hq
+    (run_checkPoint_eq_deliver_acceptedPoints process w d b fl ha.symm) hq
 
 end
 
@@ -235,7 +235,7 @@ theorem walkWord_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     ⦃ r.quit = false ⦄ walkWord process w d b fl checks x a0 step r cnt
     ⦃ fun r' ↦ r'.1 = r.deliver process ((((List.range 64).filter (x.toBitVec.getLsbD ·)).map
         fun t : Nat ↦ a0 + step * t).flatMap (acceptedPoints w d b fl checks)) ⦄ := by
-  vcgen [walkWord, accepted_value] invariants
+  vcgen [walkWord, accepted_value, checkPoint_value] invariants
   · WalkDeliveryWhileInvariant process (acceptedPoints w d b fl checks) x a0 step r
   · Variant.ofMeasure fun s : Option (Delivery σ × Counters) × UInt64 × Delivery σ × Counters ↦
       s.2.1.toNat

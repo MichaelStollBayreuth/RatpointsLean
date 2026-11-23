@@ -178,7 +178,7 @@ theorem ModinvInvariant.sub_lt_and_sub_mul {x m r₀ r₁ : ℕ} {s₀ s₁ : �
   · dsimp only
     lia [Nat.mul_le_mul_left s₁.natAbs hr0]
 
-/-- The range obligation of the cofactors of `modinv` (`find_points.c:2261-2264`): in each step of
+/-- The range obligation of the cofactors of `modinv` (`find_points.c:2290-2293`): in each step of
 the loop, the product `q s₁` and the new cofactor `s₀ - q s₁`, `q = ⌊r₀ / r₁⌋`, lie between `-m` and
 `m`, as `s₀` and `s₁` do, so that the `long`s do not overflow for `m < 2 ^ 63`. -/
 theorem ModinvInvariant.natAbs_add_mul_le {x m r₀ r₁ : ℕ} {s₀ s₁ : ℤ}
@@ -617,7 +617,7 @@ theorem mul_getElem!_inv_run_examinePower_mod {c : List ℤ} {d p e : ℕ} (u pi
     x * (Id.run (examinePower c d p e u pinf)).inv[x]! % p ^ e = 1 :=
   (Std.WP.Id.of_run_eq_wp rfl _ ((unitInverses_spec p e).le_wp ⟨hp, he⟩) x).2 hx hpx
 
-/-- The range obligation of the inverses of `examine_power` (`find_points.c:2319`), which it casts
+/-- The range obligation of the inverses of `examine_power` (`find_points.c:2348`), which it casts
 to the `unsigned short` entries of `inv` (`rp-private.h:533`): for a prime power
 `p ^ e < maxPrimeEven`, they are below `p ^ e` (`Ratpoints.Sieve.getElem!_inv_run_examinePower_lt`),
 so below `2 ^ 10` (`Ratpoints.maxPrimeEven_le_two_pow_10`) and below `2 ^ 16`: the cast keeps

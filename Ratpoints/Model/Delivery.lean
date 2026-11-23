@@ -29,9 +29,11 @@ output under `RATPOINTS_VERBOSE` goes into the data too, through the print chann
 * `Ratpoints.Delivery`, `Ratpoints.Delivery.call`: the data, the count and the flag of the stop of
   a search, and one call of the callback.
 * `Ratpoints.Delivery.print`: a text printed through the print channel of a search.
+* `Ratpoints.ModTest`: what the modular test before the exact check reads.
 * `Ratpoints.CheckFlags`, `Ratpoints.Delivery.callMapped`: the bits of the flags that decide what
-  the exact check and the points at infinity deliver, and one call of the callback with a point of
-  the polynomial searched, mapped back to the caller's curve after a reversal.
+  the exact check and the points at infinity deliver, with what the modular test reads, and one
+  call of the callback with a point of the polynomial searched, mapped back to the caller's curve
+  after a reversal.
 * `Ratpoints.appendPoint`: the callback that appends each point to an array.
 * `Ratpoints.Delivery.deliver`: the calls of the callback for the points of a list, in their order,
   up to the first call that stops the search, the reference of the delivery of a search.
@@ -46,7 +48,7 @@ namespace Ratpoints
 as a weight for counting the points; usually it will be 1", says the manual), whether it set
 `*quit` to stop the search, and the data behind `info` after the call.
 
-C: `ratpoints.h:471-472`, `ratpoints.h:476-477`
+C: `ratpoints.h:506-507`, `ratpoints.h:511-512`
 
 Deviation: the result of the call returned as a value, for the `int` that `process` returns, the
 `int` that it writes through the pointer `quit`, which the library clears before the search and
@@ -65,7 +67,7 @@ structure Answer (σ : Type) where
 /-- The state of the delivery of a search: the data `info` of the callback, the count `total`, the
 sum of the values that the calls of the callback returned so far, and the flag `quit`, whether a
 call has stopped the search. The search starts with `total = 0` and `quit` clear
-(`find_points.c:4644-4645`, `find_points.c:3154`), and its components test `quit` after each call of
+(`find_points.c:4709-4710`, `find_points.c:3196`), and its components test `quit` after each call of
 the callback, where the C code tests `*quit`, and return at once when it is set. One value stands
 for what the C code keeps apart: the pointer `info`, which the library hands on unchanged; the
 counts `total` that each function of the search keeps from zero and returns, which its caller adds
@@ -101,20 +103,46 @@ comes between the points that the callback prints, as on the standard output of 
 def Delivery.print (print : String → σ → σ) (t : String) (r : Delivery σ) : Delivery σ :=
   { r with info := print t r.info }
 
+/-- What the modular test before the exact check reads in a search for which the choice of the
+moduli switches it on (`Ratpoints.checkRelOf`): the coefficient list `c` of the polynomial searched,
+and for each modulus `q` of the test (`Ratpoints.testModuli`), in their order, the residues modulo
+`q` of the coefficients `c₀, …, c_d` (`Ratpoints.Sieve.testResidues`). The sieving of the search
+makes it once for the run (`Ratpoints.Sieve.modTest`, `Ratpoints.sieving`), and it reaches the exact
+check with the flags of the search (`Ratpoints.CheckFlags`), where the test reads the residues
+(`Ratpoints.Sieve.passesTest`) and the check of a survivor that passes it the coefficients
+(`Ratpoints.Sieve.homHorner`).
+
+C: `rp-private.h:588`
+
+Deviation: a structure of a list of residues for each modulus, for the array `cq` of the run
+(`find_points.c:3837`) with `c[k] mod test_moduli[j]` at `j (degree + 1) + k`, to which the pointer
+`cq` of the sieving thread points, natural numbers for the `unsigned long`s; and the coefficients
+with them, which `_ratpoints_check_point` reads through its worker (`args->cof`). -/
+structure ModTest where
+  /-- The coefficients of the polynomial searched. -/
+  c : List Int
+  /-- For each modulus of the test, the residues of the coefficients modulo it. -/
+  cq : List (List Nat)
+
 /-- The bits of the flags of a search (`args->flags`) that decide what the exact check and the
 points at infinity deliver: `RATPOINTS_REVERSED`, which the reversal check sets when it reverses the
 polynomial, so that each point of the polynomial searched goes to the callback mapped back to the
 caller's curve; `RATPOINTS_NO_CHECK`, the option of the caller to have every numerator that passes
 the sieve delivered without the exact check, with `y = 0`; and `RATPOINTS_NO_Y`, the option to have
-only the point with `y ≥ 0` of a pair `(x : ±y : z)` delivered.
+only the point with `y ≥ 0` of a pair `(x : ±y : z)` delivered. With them, what the modular test
+before the exact check reads (`Ratpoints.ModTest`) in a search that runs it, and nothing in a search
+that does not.
 
-C: `ratpoints.h:449`
+C: `ratpoints.h:484`
 
 Deviation: a structure with a Boolean for each of the three bits, for the bits of the word `flags`
 of the arguments, which `_ratpoints_check_point` reads through its worker and `find_points_work_1`
 directly; the bits `RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y` copied from the options of the search
 (`Ratpoints.Options`), and `RATPOINTS_REVERSED` from the reversal check
-(`Ratpoints.Setup.reversal`). -/
+(`Ratpoints.Setup.reversal`); the field `test` for the pointer `cq` of the sieving thread, `NULL`
+when the search does without the modular test, which is no bit of the flags: it reaches the exact
+check with them through the components of the sieve, and the sieving sets it for its run
+(`Ratpoints.sieving`), whatever its caller passes. -/
 structure CheckFlags where
   /-- `RATPOINTS_REVERSED`: the reversal check has reversed the polynomial. -/
   reversed : Bool := false
@@ -123,13 +151,15 @@ structure CheckFlags where
   noCheck : Bool := false
   /-- `RATPOINTS_NO_Y`: only the point with `y ≥ 0` of a pair is delivered. -/
   noY : Bool := false
+  /-- What the modular test before the exact check reads, when the search runs it. -/
+  test : Option ModTest := none
 
 /-- One call of the callback `process` with the point `(a : y : b)` of the polynomial searched, on
 the delivery `r`, mapped back to the caller's curve when `reversed` is set: with `(b : y : a)` for
 `a ≥ 0` and `(-b : y : -a)` for `a < 0` (as `Ratpoints.Sieve.swapPoint` maps the point), and
 otherwise with `(a : y : b)` itself. These are the three branches that `_ratpoints_check_point`
-writes at each of its calls of `process` (`find_points.c:5396-5400`, `find_points.c:5405-5409`,
-`find_points.c:5415-5419`), one definition here; the negations stay `long`s for a numerator and a
+writes at each of its calls of `process` (`find_points.c:5510-5514`, `find_points.c:5519-5523`,
+`find_points.c:5529-5533`), one definition here; the negations stay `long`s for a numerator and a
 denominator of a height bound below `2 ^ 63`. -/
 def Delivery.callMapped (process : Int → Int → Int → σ → Answer σ) (r : Delivery σ)
     (reversed : Bool) (a b y : Int) :

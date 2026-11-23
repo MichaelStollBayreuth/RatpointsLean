@@ -8,6 +8,7 @@ module
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.Delivery
+public import Ratpoints.Model.Jacobi
 public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Tables
 
@@ -15,6 +16,7 @@ public import Ratpoints.Model.Tables
 meta import Ratpoints.Model.BruteForce
 meta import Ratpoints.Model.Constants
 meta import Ratpoints.Model.Delivery
+meta import Ratpoints.Model.Jacobi
 meta import Ratpoints.Model.Setup
 meta import Ratpoints.Model.Tables
 
@@ -28,7 +30,8 @@ test for common factors by the binary algorithm on the 64-bit words of the C cod
 walk through the set bits of the sieve, the 2-adic information and the classes of the packing read
 as well, and the third stage, one numerator at a time against the tables of its primes
 (`Ratpoints.Sieve.stage3`, `Ratpoints.Sieve.fillChecks`), and the exact check
-(`Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`), whose reference is the check of a
+(`Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`), with the modular test that a search
+with a costly check runs before it (`Ratpoints.Sieve.passesTest`), whose reference is the check of a
 numerator (`Ratpoints.Sieve.checkNum`); the point of the caller's curve for a point of a reversed
 curve (`Ratpoints.Sieve.swapPoint`); and the points at infinity
 (`Ratpoints.Sieve.pointsAtInfinity`). The third stage removes only numerators that the rows of its
@@ -55,9 +58,16 @@ primes and the sieve entries of the moduli, with the rows of a denominator, are 
   its primes for a denominator, and its test of one numerator.
 * `Ratpoints.Sieve.Counters`: the counters of what the sieve did, from which the search corrects
   its moduli between the blocks of the run.
-* `Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`: the test of a candidate, the test for
-  common factors and the third stage, counted, and the exact check of one numerator, its points
-  delivered to the callback of the search as the flags of the search say.
+* `Ratpoints.Sieve.accepted`: the test of a candidate, the test for common factors and the third
+  stage, counted.
+* `Ratpoints.Sieve.testResidues`, `Ratpoints.Sieve.modTest`, `Ratpoints.Sieve.formMod`,
+  `Ratpoints.Sieve.passesTest`: the modular test before the exact check, the residues of the
+  coefficients that it reads, the value of the binary form modulo one of its moduli, and the test
+  of one numerator.
+* `Ratpoints.Sieve.homHorner`: the value of the binary form by Horner's rule with a running power
+  of the denominator.
+* `Ratpoints.Sieve.checkValue`, `Ratpoints.Sieve.checkPoint`: the exact check of one numerator, its
+  points delivered to the callback of the search as the flags of the search say.
 * `Ratpoints.Sieve.checkNum`: the check of the reference, the test for common factors by the gcd
   and the exact check of one numerator, its points mapped by `Ratpoints.Sieve.swapPoint` when the
   flag of the reversal is set.
@@ -235,7 +245,7 @@ C: `sift.c:405-413`, `sift.c:429-431`
 Deviation: a list, made by a map over the entries of the third stage and their reciprocals
 (`List.zipWith`), for the loop over the positions `sp2, …, sp3 - 1` of `sieve_list` and `magics`
 that fills the array `checks` of the sieving thread; no bound `RATPOINTS_NUM_PRIMES` on its length
-(`stage3_list` and the arrays of the pool, `find_points.c:352`, `find_points.c:4400`), which
+(`stage3_list` and the arrays of the pool, `find_points.c:352`, `find_points.c:4465`), which
 `ratpoints` never reaches since each entry of `sieve_list` owns its own prime
 (`find_points.c:342-344`), where the model takes any entries, which may repeat a prime; the thunk
 that the sieve of one denominator makes of it (`Ratpoints.Sieve.sift`), for the flag `stage3_filled`
@@ -288,7 +298,7 @@ def stage3 (a : Int) (checks : List CheckSpec) : Id Bool := do
     if !cs.isFSquare[cs.index a]! then return false
   return true
 
-/-! ### The test of a candidate and the exact check -/
+/-! ### The test of a candidate -/
 
 /-- The counters of the sieving thread for the block that it sieves, what the sieve did, from which
 the search corrects its choice of the moduli between the blocks of the run
@@ -300,11 +310,11 @@ numerators that survive the second stage (`n_bits`), those of them that are prim
 that the counts depend neither on the callback nor on the flags of the output, but for the block in
 which the callback stops the search.
 
-C: `rp-private.h:579-581`
+C: `rp-private.h:582-584`
 
 Deviation: a structure of its own, which the components of the sieve that count pass and return
 beside the delivery, for the fields of the sieving thread `rp_worker`, which `run_block` clears for
-each block (`find_points.c:3942-3943`, `Ratpoints.Sieve.runBlock`); `UInt64` for the
+each block (`find_points.c:4007-4008`, `Ratpoints.Sieve.runBlock`); `UInt64` for the
 `unsigned long`s, wrapping as they wrap. -/
 structure Counters where
   /-- `n_words`: the words of the bit arrays that the first stage swept. -/
@@ -346,48 +356,182 @@ def accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) (cnt : Counte
   if !(← stage3 a checks.get) then return (false, cnt)
   return (true, { cnt with checks := cnt.checks + 1 })
 
+/-! ### The modular test before the exact check -/
+
+/-- The residues of the coefficients `c₀, …, c_d` of the polynomial searched modulo each modulus of
+the modular test before the exact check (`Ratpoints.testModuli`), in the order of the moduli: what
+`run_setup` computes once for a run that tests its survivors modulo these primes
+(`Ratpoints.Sieve.modTest`).
+
+C: `find_points.c:3957-3960`
+
+Deviation: a list of the residues for each modulus, for the one array with `c[k] mod test_moduli[j]`
+at `j (degree + 1) + k`; the Euclidean remainder `c_k % q` as a natural number, for `mpz_fdiv_ui`;
+the coefficients read from the list, a missing one as `0`. -/
+def testResidues (c : List Int) (d : Nat) : List (List Nat) :=
+  testModuli.map fun q : Nat ↦ (List.range (d + 1)).map fun k ↦ (c.getD k 0 % q).toNat
+
+/-- What the modular test before the exact check reads in the run of the polynomial of degree `d`
+with the coefficient list `c`: when the choice of the moduli has switched the test on (`modular`,
+`Ratpoints.checkRelOf`), the coefficients with their residues modulo the moduli of the test
+(`Ratpoints.Sieve.testResidues`), and nothing otherwise. The sieving of the search makes it for its
+run (`Ratpoints.sieving`).
+
+C: `find_points.c:3838`, `find_points.c:3952-3953`, `find_points.c:3961`
+
+Deviation: a function of its own for the end of `run_setup`, which the sieving calls beside
+`Ratpoints.Sieve.runSetup`; an option of a structure (`Ratpoints.ModTest`), for the pointer `cq` of
+the run (`find_points.c:3838`), `NULL` without the test, which `run_block` copies to the sieving
+thread for each block (`find_points.c:4006`); no failure for lack of memory, which the model cannot
+meet. -/
+def modTest (modular : Bool) (c : List Int) (d : Nat) : Option ModTest :=
+  if modular then some ⟨c, testResidues c d⟩ else none
+
+/-- A step of Horner's rule with a running power of the denominator modulo `q`, on residues: from
+the value `s.1` and the power `s.2`, the next power `bp = s.2 b mod q` and, with the residue `ck` of
+the coefficient, the value `(s.1 a + ck bp) mod q`. It is the body of the loop of
+`Ratpoints.Sieve.formMod`. -/
+def modStep (q a b : Nat) (s : Nat × Nat) (ck : Nat) : Nat × Nat :=
+  let bp := s.2 * b % q
+  ((s.1 * a + ck * bp) % q, bp)
+
+/-- The value of the binary form of even degree modulo `q`, for the polynomial of degree `d` with
+the residues `cq` of its coefficients modulo `q` and the residues `a` and `b` of the numerator and
+the denominator: Horner's rule in `a` with a running power of `b`, every step reduced modulo `q`
+(`Ratpoints.Sieve.modStep`), from the residue of `c_d` down, and for odd `d` the value times `b`
+once more. For the residues of the coefficients, of a numerator and of a denominator, it is the
+residue of the value that the exact check tests for a square
+(`Ratpoints.Sieve.natCast_formMod`).
+
+C: `find_points.c:5448-5450`
+
+Deviation: a fold over the residues of `c_{d-1}, …, c₀` with the pair of the value and the power as
+its state, from the residue of `c_d` and the power `1`, with which the C code initializes `v` and
+`bp` where it declares them (`find_points.c:5444`); natural numbers for the `unsigned long`s, which
+do not wrap: for a modulus below `2 ^ 31` (`Ratpoints.testModuli_lt_two_pow_31`) and residues
+modulo it, each product is below `2 ^ 62`, and the sum of two of them below `2 ^ 63`; the residues
+read from the list, a missing one as `0`. -/
+def formMod (cq : List Nat) (d q a b : Nat) : Nat :=
+  let v := (((List.range d).reverse.map (cq.getD · 0)).foldl (modStep q a b) (cq.getD d 0, 1)).1
+  if d % 2 = 1 then v * b % q else v
+
+/-- The modular test before the exact check, for the numerator `a` over the denominator `b` of a
+polynomial of degree `d`, with what the test reads (`Ratpoints.ModTest`): for each modulus `q` of
+the test (`Ratpoints.testModuli`) in turn, with the residues of the coefficients modulo it, the
+value `v` of the binary form of even degree modulo `q` at the residues of `a` and `b`
+(`Ratpoints.Sieve.formMod`), and the numerator is rejected when the Jacobi symbol `(v / q)` is `-1`
+(`Ratpoints.Sieve.jacobi`, which gives `1` for `v = 0`), since the value that the exact check tests
+is then not a square; the numerator passes when no modulus rejects it. A numerator whose value is a
+square passes, whatever the moduli are, with the residues of the coefficients
+(`Ratpoints.Sieve.run_passesTest_of_sq_eq`), so that the test loses no point.
+
+C: `find_points.c:5437-5447`, `find_points.c:5451-5452`
+
+Deviation: a loop over the pairs of a modulus and the list of its residues, for the loop over the
+index `j` of `test_moduli` and the offset `j (degree + 1)` into the array `cq`; the residue of `a`
+the Euclidean `a % q` as a natural number, for the remainder of the `long`s made non-negative, and
+that of `b` the same, for the `unsigned long` `b % q` of a denominator `b ≥ 1`; the residue `v` an
+integer for the binary algorithm, which the C code calls as `jacobi1` on the `long`s `q` and `v`; a
+Boolean, for the return of the count `total` from `_ratpoints_check_point` at the modulus that
+rejects, which `Ratpoints.Sieve.checkPoint` makes; no unrolling of the loop (`RP_UNROLL_TEST`). -/
+def passesTest (t : ModTest) (d : Nat) (a b : Int) : Id Bool := do
+  for (q, cq) in testModuli.zip t.cq do
+    if (← jacobi q (formMod cq d q (a % q).toNat (b % q).toNat)) < 0 then return false
+  return true
+
+/-! ### The exact check -/
+
+/-- A step of Horner's rule with a running power of the denominator `b`, for the numerator `a`: from
+the value `s.1` and the power `s.2`, the next power `s.2 b` and, with the coefficient `ck`, the
+value `s.1 a + ck (s.2 b)`. It is the body of the loop of `Ratpoints.Sieve.homHorner`. -/
+def homStep (a b : Int) (s : Int × Int) (ck : Int) : Int × Int :=
+  (s.1 * a + ck * (s.2 * b), s.2 * b)
+
+/-- The value `F(a, b) = ∑ cₖ a^k b^(d - k)` of the binary form of degree `d` with the coefficient
+list `c`, by Horner's rule in `a` with a running power of `b` (`Ratpoints.Sieve.homStep`), from the
+coefficient `c_d` down: what the exact check computes for a survivor that passes the modular test
+(`Ratpoints.Sieve.passesTest`), without the products of the coefficients with the powers of `b`
+(`Ratpoints.BruteForce.scaledCoeffs`), on which Horner's rule gives the same value
+(`Ratpoints.Sieve.homHorner_eq_horner`).
+
+C: `find_points.c:5453-5461`
+
+Deviation: a fold over the coefficients `c_{d-1}, …, c₀` with the pair of the value and the power as
+its state, for the loop on the GMP integers `work[2]` and `work[0]`; the coefficients read from the
+list, a missing one as `0`. -/
+def homHorner (c : List Int) (d : Nat) (a b : Int) : Int :=
+  (((List.range d).reverse.map (c.getD · 0)).foldl (homStep a b) (c.getD d 0, 1)).1
+
+/-- The end of the exact check of the numerator `a` over the denominator `b`, for the value `v` of
+the binary form of degree `d` at `(a, b)`, its points delivered to the callback `process` on the
+delivery `r`, each mapped back to the caller's curve when the flag `fl.reversed` of the reversal is
+set (`Ratpoints.Delivery.callMapped`): with `v` times `b` if `d` is odd, the value of the form of
+even degree, and `y = ⌊√v⌋`, when `v ≥ 0` and `v = y ^ 2`, the call with `(a : y : b)`, and then,
+unless that call stopped the search, `y = 0` or `fl.noY`, the call with `(a : -y : b)`.
+
+C: `find_points.c:5494-5525`
+
+Deviation: a function of its own for the end of the arm of `_ratpoints_check_point` with the check,
+which follows both ways to the value (`Ratpoints.Sieve.checkPoint`); the delivery `r` passed and
+returned, for the pointers `info` and `wk->quit` and the count `total` of `_ratpoints_check_point`,
+and the three branches of the map of the reversal at each call one definition
+(`Ratpoints.Delivery.callMapped`); the square root and the test of the remainder by `Nat.sqrt` on
+`v`, for `mpz_sqrtrem`; integers for the `long`s `a` and `b` (the negations of the map stay `long`s
+by `Ratpoints.fitsLong_neg`); no output under `DEBUG`. -/
+def checkValue {σ : Type} (process : Int → Int → Int → σ → Answer σ) (d : Nat) (b : Int)
+    (fl : CheckFlags) (a v : Int) (r : Delivery σ) :
+    Delivery σ :=
+  let v := v * if d % 2 = 1 then b else 1
+  let y := v.toNat.sqrt
+  if 0 ≤ v ∧ y * y = v.toNat then
+    let r := r.callMapped process fl.reversed a b y
+    if !r.quit && y != 0 && !fl.noY then r.callMapped process fl.reversed a b (-y) else r
+  else r
+
 /-- The exact check of the numerator `a` over the denominator `b`, its points delivered to the
 callback `process` on the delivery `r`, each mapped back to the caller's curve when the flag
-`fl.reversed` of the reversal is set (`Ratpoints.Delivery.callMapped`): unless `fl.noCheck`, for the
-value `v` of Horner's rule in `a` on the products `w`, times `b` if the degree `d` is odd, and
-`y = ⌊√v⌋`, when `v ≥ 0` and `v = y ^ 2`, the call with `(a : y : b)`, and then, unless that call
-stopped the search, `y = 0` or `fl.noY`, the call with `(a : -y : b)`; with `fl.noCheck`, one call
-with `(a : 0 : b)`, whether or not it gives a point. For the products `w` of the coefficients `cₖ`
-with the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), `v` is the value `F(a, b)` of the
-binary form; with the flags of the output clear and a callback that does not stop the search, the
-calls are those of the points of the check of the reference (`Ratpoints.Sieve.checkNum`) for a
-numerator prime to `b`, with the factor `b` for odd `d` and `1` for even `d`, in their order. The
-walk through the set bits of a word calls it (`Ratpoints.Sieve.walkWord`), only while the flag
-`quit` of `r` is clear, and returns when the flag is set after it.
+`fl.reversed` of the reversal is set (`Ratpoints.Delivery.callMapped`): with `fl.noCheck`, one call
+with `(a : 0 : b)`, whether or not it gives a point; otherwise, in a search without the modular test
+(`fl.test` empty), the calls of `Ratpoints.Sieve.checkValue` for the value of Horner's rule in `a`
+on the products `w`, and in a search with the test, nothing when `a` does not pass it
+(`Ratpoints.Sieve.passesTest`), and else these calls for the value of Horner's rule with a running
+power of `b` on the coefficients of the test (`Ratpoints.Sieve.homHorner`). For the products `w` of
+the coefficients `cₖ` with the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), and for
+what the test reads of these coefficients (`Ratpoints.Sieve.modTest`), both values are the value
+`F(a, b)` of the binary form, and a numerator that the test rejects gives no point; so with the
+flags of the output clear and a callback that does not stop the search, the calls are those of the
+points of the check of the reference (`Ratpoints.Sieve.checkNum`) for a numerator prime to `b`, with
+the factor `b` for odd `d` and `1` for even `d`, in their order, with the test and without. The walk
+through the set bits of a word calls it (`Ratpoints.Sieve.walkWord`), only while the flag `quit` of
+`r` is clear, and returns when the flag is set after it.
 
-C: `sift.c:202-205`, `find_points.c:3147`, `find_points.c:5334-5422`, `rp-private.h:576`,
-`rp-private.h:596-597`
+C: `sift.c:202-205`, `find_points.c:3189`, `find_points.c:5411-5436`, `find_points.c:5462-5493`,
+`find_points.c:5526-5536`, `rp-private.h:579`, `rp-private.h:600-601`
 
 Deviation: the products `w` as a thunk, which the sieve of one denominator makes for each
 denominator (`Ratpoints.Sieve.sift`) and which is forced when the first numerator of `b` reaches the
-check, for the array `work` of the sieving thread, which `worker_init` gives it, and its flag
-`compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when it computes the products;
-the degree `d` and the flags `fl` as arguments, handed down from `Ratpoints.Sieve.sieveRun` through
-the components that call the check, for the degree and the bits `RATPOINTS_REVERSED`,
-`RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y` of the flags of the search, which `_ratpoints_check_point`
-reads through its worker (`args->degree`, `args->flags`); the delivery `r` passed and returned, for
-the pointers `info` and `wk->quit` and the count `total` that `_ratpoints_check_point` keeps from
-zero and returns, and the three branches of the map of the reversal at each call one definition
-(`Ratpoints.Delivery.callMapped`); the square root and the test of the remainder by `Nat.sqrt` on
-`v`, for `mpz_sqrtrem`; integers for the `long`s `a` and `b` (the negations of the map stay `long`s
-by `Ratpoints.fitsLong_neg`); no measurements of the time of the check and of its products
-(`RP_CHECK`, `RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under `DEBUG`. -/
+check in a search without the modular test, for the array `work` of the sieving thread, which
+`worker_init` gives it, and its flag `compute_bc`, which `sift` sets and `_ratpoints_check_point`
+clears when it computes the products; the degree `d` and the flags `fl` as arguments, handed down
+from `Ratpoints.Sieve.sieveRun` through the components that call the check, for the degree and the
+bits `RATPOINTS_REVERSED`, `RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y` of the flags of the search,
+which `_ratpoints_check_point` reads through its worker (`args->degree`, `args->flags`), and with
+the flags what the modular test reads (`Ratpoints.ModTest`), for the pointer `cq` of the worker,
+which is `NULL` without the test, and the coefficients `args->cof`; the delivery `r` passed and
+returned, for the pointers `info` and `wk->quit` and the count `total` that `_ratpoints_check_point`
+keeps from zero and returns; the test of the bit `RATPOINTS_NO_CHECK` first, where the C code has
+the arm without the check after the arm with it; no measurements of the time of the check and of its
+products (`RP_CHECK`, `RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under
+`DEBUG`. -/
 def checkPoint {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d : Nat) (b : Int) (fl : CheckFlags) (a : Int) (r : Delivery σ) :
-    Delivery σ :=
-  if !fl.noCheck then
-    let v := BruteForce.horner w.get a * if d % 2 = 1 then b else 1
-    let y := v.toNat.sqrt
-    if 0 ≤ v ∧ y * y = v.toNat then
-      let r := r.callMapped process fl.reversed a b y
-      if !r.quit && y != 0 && !fl.noY then r.callMapped process fl.reversed a b (-y) else r
-    else r
-  else r.callMapped process fl.reversed a b 0
+    Id (Delivery σ) := do
+  if fl.noCheck then return r.callMapped process fl.reversed a b 0
+  match fl.test with
+  | none => return checkValue process d b fl a (BruteForce.horner w.get a) r
+  | some t =>
+    if !(← passesTest t d a b) then return r
+    return checkValue process d b fl a (homHorner t.c d a b) r
 
 /-- The points of the numerator `a` over the denominator `b`, as the brute-force reference checks it
 (`Ratpoints.BruteForce.pointsOfDen`), each mapped by `Ratpoints.Sieve.swapPoint` when the flag `rev`
@@ -425,22 +569,22 @@ it set of the same points mapped by `Ratpoints.Sieve.swapPoint`: after a reversa
 `(0 : y : 1)` of the caller's curve. The caller tests the flag `quit` after it and returns when it
 is set (`Ratpoints.chooseAndSearch`).
 
-C: `find_points.c:4708`, `find_points.c:4978-4980`, `find_points.c:4983`,
-`find_points.c:5152-5158`, `find_points.c:5162-5183`
+C: `find_points.c:4775`, `find_points.c:5045-5047`, `find_points.c:5050`,
+`find_points.c:5228-5234`, `find_points.c:5238-5259`
 
 Deviation: the flags `fl` as an argument, for the bits `RATPOINTS_REVERSED`, `RATPOINTS_NO_CHECK`
 and `RATPOINTS_NO_Y` of the flags of the search (`args->flags`); the delivery `r` passed and
 returned, for the pointer `info`, the local flag `quit` and the count `total` of
-`find_points_work_1`; the return when the callback stops the search (`find_points.c:5184-5187`) made
+`find_points_work_1`; the return when the callback stops the search (`find_points.c:5260-5263`) made
 by the caller (`Ratpoints.chooseAndSearch`), which also prints the line before them under
 `RATPOINTS_VERBOSE` (`Ratpoints.Report.atInfinity`), the line that there are points at infinity
 coming with the report of the tests on the denominators (`Ratpoints.Report.setup`); no output under
 `DEBUG`; the square test of `c_d` and the decision whether there are points at infinity are made on
 the list that it is given, after the reversal check, when the points are delivered, where the C code
-computes `lcfsq` before the check (`find_points.c:4708`), which clears it in case 2
-(`find_points.c:4849`), the only reversal after which the degree is even, and leaves it, unread,
+computes `lcfsq` before the check (`find_points.c:4775`), which clears it in case 2
+(`find_points.c:4916`), the only reversal after which the degree is even, and leaves it, unread,
 with the odd degree that cases 1 and 3 leave, and sets `point_at_infty` before the exits of the
-search (`find_points.c:4978-4983`); the square root by `Nat.sqrt`, for `mpz_sqrt`. -/
+search (`find_points.c:5045-5050`); the square root by `Nat.sqrt`, for `mpz_sqrt`. -/
 def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d : Nat)
     (fl : CheckFlags) (r : Delivery σ) :
     Delivery σ :=
@@ -530,8 +674,35 @@ def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answe
       let w := BruteForce.scaledCoeffs c d b
       let f : Int := if d % 2 = 1 then b else 1
       checkNum w f b rev a == if Int.gcd a b = 1 then
-        (checkPoint appendPoint (.pure w) d b { reversed := rev } a ⟨#[], 0, false⟩).info.toList
+        (Id.run (checkPoint appendPoint (.pure w) d b { reversed := rev } a
+          ⟨#[], 0, false⟩)).info.toList
       else []
+
+-- Horner's rule with a running power of the denominator against the rule on the products of the
+-- coefficients with its powers, and the value of the form of even degree modulo `q` from the
+-- residues against the residue of that value times `b` for odd degree, for the moduli of the
+-- modular test and a few small ones.
+#guard ([([-2, 0, 0, 1], 3), ([1, 0, 126, 0, 441], 4), ([1, 2, 3, 4, 5, 6, 7], 6), ([5], 0),
+    ([3, -4, 0], 2)] : List (List Int × Nat)).all fun (c, d) ↦
+  [1, 2, 21, 100].all fun b : Nat ↦ (BruteForce.numerators 30).all fun a ↦
+    let v := BruteForce.horner (BruteForce.scaledCoeffs c d b) a
+    homHorner c d a b == v &&
+      ((testModuli ++ [3, 4, 97]).zip (testResidues c d ++ [3, 4, 97].map fun q : Nat ↦
+        (List.range (d + 1)).map fun k ↦ (c.getD k 0 % q).toNat)).all fun (q, cq) ↦
+          formMod cq d q (a % q).toNat (b % q) ==
+            ((v * if d % 2 = 1 then (b : Int) else 1) % q).toNat
+
+-- The modular test before the exact check: on these curves, a numerator passes it exactly when
+-- the value that the check tests is a square, and the check delivers the same points with the test
+-- as without it, also after a reversal; without the switch there is nothing for the test to read.
+#guard ([([-2, 0, 0, 1], 3), ([1, 0, 126, 0, 441], 4)] : List (List Int × Nat)).all fun (c, d) ↦
+  (modTest false c d).isNone && [1, 2, 21, 100].all fun b : Nat ↦ [false, true].all fun rev ↦
+    (BruteForce.numerators 130).all fun a ↦
+      let run (fl : CheckFlags) : List (Int × Int × Int) :=
+        (Id.run (checkPoint appendPoint (.pure (BruteForce.scaledCoeffs c d b)) d b fl a
+          ⟨#[], 0, false⟩)).info.toList
+      run { reversed := rev, test := modTest true c d } == run { reversed := rev } &&
+        Id.run (passesTest ⟨c, testResidues c d⟩ d a b) == !(run {}).isEmpty
 
 -- The flags of the output and the stop in the exact check, for the point `(129 : ±3830 : 100)` of
 -- `y ^ 2 = x ^ 3 - 2`, with a callback that appends the points and stops at its `k`-th call:
@@ -544,8 +715,9 @@ def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answe
   let stopAt (k : Nat) (x z y : Int) (pts : Array (Int × Int × Int)) :
       Answer (Array (Int × Int × Int)) := ⟨1, pts.size + 1 == k, pts.push (x, y, z)⟩
   let run (k : Nat) (fl : CheckFlags) (a : Int) : List (Int × Int × Int) × Int × Bool :=
-    let r := checkPoint (stopAt k) (.pure w) 3 100 fl a ⟨#[], 0, false⟩
+    let r := Id.run (checkPoint (stopAt k) (.pure w) 3 100 fl a ⟨#[], 0, false⟩)
     (r.info.toList, r.total, r.quit)
+  let test := modTest true [-2, 0, 0, 1] 3
   run 0 {} 129 == ([(129, 3830, 100), (129, -3830, 100)], 2, false) &&
     run 1 {} 129 == ([(129, 3830, 100)], 1, true) &&
     run 2 {} 129 == ([(129, 3830, 100), (129, -3830, 100)], 2, true) &&
@@ -554,7 +726,13 @@ def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answe
     run 0 { noCheck := true, noY := true } 130 == ([(130, 0, 100)], 1, false) &&
     run 0 {} 130 == ([], 0, false) &&
     run 0 { reversed := true } 129 == ([(100, 3830, 129), (100, -3830, 129)], 2, false) &&
-    run 0 { reversed := true, noCheck := true } (-7) == ([(-100, 0, 7)], 1, false)
+    run 0 { reversed := true, noCheck := true } (-7) == ([(-100, 0, 7)], 1, false) &&
+    -- With the modular test, the same calls, and under `RATPOINTS_NO_CHECK` the test is not run.
+    run 0 { test } 129 == ([(129, 3830, 100), (129, -3830, 100)], 2, false) &&
+    run 1 { test } 129 == ([(129, 3830, 100)], 1, true) &&
+    run 0 { test, noY := true } 129 == ([(129, 3830, 100)], 1, false) &&
+    run 0 { test } 130 == ([], 0, false) &&
+    run 0 { test, noCheck := true } 130 == ([(130, 0, 100)], 1, false)
 
 -- The check of a numerator against the reference: the point `(129 : 3830 : 100)` on
 -- `y ^ 2 = x ^ 3 - 2` and none for `(258 : 15320 : 200)`, the same point with the common factor 2;

@@ -490,12 +490,12 @@ private theorem runShape_true (a : ShapeArgs) (checkDenom : Bool) (forb : List F
 divisors and the test of the denominators only for even degree: at an exit of the third stage the
 curve has no points; otherwise the result is what the run needs (`Ratpoints.IsSievingInfo`). -/
 theorem choiceTail_spec (c : List ℤ) (u mayExtend : Bool) (s : SieveOptions) (a : ShapeArgs)
-    (bpw checkRel : Float) (checkDenom : Bool) (forb : List ForbiddenEntry)
+    (bpw checkRel : Float) (modular checkDenom : Bool) (forb : List ForbiddenEntry)
     (forbVal : List ForbiddenVal) (st : TableLoop) :
     ⦃ st.WF c a.bHigh ∧ (∀ e ∈ forb, IsForbiddenEntry c (degree c) a.bHigh e) ∧
         (∀ e ∈ forbVal, IsForbiddenVal c (degree c) a.bHigh e) ∧
         (checkDenom = true → degree c % 2 = 0) ⦄
-    choiceTail c (degree c) u mayExtend s a bpw checkRel checkDenom forb forbVal st
+    choiceTail c (degree c) u mayExtend s a bpw checkRel modular checkDenom forb forbVal st
     ⦃ fun r ↦ (∀ p, r = .error p → ∀ H q, ¬IsPoint c H q) ∧
         ∀ si, r = .ok si → IsSievingInfo c a.bHigh si ⦄ := by
   vcgen [choiceTail, runShape_true, addModuli_spec, firstStages_value, stageEntries_spec c,
@@ -517,9 +517,9 @@ theorem choiceTail_spec (c : List ℤ) (u mayExtend : Bool) (s : SieveOptions) (
       exact isSievingInfo_choiceEnd (‹_ ∧ ∀ t, _ = Except.ok t → _›.2 _ ‹_›)
         (firstStages_post ‹_› ‹_›).2.2.1 h.store hforb hval hcd rfl rfl rfl
 
--- The cost of a check, as a value: no contract reads it.
-private theorem checkRelOf_true (c : List ℤ) (d H : ℕ) (s : SieveOptions) :
-    ⦃ True ⦄ checkRelOf c d H s ⦃ fun _ ↦ True ⦄ :=
+-- The cost of a check and the switch of the modular test, as a value: no contract reads them.
+private theorem checkRelOf_true (c : List ℤ) (d H : ℕ) (noCheck : Bool) (s : SieveOptions) :
+    ⦃ True ⦄ checkRelOf c d H noCheck s ⦃ fun _ ↦ True ⦄ :=
   ⟨fun _ ↦ trivial⟩
 
 /-- The contract of the choice of the moduli and the cut points from the curve, for options that
@@ -529,10 +529,10 @@ and any values of the doubles: at an exit, at a prime of the loop of the tables 
 third stage without points modulo it, the curve has no points; otherwise the result is what the run
 needs (`Ratpoints.IsSievingInfo`). -/
 @[spec]
-theorem sievingInfo_spec (c : List ℤ) (u checkDenom mayExtend : Bool) (s : SieveOptions)
+theorem sievingInfo_spec (c : List ℤ) (u checkDenom mayExtend noCheck : Bool) (s : SieveOptions)
     (a : ShapeArgs) (bpw : Float) :
     ⦃ s.numPrimes ≤ (numPrimes : ℤ) ∧ (checkDenom = true → degree c % 2 = 0) ⦄
-    sievingInfo c (degree c) u checkDenom mayExtend s a bpw
+    sievingInfo c (degree c) u checkDenom mayExtend noCheck s a bpw
     ⦃ fun r ↦ (∀ p, r = .error p → ∀ H q, ¬IsPoint c H q) ∧
         ∀ si, r = .ok si → IsSievingInfo c a.bHigh si ⦄ := by
   vcgen [sievingInfo, checkRelOf_true, runShape_true, tablesLoop_spec, forbidden_spec,

@@ -35,6 +35,11 @@ class Variants(unittest.TestCase):
                      'def defaultSturm : Int := 62', 'def blockLen : Option Nat := none',
                      'def costSetup : Float := 0.0', 'def survivorsPerWord : Float := 1e-12'):
             self.assertIn(line + '\n', text)
+        self.assertIn('def testModuli : List Nat :=\n  [3]\n\n',
+                      cc.set_constants(CONSTANTS, cc.VARIANTS['A']))
+        m = re.search(r'def testModuli : List Nat :=\n((?:  .*\n)+)\n', text)
+        self.assertEqual(eval(m.group(1)), cc.VARIANTS['B']['testModuli'])
+        self.assertTrue(all(len(line) <= 100 for line in m.group(1).split('\n')))
 
     def test_unknown_constant(self):
         with self.assertRaises(cc.SetupError):
@@ -44,7 +49,8 @@ class Variants(unittest.TestCase):
 
     def test_wrong_kind(self):
         for consts in ({'useLongInPhase2': 1}, {'chunk': True}, {'chunk': 1.5},
-                       {'costSetup': 3}, {'blockLen': 3}, {'chunk': cc.Opt(3)}):
+                       {'costSetup': 3}, {'blockLen': 3}, {'chunk': cc.Opt(3)}, {'chunk': [3]},
+                       {'testModuli': 3}, {'testModuli': [3, -1]}, {'testModuli': [0.5]}):
             with self.subTest(consts=consts), self.assertRaises(cc.SetupError):
                 cc.check_variants({'X': consts}, CONSTANTS)
 
@@ -57,7 +63,8 @@ class Values(unittest.TestCase):
     def test_lean_value(self):
         for value, lean in ((True, 'true'), (False, 'false'), (-1, '-1'), (17, '17'),
                             (0.5, '0.5'), (1e9, '1000000000.0'), (1e-12, '1e-12'),
-                            (cc.Opt(None), 'none'), (cc.Opt(3), 'some 3')):
+                            (cc.Opt(None), 'none'), (cc.Opt(3), 'some 3'), ([], '\n  []'),
+                            ([3], '\n  [3]'), ([2, 30, 5], '\n  [2, 30, 5]')):
             with self.subTest(value=value):
                 self.assertEqual(cc.lean_value(value), lean)
 

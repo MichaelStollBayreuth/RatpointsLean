@@ -163,6 +163,10 @@ theorem nodup_pointsAbove (x z v : ℤ) : (pointsAbove x z v).Nodup := by
     lia
   · simp
 
+/-- A value that is no square has no points above it. -/
+theorem pointsAbove_eq_nil {x z v : ℤ} (h : ∀ y : ℤ, y ^ 2 ≠ v) : pointsAbove x z v = [] :=
+  List.eq_nil_iff_forall_not_mem.mpr fun _ hp ↦ h _ (mem_pointsAbove_iff.mp hp).2.2
+
 /-- The test of `Ratpoints.BruteForce.pointsAbove` is that `⌊√v⌋ ^ 2 = v`, with `Int.sqrt`. -/
 theorem pointsAbove_eq_ite (x z v : ℤ) :
     pointsAbove x z v = if Int.sqrt v ^ 2 = v then

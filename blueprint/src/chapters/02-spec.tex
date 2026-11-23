@@ -41,14 +41,17 @@ number, the height bound.
 
 \begin{remark}[What the C code computes]\label{rem:binaryFormC}
   This is the form that the C code evaluates. The library drops the leading zero coefficients
-  (\csource{find_points.c}{4698}{4706}), so that it works with the degree~$d$, and its exact check
+  (\csource{find_points.c}{4765}{4773}), so that it works with the degree~$d$, and its exact check
   computes $\sum_{k \le d} c_k a^k b^{d-k}$ by Horner's rule in the numerator~$a$, on the products
   $c_k b^{d-k}$ computed once for each denominator~$b$, and multiplies by~$b$ once more when~$d$ is
-  odd (\csource{find_points.c}{5375}{5382}); the result is $F_c(a, b)$. The model evaluates the form
-  in the same way, in the brute-force reference (Section~\ref{sec:specBruteForce}) and in the exact
-  check of the sieve (Chapter~\ref{chap:sieve}), and both evaluations are proved equal to~$F_c$.
-  The C code writes the degree of the form as \verb|degree + (degree & 1)|, and the Lean
-  definition, which copies it, as $d + (d \bmod 2)$; both are $D = 2 \lceil d/2 \rceil$.
+  odd (\csource{find_points.c}{5488}{5496}); the result is $F_c(a, b)$. In a search that tests the
+  value modulo large primes first (Definition~\ref{def:modTest}), the check computes the sum by
+  Horner's rule with a running power of~$b$ instead, without the products
+  (\csource{find_points.c}{5453}{5461}). The model evaluates the form in the same ways, in the
+  brute-force reference (Section~\ref{sec:specBruteForce}) and in the exact check of the sieve
+  (Chapter~\ref{chap:sieve}), and its evaluations are proved equal to~$F_c$. The C code writes the
+  degree of the form as \verb|degree + (degree & 1)|, and the Lean definition, which copies it, as
+  $d + (d \bmod 2)$; both are $D = 2 \lceil d/2 \rceil$.
 \end{remark}
 
 \begin{definition}[The binary form of the refusals]\label{def:binaryFormPoly}
@@ -65,7 +68,7 @@ The refusal theorems (Theorem~\ref{thm:refusals}) speak about~$\Phi_c$ with Math
 constants, so $4(X^2 + Z^2)$ is squarefree (\ratpoints{} accepts \verb|4 0 4|), and~$0$ is not.
 $\Phi_c$ is squarefree exactly when $N \le d + 1$ and~$f$ is squarefree
 (Section~\ref{sec:setupSquarefree}). The C code tests the first condition by the leading zeros
-(\csource{find_points.c}{4703}{4705}) and the second in the remainder chain of the Sturm step,
+(\csource{find_points.c}{4770}{4772}) and the second in the remainder chain of the Sturm step,
 which runs only when \verb|args->sturm| $\ge 0$. With the step off, \ratpoints{} refuses as not
 squarefree only the forms with $d + 2 \le N$ and, when the reversal is allowed, the search region is
 the whole box and~$d$ is even, those with $c_0 = c_1 = 0$ (then $X^2 \mid \Phi_c$); it accepts
@@ -95,12 +98,12 @@ agree.
 
   \emph{The points at infinity} are therefore the triples $(1, y, 0)$ with $y^2 = c_D$: the point
   $(1 : 0 : 0)$ for odd~$d$, and $(1 : \pm\sqrt{c_d} : 0)$ for even~$d$ when~$c_d$ is a square.
-  These are the points at infinity that the C code delivers (\csource{find_points.c}{4978}{4983},
-  \csource{find_points.c}{5152}{5189}) with the exact check on, without \verb|RATPOINTS_NO_Y| and
+  These are the points at infinity that the C code delivers (\csource{find_points.c}{5045}{5050},
+  \csource{find_points.c}{5228}{5265}) with the exact check on, without \verb|RATPOINTS_NO_Y| and
   without a reversal; under \verb|RATPOINTS_NO_CHECK| it delivers one triple with $y = 0$, under
   \verb|RATPOINTS_NO_Y| only the one with~$\sqrt{c_d}$, and after a reversal the points at infinity
   of the polynomial searched, as the points $(0 : y : 1)$ of the caller's curve
-  (\csource{find_points.c}{5163}{5163}; Section~\ref{sec:pointsAtInfinity}).
+  (\csource{find_points.c}{5239}{5239}; Section~\ref{sec:pointsAtInfinity}).
 
   \emph{Both signs of~$y$} are listed, as the program prints both; the option of the library that
   keeps only the point with $y \ge 0$ is an option of the search (Definition~\ref{def:Options}), not
@@ -170,14 +173,14 @@ is refused.
 
 \begin{remark}[The region compared with \ratpoints{}]\label{rem:regionC}
   The ends of the intervals are C doubles (\verb|ratpoints_interval|,
-  \csource{ratpoints.h}{394}{394}). The C code does no floating-point arithmetic on them that could
+  \csource{ratpoints.h}{429}{429}). The C code does no floating-point arithmetic on them that could
   decide a point: it compares them, converts between \verb|long|s and doubles, takes doubles apart
   and scales them by powers of~$2$ (Chapter~\ref{chap:region}), and computes with them only in the
   estimate of the work in the choice of the moduli (Chapter~\ref{chap:moduli}). So the
   specification can speak about their exact values.
 
   Well-formedness is the test of \verb|find_points_work_1| that refuses intervals as bad arguments
-  (\csource{find_points.c}{4935}{4938}): an interval without $l \le u$, or one that does not begin
+  (\csource{find_points.c}{5002}{5005}): an interval without $l \le u$, or one that does not begin
   above the end of the interval before it. Every comparison with a NaN is false, so that a NaN end
   is refused too; infinite ends, degenerate intervals $[a, a]$ and any number of intervals are
   accepted. On doubles that are not NaNs the comparisons of the C language agree with the order of
@@ -185,11 +188,11 @@ is refused.
   specification as for the C code.
 
   Without intervals the library searches $[-h, h]$ for the double~$h$ of~$H$, which holds
-  every~$x/z$ of the box (\csource{find_points.c}{4915}{4925}). It takes $b_{\mathrm{low}} < 1$
+  every~$x/z$ of the box (\csource{find_points.c}{4982}{4992}). It takes $b_{\mathrm{low}} < 1$
   as~$1$ and a $b_{\mathrm{high}}$ outside $1, \dots, H$ as~$H$
-  (\csource{find_points.c}{4733}{4735}), which the region states without clamping; it delivers the
+  (\csource{find_points.c}{4800}{4802}), which the region states without clamping; it delivers the
   points at infinity whatever the region, and forbids the reversal exactly when the region is not
-  the whole box (\csource{find_points.c}{4760}{4761}; Chapter~\ref{chap:region}).
+  the whole box (\csource{find_points.c}{4827}{4828}; Chapter~\ref{chap:region}).
 \end{remark}
 
 \begin{definition}[Sturm's theorem]\label{def:sturmTheorem}
@@ -263,18 +266,18 @@ intervals and the least denominator only filter the list.
 
 \begin{remark}[The order compared with \ratpoints{}]\label{rem:orderC}
   $\mathrm{searchedPoly}$ is the reversal check of \verb|find_points_work_1|
-  (\csource{find_points.c}{4811}{4887}) on the coefficient list; items (1) to~(3) are its cases~1
+  (\csource{find_points.c}{4878}{4954}) on the coefficient list; items (1) to~(3) are its cases~1
   to~3. In case~(1) the check refuses the form as not squarefree when also $c_1 = 0$, since then
-  $X^2 \mid \Phi_c$ (\csource{find_points.c}{4823}{4828}), and otherwise reverses $c_0, \dots, c_d$,
+  $X^2 \mid \Phi_c$ (\csource{find_points.c}{4890}{4895}), and otherwise reverses $c_0, \dots, c_d$,
   which lowers the degree to~$d - 1$; in case~(2) it reverses $c_0, \dots, c_d$, in case~(3)
   $c_1, \dots, c_d$. The squares are those of GMP's \verb|mpz_perfect_square_p|, which agrees with
   Mathlib's \verb|IsSquare| on~$\ZZ$: no negative integer is a square. After a reversal the C code
   hands each point $(a, y, b)$ of the polynomial searched to the caller mapped as above
-  (\csource{find_points.c}{5396}{5400}).
+  (\csource{find_points.c}{5510}{5514}).
 
   The C code delivers the points at infinity first, then sieves the denominators in the order of its
   loop, and for each denominator delivers the points by increasing numerator, $(a, y, b)$ before
-  $(a, -y, b)$ (\csource{find_points.c}{5384}{5411}). For odd~$d$ the loop departs from
+  $(a, -y, b)$ (\csource{find_points.c}{5498}{5525}). For odd~$d$ the loop departs from
   $1, \dots, B$ in two ways. When $|c_d| = 1$ it visits only the squares, in increasing order; the
   specification lists $1, \dots, B$, and the denominators that are not squares carry no point. When
   $|c_d| \ne 1$, \verb|setup_us1| factors~$|c_d|$ by trial division up to~$1021$, which succeeds
@@ -282,7 +285,7 @@ intervals and the least denominator only filter the list.
   divisors up to~$b_{\mathrm{high}}$ in the order of binary counting
   (\csource{find_points.c}{790}{873}, \csource{find_points.c}{877}{894}); when there are fewer than
   \verb|MAX_DIVISORS|, the loop visits~$e k^2$, divisor by divisor and~$k$ increasing
-  (\csource{find_points.c}{3965}{3968}), the one case in which the denominators do not increase.
+  (\csource{find_points.c}{4030}{4033}), the one case in which the denominators do not increase.
   Chapter~\ref{chap:denominators} proves that the loop of the model visits the denominators in this
   order.
 \end{remark}
@@ -297,8 +300,8 @@ $1, 2, 3, 6, 5, 10, 15, 30$ of the divisors of~$30$, and on runs with search reg
 The main theorems speak about the search $\mathrm{findPoints}(c, H, s, o)$, which returns the list
 of the points or a refusal, and about the search with a callback (Definition~\ref{def:findPoints}).
 Their arguments and results are types of the model, whose fields mirror the fields of the arguments
-\verb|ratpoints_args| of the library (\csource{ratpoints.h}{397}{435}) and the bits of its flags
-(\csource{ratpoints.h}{437}{459}).
+\verb|ratpoints_args| of the library (\csource{ratpoints.h}{432}{470}) and the bits of its flags
+(\csource{ratpoints.h}{472}{494}).
 
 \begin{definition}[The options, the refusals and the outcome of a search]\label{def:Options}
   \uses{def:Double, def:regionSpec}
@@ -315,7 +318,7 @@ Their arguments and results are types of the model, whose fields mirror the fiel
   doubles for the array \verb|domain| with its length \verb|num_inter|, empty by default, and the
   least and the largest denominator, integers for the \verb|long|s \verb|b_low| and \verb|b_high|,
   by default~$1$ and~$0$ (\csource{main.c}{359}{359}, \csource{main.c}{363}{363},
-  \csource{ratpoints.h}{438}{440}); the program sets \verb|b_high| to~$H$, and the library takes a
+  \csource{ratpoints.h}{473}{475}); the program sets \verb|b_high| to~$H$, and the library takes a
   value below~$1$ as~$H$, so that the two defaults give the same search. The statements read the
   search intervals by the values of their ends, $\mathrm{domainValues}$, and by their bits,
   $\mathrm{domainBits}$.
@@ -326,7 +329,7 @@ Their arguments and results are types of the model, whose fields mirror the fiel
   its correction (\verb|-r -R -U -C -A -P -Q -W|), the number of forbidden divisors (\verb|-F|), the
   array size, and whether the Jacobi test runs (\verb|-j|, \verb|-J|), as the program reads them
   into \verb|ratpoints_args|, $-1$ for an absent option that takes a number
-  (\csource{main.c}{348}{358}, \csource{main.c}{360}{361}, \csource{ratpoints.h}{400}{402}).
+  (\csource{main.c}{348}{358}, \csource{main.c}{360}{361}, \csource{ratpoints.h}{435}{437}).
 
   The \emph{refusals} are five, each with the error of the program: more than
   $\mathrm{maxDegree} + 1$ coefficients (error~3), fewer than two (error~5), the height bound~$0$ or
@@ -337,8 +340,8 @@ Their arguments and results are types of the model, whose fields mirror the fiel
   the data of the callback, the count, the three bits of the flags that the program reads after the
   search, \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_USE_SQUARES| and \verb|RATPOINTS_USE_SQUARES1|,
   the search intervals as the search leaves them, and the numbers of the moduli used in the stages
-  (\csource{ratpoints.h}{412}{418}, \csource{ratpoints.h}{449}{449},
-  \csource{ratpoints.h}{451}{452}).
+  (\csource{ratpoints.h}{447}{453}, \csource{ratpoints.h}{484}{484},
+  \csource{ratpoints.h}{486}{487}).
 \end{definition}
 
 The search refuses in the order of the program, which differs from that of the library on a few
@@ -354,7 +357,7 @@ gives them, as \verb|find_points_work| restores the fields that it normalized.
 \begin{definition}[The bounds that the statements mention]\label{def:maxDegree}
   \lean{Ratpoints.maxDegree, Ratpoints.maxDivisors, Ratpoints.fitsLong}\leanok
   $\mathrm{maxDegree} = 1518500246$, the largest degree of a polynomial that \ratpoints{} accepts,
-  the value of \verb|RATPOINTS_MAX_DEGREE| (\csource{ratpoints.h}{33}{59}): a list of coefficients
+  the value of \verb|RATPOINTS_MAX_DEGREE| (\csource{ratpoints.h}{33}{60}): a list of coefficients
   has at most $\mathrm{maxDegree} + 1$ entries. The C code takes every array that the degree sizes
   from the heap, and the value is the largest degree~$d$ for which the size of the largest of them,
   the $(d^2 + 7d)/2$ integers of $16$~bytes of the Sturm sequence, fits a \verb|size_t|
@@ -380,13 +383,13 @@ The library function \verb|find_points| returns no list of points. For each poin
 calls a function \verb|process| of the caller with the coordinates, the caller's data \verb|info|
 and a pointer to a flag \verb|quit|; it adds the value that the call returns to a count
 \verb|total|, which it returns, and it stops the search as soon as a call sets the flag
-(\csource{ratpoints.h}{471}{472}).
+(\csource{ratpoints.h}{506}{507}).
 
 \begin{definition}[The reference of the delivery]\label{def:deliver}
   \lean{Ratpoints.Answer, Ratpoints.Delivery, Ratpoints.Delivery.call, Ratpoints.Delivery.deliver}\leanok
   The callback is a function of~$x$, $z$, $y$ and the data, in the order of the C code, that returns
   what the call gives: the weight that it returns, an integer, whether it set \verb|*quit|, and the
-  data after the call (\csource{ratpoints.h}{471}{472}, \csource{ratpoints.h}{476}{477}). A
+  data after the call (\csource{ratpoints.h}{506}{507}, \csource{ratpoints.h}{511}{512}). A
   \emph{delivery} is the data of the callback, the count, the sum of the weights so far, and the
   flag of the stop; one call on a delivery adds the weight to the count and takes the flag and the
   data that the call leaves. The \emph{delivery of a list}~$L$ of points to the callback, from a

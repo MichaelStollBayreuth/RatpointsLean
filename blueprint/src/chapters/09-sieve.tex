@@ -25,10 +25,10 @@ from Chapter~\ref{chap:region}.
 
 \section{The sieve in the C code and in the model}\label{sec:sieveC}
 
-In the C code the sieve of a denominator is \verb|sift| (\csource{find_points.c}{3468}{3643}), which
+In the C code the sieve of a denominator is \verb|sift| (\csource{find_points.c}{3511}{3686}), which
 cuts the bits of each search interval into pieces for \verb|_ratpoints_sift0|
 (\csource{sift.c}{498}{1305}), and each numerator that survives goes through \verb|accepted|
-(\csource{sift.c}{438}{446}) to the exact check (\csource{find_points.c}{5334}{5422}). The model has
+(\csource{sift.c}{438}{446}) to the exact check (\csource{find_points.c}{5411}{5536}). The model has
 a component for each step, in the sections below, with the data and the loops of the default build.
 
 A C \verb|long| is an integer or a natural number, with a lemma that it stays in range, except in
@@ -41,7 +41,7 @@ a delivery whose flag of the stop is clear, it returns the reference of the deli
   \lean{Ratpoints.Sieve.Counters}
   \leanok
   The six counters that the sieve keeps for the correction of the moduli
-  (Chapter~\ref{chap:moduli}), $64$-bit words that wrap (\csource{rp-private.h}{579}{581}): the
+  (Chapter~\ref{chap:moduli}), $64$-bit words that wrap (\csource{rp-private.h}{582}{584}): the
   words that the first stage sweeps, the bit arrays that survive it, the numerators extracted, those
   prime to the denominator, those that pass the third stage, and the calls of the sieve.
 \end{definition}
@@ -153,11 +153,11 @@ offset computed once per run for each packing and each modulus.
   $a_0\,(2^k\,\mathrm{rbaLength})^{-1} \bmod p$ plus the bias of~$p$, the least multiple of~$p$ from
   $\mathrm{rowBias} = 2^{31}$ on (\csource{find_points.c}{1177}{1195}). The residues
   $b\,\mathrm{dinv}[k] \bmod p$ of a denominator for the moduli of the first two stages, in three
-  branches by the size of~$b$ (\csource{find_points.c}{3667}{3707}). The bits
+  branches by the size of~$b$ (\csource{find_points.c}{3710}{3750}). The bits
   $\lceil (\mathrm{low} - a_0)/2^k \rceil$ to $\lfloor (\mathrm{high} - a_0)/2^k \rfloor$ of an
   interval of numerators, by arithmetic shifts of signed 64-bit words, in a plain form and in a form
   that splits each end into its multiple of~$2^k$ and its rest, which cannot overflow
-  (\csource{find_points.c}{3381}{3396}).
+  (\csource{find_points.c}{3424}{3439}).
 \end{definition}
 
 \begin{lemma}[What the packing computes]\label{lem:packing}
@@ -290,9 +290,31 @@ the word smaller, the scan since the sentinel is not zero.
 
 \section{The test of a candidate and the exact check}\label{sec:candidate}
 
+\begin{definition}[The modular test before the exact check]\label{def:modTest}
+  \uses{def:jacobi}
+  \lean{Ratpoints.testModuli, Ratpoints.ModTest, Ratpoints.Sieve.testResidues, Ratpoints.Sieve.modTest, Ratpoints.Sieve.formMod, Ratpoints.Sieve.passesTest, Ratpoints.Sieve.homHorner}
+  \leanok
+  A search for which the choice of the moduli has switched the test on
+  (Definition~\ref{def:costModel}) tests each numerator that reaches the exact check modulo the
+  sixteen largest primes below~$2^{31}$ first (\csource{find_points.c}{1298}{1302}). What the test
+  reads is made once for the run (\csource{find_points.c}{3952}{3953}): the coefficients and, for
+  each modulus~$q$ of the test, their residues $c_k \bmod q$ for $k \le d$
+  (\csource{find_points.c}{3957}{3960}); the flags of the check carry it, and carry nothing in a
+  search without the test (\csource{rp-private.h}{588}{588}). The value of the form modulo~$q$
+  (\csource{find_points.c}{5448}{5450}), for the residues of the coefficients, of~$a$ and of~$b$:
+  from $v = c_d$ and $p = 1$, for $k = d - 1, \dots, 0$, first $p \leftarrow p\,b \bmod q$ and then
+  $v \leftarrow (v\,a + c_k\,p) \bmod q$, and at the end $v \leftarrow v\,b \bmod q$ for odd~$d$.
+  The test (\csource{find_points.c}{5437}{5447}) takes the moduli in their order and rejects the
+  numerator at the first modulus~$q$ at which the binary algorithm of the Jacobi symbol
+  (Definition~\ref{def:jacobi}) gives~$-1$ for~$q$ and this value. A numerator that passes is
+  checked exactly on the value of Horner's rule with a running power of~$b$ on the coefficients
+  themselves (\csource{find_points.c}{5453}{5461}): from $v = c_d$ and $p = 1$, the steps
+  $p \leftarrow p\,b$ and $v \leftarrow v\,a + c_k\,p$, without the products $c_k b^{d - k}$.
+\end{definition}
+
 \begin{definition}[The test of a candidate and the exact check]\label{def:candidate}
-  \uses{def:bitArrays, def:reciprocal, def:deliver, def:callback, def:sieveEntry, def:tableOfPrime, def:counters}
-  \lean{Ratpoints.Sieve.relprime, Ratpoints.Sieve.relprimeOdd, Ratpoints.Sieve.checkOf, Ratpoints.Sieve.fillChecks, Ratpoints.Sieve.stage3, Ratpoints.Sieve.accepted, Ratpoints.Sieve.checkPoint}
+  \uses{def:bitArrays, def:reciprocal, def:deliver, def:callback, def:sieveEntry, def:tableOfPrime, def:counters, def:modTest}
+  \lean{Ratpoints.Sieve.relprime, Ratpoints.Sieve.relprimeOdd, Ratpoints.Sieve.checkOf, Ratpoints.Sieve.fillChecks, Ratpoints.Sieve.stage3, Ratpoints.Sieve.accepted, Ratpoints.Sieve.checkPoint, Ratpoints.Sieve.checkValue}
   \leanok
   The test for common factors on signed 64-bit words (\csource{sift.c}{318}{327}): for $m = 0$,
   whether $n = 1$; otherwise~$m$ replaced by~$-m$ when it is negative, false when~$m$ and~$n$ are
@@ -308,30 +330,64 @@ the word smaller, the scan since the sentinel is not zero.
   $a\, b^{-1}$, reduced with the reciprocal after adding the bias if there is one, and by division
   otherwise (\csource{sift.c}{291}{301}). The test of a candidate: $a$ is prime to~$b$ and passes
   the third stage (\csource{sift.c}{438}{446}). The exact check
-  (\csource{find_points.c}{5334}{5422}): unless~$\mathrm{noCheck}$, for the value~$v$ of Horner's
-  rule at~$a$ on the products $c_k b^{d - k}$ (a thunk made once per denominator), times~$b$ for
-  odd~$d$, so that $v = F_c(a, b)$ (Definition~\ref{def:binaryForm}), and
-  $y = \lfloor \sqrt{v} \rfloor$: when $v = y^2$, the call with $(a : y : b)$ and then, unless that
-  call stopped the search, $y = 0$ or~$\mathrm{noY}$, the call with $(a : -y : b)$;
-  under~$\mathrm{noCheck}$ one call with $(a : 0 : b)$; the points mapped back to the caller's curve
-  after a reversal.
+  (\csource{find_points.c}{5411}{5436}): unless~$\mathrm{noCheck}$, in a search without the modular
+  test for the value~$v$ of Horner's rule at~$a$ on the products $c_k b^{d - k}$ (a thunk made once
+  per denominator), and in a search with it (Definition~\ref{def:modTest}) nothing for a numerator
+  that the test rejects and else for the value~$v$ of Horner's rule with a running power of~$b$; in
+  both, $v$ times~$b$ for odd~$d$, so that $v = F_c(a, b)$ (Definition~\ref{def:binaryForm}), and
+  $y = \lfloor \sqrt{v} \rfloor$ (\csource{find_points.c}{5494}{5525}): when $v = y^2$, the call
+  with $(a : y : b)$ and then, unless that call stopped the search, $y = 0$ or~$\mathrm{noY}$, the
+  call with $(a : -y : b)$; under~$\mathrm{noCheck}$ one call with $(a : 0 : b)$, without the
+  modular test; the points mapped back to the caller's curve after a reversal.
 \end{definition}
 
+\begin{lemma}[The modular test loses no point]\label{lem:modTest}
+  \uses{def:modTest, def:candidate, def:jacobi, def:checkNumWith, def:deliver}
+  \lean{Ratpoints.Sieve.passesTest_spec, Ratpoints.Sieve.homHorner_eq_horner, Ratpoints.Sieve.natCast_formMod, Ratpoints.Sieve.run_passesTest_of_sq_eq, Ratpoints.Sieve.checkedList, Ratpoints.Sieve.run_checkPoint_eq_deliver, Ratpoints.CheckFlags.HasSoundTest, Ratpoints.CheckFlags.TestFor, Ratpoints.CheckFlags.testFor_modTest, Ratpoints.CheckFlags.TestFor.hasSoundTest}
+  \leanok
+  The test is whether every modulus admits the numerator, the Jacobi symbol at it not being~$-1$.
+  Horner's rule with a running power of~$b$ gives $\sum_{k \le d} c_k a^k b^{d-k}$, the value of
+  Horner's rule at~$a$ on the products $c_k b^{d-k}$. For a modulus $q \ne 0$, the value that the
+  test computes from the residues of the coefficients, of~$a$ and of~$b$ is the residue of
+  $F_c(a, b)$ modulo~$q$ (Definition~\ref{def:binaryForm}). So a numerator~$a$ for which $F_c(a, b)$
+  is a square passes the test, whatever the moduli are, as long as none is~$0$. On a delivery whose
+  flag is clear, the exact check delivers the list \lname{Ratpoints.Sieve.checkedList}: in a search
+  without the test, the points of the exact check of the numerator with the flags
+  (Definition~\ref{def:checkNumWith}), and in a search with it, nothing for a numerator that the
+  test rejects and else those points for the value of Horner's rule with a running power of~$b$. The
+  flags have a \emph{sound test} for~$c$ when, at every denominator~$b$ and numerator~$a$, this list
+  for the products $c_k b^{d-k}$ is the list of a search without the test; flags that carry the
+  coefficients~$c$ with their residues have one, and these are the flags with which the search runs.
+\end{lemma}
+
+\begin{proof}
+  \uses{def:jacobi, lem:deliverList}
+  \leanok
+  The loop over the moduli returns at the first modulus that does not admit the numerator; its
+  invariant is a named definition (\lname{Ratpoints.Sieve.AllInvariant}). The steps modulo~$q$ on
+  residues are the steps on the integers, cast to $\mathbb{Z}/q$, by induction along the
+  coefficients. The binary algorithm gives the Jacobi symbol of the value over a divisor of~$q$
+  (Definition~\ref{def:jacobi}), which depends only on the residue of the value modulo~$q$, and the
+  symbol of a square is not~$-1$. So a numerator that the test rejects has no point, and the check
+  without the test delivers nothing for it either.
+\end{proof}
+
 \begin{lemma}[The test of a candidate]\label{lem:candidate}
-  \uses{def:candidate, def:callback, def:checkNumWith, def:sieveEntry, def:counters}
+  \uses{def:candidate, def:callback, def:checkNumWith, def:sieveEntry, def:counters, lem:modTest}
   \lean{Ratpoints.Sieve.relprime_spec, Ratpoints.Sieve.SieveEntry.IsPrimeEntry, Ratpoints.Sieve.all_admits_fillChecks, Ratpoints.Sieve.accepted_spec, Ratpoints.Sieve.acceptedPoints_eq_ite}
   \leanok
-  For words $m > -2^{63}$ and $n > 0$ the test for common factors gives whether $\gcd(m, n) = 1$.
-  A \emph{prime entry} is a sieve entry whose single factor is a table of the kind of a prime, of a
+  For words $m > -2^{63}$ and $n > 0$ the test for common factors gives whether $\gcd(m, n) = 1$. A
+  \emph{prime entry} is a sieve entry whose single factor is a table of the kind of a prime, of a
   modulus $1 < p \le 2^{32}$ ($p$ need not be prime), whose table of inverses holds a value in
   $[1, p - 1]$ at each nonzero residue below~$p$ (that these are inverses is not needed), and whose
   modulus and reciprocal are those of~$p$. For prime entries, $\gcd(a, b) = 1$ and $|a| \le H$, the
   third stage lets~$a$ through exactly when the rows of~$b$ in all the entries admit~$a$. For
   $0 < b < 2^{63}$ and $|a| < 2^{63}$ the test of a candidate is $\gcd(a, b) = 1$ followed by the
-  third stage. So for prime entries in the third stage with their reciprocals, $0 < b < 2^{63}$ and
-  $|a| \le H < 2^{63}$, the points that the extraction delivers for~$a$ are those of the check with
-  the flags (\lname{Ratpoints.Sieve.checkNumWith}, the points of the exact check if
-  $\gcd(a, b) = 1$) when the rows of the third stage admit~$a$, and none otherwise.
+  third stage. So for prime entries in the third stage with their reciprocals, $0 < b < 2^{63}$,
+  $|a| \le H < 2^{63}$ and flags with a sound test (Lemma~\ref{lem:modTest}), the points that the
+  extraction delivers for~$a$ are those of the check with the flags
+  (\lname{Ratpoints.Sieve.checkNumWith}, the points of the exact check if $\gcd(a, b) = 1$) when the
+  rows of the third stage admit~$a$, and none otherwise.
 \end{lemma}
 
 \begin{proof}
@@ -358,17 +414,17 @@ correction of the moduli (Chapter~\ref{chap:moduli}), and these are prime entrie
 \section{One denominator}\label{sec:siftDen}
 
 \begin{definition}[The sieve of one denominator]\label{def:sift}
-  \uses{def:firstStage, def:extraction, def:candidate, def:packing, def:bitArrays, def:deliver, def:bruteForce, lem:packing, lem:candidate, lem:reciprocal, lem:runRows, def:callback, def:checkNumWith, def:exactBounds, lem:deliverList, def:counters}
+  \uses{def:firstStage, def:extraction, def:candidate, def:packing, def:bitArrays, def:deliver, def:bruteForce, lem:packing, lem:candidate, lem:reciprocal, lem:runRows, def:callback, def:checkNumWith, def:exactBounds, lem:deliverList, def:counters, lem:modTest}
   \lean{Ratpoints.Sieve.siftPiece, Ratpoints.Sieve.siftBits, Ratpoints.Sieve.sift, Ratpoints.Sieve.siftPiece_spec, Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.sift_spec, Ratpoints.Sieve.RowStore.Fits.fits_run_sift}
   \leanok
   One piece (\csource{sift.c}{498}{531}): the test \verb|small|, a fresh array with room for the
   sentinel, the first stage with the first~$s_1$ moduli in the arm that $1 < \mathrm{chunk} \le 16$
   chooses, the masks of the ends (\csource{sift.c}{1030}{1041}) and the scan with the moduli of the
   second stage. The bits from~$\mathrm{low}$ to~$\mathrm{high}$ of an interval
-  (\csource{find_points.c}{3589}{3638}): the word numbers from
+  (\csource{find_points.c}{3632}{3681}): the word numbers from
   $\lfloor \mathrm{low}/\mathrm{rbaLength} \rfloor$ to
   $\lfloor \mathrm{high}/\mathrm{rbaLength} \rfloor$ in pieces of at most~$A$ bit arrays, the first
-  and the last masked. One denominator (\csource{find_points.c}{3468}{3514}): for each search
+  and the last masked. One denominator (\csource{find_points.c}{3511}{3557}): for each search
   interval the bits of its numerators within the height bound (Chapter~\ref{chap:region}); at the
   first interval that the height bound does not rule out (also one without numerators) the sieve
   specs (Definition~\ref{def:runTables}), the modulus, the offset of the row of the class and the
@@ -377,13 +433,14 @@ correction of the moduli (Chapter~\ref{chap:moduli}), and these are prime entrie
   returns when the callback stops the search. The contract of one denominator: for $A \ge 1$,
   $0 < b < 2^{63}$, $H < 2^{63}$, prime entries in the third stage, the reciprocals of all the
   entries, the residues $b\,\mathrm{dinv}[k] \bmod p$ of the entries of the first two stages, whose
-  tables of inverses invert, tables of rows that fit them, and a delivery whose flag is clear: for
-  every word~$w$ that the class packs, a row of offsets packed for the class, and the ranges of the
-  numerators that the bounds of the search intervals give at~$b$, the delivery is that of the points
-  of the check with the flags of the numerators $-H, \dots, H$ that lie in a range, pass~$w$ and
-  survive the entries of all three stages, in increasing order; when the callback does not stop the
-  search, the counters of the sieve grow by a closed form that depends neither on the callback and
-  the flags nor on the tables of rows; and the tables of rows afterwards fit the entries again.
+  tables of inverses invert, tables of rows that fit them, flags with a sound test
+  (Lemma~\ref{lem:modTest}), and a delivery whose flag is clear: for every word~$w$ that the class
+  packs, a row of offsets packed for the class, and the ranges of the numerators that the bounds of
+  the search intervals give at~$b$, the delivery is that of the points of the check with the flags
+  of the numerators $-H, \dots, H$ that lie in a range, pass~$w$ and survive the entries of all
+  three stages, in increasing order; when the callback does not stop the search, the counters of the
+  sieve grow by a closed form that depends neither on the callback and the flags nor on the tables
+  of rows; and the tables of rows afterwards fit the entries again.
 \end{definition}
 
 The contracts compose from the bottom: the walk gives that of a bit array, the bit arrays that of

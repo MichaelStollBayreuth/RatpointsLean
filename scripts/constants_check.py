@@ -32,11 +32,13 @@ Usage:
 
 To add a variant for good, add an entry to VARIANTS: a name and a dict from constant names to
 values. A constant that a variant names must be a definition `def <name> : Nat := <value>` (or
-`: Int`, `: Bool`, `: Float`, `: Option Nat`), on one line, of Constants.lean at HEAD; otherwise
+`: Int`, `: Bool`, `: Float`, `: Option Nat`), on one line, of Constants.lean at HEAD, or a
+definition `def <name> : List Nat :=` with a list literal `[...]` on the lines after it; otherwise
 the script stops before it copies anything. The values are integers, natural numbers for a `Nat`,
 Python's `True` and `False` for a `Bool`, written `true` and `false` in Lean (and in a --variant),
-Python floats for a `Float`, and `Opt(None)` or `Opt(n)` for an `Option Nat` (`none` and `some n`
-in Lean; a --variant cannot set these).
+Python floats for a `Float`, `Opt(None)` or `Opt(n)` for an `Option Nat` (`none` and `some n` in
+Lean), and a Python list of natural numbers for a `List Nat`, which is written on lines of at most
+100 columns (a --variant can set neither of the last two).
 
 What it does for each variant, one after the other (never two builds at a time):
 
@@ -120,16 +122,17 @@ class Opt:
 
 
 VARIANTS = {
-    'A': {'maxDegree': 30, 'printDegree': 0, 'maxBitsInPrime': 5, 'defaultNumPrimes': 7, 'defaultMaxForbidden': 0,
-          'rbaPack': 1, 'chunk': 1, 'defaultArraySize': 3, 'defaultSturm': -1,
-          'veryBig': 0, 'maxDivisors': 2, 'jacobiPrimes': 0, 'jacobiTable': 0,
+    'A': {'maxDegree': 30, 'printDegree': 0, 'maxBitsInPrime': 5, 'defaultNumPrimes': 7,
+          'defaultMaxForbidden': 0, 'rbaPack': 1, 'chunk': 1, 'defaultArraySize': 3,
+          'defaultSturm': -1, 'veryBig': 0, 'maxDivisors': 2, 'jacobiPrimes': 0, 'jacobiTable': 0,
           'mulModLimit': 0, 'stage3Limit': 0, 'useLongInPhase2': True,
           'sp2Extra': 0, 'rowBias': 0, 'numStrides': 1, 'rbaShift': 6,
           'survivorsPerWord': 0.5, 'sp2U0': 0.0, 'sp3PerSurvivor': 0.0, 'sp3PerDenom': 1.0,
           'sp3Coprime': 0.0, 'costTable': 0.0, 'compositeMax': 0, 'costBp': 0.0, 'costSetup': 1e9,
           'costCall': 0.0, 'costLine': 0.0, 'costPhase2': 1.0, 'costSurvivor': 0.0,
           'costCheck': 0.0, 'checkStep': 0.0, 'checkLimb': 0.0, 'checkCall': 0.0,
-          'checkRoot': 1e9, 'checkReference': 1.0, 'maxFactors': 1, 'modulusTableMax': 0.0,
+          'checkRoot': 1e9, 'checkReference': 1.0, 'testStep': 0.0, 'testCall': 0.0,
+          'testTried': 1e9, 'testModuli': [3], 'maxFactors': 1, 'modulusTableMax': 0.0,
           'runShapeSamples': 1, 'adaptWords': 0,
           'adaptArrays': 0, 'adaptBits': 0, 'adaptLag': 0, 'blocksWanted': 1, 'blockMin': 1,
           'blockLen': Opt(1)},
@@ -143,7 +146,11 @@ VARIANTS = {
           'sp3Coprime': 2.5, 'costTable': 1e306, 'compositeMax': 1023, 'costBp': 1e3,
           'costSetup': 0.0, 'costCall': 1e5, 'costLine': 100.0, 'costPhase2': 1e-3,
           'costSurvivor': 1e9, 'costCheck': 7.0, 'checkStep': 1e3, 'checkLimb': 1e3,
-          'checkCall': 0.5, 'checkRoot': 0.0, 'checkReference': 1e-9, 'maxFactors': 6,
+          'checkCall': 0.5, 'checkRoot': 0.0, 'checkReference': 1e-9, 'testStep': 1e3,
+          'testCall': 0.5, 'testTried': 0.0,
+          'testModuli': ([2 ** 31 - 1, 1, 9, 15, 2 ** 31 - 2]
+                         + [2147483629 - 2 * k for k in range(20)]),
+          'maxFactors': 6,
           'modulusTableMax': 1e300, 'runShapeSamples': 200, 'adaptWords': 2 ** 40,
           'adaptArrays': 2 ** 40, 'adaptBits': 2 ** 40, 'adaptLag': 1000, 'blocksWanted': 10 ** 6,
           'blockMin': 1000, 'blockLen': Opt(None)},
@@ -165,7 +172,7 @@ DROPPED_ENV = ('LEAN_PATH', 'LEAN_SRC_PATH', 'LEAN_SYSROOT', 'LAKE', 'LAKE_HOME'
                'LAKE_NO_CACHE')
 
 _MODIFIERS = r'(?:@\[[^\]\n]*\]\s*)?(?:(?:private|protected|public|noncomputable)\s+)*'
-_CONST_TYPE = r'(?:Nat|ℕ|Int|ℤ|Bool|Float|Option Nat)'
+_CONST_TYPE = r'(?:Nat|ℕ|Int|ℤ|Bool|Float|Option Nat|List Nat)'
 DEF_NAT_RE = re.compile(r'^' + _MODIFIERS
                         + r'def\s+(?P<name>[^\s:]+)\s*:\s*' + _CONST_TYPE + r'\s*:=',
                         re.MULTILINE)
@@ -210,12 +217,22 @@ def lean_value(value):
         return s if ('.' in s or 'e' in s) else s + '.0'
     if isinstance(value, Opt):
         return 'none' if value.n is None else f'some {value.n}'
+    if isinstance(value, list):  # on the lines after `:=`, each of at most 100 columns
+        lines, cur = [], '  ['
+        for i, n in enumerate(value):
+            word = str(n) + (',' if i + 1 < len(value) else '')
+            if len(cur) + 1 + len(word) > 99 and not cur.endswith('['):
+                lines.append(cur)
+                cur = '    ' + word
+            else:
+                cur += ('' if cur.endswith('[') else ' ') + word
+        return '\n' + '\n'.join(lines + [cur + ']'])
     return str(value)
 
 
 
 def fmt_consts(consts):
-    return ' '.join(f'{k}={lean_value(v)}' for k, v in consts.items())
+    return ' '.join(f'{k}={" ".join(lean_value(v).split())}' for k, v in consts.items())
 
 
 # ---------------------------------------------------------------------------------------------
@@ -245,10 +262,12 @@ def parse_variant(spec):
 
 
 def const_line_re(name):
-    """The one-line definition `def <name> : Nat := <value>` (or `: Int`, `: Bool`), with the
-    value as a group."""
+    """The one-line definition `def <name> : Nat := <value>` (or `: Int`, `: Bool`, `: Float`,
+    `: Option Nat`), or `def <name> : List Nat :=` with its list literal on the lines after it,
+    with the value as a group, for a list from the end of the line of the `:=` on."""
     return re.compile(r'^(?P<head>' + _MODIFIERS + r'def\s+' + re.escape(name)
-                      + r'\s*:\s*' + _CONST_TYPE + r'\s*:=[ \t]*)(?P<value>\S[^\n]*?)[ \t]*$',
+                      + r'\s*:\s*' + _CONST_TYPE
+                      + r'\s*:=[ \t]*)(?P<value>\S[^\n]*?|\n[ \t]*\[[^\]]*\])[ \t]*$',
                       re.MULTILINE)
 
 
@@ -268,9 +287,13 @@ def check_variants(variants, constants_text):
             is_bool = re.search(r':\s*Bool\s*:=', lines[0][0]) is not None
             is_float = re.search(r':\s*Float\s*:=', lines[0][0]) is not None
             is_opt = re.search(r':\s*Option Nat\s*:=', lines[0][0]) is not None
+            is_list = re.search(r':\s*List Nat\s*:=', lines[0][0]) is not None
+            if isinstance(value, list) and not all(type(n) is int and n >= 0 for n in value):
+                raise SetupError(f'variant {name}: {key} takes a list of natural numbers')
             kind = ('bool' if isinstance(value, bool) else 'option' if isinstance(value, Opt)
                     else type(value).__name__)
-            want = 'bool' if is_bool else 'float' if is_float else 'option' if is_opt else 'int'
+            want = ('bool' if is_bool else 'float' if is_float else 'option' if is_opt
+                    else 'list' if is_list else 'int')
             if kind != want:
                 raise SetupError(f'variant {name}: {key} takes a value of the kind {want}, not '
                                  f'{lean_value(value)}')

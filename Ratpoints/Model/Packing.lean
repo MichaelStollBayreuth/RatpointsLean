@@ -268,7 +268,7 @@ reduced by the helper `mod` of the C code (`Ratpoints.Sieve.modLong`), which div
 product. The branch is chosen once for `b`. The sieve of the denominator reads the rows of these
 residues (`Ratpoints.Sieve.setRows`).
 
-C: `find_points.c:3667-3707`
+C: `find_points.c:3710-3750`
 
 Deviation: a list, made by a map over the entries and their reciprocals (`List.zipWith`) in the
 branch that `b` chooses and returned, for the array `bp_list` that the loops over the positions

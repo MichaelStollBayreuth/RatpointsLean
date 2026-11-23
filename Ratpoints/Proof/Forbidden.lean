@@ -902,10 +902,10 @@ theorem forbidden_spec (c : List ℤ) (d examined maxForbidden bHigh : ℕ) (ba 
 
 /-- The valuations `m` with `p ^ m ≤ bHigh` for `p ≥ 3`, as for an odd prime, and a `long` `bHigh`
 are below `40`, since `3 ^ 40 > 2 ^ 63`: the cap `m < LONG_LENGTH - 1` of the loops of
-`forbidden_valuations` and of the valuations that a denominator can have (`find_points.c:2232`,
-`find_points.c:2661-2662`), which the model drops, never binds, and the bits `1UL << m` that they
-set are defined, so that the masks fit an `unsigned long` (`find_points.c:2244`,
-`find_points.c:2663`). The values `pm * p` of these loops, computed only for `pm ≤ ⌊b_high / p⌋`,
+`forbidden_valuations` and of the valuations that a denominator can have (`find_points.c:2261`,
+`find_points.c:2703-2704`), which the model drops, never binds, and the bits `1UL << m` that they
+set are defined, so that the masks fit an `unsigned long` (`find_points.c:2273`,
+`find_points.c:2705`). The values `pm * p` of these loops, computed only for `pm ≤ ⌊b_high / p⌋`,
 are `long`s too (`Ratpoints.Setup.fitsLong_mul_of_le_div`). -/
 theorem lt_forty_of_pow_le {p m bHigh : ℕ} (hp : 3 ≤ p) (hH : bHigh < 2 ^ 63) (h : p ^ m ≤ bHigh) :
     m < 40 := by

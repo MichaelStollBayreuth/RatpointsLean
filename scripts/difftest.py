@@ -215,6 +215,24 @@ def third_stage_filter(ls):
     return out
 
 
+def check_report_filter(ls, found):
+    """The lines that awk '/one exact check/ { p = 1 } p; /third stage was tuned/ { p = 0 }' prints
+    of `ls`, the report of the cost of a check from its first line to its last, and with `found`
+    (the awk program with / found/ at its end) also every line with ' found', which is printed
+    twice when it lies in the report."""
+    out, p = [], False
+    for l in ls:
+        if 'one exact check' in l:
+            p = True
+        if p:
+            out.append(l)
+        if 'third stage was tuned' in l:
+            p = False
+        if found and ' found' in l:
+            out.append(l)
+    return out
+
+
 # The filters of test4.sh, under which ratpoints-lean is compared with the outputs that it records.
 FILTERS = {'grep found': lambda ls: [l for l in ls if 'found' in l],
            "grep 'Curve equation'": lambda ls: [l for l in ls if 'Curve equation' in l],
@@ -225,7 +243,11 @@ FILTERS = {'grep found': lambda ls: [l for l in ls if 'found' in l],
            "grep 'moduli in the first stage\\|found' | sed 's/.*==> //'":
                lambda ls: [l.rsplit('==> ', 1)[-1] for l in ls
                            if 'moduli in the first stage' in l or 'found' in l],
-           "awk '/for third stage/ { print; getline; print } / found/'": third_stage_filter}
+           "awk '/for third stage/ { print; getline; print } / found/'": third_stage_filter,
+           "awk '/one exact check/ { p = 1 } p; /third stage was tuned/ { p = 0 } / found/'":
+               lambda ls: check_report_filter(ls, True),
+           "awk '/one exact check/ { p = 1 } p; /third stage was tuned/ { p = 0 }'":
+               lambda ls: check_report_filter(ls, False)}
 # The params suite: the options that set the sieving parameters, with values that give no
 # moduli, all the primes of the default build and a cap above them, the cut points in several
 # positions, a third stage, the second and the third stage after few moduli or none in the first
@@ -252,7 +274,7 @@ CORRECTION_HEIGHT = 16383
 # decides a correction of the moduli (on 1 2 3 4 5 6 7).
 THREADS_HEIGHT = 30000
 # The adapt suite: searches on which the C program corrects its moduli during the run
-# (find_points.c:4143-4153, RP_ADAPT_LAG), as (the coefficient list, the height bound, further
+# (find_points.c:4208-4218, RP_ADAPT_LAG), as (the coefficient list, the height bound, further
 # options), each run under -x without -A and with -A 0, 1 and 2: curves of testdata.h,
 # testdata-many.h and testdata-degrees.h at 16383 and 50000 on which a correction takes effect (in
 # the words shape at 50000 within the last blocks), and point-rich curves of test4.sh, also with
@@ -303,7 +325,7 @@ MAX_DIVISORS = 512
 STOP_TIMEOUT = 30
 STOP_MEMORY = 12 * 10 ** 9  # the address space, as BIG_MEMORY
 # The numerator words after which the C program may first correct its choice of the moduli
-# (RP_ADAPT_WORDS, find_points.c:1368), and the bit arrays of the default build: RBA_LENGTH bits,
+# (RP_ADAPT_WORDS, find_points.c:1397), and the bit arrays of the default build: RBA_LENGTH bits,
 # RBA_PACK words each (correction_possible, which counts the runs where a correction may come).
 ADAPT_WORDS = 10 ** 6
 RBA_LENGTH = 256
@@ -714,7 +736,7 @@ def big_search(args, st, out):
         k += 1
     per = min(2 * H + 1, hi * width + k) if st.ends else 2 * H + 1
     numerators = n * per
-    # a search region suppresses the reversal unless it is the whole box (find_points.c:4760)
+    # a search region suppresses the reversal unless it is the whole box (find_points.c:4827)
     first = first_point(out) if st.one and (st.ends or lo > 1 or hi < H) else None
     if first is not None and first[1] == 0:
         numerators = 0
@@ -1002,7 +1024,7 @@ def live_mode(mode):
 def correction_possible(args, st):
     """Whether the C program may correct its choice of the moduli during the run on the command line
     `args` with the settings `st` (adapt_primes), for the count of such runs: neither -n nor -N
-    gives a value >= 0 and -A does not give 0 (find_points.c:2604), and the run can pass
+    gives a value >= 0 and -A does not give 0 (find_points.c:2634), and the run can pass
     RP_ADAPT_WORDS = 10^6 numerator words, by an upper bound: the denominators of the range times
     the number of search intervals (at least one) times the words of the bit arrays of the
     numerators of the height bound, two bit arrays more per interval for the rounding."""

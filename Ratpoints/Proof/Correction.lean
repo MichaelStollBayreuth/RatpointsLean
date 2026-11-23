@@ -683,9 +683,10 @@ open Std.WP Lean.Order in
 sieve entries with what the run needs of them (`Ratpoints.Sieve.IsRunEntries`), the word `db` whose
 bits mark the classes `cls` with a pattern, a well-formed decision of the choice
 (`Ratpoints.Sieve.DecisionWF`), forbidden divisors of the word shape that have what its loop needs,
-pieces of at least one bit array, the denominators from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the
-height below `2 ^ 63`, the run, with a delivery whose flag of the stop is clear and a store of the
-tables of rows that fits all the entries, delivers the points of its blocks in order
+pieces of at least one bit array, the denominators from `bLow ≥ 1` to `bHigh < 2 ^ 63`, the height
+below `2 ^ 63` and flags whose modular test before the exact check rejects no numerator of a point
+(`Ratpoints.CheckFlags.HasSoundTest`), the run, with a delivery whose flag of the stop is clear and
+a store of the tables of rows that fits all the entries, delivers the points of its blocks in order
 (`Ratpoints.Sieve.blockPoints`), each a function of the block and of its decision
 (`Ratpoints.Sieve.blockDecision`), which depends neither on the callback nor on the flags of the
 output, for every choice of the words of the classes and the ranges of the numerators of
@@ -697,7 +698,7 @@ theorem sieveRun_spec (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : SieveO
     (hw : IsRunEntries entries magics cls offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
     (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
-    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) :
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (ht : fl.HasSoundTest c d) :
     ⦃ r.quit = false ∧ store.Fits entries ⦄
     sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh store r
     ⦃ fun res ↦ ∀ x, RunWords cls iv H bLow bHigh x → res.1 = r.deliver process
@@ -727,14 +728,15 @@ theorem fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : Sie
     (hw : IsRunEntries entries magics cls offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
     (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
-    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hr : r.quit = false) (hs : store.Fits entries)
-    {x : Vector UInt64 64 × (Nat → List (Int × Int))} (hx : RunWords cls iv H bLow bHigh x) :
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (ht : fl.HasSoundTest c d) (hr : r.quit = false)
+    (hs : store.Fits entries) {x : Vector UInt64 64 × (Nat → List (Int × Int))}
+    (hx : RunWords cls iv H bLow bHigh x) :
     (Id.run (sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
       store r)).1 = r.deliver process
         ((List.range (Id.run (shape.blockPlan bLow bHigh)).nblocks).flatMap
           (blockPoints c d H fl s P entries magics cls db shape iv bLow bHigh x)) :=
   (sieveRun_spec process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh store r hA
-    hw hdb hdec hforb hbLow hbHigh hH).le_wp ⟨hr, hs⟩ x hx
+    hw hdb hdec hforb hbLow hbHigh hH ht).le_wp ⟨hr, hs⟩ x hx
 
 /-- The contract of the run over the blocks with the correction of the moduli, per denominator: for
 sieve entries with what the run needs of them (`Ratpoints.Sieve.IsRunEntries`), the word `db` whose
@@ -746,13 +748,14 @@ listing of the shape with no denominator twice, so that each lies in one block
 from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the height below `2 ^ 63`, there is a number `sp3At b` of
 the entries of the first three stages for each denominator `b`, the end of the third stage of the
 decision of its block (`Ratpoints.Sieve.blockDecision`), which depends neither on the callback nor
-on the flags of the output, such that the run, with any callback, flags and delivery whose flag of
-the stop is clear, delivers for each denominator `b` of the listing of the shape that passes its
-tests (`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), in order, the points of the
-check with the flags of the numerators `-H, …, H` in one of the ranges `rs b` that the bounds of the
-search intervals give for `b` (`Ratpoints.Sieve.RangesFor`), that pass the class word `nb[b mod 64]`
-for words `nb` that the classes pack, and survive the first `sp3At b` entries: the blocks in order
-(`Ratpoints.Sieve.sieveRun_spec`) visit the denominators of the listing in its order
+on the flags of the output, such that the run, with any callback, flags whose modular test before
+the exact check rejects no numerator of a point (`Ratpoints.CheckFlags.HasSoundTest`) and delivery
+whose flag of the stop is clear, delivers for each denominator `b` of the listing of the shape that
+passes its tests (`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), in order, the points
+of the check with the flags of the numerators `-H, …, H` in one of the ranges `rs b` that the bounds
+of the search intervals give for `b` (`Ratpoints.Sieve.RangesFor`), that pass the class word
+`nb[b mod 64]` for words `nb` that the classes pack, and survive the first `sp3At b` entries: the
+blocks in order (`Ratpoints.Sieve.sieveRun_spec`) visit the denominators of the listing in its order
 (`Ratpoints.Sieve.Shape.flatMap_filter_blockDens`). -/
 theorem exists_run_sieveRun_eq_deliver (c : List ℤ) (d H A : ℕ) (s : SieveOptions) (P : Params)
     (entries : List SieveEntry) (magics : Array ℕ) (cls : Vector NumClass 64) (offsets : Array ℕ)
@@ -763,7 +766,8 @@ theorem exists_run_sieveRun_eq_deliver (c : List ℤ) (d H A : ℕ) (s : SieveOp
     (hnd : (Id.run (shape.dens db bLow bHigh)).Nodup) (hbLow : 1 ≤ bLow)
     (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hs : store.Fits entries) :
     ∃ sp3At : ℕ → ℕ, ∀ {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ) (fl : CheckFlags)
-      (r : Delivery σ), r.quit = false → ∀ (nb : Vector UInt64 64) (rs : ℕ → List (ℤ × ℤ)),
+      (r : Delivery σ), fl.HasSoundTest c d → r.quit = false →
+      ∀ (nb : Vector UInt64 64) (rs : ℕ → List (ℤ × ℤ)),
       (∀ b < 64, cls[b]!.Packs nb[b]!) → (∀ b, bLow ≤ b → b ≤ bHigh → RangesFor iv b H (rs b)) →
       (Id.run (sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
         store r)).1 = r.deliver process (((Id.run (shape.dens db bLow bHigh)).filter
@@ -775,9 +779,9 @@ theorem exists_run_sieveRun_eq_deliver (c : List ℤ) (d H A : ℕ) (s : SieveOp
   refine ⟨fun b ↦ if h : ∃ i < (Id.run (shape.blockPlan bLow bHigh)).nblocks,
       b ∈ blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh i then
       (blockDecision H s P entries magics cls db shape iv bLow bHigh h.choose).sp3 else 0,
-    fun process fl r hr nb rs hnb hrs ↦ ?_⟩
+    fun process fl r ht hr nb rs hnb hrs ↦ ?_⟩
   rw [fst_run_sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
-    store hA hw hdb hdec hforb hbLow hbHigh hH hr hs (x := (nb, rs)) ⟨hnb, hrs⟩]
+    store hA hw hdb hdec hforb hbLow hbHigh hH ht hr hs (x := (nb, rs)) ⟨hnb, hrs⟩]
   refine congr(r.deliver process $(shape.flatMap_filter_blockDens db cls bLow bHigh
     fun i hi b hb ↦ ?_))
   have h : ∃ i < (Id.run (shape.blockPlan bLow bHigh)).nblocks,
@@ -873,7 +877,7 @@ theorem toList_info_run_runBlock_appendPoint (c : List Int) (d H A : Nat) (fl : 
     (hw : IsRunEntries entries magics cls offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
     (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
-    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hk : i - adaptLag ≤ k)
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (ht : fl.HasSoundTest c d) (hk : i - adaptLag ≤ k)
     (hi : i < (Id.run (shape.blockPlan bLow bHigh)).nblocks) (hs : store.Fits entries)
     {x : Vector UInt64 64 × (Nat → List (Int × Int))} (hx : RunWords cls iv H bLow bHigh x) :
     (Id.run (runBlock appendPoint c d H A fl P.sp1 entries magics cls offsets db shape iv bLow
@@ -885,7 +889,7 @@ theorem toList_info_run_runBlock_appendPoint (c : List Int) (d H A : Nat) (fl : 
     wf_correctionAfter hdec k
   have h := Std.WP.Id.of_run_eq_wp rfl _ ((runBlock_spec appendPoint c d H A fl P.sp1 entries
     magics cls offsets db shape iv bLow bHigh _ _ i store ⟨#[], 0, false⟩).le_wp ⟨rfl, hA, hw, hdb,
-      hwf.decisionWF_findDecision i, rfl, hforb, hi, hbLow, hbHigh, hH, hs⟩)
+      hwf.decisionWF_findDecision i, rfl, hforb, hi, hbLow, hbHigh, hH, hs, ht⟩)
   rw [h.2.1 x hx, Delivery.deliver_appendPoint, getElem!_findDecision_correctionAfter hk]
   simp [blockPoints]
 
@@ -897,9 +901,9 @@ calling thread gives (`Ratpoints.Sieve.sieveRun`), for the hypotheses of
 `Ratpoints.Sieve.sieveRun_spec` and words of the classes and ranges of the numerators of
 `Ratpoints.Sieve.RunWords`. The pool of threads of the C code meets these hypotheses: a thread
 starts block `i` only once the blocks before block `i - RP_ADAPT_LAG` are folded
-(`find_points.c:4320-4324`), and the tables of rows that the threads share only gain complete rows,
+(`find_points.c:4385-4389`), and the tables of rows that the threads share only gain complete rows,
 published once built (`init.c:180`, `init.c:241`, `init.c:391`, `init.c:443`), so that they fit all
-the entries whenever a thread reads them (`find_points.c:3186`, `find_points.c:3559-3561`). -/
+the entries whenever a thread reads them (`find_points.c:3229`, `find_points.c:3602-3604`). -/
 theorem run_deliverSlots_eq_fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : CheckFlags)
     (s : SieveOptions) (P : Params) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
@@ -908,8 +912,9 @@ theorem run_deliverSlots_eq_fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : 
     (hw : IsRunEntries entries magics cls offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
     (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
-    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hk : ∀ i, i - adaptLag ≤ k i)
-    (hst : ∀ i, (stores i).Fits entries) (hr : r.quit = false) (hs : store.Fits entries)
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (ht : fl.HasSoundTest c d)
+    (hk : ∀ i, i - adaptLag ≤ k i) (hst : ∀ i, (stores i).Fits entries) (hr : r.quit = false)
+    (hs : store.Fits entries)
     {x : Vector UInt64 64 × (Nat → List (Int × Int))} (hx : RunWords cls iv H bLow bHigh x) :
     Id.run (deliverSlots process (fun i ↦ (Id.run (runBlock appendPoint c d H A fl P.sp1 entries
       magics cls offsets db shape iv bLow bHigh (Id.run (shape.blockPlan bLow bHigh))
@@ -918,11 +923,11 @@ theorem run_deliverSlots_eq_fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : 
       (Id.run (sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
         store r)).1 := by
   rw [fst_run_sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
-    store hA hw hdb hdec hforb hbLow hbHigh hH hr hs hx,
+    store hA hw hdb hdec hforb hbLow hbHigh hH ht hr hs hx,
     (deliverSlots_spec process _ _ r).le_wp hr]
   exact congr(r.deliver process $(List.flatMap_congr fun i hi ↦
     toList_info_run_runBlock_appendPoint c d H A fl s P entries magics cls offsets db shape iv bLow
-      bHigh hA hw hdb hdec hforb hbLow hbHigh hH (hk i) (List.mem_range.mp hi) (hst i) hx))
+      bHigh hA hw hdb hdec hforb hbLow hbHigh hH ht (hk i) (List.mem_range.mp hi) (hst i) hx))
 
 end Sieve
 

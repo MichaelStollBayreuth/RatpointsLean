@@ -87,8 +87,9 @@ status:
     of a denominator on bit arrays of 64-bit words in three stages, the first in chunks of 16 bit
     arrays as the default build compiles it, with the numerators packed by the stride of their
     class, the reductions by a multiplication with the reciprocal of the modulus, the extraction of
-    the set bits, the test for common factors on 64-bit longs and the exact check; the delivery of
-    the points to the callback of the caller with its stops, the options RATPOINTS_NO_CHECK and
+    the set bits, the test for common factors on 64-bit longs and the exact check, with the test
+    modulo sixteen large primes that comes before it where the check is costly; the delivery of the
+    points to the callback of the caller with its stops, the options RATPOINTS_NO_CHECK and
     RATPOINTS_NO_Y and the flags written back; the report of the library under RATPOINTS_VERBOSE;
     and the command-line program ratpoints-model, which reads its command line and prints the points
     and the report as the program of ratpoints does. The compile-time constants of the C code are
@@ -110,7 +111,7 @@ status:
     deliver them, give what the run delivers. Every line of code of the C files is recorded, with
     the declarations that model it or the reason for its exclusion, and CI checks the record against
     the C code at the pinned commit; the differential tests compare ratpoints-model with the C
-    program, built on the same machine (5514 comparisons in the default suites, 13 in the suite of the runs of test4.sh
+    program, built on the same machine (5556 comparisons in the default suites, 13 in the suite of the runs of test4.sh
     above height 30000 and 92 in the suite of the searches in which ratpoints corrects its moduli,
     none failed).
   sorry_count: 0

@@ -92,7 +92,7 @@ beyond the table: all ones, then for `i < 64` the bit of the position `p i` clea
 `N` being bit `N mod 64` of word `⌊N / 64⌋`. The pattern `sieves0` repeats them
 (`Ratpoints.Sieve.sieves0`).
 
-C: `find_points.c:2798-2802`, `gen_find_points_h.c:118-120`
+C: `find_points.c:2840-2844`, `gen_find_points_h.c:118-120`
 
 Deviation: one function for the two codes that make these words, the array `work` of the generator
 of `find_points.h`, for the primes of the table, and the words that `sieving_info` makes in the
@@ -157,7 +157,7 @@ def RowStore.publish (s : RowStore) (ref : EntryRef) (r : Nat) (row : Array UInt
 `sieves0` of the build (`Ratpoints.Sieve.sieves0`), and the rows of the residues `1, …, p - 1`
 absent until they are built.
 
-C: `find_points.c:1834-1835`
+C: `find_points.c:1863-1864`
 
 Deviation: the table returned, for the array `sieve` of the entry, which `examine_prime` fills; the
 row of `0` the words of the pattern, for the pointer to them. -/
@@ -178,15 +178,15 @@ its reference is absent: the table of rows of the entry of each factor
 `make_power` makes it, and for a product the `m` rows absent of its own entry, as `make_modulus`
 makes them.
 
-C: `find_points.c:2443`, `find_points.c:2487`
+C: `find_points.c:2472`, `find_points.c:2516`
 
 Deviation: the tables of rows made in the store of the run, by the reference to the entry
 (`Ratpoints.Sieve.EntryRef`), for the arrays `sieve` of the entries, after the choice for every
 entry, the reserve included (`Ratpoints.choiceEnd`), where `make_power` and `make_modulus` make them
 with the entry; a table of rows made only when its reference is absent, for the test of `power_se`
-(`find_points.c:2460` and `find_points.c:2482`) by which the entry of a prime power is made once,
+(`find_points.c:2489` and `find_points.c:2511`) by which the entry of a prime power is made once,
 and for the entry of a prime, which `examine_prime` makes once, with its table of rows, in the loop
-of the tables (`Ratpoints.examineInLoop`) or in the third stage (`find_points.c:3019-3020`), where
+of the tables (`Ratpoints.examineInLoop`) or in the third stage (`find_points.c:3061-3062`), where
 the model makes the table of a prime of the third stage after the choice, and none for a prime that
 the third stage examines and passes over, whose table nothing reads. -/
 def SieveEntry.addTables (e : SieveEntry) (s : RowStore) : RowStore :=
@@ -580,7 +580,7 @@ rows of the entry `ref` (`Ratpoints.Sieve.RowStore.publish`): the pattern `pat` 
 `frev(b x⁻¹)` is a square modulo `m` (`Ratpoints.Sieve.powerPatternNonunit`); then the pattern laid
 out as a row of `m + chunk - 1` bit arrays (`Ratpoints.Sieve.layOutPattern`).
 
-C: `init.c:359-368`, `init.c:376-377`, `init.c:386-387`, `init.c:391-393`, `rp-private.h:592`
+C: `init.c:359-368`, `init.c:376-377`, `init.c:386-387`, `init.c:391-393`, `rp-private.h:596`
 
 Deviation: the tables of the prime power and the reference to its entry (`Ratpoints.Sieve.EntryRef`)
 as arguments, for the sieve entry `se` whose field `pw` points to the tables and into which the C
@@ -706,7 +706,7 @@ others and-ed in, in blocks of theirs (`Ratpoints.Sieve.productAnd`), and the co
 the factors divide `m`, bit array `y < m + chunk - 1` of the row is the and of the bit arrays
 `y mod q` of the rows of the factors.
 
-C: `init.c:399-406`, `init.c:415-418`, `init.c:430`, `init.c:443-445`, `rp-private.h:593`
+C: `init.c:399-406`, `init.c:415-418`, `init.c:430`, `init.c:443-445`, `rp-private.h:597`
 
 Deviation: the store of the tables of rows passed and returned, for the entries of the factors that
 the C code reaches through the pointers `factor` and for the entry `se` into which it stores the

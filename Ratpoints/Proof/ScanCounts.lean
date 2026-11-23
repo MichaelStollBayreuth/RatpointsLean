@@ -157,7 +157,7 @@ theorem walkWord_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFla
     ⦃ True ⦄ walkWord process w d b fl checks x a0 step r cnt
     ⦃ fun r' ↦ r'.1.quit = false → r'.2 = cnt + testedCounts b checks
         (((List.range 64).filter (x.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + step * t) ⦄ := by
-  vcgen [walkWord, accepted_value] invariants
+  vcgen [walkWord, accepted_value, checkPoint_value] invariants
   · WalkCountsWhileInvariant (σ := σ) b checks x a0 step cnt
   · Variant.ofMeasure fun s : Option (Delivery σ × Counters) × UInt64 × Delivery σ × Counters ↦
       s.2.1.toNat

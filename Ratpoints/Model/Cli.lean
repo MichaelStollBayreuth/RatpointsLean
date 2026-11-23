@@ -201,7 +201,7 @@ the coefficients and of the height (`Ratpoints.Refusal.tooManyCoefficients`,
 `Ratpoints.Refusal.tooFewCoefficients`, `Ratpoints.Refusal.incorrectHeight`) mapped to the errors 3,
 5 and 4 with which `read_input` refuses those inputs before the library is called, where
 `main.c:271` gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it
-can be given (`find_points.c:4611-4612`, `find_points.c:4707` and `find_points.c:4732`); no command
+can be given (`find_points.c:4676-4677`, `find_points.c:4774` and `find_points.c:4799`); no command
 line reaches them; no `mpz_clear`. -/
 def Failure.ofRefusal : Refusal → Failure
   | .tooManyCoefficients => .tooManyCoefficients
@@ -294,7 +294,7 @@ whether no point is printed (`-z`, and not `-Z`), the format of a point (`-f`), 
 `-fm`, `-fe`), none for none, and the exact ends of the search intervals of the command line, which
 `process` reads (`ends`, as the options `-l` and `-u` fill it: `Ratpoints.Cli.Intervals`).
 
-C: `main.c:59-66`, `main.c:421-428`, `ratpoints.h:442`
+C: `main.c:59-66`, `main.c:421-428`, `ratpoints.h:477`
 
 Deviation: a structure for the global variables; `Option String` for the strings and the format,
 `none` for the null pointer, and Lean strings for the C strings of the command line, which the Lean

@@ -23,7 +23,7 @@ valuations, that an examined prime gives from what its table hands back in the l
 `sieving_info`, which also takes the exit (`Ratpoints.Sieve.forbiddenOfPrime`, which the loop of the
 tables of the choice of the moduli, `Ratpoints.examineInLoop`, calls), and that the further primes
 give (`Ratpoints.Sieve.forbidden`); the Jacobi test, by the binary algorithm
-(`Ratpoints.Sieve.jacobi`) or by tables (`Ratpoints.Sieve.jacobiSetup`,
+(`Ratpoints.Sieve.jacobi`, in `Ratpoints.Model.Jacobi`) or by tables (`Ratpoints.Sieve.jacobiSetup`,
 `Ratpoints.Sieve.jacobiTest`); and the loop over the denominators in its four shapes, as `run_setup`
 chooses them (`Ratpoints.Sieve.Shape`, `Ratpoints.Sieve.runSetup`): the squares, the divisors of the
 leading coefficient times squares (`Ratpoints.Setup.setupUs1`), the words of 64 denominators, and
@@ -52,8 +52,6 @@ increasing, except for the divisors; it returns when the callback stops the sear
   denominator of a point has, and those that a denominator can have at all.
 * `Ratpoints.Sieve.forbiddenOfPrime`, `Ratpoints.Sieve.forbidden`: the forbidden divisor of an
   examined prime, and the forbidden divisors among the further primes.
-* `Ratpoints.Sieve.jacobi`: the Jacobi test by the binary algorithm, with its helpers
-  `Ratpoints.Sieve.twoSign`, `Ratpoints.Sieve.jacobiReduce` and `Ratpoints.Sieve.jacobiRound`.
 * `Ratpoints.Sieve.JacobiInfo`, `Ratpoints.Sieve.nonSquares`, `Ratpoints.Sieve.jacobiSigns`,
   `Ratpoints.Sieve.jacobiSetup`, `Ratpoints.Sieve.jacobiTest`: the Jacobi test by tables.
 * `Ratpoints.Sieve.ceilSqrt`, `Ratpoints.Sieve.floorSqrt`: the bounds of the square shapes.
@@ -211,7 +209,7 @@ otherwise, when `cm[d - j] = 0`, the valuation `w_j` of `c_{d-j}` at `p` with it
 modulo `p`, the sign included (`Ratpoints.Setup.valuation`), and when `cm[d - j] ≠ 0`, `w_j = 0`
 and `r_j = cm[d - j]`.
 
-C: `find_points.c:2213-2215`, `find_points.c:2219-2230`
+C: `find_points.c:2242-2244`, `find_points.c:2248-2259`
 
 Deviation: an array of options of pairs, for the arrays `present`, `w` and `r` among the scratch
 arrays of the search (`rp_coeffs`, `find_points.c:180-182`); natural numbers for the `long`s. -/
@@ -232,7 +230,7 @@ and the squares `sq` modulo `p`: the least of the `w_j + j m` over the coefficie
 at one `j` only, `j₀`, and is odd, or `j₀` is even and `r_{j₀}` is not a square modulo `p`; the term
 with the least valuation then makes `F(a, b)` a non-square.
 
-C: `find_points.c:2233-2243`
+C: `find_points.c:2262-2272`
 
 Deviation: the valuations and unit parts of the coefficients as the array of options `us`
 (`Ratpoints.Sieve.unitParts`), for the arrays `present`, `w` and `r`, its size `d + 1` for the bound
@@ -261,8 +259,8 @@ modulo `p`, as a mask: bit `m` is set, for `m = 1, 2, …` while `p ^ m ≤ bHig
 parts of the coefficients, `Ratpoints.Sieve.unitParts`, and the squares modulo `p`,
 `Ratpoints.Sieve.squaresMod`).
 
-C: `find_points.c:2206-2212`, `find_points.c:2216-2218`, `find_points.c:2231-2232`,
-`find_points.c:2244-2249`
+C: `find_points.c:2235-2241`, `find_points.c:2245-2247`, `find_points.c:2260-2261`,
+`find_points.c:2273-2278`
 
 Deviation: the prime `p` itself, for its index `pn` in the table `prime`, and the squares modulo `p`
 by `Ratpoints.Sieve.squaresMod`, for the row of `p` in the table `squares` of the build; an array
@@ -288,7 +286,7 @@ def forbiddenValuations (c : List Int) (d p bHigh : Nat) (cm : Array Nat) : Id N
 (`Ratpoints.Sieve.forbiddenValuations`) that holds all of them says that `p` divides no denominator
 of a point.
 
-C: `find_points.c:2657-2666`
+C: `find_points.c:2699-2708`
 
 Deviation: a natural number for the `unsigned long` mask, without the cap `m < LONG_LENGTH - 1` of
 the loop, which never binds for a `long` `b_high` and an odd prime, the loop ending before `m = 40`
@@ -316,7 +314,7 @@ when it is not `0`, gives `p` with its words, the first `p` words of the row of 
 words when there are no points at infinity modulo `p`, which for even `d` says that `c_d` is not a
 square modulo `p`.
 
-C: `find_points.c:2651-2656`, `find_points.c:2667-2701`
+C: `find_points.c:2693-2698`, `find_points.c:2709-2743`
 
 Deviation: the entry returned, for the entries that the C code writes into the arrays
 `args->forb_ba` and `args->forbidden` and counts; the words of the prime an array of the first `p`
@@ -345,8 +343,8 @@ table the first `p` words of its row of `0` (`Ratpoints.Sieve.sieves0`), and for
 its words made as the C code makes them after the loop (`Ratpoints.Sieve.forbiddenRow`); both lists
 in the order found.
 
-C: `find_points.c:2557-2560`, `find_points.c:2585-2586`, `find_points.c:2734-2797`,
-`find_points.c:2803-2814`
+C: `find_points.c:2587-2590`, `find_points.c:2615-2616`, `find_points.c:2776-2839`,
+`find_points.c:2845-2856`
 
 Deviation: the position `examined` as an argument, for the final `pn_lim` of the loop of the tables;
 the Kronecker symbol by the table of the squares modulo `p`, which marks `0` as a square, for
@@ -374,82 +372,6 @@ def forbidden (c : List Int) (d examined maxForbidden bHigh : Nat) (ba : Array F
   return (ba.toList, val.toList)
 
 /-! ### The Jacobi test -/
-
-/-- The sign `s` times `(2 / m)` for odd `m`: negated when bit 1 of `m` is set (`m ≡ 3, 7 (mod 8)`)
-and again when bit 2 is (`m ≡ 5, 7 (mod 8)`), so negated in all exactly for `m ≡ 3, 5 (mod 8)`,
-where `(2 / m) = -1`. -/
-def twoSign (m : Nat) (s : Int) : Int :=
-  let s := if m &&& 2 != 0 then -s else s
-  if m &&& 4 != 0 then -s else s
-
-/-- One subtraction loop of the binary algorithm (`Ratpoints.Sieve.jacobi`) on the odd `x` and `y`:
-while `x > y`, `x` becomes `x - y` and is then halved until it is odd again, the sign `s` taking the
-factor `(2 / y)` at each halving (`Ratpoints.Sieve.twoSign`); the new `x` and the sign. -/
-def jacobiReduce (x y : Nat) (s : Int) : Id (Nat × Int) := do
-  let mut x := x
-  let mut s := s
-  while y < x do
-    x := x - y
-    repeat
-      s := twoSign y s
-      x := x / 2
-      if x % 2 == 1 then break
-  return (x, s)
-
-/-- One round of the binary algorithm (`Ratpoints.Sieve.jacobi`) for the symbol `(f / b)`, `f > 0`
-and `b` odd: from `n = f` and `m = b`, the factors `2` are taken out of `n` with the sign of
-`(2 / m)`; then the two are exchanged, with the sign of the reciprocity when both are `≡ 3 (mod 4)`,
-and the larger reduced by the smaller (`Ratpoints.Sieve.jacobiReduce`), in turn, until they are
-equal. The common value `g`, the gcd of `f` and `b`, is returned with the sign, which is the symbol
-`(f / b)` when `g = 1`. -/
-def jacobiRound (f b : Nat) : Id (Nat × Int) := do
-  let mut s : Int := 1
-  let mut n := f
-  let mut m := b
-  while n % 2 == 0 do
-    s := twoSign m s
-    n := n / 2
-  repeat
-    if n &&& m &&& 2 != 0 then s := -s
-    (m, s) ← jacobiReduce m n s
-    if m == n then break
-    if n &&& m &&& 2 != 0 then s := -s
-    (n, s) ← jacobiReduce n m s
-    if m == n then break
-  return (m, s)
-
-/-- The Jacobi symbol `(lcf / b*)` for `b > 0`, where `b*` is `b` with the prime factors of `2 lcf`
-taken out, so that it is `±1`, by the binary algorithm of the C code: the factors `2` are taken out
-of `b`, and `f = lcf mod b`; while `f ≠ 0`, a round of the algorithm (`Ratpoints.Sieve.jacobiRound`)
-gives the symbol `(f / b)` when `f` and `b` are coprime, and otherwise their gcd, which is divided
-out of `b`, `f` being reduced modulo the new `b` when it is not smaller. When `f` is `0`, `b*` is
-`1`, and so is the symbol. For `b = 0` the loop does not end.
-
-C: `find_points.c:511-579`, `find_points.c:581-654`
-
-Deviation: one function for `jacobi`, on the GMP integer `lcf`, and `jacobi1`, on a `long`, which
-the run calls when all coefficients are `long`s (`use_c_long`), with the steps of `jacobi`:
-`jacobi1` takes the sign of `lcf` out as `(-1 / b)^neg` and its value `LONG_MIN` as `LONG_MIN / 4`,
-so that the negation of a negative `lcf` is a `long` (`Ratpoints.fitsLong_neg_ite_div_four`),
-reduces `|lcf|` modulo `b` only for `b < 2^59`, and does not reduce it after dividing `b` by the
-gcd, which changes the steps but not the symbol; the round of the algorithm and its two subtraction
-loops, which the C code writes out twice each, as helpers (`Ratpoints.Sieve.jacobiRound`,
-`Ratpoints.Sieve.jacobiReduce`, `Ratpoints.Sieve.twoSign`); natural numbers for the `long`s `b`,
-`f`, `n` and `m`, and integers for the `long` sign `s` and the `long` `lcf` of `jacobi1`; `f` the
-Euclidean `lcf % b`, for `mpz_fdiv_r_ui` with its scratch integer `tmp`; the tests `f = 0` of the C
-code, at the start and after each division of `b`, as the condition of the outer loop; the masks of
-the signs by `&&&` on natural numbers; the symbol as an integer, for the `int`. -/
-def jacobi (b : Nat) (lcf : Int) : Id Int := do
-  let mut b := b
-  while b % 2 == 0 do
-    b := b / 2
-  let mut f := (lcf % (b : Int)).toNat
-  while f != 0 do
-    let (g, s) ← jacobiRound f b
-    if g == 1 then return s
-    b := b / g
-    if b ≤ f then f := f % b
-  return 1
 
 /-- What the Jacobi test by tables knows of the leading coefficient `lcf = ±2^v ∏ q_i^(e_i)`: its
 odd primes `q_i` in increasing order, each with the table of the non-squares modulo `q_i` when
@@ -594,7 +516,7 @@ def ceilSqrt (n : Nat) : Nat := Nat.sqrt (n - 1) + 1
 
 /-- The largest `k` with `k ^ 2 ≤ n`, `⌊√n⌋`.
 
-C: `find_points.c:3794-3802`
+C: `find_points.c:3842-3850`
 
 Deviation: the exact square root of the natural numbers (`Nat.sqrt`), for the square root in
 `double` corrected by a step either way; natural numbers for the `long`s, so that `0` is the only
@@ -606,7 +528,7 @@ the leading coefficient, with its valuation `val` and its slope (`Ratpoints.Setu
 `Ratpoints.Setup.setupUs1`), the valuation `v = v_p(b)` (`Ratpoints.Setup.valuation`) has
 `v ≥ slope` and `v + val` odd, and true otherwise.
 
-C: `find_points.c:3972-3981`
+C: `find_points.c:4037-4046`
 
 Deviation: the test returned, for the flag `flag`; natural numbers for the `int`s and `long`s. -/
 def denInfoTest (info : List Setup.DenInfo) (b : Nat) : Id Bool := do
@@ -621,7 +543,7 @@ def denInfoTest (info : List Setup.DenInfo) (b : Nat) : Id Bool := do
 `v_p(b)` (`Ratpoints.Setup.valuation`); then, with the Jacobi test on (`useJacobi`) and no tables,
 that the binary algorithm (`Ratpoints.Sieve.jacobi`) gives `(lcf / b*) = 1`.
 
-C: `find_points.c:4038-4039`, `find_points.c:4041-4069`
+C: `find_points.c:4103-4104`, `find_points.c:4106-4134`
 
 Deviation: the binary algorithm of `jacobi` also where the run calls `jacobi1` on the `long`
 `lcf_long` (`Ratpoints.Sieve.jacobi`); bit `v_p(b)` of the mask of a natural number, false beyond
@@ -647,7 +569,7 @@ the forbidden divisors tested with words and by their valuations, the switch of 
 its tables when they apply and the leading coefficient (even degree, when there is a test); and
 every denominator.
 
-C: `find_points.c:3753-3756`, `find_points.c:3764-3777`, `find_points.c:3791`
+C: `find_points.c:3796-3799`, `find_points.c:3807-3820`, `find_points.c:3839`
 
 Deviation: an inductive type with the data of each shape, for the constant `shape` and the fields of
 `rp_run` that the shapes read, with these exceptions: the forbidden divisors as lists, for `forb_ba`
@@ -681,7 +603,7 @@ denominator `bHigh` (`Ratpoints.Sieve.jacobiSetup`), and `lcf`; and every denomi
 bounds of the search intervals `domain` for the height bound `H` and the denominators up to `bHigh`
 (`Ratpoints.Sieve.exactBounds`) are made after the shape, once for the run.
 
-C: `find_points.c:3806-3834`, `find_points.c:3897-3898`, `find_points.c:3904-3905`
+C: `find_points.c:3856-3884`, `find_points.c:3948-3949`, `find_points.c:3967-3968`
 
 Deviation: the shape returned with its data, for the fields of the run that `run_setup` fills, and
 Booleans and an option for the bits `RATPOINTS_USE_SQUARES`, `RATPOINTS_USE_SQUARES1`,
@@ -691,8 +613,9 @@ returned as an array with the shape, for the struct `iv` of the run with its poi
 fields of the arguments that `exact_bounds` reads; no count `nfb`, a list having its length; no
 copies of `use_c_long` and `lcf_long`, which only `jacobi1` reads (`Ratpoints.Sieve.jacobi`); the
 segments and the blocks made by `Ratpoints.Sieve.Shape.blockPlan`, and the counters and the
-decisions of the correction by `Ratpoints.Sieve.Correction.start`; no failure for lack of memory.
--/
+decisions of the correction by `Ratpoints.Sieve.Correction.start`; no argument `modular` and no
+residues of the coefficients for the modular test before the exact check, which `run_setup` computes
+at its end and `Ratpoints.Sieve.modTest` makes here; no failure for lack of memory. -/
 def runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List Nat))
     (checkDenom useJacobi : Bool) (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal)
     (lcf : Int) (H bHigh : Nat) (domain : List (Double × Double)) :
@@ -789,31 +712,6 @@ against the points that `ratpoints` prints in those of `Ratpoints.Model.Blocks`.
     match Id.run (forbiddenOfPrime c 2 3 (3 ^ 64) #[0, 0, 0] true) with
     | some (.inr e) => e.p == 3 && !e.mask.testBit (Id.run (Setup.valuation (3 ^ 64) 3)).1
     | _ => false
-
--- The Jacobi symbol by the binary algorithm: `(2 / 7) = 1`, `(3 / 7) = -1`, `(-1 / 3) = -1`,
--- `(5 / 21) = 1`, `(10 / 21) = -1`; `b*` without the primes of `2 lcf`: `(6 / 9)` over `b* = 1`,
--- `(3 / 28)` over `b* = 7`, `(-12 / 75)` over `b* = 25`.
-#guard [Id.run (jacobi 7 2), Id.run (jacobi 7 3), Id.run (jacobi 3 (-1)), Id.run (jacobi 21 5),
-    Id.run (jacobi 21 10), Id.run (jacobi 9 6), Id.run (jacobi 28 3), Id.run (jacobi 75 (-12))] ==
-  [1, -1, -1, 1, -1, 1, -1, 1]
-
--- The binary algorithm against a direct computation of `(lcf / b*)`: the product over the odd
--- primes `q ∤ lcf` of `b`, each as often as it divides `b`, of Euler's criterion
--- `lcf ^ ((q - 1) / 2) mod q`, read as `1` or `-1`, for the denominators up to 300.
-#guard
-  let primes := (List.range' 3 298).filter fun q ↦ (List.range' 2 (q - 2)).all (q % · != 0)
-  [7, -12, 18, 2, -1, 3 * 5 * 7 * 11, -(2 ^ 63)].all fun (lcf : Int) ↦
-    let euler (q : Nat) : Int := if (lcf % q).toNat ^ ((q - 1) / 2) % q == 1 then 1 else -1
-    (List.range' 1 300).all fun b ↦
-      Id.run (jacobi b lcf) == (primes.filter fun q ↦ b % q == 0 && lcf % q != 0).foldl
-        (fun s q ↦ s * euler q ^ ((List.range 10).filter fun k ↦ b % q ^ (k + 1) == 0).length) 1
-
--- The helpers of the binary algorithm: `(2 / m)` for `m = 1, 3, 5, 7`; one subtraction loop on
--- `15` and `3`; the rounds for `(2 / 7)`, which ends at the gcd 1 with the symbol 1, and for
--- `(6 / 9)`, which ends at the gcd 3.
-#guard [twoSign 1 1, twoSign 3 1, twoSign 5 1, twoSign 7 1] == [1, -1, -1, 1] &&
-  Id.run (jacobiReduce 15 3 1) == (3, 1) && Id.run (jacobiRound 2 7) == (1, 1) &&
-  (Id.run (jacobiRound 6 9)).1 == 3
 
 -- The non-squares modulo 7 (the squares 1, 2 and 4) and modulo 13, and the signs of `7`.
 #guard Id.run (nonSquares 7) == #[true, false, false, true, false, true, true] &&

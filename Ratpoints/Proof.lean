@@ -35,6 +35,7 @@ public import Ratpoints.Proof.FirstStage
 public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Jacobi
 public import Ratpoints.Proof.JacobiTables
+public import Ratpoints.Proof.ModTest
 public import Ratpoints.Proof.Moduli
 public import Ratpoints.Proof.Order
 public import Ratpoints.Proof.Output

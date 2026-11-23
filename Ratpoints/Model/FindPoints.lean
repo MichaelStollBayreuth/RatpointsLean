@@ -92,8 +92,8 @@ and without the Sturm step the reversal check), what is delivered (the options o
 search region; under the first of the output, the reversal, the options of the sieve and the Sturm
 step change it too), and with its intervals what the search writes back (`Ratpoints.Outcome`).
 
-C: `main.c:359`, `main.c:363`, `ratpoints.h:394`, `ratpoints.h:398-399`, `ratpoints.h:404`,
-`ratpoints.h:438-440`
+C: `main.c:359`, `main.c:363`, `ratpoints.h:429`, `ratpoints.h:433-434`, `ratpoints.h:439`,
+`ratpoints.h:473-475`
 
 Deviation: a structure for the fields of `ratpoints_args` that hold these options: Booleans for the
 bits `RATPOINTS_NO_CHECK`, `RATPOINTS_NO_Y` and `RATPOINTS_NO_REVERSE` of the flags, `noCheck` and
@@ -143,15 +143,15 @@ for the height bound `H ≥ 1`: the least denominator `1` for one below `1`, the
 would not all be doubles, and the switch of the reversal off (`RATPOINTS_NO_REVERSE_AUTO`) when the
 caller gives search intervals or the range of the denominators is not `1, …, H`.
 
-C: `find_points.c:4714-4715`, `find_points.c:4733-4735`, `find_points.c:4752-4763`,
-`ratpoints.h:456-459`
+C: `find_points.c:4781-4782`, `find_points.c:4800-4802`, `find_points.c:4819-4830`,
+`ratpoints.h:491-494`
 
 Deviation: the normalized options returned, for the fields of the arguments that the C code
-normalizes in place and restores in `find_points_work` (`find_points.c:4594-4597` and
-`find_points.c:4616-4619`), which the caller does not see either; no clamp of the number of the
+normalizes in place and restores in `find_points_work` (`find_points.c:4659-4662` and
+`find_points.c:4681-4684`), which the caller does not see either; no clamp of the number of the
 search intervals, which a list cannot make negative; the bit `RATPOINTS_NO_REVERSE_AUTO`, which the
 C code sets in the flags and the reversal check tests with `RATPOINTS_NO_REVERSE`
-(`find_points.c:4818`), as the switch `reverse` cleared; integers for the `long`s. -/
+(`find_points.c:4885`), as the switch `reverse` cleared; integers for the `long`s. -/
 def Options.normalize (o : Options) (H : Nat) : Options :=
   let bLow : Int := if o.bLow < 1 then 1 else o.bLow
   let bHigh : Int := if o.bHigh < 1 ∨ H < o.bHigh then H else o.bHigh
@@ -169,7 +169,7 @@ the arguments that the search writes back and the program `ratpoints` reads afte
 and `RATPOINTS_USE_SQUARES1`, set for odd degree otherwise when the divisor set-up has succeeded
 (`Ratpoints.Setup.setupUs1`), when the denominators are divisors of `c_d` times squares; the search
 sets the last two before its exits after the Sturm step and before the points at infinity, and the
-return after the Sturm step (`find_points.c:4973`) comes only for an even degree, where neither is
+return after the Sturm step (`find_points.c:5040`) comes only for an even degree, where neither is
 set, so that they are written back on every path that does not refuse the input; and the search
 intervals as the search leaves them, which the program prints after the search (its message 8):
 `[-h, h]` when the caller gives none (`Ratpoints.searchIntervals`), narrowed by the Sturm step to
@@ -179,7 +179,7 @@ the search (its message 4): those of the first stage, of the first two and of al
 the last block of the run was sifted with them (`Ratpoints.Sieve.sieveRun`), and `0` for each when
 the search returns before the sieve.
 
-C: `ratpoints.h:412-418`, `ratpoints.h:449`, `ratpoints.h:451-452`
+C: `ratpoints.h:447-453`, `ratpoints.h:484`, `ratpoints.h:486-487`
 
 Deviation: a structure for what the C code returns and writes back into the arguments: the data of
 the callback, which the caller has behind its pointer `info`, the count, which `find_points` returns
@@ -190,14 +190,14 @@ after it; nothing else written back: neither the reversed coefficients and the d
 `args->degree`), which nothing reads after the search; nor the other internal bits of the flags,
 `RATPOINTS_CHECK_DENOM`, `RATPOINTS_USE_JACOBI` and `RATPOINTS_NO_REVERSE_AUTO`, which the program
 does not read either, the bits of the input coming back as the caller set them
-(`find_points.c:4680`), which the program takes from its own options and settings
+(`find_points.c:4747`), which the program takes from its own options and settings
 (`Ratpoints.Options`, `Ratpoints.SieveOptions.jacobi`, `Ratpoints.Cli.Output.verbose`); nor
-`args->sp3`, which `find_points_work` zeroes on entry (`find_points.c:4604`) and leaves as the
-search leaves it, unlike `sp2`, which it restores (`find_points.c:4617`): the end of the third stage
-of the last block sifted (`find_points.c:5247`), that of the choice after the returns between the
+`args->sp3`, which `find_points_work` zeroes on entry (`find_points.c:4669`) and leaves as the
+search leaves it, unlike `sp2`, which it restores (`find_points.c:4682`): the end of the third stage
+of the last block sifted (`find_points.c:5324`), that of the choice after the returns between the
 choice and the sieve, where `sp3_used` stays `0`, and `0` after the returns before the choice and
-after the exits of the choice when the curve has no points modulo a prime (`find_points.c:2638`,
-`find_points.c:3023`), which come before `find_points.c:3042` sets it; nor the private fields that
+after the exits of the choice when the curve has no points modulo a prime (`find_points.c:2680`,
+`find_points.c:3065`), which come before `find_points.c:3084` sets it; nor the private fields that
 `sieving_info` and `adapt_primes` write, `adapt_at`, `run_words`, `run_denoms`, `sp3_max` and
 `check_rel`, which nothing reads before `sieving_info` sets them again in the next search; natural
 numbers for the `long`s `sp1_used`, `sp2_used` and `sp3_used`. -/
@@ -230,12 +230,12 @@ intervals given, refused when an interval has not `l ≤ u` or does not begin ab
 one before it, the comparisons of doubles (`Ratpoints.Double.le`, `Ratpoints.Double.lt`), so that a
 NaN end is refused too.
 
-C: `find_points.c:4913`, `find_points.c:4915-4939`
+C: `find_points.c:4980`, `find_points.c:4982-5006`
 
 Deviation: the intervals returned as a list, for the array `domain` and the number `num_inter` of
 the arguments, which the C code sets to the default interval in place; none for the code
 `RATPOINTS_BAD_ARGS` that the C code returns (`Ratpoints.Refusal.badArgs`); the test of a null
-pointer `domain` (`find_points.c:4914`) excluded, the interface of the library; natural numbers for
+pointer `domain` (`find_points.c:4981`) excluded, the interface of the library; natural numbers for
 the `long` index. -/
 def searchIntervals (H : Nat) (domain : List (Double × Double)) :
     Id (Option (List (Double × Double))) := do
@@ -258,13 +258,13 @@ coefficient is not a square (`Ratpoints.Setup.isSquare`), when there is no point
 so that the search returns at once, and otherwise no intervals with the flag `sturm_empty` set, so
 that the search delivers the points at infinity only.
 
-C: `find_points.c:4941-4943`, `find_points.c:4946-4947`, `find_points.c:4963-4976`
+C: `find_points.c:5008-5010`, `find_points.c:5013-5014`, `find_points.c:5030-5043`
 
 Deviation: the result as a refusal, none, or the intervals with the flag `sturm_empty`, for the
-codes that the C code returns at `find_points.c:4963` and `find_points.c:4973`, the intervals that
+codes that the C code returns at `find_points.c:5030` and `find_points.c:5040`, the intervals that
 it leaves in `domain` with their number `num_inter`, and its local flag `sturm_empty`; the square
 test `lcfsq` made on the polynomial searched (`Ratpoints.Setup.isSquare`), where the C code computes
-it before the reversal check (`find_points.c:4708`) and clears it in case 2 (`find_points.c:4849`):
+it before the reversal check (`find_points.c:4775`) and clears it in case 2 (`find_points.c:4916`):
 the same value for an even degree, the only one that reads it; no failure for lack of memory
 (`RATPOINTS_NO_MEMORY`), which the model cannot meet; the report under `RATPOINTS_VERBOSE` printed
 by the caller from the result (`Ratpoints.Report.sturmStep`). -/
@@ -294,24 +294,27 @@ denominators `bLow, …, bHigh` of the shape in the search intervals (`Ratpoints
 blocks, with the cut points of the choice `P` as the first decision, the options `s`, which the
 correction reads, and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit arrays, which returns
 when the callback stops the search, with the ends of the second and the third stage of its last
-block. This is the block that the C code introduces as "now do the sieving".
+block; the run with the flags `fl` and, when the choice has switched the modular test before the
+exact check on (`P.modular`), what that test reads (`Ratpoints.Sieve.modTest`), whatever the field
+`test` of `fl` holds. This is the block that the C code introduces as "now do the sieving".
 
-C: `find_points.c:4647`, `find_points.c:5200`, `find_points.c:5203`, `find_points.c:5216`,
-`find_points.c:5221-5223`, `find_points.c:5251`
+C: `find_points.c:4712`, `find_points.c:5276`, `find_points.c:5279`, `find_points.c:5292`,
+`find_points.c:5297-5300`, `find_points.c:5328`
 
 Deviation: a function of its own for the block of the sieving in `find_points_work_1`; the range of
 the denominators and the search intervals as arguments, for the fields `b_low`, `b_high`, `domain`
-and `num_inter` of the arguments that `run_setup` and the run read; the flags of the
-denominators as Booleans and an option, for the bits of `args->flags` and the arrays
-`args->den_info` and `args->divisors` that `run_setup` reads; the array of the row offsets made with
-zeros, for the array on the stack, whose entries the C code leaves unset until `class_offsets`
-writes them, with one offset in each row for each of the `sp3_max` sieve entries of the run, the
-reserve of the correction included; the delivery passed and returned, for the pointers `info` and
-`wk.quit` and the count `total`, and the ends of the second and the third stage of the last block
-returned with it, for the fields `sp2` and `sp3` of the arguments that the run writes; no sieving
-thread made (`worker_init`, `worker_clear`), whose fields the components that the run calls take as
-arguments, and no pool of threads (excluded with the threads); no failure for lack of memory, which
-the model cannot meet. -/
+and `num_inter` of the arguments that `run_setup` and the run read; the flags of the denominators as
+Booleans and an option, for the bits of `args->flags` and the arrays `args->den_info` and
+`args->divisors` that `run_setup` reads; what the modular test reads in the flags of the run, for
+the switch `modular` that `run_setup` gets and the pointer `cq` that it sets
+(`Ratpoints.Sieve.modTest`); the array of the row offsets made with zeros, for the array on the
+stack, whose entries the C code leaves unset until `class_offsets` writes them, with one offset in
+each row for each of the `sp3_max` sieve entries of the run, the reserve of the correction included;
+the delivery passed and returned, for the pointers `info` and `wk.quit` and the count `total`, and
+the ends of the second and the third stage of the last block returned with it, for the fields `sp2`
+and `sp3` of the arguments that the run writes; no sieving thread made (`worker_init`,
+`worker_clear`), whose fields the components that the run calls take as arguments, and no pool of
+threads (excluded with the threads); no failure for lack of memory, which the model cannot meet. -/
 def sieving {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H : Nat)
     (s : SieveOptions) (P : Params) (fl : CheckFlags) (useSquares : Bool)
     (us1 : Option (List Setup.DenInfo × List Nat)) (checkDenom useJacobi : Bool)
@@ -323,8 +326,8 @@ def sieving {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c 
   let (cls, entries, offsets) ← classOffsets cls entries offsets
   let (shape, iv) ←
     runSetup useSquares us1 checkDenom useJacobi forb forbVal (c.getD d 0) H bHigh domain
-  sieveRun process c d H (P.arraySizeAt H) fl s P entries magics cls offsets db shape iv bLow bHigh
-    store r
+  sieveRun process c d H (P.arraySizeAt H) { fl with test := modTest P.modular c d } s P entries
+    magics cls offsets db shape iv bLow bHigh store r
 
 open Sieve in
 /-- The choice of the moduli and the search after it, for the polynomial with the coefficient list
@@ -336,10 +339,11 @@ Sturm step leaves and the classes of the denominators modulo 64), the mean bits 
 its bit arrays and the flag `sturmEmpty` of the Sturm step, delivered to the callback `process` on
 the delivery `r`, whose flag `quit` is clear, with the print channel `print`: the choice of the
 moduli from the curve (`Ratpoints.sievingInfo`), with the flag of the `long`s
-(`Ratpoints.Setup.useCLong`), and nothing delivered when the curve has no points modulo one of the
-primes looked at, after the message of the exit (`Ratpoints.Report.noPoints`); the report of the
-choice and of its moduli (`Ratpoints.Report.choice`, `Ratpoints.Report.moduli`); the points at
-infinity (`Ratpoints.Sieve.pointsAtInfinity`), after the line before them when there are some
+(`Ratpoints.Setup.useCLong`) and the flag `fl.noCheck`, and nothing delivered when the curve has no
+points modulo one of the primes looked at, after the message of the exit
+(`Ratpoints.Report.noPoints`); the report of the choice and of its moduli
+(`Ratpoints.Report.choice`, `Ratpoints.Report.moduli`); the points at infinity
+(`Ratpoints.Sieve.pointsAtInfinity`), after the line before them when there are some
 (`Ratpoints.Report.atInfinity`), after which it returns if the callback has stopped the search; the
 lines after them (`Ratpoints.Report.sieving`), after which it returns if the Sturm step has left no
 interval; and the sieving (`Ratpoints.sieving`) with the result of the choice. It returns the
@@ -347,8 +351,8 @@ delivery with the numbers of the moduli used, the end of the first stage of the 
 of the second and the third stage of the last block of the run, after the sieving, and `0` for each
 after the returns before it.
 
-C: `find_points.c:5080-5090`, `find_points.c:5094-5096`, `find_points.c:5184-5187`,
-`find_points.c:5189-5190`, `find_points.c:5294-5297`
+C: `find_points.c:5147-5157`, `find_points.c:5161-5163`, `find_points.c:5260-5263`,
+`find_points.c:5265-5266`, `find_points.c:5371-5374`
 
 Deviation: a function of its own for the part of `find_points_work_1` from the call of
 `sieving_info` on; the shape of the run as an argument, for the fields of the arguments and the
@@ -366,10 +370,11 @@ def chooseAndSearch {σ : Type} (process : Int → Int → Int → σ → Answer
     (us1 : Option (List Setup.DenInfo × List Nat)) (a : ShapeArgs) (bpw : Float)
     (sturmEmpty : Bool) (print : String → σ → σ) (r : Delivery σ) :
     Id (Delivery σ × Nat × Nat × Nat) := do
-  match ← sievingInfo c d (Setup.useCLong c d) (d % 2 == 0) mayExtend s a bpw with
+  match ← sievingInfo c d (Setup.useCLong c d) (d % 2 == 0) mayExtend fl.noCheck s a bpw with
   | .error p => return (r.print print (Report.noPoints p), 0, 0, 0)
   | .ok si =>
-    let r := r.print print (Report.choice bpw si.params ++ (← Report.moduli si a.useJacobi a.bHigh))
+    let r := r.print print
+      (Report.choice bpw si.params ++ (← Report.moduli c d a.H s si a.useJacobi a.bHigh))
     let atInf := d % 2 == 1 || Setup.isSquare (c.getD d 0)
     let r := pointsAtInfinity process c d fl (if atInf then r.print print Report.atInfinity else r)
     if r.quit then return (r, 0, 0, 0)
@@ -411,20 +416,20 @@ points of the brute-force reference over the denominators of the search from `bL
 increasing unless the shape is that of the divisors, each mapped when `fl.reversed` is set, also
 when an exit is taken; with `sturmEmpty` set, only the points at infinity.
 
-C: `find_points.c:4662-4663`, `find_points.c:4669-4670`, `find_points.c:4676`,
-`find_points.c:4677-4678`, `find_points.c:4681`, `find_points.c:4984-4998`,
-`find_points.c:5003-5004`, `find_points.c:5011`, `find_points.c:5026-5027`, `find_points.c:5032`,
-`find_points.c:5038-5043`, `find_points.c:5046-5047`, `find_points.c:5076-5079`, `ratpoints.h:450`,
-`ratpoints.h:453`
+C: `find_points.c:4729-4730`, `find_points.c:4736-4737`, `find_points.c:4743`,
+`find_points.c:4744-4745`, `find_points.c:4748`, `find_points.c:5051-5065`,
+`find_points.c:5070-5071`, `find_points.c:5078`, `find_points.c:5093-5094`, `find_points.c:5099`,
+`find_points.c:5105-5110`, `find_points.c:5113-5114`, `find_points.c:5143-5146`, `ratpoints.h:485`,
+`ratpoints.h:488`
 
 Deviation: the range of the denominators, the search intervals and the flag `sturm_empty` as
 arguments, for the fields `b_low`, `b_high`, `domain` and `num_inter` of the arguments and the local
 flag of `find_points_work_1`; the flags of the denominators as Booleans, for the bits of
 `args->flags`; the divisors of the leading coefficient with their records as lists, for the arrays
 `args->den_info` and `args->divisors` of the arguments; the square test `lcfsq` of
-`find_points.c:4990` made on the polynomial searched (`Ratpoints.Setup.isSquare`), where the C code
-computes it before the reversal check (`find_points.c:4708`) and clears it in case 2
-(`find_points.c:4849`): the same value for an even degree, the only one that reads it; the array
+`find_points.c:5057` made on the polynomial searched (`Ratpoints.Setup.isSquare`), where the C code
+computes it before the reversal check (`find_points.c:4775`) and clears it in case 2
+(`find_points.c:4916`): the same value for an even degree, the only one that reads it; the array
 size normalized for the height bound where the estimate of the run reads it
 (`Ratpoints.arraySizeAt`); the test on `point_at_infty` of the 2-adic exit recomputed, as
 `Ratpoints.Sieve.pointsAtInfinity` decides it; the 2-adic exit returns the delivery with the
@@ -478,12 +483,12 @@ denominators and the search intervals that the Sturm step leaves, from the data 
 `0` and the flag `quit` clear. A refusal comes with the data of the callback as the report has left
 it.
 
-C: `find_points.c:4651-4659`
+C: `find_points.c:4716-4726`
 
 Deviation: a function of its own for the part of `find_points_work_1` after the test of the leading
 zeros; the refusals returned apart from the outcome, with the data of the callback, for the negative
 codes that the C code returns, the caller keeping its data behind the pointer `info`; the outcome of
-the return of `find_points.c:4973`, which leaves the flags of the squares clear and no interval,
+the return of `find_points.c:5040`, which leaves the flags of the squares clear and no interval,
 with the data `info`, the count `0`, the flag of the reversal, no interval and no moduli used, the
 flag being in fact clear there (the cases 1 and 3 of the reversal check leave an odd degree, and in
 case 2 the reversed polynomial takes the value `c_d > 0` at `0`, in the default interval, which the
@@ -551,12 +556,12 @@ the search; it returns the data that `process` and `print` leave, the count, the
 that the program reads after the search, the search intervals as the search leaves them and the
 numbers of the moduli used (`Ratpoints.Outcome`).
 
-C: `find_points.c:4574-4580`, `find_points.c:4598`, `find_points.c:4604-4605`,
-`find_points.c:4611-4612`, `find_points.c:4614`, `find_points.c:4620-4621`,
-`find_points.c:4640-4645`, `find_points.c:4680`, `find_points.c:4698-4707`, `find_points.c:4732`,
-`find_points.c:5303-5304`, `find_points.c:5310-5313`, `find_points.c:5319`,
-`find_points.c:5325-5326`, `ratpoints.h:397`, `ratpoints.h:434-435`, `ratpoints.h:444-446`,
-`ratpoints.h:462-465`, `ratpoints.h:471-472`, `ratpoints.h:476-477`
+C: `find_points.c:4639-4645`, `find_points.c:4663`, `find_points.c:4669-4670`,
+`find_points.c:4676-4677`, `find_points.c:4679`, `find_points.c:4685-4686`,
+`find_points.c:4705-4710`, `find_points.c:4747`, `find_points.c:4765-4774`, `find_points.c:4799`,
+`find_points.c:5380-5381`, `find_points.c:5387-5390`, `find_points.c:5396`,
+`find_points.c:5402-5403`, `ratpoints.h:432`, `ratpoints.h:469-470`, `ratpoints.h:479-481`,
+`ratpoints.h:497-500`, `ratpoints.h:506-507`, `ratpoints.h:511-512`
 
 Deviation: one function for `find_points`, `find_points_work` and the start of `find_points_work_1`,
 which the library calls in turn, and the rest of which is `Ratpoints.findPointsWork`. The refusals
@@ -571,10 +576,10 @@ of the leading zeros first); and the height bound, which the program checks befo
 library, comes before the test of the leading zeros, which the library makes first, so that `5 0`
 with `H = 0` is error 4, as the program gives it. The degree with the leading zeros dropped is
 `Ratpoints.BruteForce.degree c`. A natural number `H` for the `long` `height` of the arguments
-(`ratpoints.h:397`), so that `H = 0` stands for the heights below 1 that `find_points.c:4732`
+(`ratpoints.h:432`), so that `H = 0` stands for the heights below 1 that `find_points.c:4799`
 refuses; a height that is not a `long`, `2 ^ 63` or more, is refused with error 4, as the program
 refuses it when it reads the height (`Ratpoints.Cli.heightBound`), where the library cannot be given
-one, its height being a `long`. The end of the type `ratpoints_args` (`ratpoints.h:434-435`) with
+one, its height being a `long`. The end of the type `ratpoints_args` (`ratpoints.h:469-470`) with
 its first fields, whose other fields are those of the options, the parameters, the result of the
 choice of the moduli and the outcome (`Ratpoints.Options`, `Ratpoints.SieveOptions`,
 `Ratpoints.Params`, `Ratpoints.SievingInfo`, `Ratpoints.Outcome`), of the divisor set-up
@@ -590,7 +595,7 @@ standard output of the caller, so that the text comes between the points as on t
 of the C program, and which prints nothing when the bit is clear; the options of the output as
 fields of the options (`Ratpoints.Options`), copied into the flags of the check
 (`Ratpoints.CheckFlags`) with the flag of the reversal, for the bits of `args->flags` that the mask
-of `find_points.c:4680` keeps; the points at infinity and the square test of the leading coefficient
+of `find_points.c:4747` keeps; the points at infinity and the square test of the leading coefficient
 are decided where they are used (`Ratpoints.Sieve.pointsAtInfinity`, `Ratpoints.Setup.reversal`,
 `Ratpoints.sturmRegion`, `Ratpoints.searchPoints`); no failure for lack of memory, which the model
 cannot meet. -/

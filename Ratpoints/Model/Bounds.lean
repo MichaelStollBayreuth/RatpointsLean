@@ -56,7 +56,7 @@ namespace Sieve
 `Ratpoints.Sieve.exactScale` adds to `b m`, `2 ^ s - 1` when the end wants `b |x|` rounded up and
 `0` when it wants it rounded down, and whether `x < 0`.
 
-C: `find_points.c:3243-3244`
+C: `find_points.c:3286-3287`
 
 Deviation: a natural number for the `int` `s`, which is from `0` to `127`, and a Boolean for the
 `int` `neg`. -/
@@ -79,7 +79,7 @@ forms `(b lM + lC) >> lsh` of the lower end and `(b uM + uC) >> ush` of the uppe
 binary fractions (`Ratpoints.Sieve.ExactEnd`). An interval that is not taken inline has the forms of
 an empty one, `0` at the lower end and `-2 ^ 63` at the upper end.
 
-C: `find_points.c:3245-3247`
+C: `find_points.c:3288-3290`
 
 Deviation: natural numbers for the `int` shifts `lsh` and `ush`, which are from `0` to `63`, and a
 Boolean for the `int` `fast`. -/
@@ -112,12 +112,12 @@ half; the 128-bit sum shifted right by `s`, from `0` to `127`, in its halves; an
 the high half of the quotient is not `0`. As `b m < 2 ^ 126` and `r < 2 ^ 127`, the sum is below
 `2 ^ 128` and nothing is lost.
 
-C: `find_points.c:3257-3264`, `find_points.c:3283`
+C: `find_points.c:3300-3307`, `find_points.c:3326`
 
 Deviation: the 128-bit product, sum and shift on two 64-bit halves, the high half of the product by
 `Ratpoints.Sieve.mulHi`, for the `unsigned __int128` of the arm that the modelled builds compile
 (the compiler defines `__SIZEOF_INT128__`, and `RP_NO_INT128` is not set), which Lean core does not
-have; the other arm (`find_points.c:3265-3282`), for a build without a 128-bit type, is excluded;
+have; the other arm (`find_points.c:3308-3325`), for a build without a 128-bit type, is excluded;
 the `long` `b` converted to a 64-bit word, as the C code converts it to an `unsigned long`. -/
 def exactScale (b : Int64) (e : ExactEnd) : UInt64 :=
   let lo := b.toUInt64 * e.m + e.rl
@@ -137,7 +137,7 @@ and else, while `s > 0`, the trailing zero bits of `m` dropped (`Ratpoints.Sieve
 of them; `m` shifted up by `-s` when `s < 0`; and `s` capped at `127`, which leaves
 `⌊b m 2 ^ (-s)⌋ = 0` and `⌈b m 2 ^ (-s)⌉ = 1` for every `1 ≤ b < 2 ^ 63`, as they are for `s = 127`.
 
-C: `find_points.c:3298-3317`
+C: `find_points.c:3341-3360`
 
 Deviation: an integer for the `int` `s` while it is computed, and a natural number when it is
 returned; the lowest set bit by the loop of `RP_CTZL` (`Ratpoints.Sieve.ctz`), where gcc and clang
@@ -167,7 +167,7 @@ the end wants `b |x|` rounded up, which is when `lower` and `neg` differ (the lo
 `⌈b x⌉`, which is `b |x|` rounded up for `x ≥ 0` and minus `b |x|` rounded down for `x < 0`, and
 the upper end the other way round), and `0` otherwise.
 
-C: `find_points.c:3290-3297`, `find_points.c:3318-3325`
+C: `find_points.c:3333-3340`, `find_points.c:3361-3368`
 
 Deviation: the double as its bits, with `fabs` and the comparisons of the C language on them
 (`Ratpoints.Double.fabs`, `Ratpoints.Double.lt`); a Boolean for the `int` `lower`; the end returned,
@@ -193,7 +193,7 @@ and at its upper end otherwise, for the height bound `height` and the denominato
 lower end and `0` at the upper end, for which `b M + C` stays within the `long`s for every
 `b ≤ bHigh`.
 
-C: `find_points.c:3330-3344`
+C: `find_points.c:3373-3387`
 
 Deviation: the form returned as an option, for the pointers `M`, `C` and `sh` through which the C
 code writes it and the `int` that says whether it has one; `Int64` for the `long`s, with the
@@ -216,7 +216,7 @@ inline when `height ≤ 2 ^ 63 - 65`, so that `Ratpoints.Sieve.numeratorsToBits`
 form, and both ends have a form (`Ratpoints.Sieve.endForm`), with these forms; otherwise the forms
 of an empty interval, `0` at the lower end and `-2 ^ 63` at the upper end.
 
-C: `find_points.c:3349-3366`
+C: `find_points.c:3392-3409`
 
 Deviation: the search intervals and the bounds as arguments, for the fields `domain`, `num_inter`,
 `height` and `b_high` of the arguments, and the array of the bounds returned, for the array that

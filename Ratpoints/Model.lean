@@ -19,6 +19,7 @@ public import Ratpoints.Model.Denominators
 public import Ratpoints.Model.Double
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
+public import Ratpoints.Model.Jacobi
 public import Ratpoints.Model.Packing
 public import Ratpoints.Model.Params
 public import Ratpoints.Model.Report
