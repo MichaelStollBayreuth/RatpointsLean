@@ -19,7 +19,7 @@ import Std.Tactic.Do
 /-!
 # The numbers and the search intervals of the program
 
-The ends of the search intervals of the command line of `ratpoints-lean`, as
+The ends of the search intervals of the command line of `ratpoints-model`, as
 `Ratpoints.Model.CliNumbers` reads, compares and joins them. `strtod` never reads a NaN
 (`Ratpoints.Cli.isNaN_strtod`); `outward` moves a double to the side of the end that its direction
 asks, and onto the largest double at most a lower end when it starts close enough to it

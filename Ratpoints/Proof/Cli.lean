@@ -20,7 +20,7 @@ import Ratpoints.Proof.Params
 /-!
 # The output of the program
 
-What the program `ratpoints-lean` prints for the points of a successful search. Its callback
+What the program `ratpoints-model` prints for the points of a successful search. Its callback
 `Ratpoints.Cli.process`, called for the points of a list `L` in turn from the data
 `Ratpoints.Cli.Data.ofOutput u o` of the settings `u` of the output and the options `o` of the
 search, counts the points of `L` that it keeps (`Ratpoints.Cli.Data.keeps`: all but those at

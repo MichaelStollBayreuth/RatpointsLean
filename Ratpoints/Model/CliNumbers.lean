@@ -11,9 +11,9 @@ public import Ratpoints.Model.Double
 meta import Ratpoints.Model.Double
 
 /-!
-# The numbers and the search intervals of `ratpoints-lean`
+# The numbers and the search intervals of `ratpoints-model`
 
-`ratpoints-lean` reads the numbers of its command line as `main.c` of `ratpoints` reads them: the
+`ratpoints-model` reads the numbers of its command line as `main.c` of `ratpoints` reads them: the
 integers of the coefficient list as `scan_mpz` reads them, the C `long`s of the height bound and of
 the options as `scan_long` reads them with `strtol`, the real numbers of the options as
 `scan_double` reads them with `strtod`, and the ends of the search intervals of `-l` and `-u` as

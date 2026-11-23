@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Differential tests of ratpoints-lean against ratpoints at the pinned commit.
+"""Differential tests of ratpoints-model against ratpoints at the pinned commit.
 
 usage: scripts/difftest.py [options]
 
-Runs the Lean program ratpoints-lean on the test suites of ratpoints and on further command lines,
+Runs the Lean program ratpoints-model on the test suites of ratpoints and on further command lines,
 and compares it with the recorded outputs and with the C program:
 
   test4   the invocations of test4.sh, read from testbase4 (split at its announce lines);
@@ -22,7 +22,7 @@ and compares it with the recorded outputs and with the C program:
           are not squarefree, and for the list of the coefficients read from a file (@name and @-),
           against the C program; searches at a large height that both programs
           stop at once (difftest_cases.STOP_CASES); the usage; and failed writes: a standard output
-          whose reader is gone, which ends the C program by SIGPIPE, where ratpoints-lean (the Lean
+          whose reader is gone, which ends the C program by SIGPIPE, where ratpoints-model (the Lean
           runtime ignores SIGPIPE) is to exit quietly with the status 141 that the shell reports for
           that, and a full device and a closed standard output, on which both programs report
           the failed write on their standard error and exit with status 13 when they write
@@ -51,7 +51,7 @@ and compares it with the recorded outputs and with the C program:
           smallest double and huge values) with the cut points (-p -n -N -P) at times, on random
           polynomials at small heights, at times under -x and at times with the report (message 4),
           against the C program;
-  threads the C program with -t 4 and -t 7 against ratpoints-lean, which reads -t and sieves on one
+  threads the C program with -t 4 and -t 7 against ratpoints-model, which reads -t and sieves on one
           thread: random polynomials at small heights, at times under -x, the point-rich curves at
           30000 under -x, on one of which the C program decides a correction of the moduli without
           an effect on the output, and a curve at 16383 under -x where the correction changes the
@@ -69,7 +69,7 @@ and compares it with the recorded outputs and with the C program:
           times, on point-rich curves and on curves of testdata.h on which a correction takes
           effect, against the C program: run locally, not by default (some minutes).
 
-ratpoints-lean prints the points and the report as ratpoints does; they are compared in their order,
+ratpoints-model prints the points and the report as ratpoints does; they are compared in order,
 also where ratpoints visits the denominators divisor by divisor (a polynomial searched of odd degree
 whose leading coefficient is not +-1), since the model visits them in the same order. An output of
 points in the default format with -q is compared as a list of points with a recorded output (test4,
@@ -104,12 +104,12 @@ the pairs that are points the same and in the same order in both outputs, the pa
 in the same order, the pairs in one block at the same place among the other lines, with -1 one line
 in each output when one of them is a point (the same if both are) and else at most one, and the
 other lines equal, a count line but for its number, which must be that of the pairs printed (unless
--z); without -q on reports. Exit codes are compared exactly, and ratpoints-lean must write nothing
+-z); without -q on reports. Exit codes are compared exactly, and ratpoints-model must write nothing
 to its standard error: it runs with LEAN_ABORT_ON_PANIC=1, so that a panic of the Lean runtime ends
 it by SIGABRT. Messages are compared exactly, but for the banner and the usage, which differ by
 design: in the outputs of errors 2 and 6 they are exchanged for those of the C program (the outputs
 of the two programs on an empty command line), and the errors suite checks the usage of
-ratpoints-lean against that of ratpoints. A few searches at a large height that both programs stop
+ratpoints-model against that of ratpoints. A few searches at a large height that both programs stop
 at a point at infinity before the sieve (-1) are run with a short timeout and a cap on the memory. A
 search above --max-height with a search region is compared, with a timeout and a cap on the memory,
 when the model sifts at most 10^5 denominators for it (an upper bound that mirrors the divisor
@@ -124,22 +124,22 @@ of the denominators modulo 64 admits a numerator).
 The runs of test4.sh's w(), on a standard output that refuses every write (/dev/full or a closed
 one), are compared with their record, the standard error and the exit status of the C program: the
 report of the failed write with status 13, or nothing with status 0 when the run writes nothing.
-Only on such a standard output may ratpoints-lean write to its standard error.
+Only on such a standard output may ratpoints-model write to its standard error.
 
 A run whose first argument is @name, which reads the list of the coefficients from the file name,
 runs in a temporary directory that holds the files of difftest_cases.LIST_FILES by their names,
 among them those that test4.sh writes for its runs of this kind, and a run of @- finds on its
 standard input what test4.sh pipes into its own (difftest_cases.LIST_STDIN). The run of test4.sh on
-a list of 2 MB, two coefficients of a million digits, is skipped: ratpoints-lean reads a number in
+a list of 2 MB, two coefficients of a million digits, is skipped: ratpoints-model reads a number in
 time quadratic in its digits and takes minutes on it; the errors suite compares the two programs on
 coefficients of 20001 digits instead.
 
 options:
-  --lean PATH        the ratpoints-lean executable (default: .lake/build/bin/ratpoints-lean)
+  --lean PATH        the ratpoints-model executable (default: .lake/build/bin/ratpoints-model)
   --c PATH           the C program, built at the pinned commit without a tuning.mk, which the
                      harness refuses (default: the environment variable RATPOINTS_BIN, else the
                      program ratpoints in the clone of --repo); a build that fixes the block
-                     length (-DRP_BLOCK_LEN=3), run against a ratpoints-lean built with
+                     length (-DRP_BLOCK_LEN=3), run against a ratpoints-model built with
                      Ratpoints.blockLen := some 3 (--lean), tests the boundaries of the blocks
                      (locally, not by default)
   --repo PATH        a clone of ratpoints that contains the pinned commit (default: the
@@ -233,7 +233,7 @@ def check_report_filter(ls, found):
     return out
 
 
-# The filters of test4.sh, under which ratpoints-lean is compared with the outputs that it records.
+# The filters of test4.sh, under which ratpoints-model is compared with the outputs that it records.
 FILTERS = {'grep found': lambda ls: [l for l in ls if 'found' in l],
            "grep 'Curve equation'": lambda ls: [l for l in ls if 'Curve equation' in l],
            'grep -c .': lambda ls: [str(sum(1 for l in ls if l))],
@@ -304,7 +304,7 @@ TIMEOUT = 600
 # most BIG_NUMERATORS, under -1 only those up to the stop at the first point of the expected output,
 # with BIG_PIECE more for the piece of bit arrays that holds it, which is sifted in full (the
 # default array size 256 plus one bit array of rbaLength = 256 bits, at the largest stride 64):
-# ratpoints-lean within BIG_TIMEOUT seconds, its address space capped at BIG_MEMORY bytes, and a
+# ratpoints-model within BIG_TIMEOUT seconds, its address space capped at BIG_MEMORY bytes, and a
 # run that does not end in time is a failure.
 BIG_DENOMINATORS = 10 ** 5
 BIG_NUMERATORS = 2 * 10 ** 10
@@ -320,7 +320,7 @@ BIG_MEMORY = 12 * 10 ** 9
 TABLE_PRIMES = [p for p in range(3, 1022, 2) if all(p % q for q in range(3, math.isqrt(p) + 1, 2))]
 MAX_DIVISORS = 512
 # The stop cases of the errors suite (difftest_cases.STOP_CASES), searches at a large height that
-# both programs stop at a point at infinity before the sieve: ratpoints-lean must end within
+# both programs stop at a point at infinity before the sieve: ratpoints-model must end within
 # STOP_TIMEOUT seconds with its address space capped at STOP_MEMORY bytes.
 STOP_TIMEOUT = 30
 STOP_MEMORY = 12 * 10 ** 9  # the address space, as BIG_MEMORY
@@ -330,7 +330,7 @@ STOP_MEMORY = 12 * 10 ** 9  # the address space, as BIG_MEMORY
 ADAPT_WORDS = 10 ** 6
 RBA_LENGTH = 256
 RBA_PACK = 4
-# The environment of ratpoints-lean: LEAN_ABORT_ON_PANIC=1 turns a panic of the Lean runtime (an
+# The environment of ratpoints-model: LEAN_ABORT_ON_PANIC=1 turns a panic of the Lean runtime (an
 # index out of bounds, after which the program would go on with a default value) into SIGABRT,
 # which every comparison of the exit code catches.
 LEAN_ENV = {**os.environ, 'LEAN_ABORT_ON_PANIC': '1'}
@@ -383,7 +383,7 @@ def as_bytes(arg):
 
 
 def no_core():
-    """No core dump for a program that the harness runs (a panic of ratpoints-lean ends it by
+    """No core dump for a program that the harness runs (a panic of ratpoints-model ends it by
     SIGABRT)."""
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
@@ -433,7 +433,7 @@ def run(prog, args):
 
 
 def run_lean(cfg, args, timeout=TIMEOUT, limit=None):
-    """The standard output, the exit code and the standard error of ratpoints-lean on the command
+    """The standard output, the exit code and the standard error of ratpoints-model on the command
     line `args`, in LEAN_ENV."""
     return run3(cfg.lean, args, LEAN_ENV, timeout, limit)
 
@@ -503,7 +503,7 @@ def special(cfg, tally, label, ok, detail):
 
 
 def option_words(opts):
-    """The options among the words `opts` after the height, as ratpoints-lean reads them: the list
+    """The options among the words `opts` after the height, as ratpoints-model reads them: the list
     of (index, word, argument or None) up to the first word that is no option of ratpoints (or an
     option whose argument is missing), and the index of that word (None if it reaches the end)."""
     words, i = [], 0
@@ -571,7 +571,7 @@ class Settings:
 
 
 def settings(opts):
-    """The settings of the options `opts`, the words after the height, as far as ratpoints-lean
+    """The settings of the options `opts`, the words after the height, as far as ratpoints-model
     reads them."""
     st = Settings()
     for _, o, a in option_words(opts)[0]:
@@ -798,7 +798,7 @@ MODULI_LINES = re.compile('used for|further primes|primes used')
 
 def report_text(cfg, text, lean=False):
     """A report as it is compared: the first line of the banner, which test4.sh's m() drops, left
-    out, for ratpoints-lean (`lean`) after its banner is exchanged for that of the C program, the
+    out, for ratpoints-model (`lean`) after its banner is exchanged for that of the C program, the
     message on the moduli used (message 4) included."""
     if lean:
         text = text.replace(cfg.lean_banner, cfg.c_banner)
@@ -913,7 +913,7 @@ def weak_agrees(lean_text, exp_text, args, st):
 
 
 def agrees(cfg, lean, expected, mode, args=None, st=None):
-    """Whether the output and exit code `lean` of ratpoints-lean agree with `expected`: in the mode
+    """Whether the output and exit code `lean` of ratpoints-model agree with `expected`: in the mode
     'points' as lists of points in their order (exit 0), in 'report' as reports (report_text), in
     'weak' by the weaker check of -x (weak_agrees, on reports when there is no -q), in 'filter:F'
     after the filter F of test4.sh, the banner exchanged first (exit 0), in 'exact' exactly and in
@@ -939,9 +939,9 @@ def agrees(cfg, lean, expected, mode, args=None, st=None):
 
 
 def verdict(cfg, lean, expected, mode, args=None, st=None):
-    """Whether the run `lean` of ratpoints-lean, its output, exit code and standard error, agrees
+    """Whether the run `lean` of ratpoints-model, its output, exit code and standard error, agrees
     with `expected` in the mode `mode` (agrees) and wrote nothing to its standard error, as the C
-    program never does (ratpoints-lean writes there only when the Lean runtime panics)."""
+    program never does (ratpoints-model writes there only when the Lean runtime panics)."""
     return lean[2] == '' and agrees(cfg, lean[:2], expected, mode, args, st)
 
 
@@ -953,7 +953,7 @@ def failure_text(label, expected, lean):
 
 
 def lean_or_timeout(cfg, tally, label, args, big):
-    """The run of ratpoints-lean on `args`, for a search above --max-height (`big`) within
+    """The run of ratpoints-model on `args`, for a search above --max-height (`big`) within
     BIG_TIMEOUT seconds and with its address space capped at BIG_MEMORY bytes; None, with a
     failure recorded, when it does not end in time."""
     if not big:
@@ -962,12 +962,12 @@ def lean_or_timeout(cfg, tally, label, args, big):
         return run_lean(cfg, args, BIG_TIMEOUT, BIG_MEMORY)
     except subprocess.TimeoutExpired:
         tally.compared += 1
-        tally.failures.append(f'{label}: ratpoints-lean did not end within {BIG_TIMEOUT} s')
+        tally.failures.append(f'{label}: ratpoints-model did not end within {BIG_TIMEOUT} s')
         return None
 
 
 def check(cfg, tally, label, args, expected, mode, st=None, lean=None, big=False):
-    """Run ratpoints-lean on `args` (unless its run `lean` is given; for a search above
+    """Run ratpoints-model on `args` (unless its run `lean` is given; for a search above
     --max-height, `big`, with a timeout and a cap on the memory) and compare it with `expected`
     (see verdict)."""
     lean = lean or lean_or_timeout(cfg, tally, label, args, big)
@@ -985,7 +985,7 @@ def check(cfg, tally, label, args, expected, mode, st=None, lean=None, big=False
 
 
 def mode_of(st, code):
-    """How an output of ratpoints-lean is compared with an output of the C program that ends with
+    """How an output of ratpoints-model is compared with an output of the C program that ends with
     the exit code `code`, for the settings `st` of the command line: a failure before the search
     exactly; error 8 exactly with -q and as a report without; a search without -q as a report; with
     -q as a list of points in the default format, else exactly."""
@@ -1038,7 +1038,7 @@ def correction_possible(args, st):
 
 
 def check_x(cfg, tally, label, args, st, expected, big=False):
-    """Compare ratpoints-lean with the C program on a search under -x (no exact check) on the
+    """Compare ratpoints-model with the C program on a search under -x (no exact check) on the
     command line `args` with the settings `st`, whose lines (x : z) are the survivors of the sieve,
     which depend on the moduli and on the search region, and whose output of the C program is
     `expected`: exactly, since the model chooses its moduli from the curve and corrects them during
@@ -1066,7 +1066,7 @@ def check_x(cfg, tally, label, args, st, expected, big=False):
 
 
 def against_c(cfg, tally, label, args):
-    """Compare ratpoints-lean with the C program on the command line `args`, a search under -x by
+    """Compare ratpoints-model with the C program on the command line `args`, a search under -x by
     check_x, and a search above --max-height that big_search admits with a timeout and a cap on
     the memory."""
     st = settings(args[2:])
@@ -1082,8 +1082,8 @@ def against_c(cfg, tally, label, args):
 
 
 def stop_case(cfg, tally, label, args):
-    """Compare ratpoints-lean exactly with the C program on a search at a large height that both
-    stop at a point at infinity before the sieve (difftest_cases.STOP_CASES), ratpoints-lean within
+    """Compare ratpoints-model exactly with the C program on a search at a large height that both
+    stop at a point at infinity before the sieve (difftest_cases.STOP_CASES), ratpoints-model within
     STOP_TIMEOUT seconds and with its address space capped at STOP_MEMORY bytes; a run that does
     not end in time is a failure."""
     expected = run(cfg.c, args)
@@ -1091,7 +1091,7 @@ def stop_case(cfg, tally, label, args):
         lean = run_lean(cfg, args, STOP_TIMEOUT, STOP_MEMORY)
     except subprocess.TimeoutExpired:
         tally.compared += 1
-        tally.failures.append(f'{label}: ratpoints-lean did not end within {STOP_TIMEOUT} s')
+        tally.failures.append(f'{label}: ratpoints-model did not end within {STOP_TIMEOUT} s')
         return
     check(cfg, tally, label, args, expected, 'exact', lean=lean)
 
@@ -1120,7 +1120,7 @@ def split_test4(text):
 
 
 def compare_search(cfg, tally, label, args, text, st, big=False):
-    """Compare ratpoints-lean with the output `text` of a search that testbase4 records for the
+    """Compare ratpoints-model with the output `text` of a search that testbase4 records for the
     command line `args` with the settings `st` (above --max-height, `big`, with a timeout and a cap
     on the memory): under -v with the C program, whose report of the library test4.sh's v() records
     without the lines that depend on the build; under -x by check_x with the output of the C program
@@ -1171,7 +1171,7 @@ def suite_test4(cfg, tally, window=None):
                 continue
             lean = WRITE_FAILS[r.filt](cfg.lean, r.args, LEAN_ENV)
             special(cfg, tally, f'{label} | {r.filt}', lean == (code, text),
-                    f'ratpoints-lean gives {lean}, testbase4 records {(code, text)}')
+                    f'ratpoints-model gives {lean}, testbase4 records {(code, text)}')
         elif r.filt is not None:
             if r.filt not in FILTERS:
                 tally.skip('output filtered')
@@ -1266,12 +1266,12 @@ def suite_outputs(cfg, tally):
 
 def suite_errors(cfg, tally):
     usage = cfg.c_usage[cfg.c_usage.index('Usage: '):]
-    usage = (usage.replace('Usage: ratpoints ', 'Usage: ratpoints-lean ')
-             .replace('\n' + ' ' * 17, '\n' + ' ' * 22))
+    usage = (usage.replace('Usage: ratpoints ', 'Usage: ratpoints-model ')
+             .replace('\n' + ' ' * 17, '\n' + ' ' * 23))
     special(cfg, tally, 'the banner and the usage',
-            cfg.lean_usage.startswith('\nThis is ratpoints-lean-') and
+            cfg.lean_usage.startswith('\nThis is ratpoints-model-') and
             cfg.lean_usage.endswith(usage), repr(cfg.lean_usage))
-    # Short and long outputs (ratpoints-lean's write fails in its flush or in the write itself),
+    # Short and long outputs (ratpoints-model's write fails in its flush or in the write itself),
     # an error message, and no output at all, where neither program notices the closed pipe.
     for args, writes in ((['1 0 1', '10', '-q'], True), (['1 0 1', '300', '-q'], True),
                          (['1 2 x', '10'], True), (['-1 0 -1', '10', '-q'], False)):
@@ -1279,7 +1279,7 @@ def suite_errors(cfg, tally):
         ok = ((c, lean) == ((-signal.SIGPIPE, ''), (128 + signal.SIGPIPE, '')) if writes else
               c == lean == (0, ''))
         special(cfg, tally, f'a closed pipe: {args}', ok,
-                f'ratpoints-lean gives {lean}, the C program {c}')
+                f'ratpoints-model gives {lean}, the C program {c}')
     # The same, and the usage, on a standard output that refuses every write: both programs
     # report the failure with status 13 when they write anything, in place of the status of an
     # error too, and exit with 0 when they write nothing.
@@ -1293,7 +1293,7 @@ def suite_errors(cfg, tally):
             lean, c = failing(cfg.lean, args, LEAN_ENV), failing(cfg.c, args)
             special(cfg, tally, f'{name}: {args}',
                     lean == c == ((13, WRITE_ERROR) if writes else (0, '')),
-                    f'ratpoints-lean gives {lean}, the C program {c}')
+                    f'ratpoints-model gives {lean}, the C program {c}')
     # The list from a standard input that is closed (it cannot be read: error 12) or holds nothing
     # (error 5).
     for name, stdin, code in (('closed', None, 12), ('empty', subprocess.DEVNULL, 5)):
@@ -1301,7 +1301,7 @@ def suite_errors(cfg, tally):
                    for prog, env in ((cfg.lean, LEAN_ENV), (cfg.c, None)))
         special(cfg, tally, f'the list from a standard input that is {name}',
                 lean == c and c[1:] == (code, ''),
-                f'ratpoints-lean gives {lean}, the C program {c}')
+                f'ratpoints-model gives {lean}, the C program {c}')
     for args, note in difftest_cases.CASES:
         against_c(cfg, tally, f'{note}: {args}', args)
     for args, note in difftest_cases.STOP_CASES:
@@ -1377,9 +1377,9 @@ def suite_tuning(cfg, tally):
 
 def suite_threads(cfg, tally):
     """The C program sieving with a pool of threads, -t 4 and -t 7 (fixed counts, so that the suite
-    tests the same on every machine; -t 0 is an errors case), against ratpoints-lean, which reads -t
-    and sieves on one thread: random polynomials at small heights, at times under -x, the point-rich
-    curves of the high suite at the height THREADS_HEIGHT under -x, and the first of
+    tests the same on every machine; -t 0 is an errors case), against ratpoints-model, which reads
+    -t and sieves on one thread: random polynomials at small heights, at times under -x, the
+    point-rich curves of the high suite at the height THREADS_HEIGHT under -x, and the first of
     CORRECTION_CURVES under -x, where a correction of the moduli changes the survivors."""
     rng = random.Random(cfg.seed)
     for i in range(cfg.threads):
@@ -1427,7 +1427,7 @@ DEFAULT_SUITES = ['test4', 'test3', 'rptest', 'random', 'outputs', 'errors', 'fu
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--lean', type=Path, default=ROOT / '.lake' / 'build' / 'bin' /
-                    'ratpoints-lean')
+                    'ratpoints-model')
     ap.add_argument('--c', type=Path)
     ap.add_argument('--repo', type=Path)
     ap.add_argument('--suites', default=','.join(DEFAULT_SUITES))

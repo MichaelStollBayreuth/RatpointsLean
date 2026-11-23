@@ -248,13 +248,13 @@ The executable \verb|ratpoints-model| has the command line of \ratpoints{}: the 
 $c_0, \dots, c_n$ of $y^2 = c_n x^n + \dots + c_0$ as one argument, the height bound and the
 options. It reads them as \verb|main.c| does, with its checks, messages and exit statuses in its
 order, runs the search with the callback of \verb|main.c|, and prints what \ratpoints{} prints, but
-for the banner and the usage, which name \verb|ratpoints-lean| (the earlier name of the program), so
-that the test scripts of the C repository can run it in place of ratpoints. Its root
-\verb|ModelMain.lean| imports only the model, so that the program depends neither on Mathlib nor on
-the proofs. It acts on every option of \ratpoints{} but \verb|-t|, the number of threads, which it
-checks and ignores: the model sifts the blocks of the run in turn, and the thread lemma
-(Theorem~\ref{thm:threads}) shows that blocks sifted apart under hypotheses that the pool of
-\ratpoints{} meets by its code, and delivered in their order, give the same output.
+for the banner and the usage, which are its own, so that the test scripts of the C repository can
+run it in place of ratpoints. Its root \verb|ModelMain.lean| imports only the model, so that the
+program depends neither on Mathlib nor on the proofs. It acts on every option of \ratpoints{} but
+\verb|-t|, the number of threads, which it checks and ignores: the model sifts the blocks of the run
+in turn, and the thread lemma (Theorem~\ref{thm:threads}) shows that blocks sifted apart under
+hypotheses that the pool of \ratpoints{} meets by its code, and delivered in their order, give the
+same output.
 
 \begin{definition}[The command line]\label{def:cliInput}
   \uses{def:cliNumbers, def:Options, def:maxDegree}

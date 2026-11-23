@@ -13,14 +13,14 @@ meta import Ratpoints.Model.CliNumbers
 meta import Ratpoints.Model.FindPoints
 
 /-!
-# The command-line program `ratpoints-lean`
+# The command-line program `ratpoints-model`
 
-`ratpoints-lean` has the command line of `ratpoints`: the coefficient list `'a_0 a_1 ... a_n'` of
+`ratpoints-model` has the command line of `ratpoints`: the coefficient list `'a_0 a_1 ... a_n'` of
 `y ^ 2 = a_n x ^ n + ⋯ + a_0` as one argument (constant term first), or `@file` for a file that
 holds the list and `@-` for the standard input (`Ratpoints.Cli.runWithFile`), the height bound and
 the options. It reads them as `main.c` of `ratpoints` does, with its checks, messages and exit
 statuses, in its order, and prints what `ratpoints` prints: unless `-q` is given, the report, with
-the banner of `ratpoints-lean`, the curve, the height bound and the search region of the command
+the banner of `ratpoints-model`, the curve, the height bound and the search region of the command
 line before the points, and after them the numbers of the moduli used, what the search did, the
 search intervals that it searched and the count of the points found, and, under `-v`, in place of
 the height bound and the messages after the points but the count, the report of the library
@@ -71,47 +71,47 @@ namespace Cli
 
 /-! ### Messages -/
 
-/-- The version of `ratpoints-lean`, which its banner names: that of the release of `ratpoints` that
-it models. -/
+/-- The version of `ratpoints-model`, which its banner names: that of the release of `ratpoints`
+that it models. -/
 def version : String := "3.2.0"
 
-/-- The banner of `ratpoints-lean`, which it prints with the usage. Its first line names the
+/-- The banner of `ratpoints-model`, which it prints with the usage. Its first line names the
 program and its version, as that of `ratpoints` does, so that the test scripts of `ratpoints`, which
 leave out the line beginning `This is ratpoints-`, leave it out too; the rest says what the
 program is, under which licence it is released and where it lives.
 
 C: `main.c:44-49`
 
-Deviation: the text is that of `ratpoints-lean`. -/
+Deviation: the text is that of `ratpoints-model`. -/
 def banner : String :=
-  s!"This is ratpoints-lean-{version} Copyright (C) 2026 by Michael Stoll.\n\n" ++
+  s!"This is ratpoints-model-{version} Copyright (C) 2026 by Michael Stoll.\n\n" ++
     "This program is a model of ratpoints 3.2.0 in Lean:\n" ++
     "https://github.com/MichaelStollBayreuth/RatpointsLean\n" ++
     "It comes with ABSOLUTELY NO WARRANTY. It is free software, released\n" ++
     "under the Apache License 2.0.\n\n"
 
-/-- The usage of `ratpoints-lean`: that of `ratpoints`, all options included.
+/-- The usage of `ratpoints-model`: that of `ratpoints`, all options included.
 
 C: `main.c:80-93`
 
-Deviation: the program is called `ratpoints-lean`, and the lines of the options below the first are
+Deviation: the program is called `ratpoints-model`, and the lines of the options below the first are
 indented to match. -/
 def usage : String :=
-  "Usage: ratpoints-lean 'a_0 a_1 ... a_n' max_height\n" ++
-  "                      [-dl low_den] [-du up_den]\n" ++
-  "                      [-f format] [-fs str] [-fm str] [-fe str] [-y] [-Y]\n" ++
-  "                      [[-l low1] -u up1 ... -l lown [-u upn]]\n" ++
-  "                      [-n num_primes1] [-N num_primes2] [-p max_primes]\n" ++
-  "                      [-r survivors_per_word] [-R extra_primes] [-U words]\n" ++
-  "                      [-C table_cost] [-A adapt]\n" ++
-  "                      [-P stage3_primes] [-Q stage3_cost] [-W check_cost]\n" ++
-  "                      [-F max_forbidden] [-t threads] [-s] [-S [iter]]\n" ++
-  "                      [-q] [-v] [-z] [-Z] [-1] [-i] [-I]\n" ++
-  "                      [-k] [-K] [-j] [-J] [-x] [-X]\n" ++
+  "Usage: ratpoints-model 'a_0 a_1 ... a_n' max_height\n" ++
+  "                       [-dl low_den] [-du up_den]\n" ++
+  "                       [-f format] [-fs str] [-fm str] [-fe str] [-y] [-Y]\n" ++
+  "                       [[-l low1] -u up1 ... -l lown [-u upn]]\n" ++
+  "                       [-n num_primes1] [-N num_primes2] [-p max_primes]\n" ++
+  "                       [-r survivors_per_word] [-R extra_primes] [-U words]\n" ++
+  "                       [-C table_cost] [-A adapt]\n" ++
+  "                       [-P stage3_primes] [-Q stage3_cost] [-W check_cost]\n" ++
+  "                       [-F max_forbidden] [-t threads] [-s] [-S [iter]]\n" ++
+  "                       [-q] [-v] [-z] [-Z] [-1] [-i] [-I]\n" ++
+  "                       [-k] [-K] [-j] [-J] [-x] [-X]\n" ++
   "       In place of the list of the a_i, @file reads it from a file\n" ++
   "       and @- from standard input.\n\n"
 
-/-- The ways in which `ratpoints-lean` refuses its command line: the errors of `main.c` that a
+/-- The ways in which `ratpoints-model` refuses its command line: the errors of `main.c` that a
 command line can cause, those of the reading of the command line and error 8, which `main.c` gives
 for a binary form that the library refuses as not squarefree; error 9, which `main.c` gives for
 the codes of the library other than `RATPOINTS_NON_SQUAREFREE` and `RATPOINTS_NO_MEMORY` (error 10,
@@ -146,14 +146,14 @@ inductive Failure where
   list cannot be opened or read. -/
   | unreadableFile
 
-/-- What `ratpoints-lean` prints on a failure: what the function `error` of `main.c` prints
+/-- What `ratpoints-model` prints on a failure: what the function `error` of `main.c` prints
 for the same error, a blank line, the message and a blank line; for error 2 the banner and the
 usage instead, which error 6 prints after its message, as its case falls through to that of
 error 2.
 
 C: `main.c:1162-1174`, `main.c:1176-1180`
 
-Deviation: the banner and the usage are those of `ratpoints-lean`. -/
+Deviation: the banner and the usage are those of `ratpoints-model`. -/
 def Failure.message : Failure → String
   | .tooFewArguments => s!"\n{banner}\n{usage}"
   | .tooManyCoefficients => "\nToo many coefficients.\n\n"
@@ -167,7 +167,7 @@ def Failure.message : Failure → String
   | .incorrectCoefficients => "\nIncorrect coefficients (not integers separated by blanks).\n\n"
   | .unreadableFile => "\nCannot read the file of the coefficients.\n\n"
 
-/-- The exit status of `ratpoints-lean` on a failure: the number of the error of `main.c`,
+/-- The exit status of `ratpoints-model` on a failure: the number of the error of `main.c`,
 with which its function `error` exits, unless a write to the standard output has failed
 (`Ratpoints.Cli.main`).
 
@@ -184,7 +184,7 @@ def Failure.status : Failure → UInt32
   | .incorrectCoefficients => 11
   | .unreadableFile => 12
 
-/-- The failure of `ratpoints-lean` for a refusal of the search (`Ratpoints.findPointsWith`, whose
+/-- The failure of `ratpoints-model` for a refusal of the search (`Ratpoints.findPointsWith`, whose
 refusals are those of `Ratpoints.findPoints`): the error of `main.c` with the number that
 `Ratpoints.Refusal` names, as `main.c` turns the code `RATPOINTS_NON_SQUAREFREE` that the library
 returns into error 8 and its codes other than `RATPOINTS_NO_MEMORY` (error 10) into error 9, among
@@ -239,7 +239,7 @@ def heightBound (s : String) : Except Failure Nat :=
   | some h => return h.toNat
   | none => throw .incorrectHeight
 
-/-- The kinds of argument that the options of `ratpoints-lean` take. -/
+/-- The kinds of argument that the options of `ratpoints-model` take. -/
 inductive OptionArg where
   /-- A C `long`, as `Ratpoints.Cli.longOfString?` reads it. -/
   | long
@@ -263,7 +263,7 @@ def OptionArg.accepts (arg : OptionArg) (a : String) : Bool :=
   | .word | .bound => true
 
 /-- The kind of argument that the option `o` takes, or `none` if it takes none, for an option that
-`ratpoints-lean` reads. `main.c` tells an option by the character after its `-`, and for `-f` and
+`ratpoints-model` reads. `main.c` tells an option by the character after its `-`, and for `-f` and
 `-d` by the one after that, ignoring the rest of the word, so that `-quiet` is `-q` and `-fsx` is
 `-fs`. The tuning options `-p -F -t -n -N -R -A -P` take a C `long`, `-r -U -C -Q -W` a C `double`,
 `-S` an optional C `long`, the options of the output `-f -fs -fm -fe` a string, the bounds of the
@@ -285,7 +285,7 @@ def optionArg (o : String) : Except Failure (Option OptionArg) :=
     else throw .optionSyntax
   | _ => throw .optionSyntax
 
-/-- The settings of the output of `ratpoints-lean`, the global variables of `main.c`, with their
+/-- The settings of the output of `ratpoints-model`, the global variables of `main.c`, with their
 defaults, those of a command line without options: whether the report is left out (`-q`), whether
 it is the report of `-v` (the bit `RATPOINTS_VERBOSE` of the flags), whether the search stops at
 the first point counted (`-1`), whether the points at infinity are kept (`-I`, and not `-i`),
@@ -770,7 +770,7 @@ def printPoly (c : List Int) : String :=
       (acc.1 ++ sign ++ term ai.1 ai.2, true)
   (c.zipIdx.reverse.foldl step ("", false)).1 ++ "\n"
 
-/-- The messages of the report of `main.c` that `ratpoints-lean` prints, with the data they read:
+/-- The messages of the report of `main.c` that `ratpoints-model` prints, with the data they read:
 message 0, the banner; message 2, the count of the points found, of the pairs when the points are
 not checked exactly or only one point of each pair is delivered; message 3, the search region of the
 command line; message 4, the numbers of the moduli used in the first stage, in the first two and in
@@ -809,8 +809,8 @@ def showIntervals (dom : List (Double × Double)) : String :=
 
 C: `main.c:1081-1085`, `main.c:1088-1159`
 
-Deviation: the banner of `ratpoints-lean` (`Ratpoints.Cli.banner`); a constructor for each message
-that `ratpoints-lean` prints, with its data, for the number `n` and the arguments of the library:
+Deviation: the banner of `ratpoints-model` (`Ratpoints.Cli.banner`); a constructor for each message
+that `ratpoints-model` prints, with its data, for the number `n` and the arguments of the library:
 message 1, which the program prints when `read_input` fails, which it never does, is left out; the
 loops over the intervals of messages 3 and 8 as `Ratpoints.Cli.showIntervals`, the conversion `%lf`
 of message 8 being `%f`; in message 5, which from the degree `Ratpoints.printDegree` on prints the
@@ -875,8 +875,8 @@ def report {σ : Type} (s : SieveOptions) (o : Options) (u : Output) (r : Outcom
 
 /-! ### The program -/
 
-/-- What `ratpoints-lean` does on the command line `args` (the words after the name of the program):
-the text it prints on the standard output and its exit status when the writes succeed
+/-- What `ratpoints-model` does on the command line `args` (the words after the name of the
+program): the text it prints on the standard output and its exit status when the writes succeed
 (`Ratpoints.Cli.main` writes the text and has the status of a failed write). On the coefficient list
 `c`, the height bound `H`, the options `s` of the sieve, the options `o` of the search and the
 settings `u` of the output, as `Ratpoints.Cli.input` reads them, it prints the head of the report
@@ -915,7 +915,7 @@ def run (args : List String) : String × UInt32 :=
       let before := if r.info.printBetween then "" else printString u.stringBefore
       (pre ++ r.info.out ++ before ++ printString u.stringAfter ++ report s o u r, 0)
 
-/-- The name of the file from which `ratpoints-lean` reads the coefficient list on the command line
+/-- The name of the file from which `ratpoints-model` reads the coefficient list on the command line
 `args`, if it reads the list from a file: when the first argument begins with `@`, what follows the
 `@`, which may be empty and where `-` stands for the standard input. A command line of fewer than
 two arguments names no file: it fails with error 2 before `main.c` looks at its first argument.
@@ -942,7 +942,7 @@ def fileList (b : ByteArray) : Except Failure String :=
   if b.data.contains 0 then throw .incorrectCoefficients
   else return String.ofList (b.toList.map fun x ↦ Char.ofNat x.toNat)
 
-/-- What `ratpoints-lean` does on the command line `args` when the file that the command line names
+/-- What `ratpoints-model` does on the command line `args` when the file that the command line names
 for the coefficient list (`Ratpoints.Cli.coefficientFile?`), if it names one, has the contents
 `file`, or cannot be opened or read (`none`): the text it prints on the standard output and its exit
 status when the writes succeed. A file that cannot be read fails with error 12 and a zero byte in it
@@ -981,7 +981,7 @@ def readCoefficientFile (path : String) : BaseIO (Option ByteArray) := do
     if path = "-" then do (← IO.getStdin).readBinToEnd else IO.FS.readBinFile path
   return (← read.toBaseIO).toOption
 
-/-- The program `ratpoints-lean`: it reads the file of the coefficients, if the command line names
+/-- The program `ratpoints-model`: it reads the file of the coefficients, if the command line names
 one (`Ratpoints.Cli.coefficientFile?`, `Ratpoints.Cli.readCoefficientFile`), prints the text of
 `Ratpoints.Cli.runWithFile` on the standard output, in one write once it is computed, flushes the
 standard output, and exits with the status of the run, unless the write or the flush fails (on a
