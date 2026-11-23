@@ -3,12 +3,11 @@
 # the pin, the C files the record covers and the ranges excluded from the model. README.md
 # describes the record; scripts/correspondence.py checks it.
 
-# The ratpoints commit every line number refers to: a commit of its branch 3.2, on the way from
-# release 3.1.1 to release 3.2.0.
+# The ratpoints commit every line number refers to: release 3.2.0.
 [pin]
 repository = "https://github.com/MichaelStollBayreuth/ratpoints"
-tag = "v3.1.1-18-g63720c6"
-commit = "63720c6e2b4c8eac0c30bfb71c3184d6e6c45896"
+tag = "v3.2.0"
+commit = "1763c627ebc5e09971f3f03916bec765945a2cf2"
 
 # Every line of code of these files lies in exactly one recorded range: modelled (a `C:`
 # paragraph of a docstring of the model) or excluded (an [[excluded]] table below), as

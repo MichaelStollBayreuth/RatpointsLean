@@ -290,7 +290,7 @@ def setupUs1 (c : List Int) (d bHigh : Nat) : Id (Option (List DenInfo × List N
 
 /-! ### Examples
 
-What `ratpoints` 3.1.1 does at the pinned commit: with `-v` it says whether it reverses and in which
+What `ratpoints` 3.2.0 does at the pinned commit: with `-v` it says whether it reverses and in which
 case, and prints the coefficients of case 3; `-k` switches the reversal off; and
 `ratpoints '0 0 1 1 1' 5 -q -s`, without the Sturm step, which would refuse the form too, ends with
 error 8, which `-s -k` does not. The test of the `long`s is checked at the ends of their range. The

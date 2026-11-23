@@ -14,7 +14,7 @@ form of even degree with integer coefficients, by sieving; with proofs that the 
 specification for every value of the options of the sieve, and a record, checked in CI, of which
 Lean definition models which lines of C.
 
-The C code is that of `ratpoints` 3.1.1. The project follows the releases of `ratpoints`, and future
+The C code is that of `ratpoints` 3.2.0. The project follows the releases of `ratpoints`, and future
 changes to the C code come, as far as possible, with their soundness proofs here.
 
 ## What is verified
@@ -58,7 +58,7 @@ does), the search `Ratpoints.findPoints`
 The brute-force reference `Ratpoints.bruteForce` lists exactly the points, each once; the fast
 search `Ratpoints.FastMask.fastPoints` of `ratpoints-lean` lists, for every range of the
 denominators, only points, each once, and all of them assuming Sturm's theorem. These thirteen
-statements are certified by Comparator: `lake comparator --paranoid` accepted them on 2026-11-21
+statements are certified by Comparator: `lake comparator --paranoid` accepted them on 2026-11-23
 (`comparator/README.md`). Also proved, but not certified: what `ratpoints-model` prints
 (`Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok`); that the Sturm step keeps every point, under
 Sturm's theorem, so that with the exact check on its depth does not change the output
@@ -254,5 +254,6 @@ points in Lean is `ratpoints-lean`.
 
 ## Licence
 
-Apache 2.0 (`LICENSE`). The C code of `ratpoints` is under the GPL; its copyright notices name
+Apache 2.0 (`LICENSE`). The C code of `ratpoints` is under the LGPL, version 2.1 or later, from
+its release 3.2.0 on (before that under the GPL, version 2 or later); its copyright notices name
 Michael Stoll alone.

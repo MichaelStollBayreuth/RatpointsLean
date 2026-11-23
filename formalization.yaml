@@ -26,9 +26,9 @@ project:
 
 # sources - what was formalized.
 sources:
-  - title: "ratpoints: a program to find rational points on hyperelliptic curves, release 3.1.1"
+  - title: "ratpoints: a program to find rational points on hyperelliptic curves, release 3.2.0"
     authors: ["Michael Stoll"]
-    id: "https://github.com/MichaelStollBayreuth/ratpoints, tag v3.1.1 (commit 1a998538dfa835bb1bce6047e75302cc01517443)"
+    id: "https://github.com/MichaelStollBayreuth/ratpoints, tag v3.2.0 (commit 1763c627ebc5e09971f3f03916bec765945a2cf2)"
     type: "software"
     location: >
       the library (find_points.c, sift.c, init.c, sturm.c, rp-private.h, ratpoints.h, primes.h,
@@ -39,16 +39,16 @@ sources:
       The C code is modelled, not translated (Lean has no semantics of C): every model
       declaration names the lines of C it models, at the pinned commit, and
       scripts/correspondence.py checks the record (correspondence/README.md).
-    license: "GPL-2.0-or-later"
+    license: "LGPL-2.1-or-later"
     author_endorsement: "participated"
-  - title: "ratpoints-3.1 (the manual of the program)"
+  - title: "ratpoints-3.2 (the manual of the program)"
     authors: ["Michael Stoll"]
-    id: "ratpoints-doc-3.1.tex in the repository above, at the same commit"
+    id: "ratpoints-doc-3.2.tex in the repository above, at the same commit"
     type: "manual"
     location: "the description of the library function find_points and of the command line"
     relationship: "formalizes"
     note: "The specification of the Lean development is the behaviour the manual and the code define."
-    license: "GPL-2.0-or-later"
+    license: "LGPL-2.1-or-later"
     author_endorsement: "participated"
 
 related_formalizations: []
@@ -60,7 +60,7 @@ classification:
 # project status
 status:
   scope: >
-    The whole of the C library of ratpoints 3.1.1 and of its command-line program, but for the
+    The whole of the C library of ratpoints 3.2.0 and of its command-line program, but for the
     threads, the management of memory, the calling conventions of the library, the instrumentation
     for development and debugging, and a few lines without a counterpart in Lean (the includes,
     macros that the C code does not use, the arm of a build without a 128-bit integer type). The
@@ -101,7 +101,7 @@ status:
     Sturm's theorem when the Sturm step is on), without duplicates, in the order of ratpoints; with
     the statements under RATPOINTS_NO_CHECK, the protocol of the delivery and the two theorems of
     the brute-force reference they are eleven of the thirteen statements of
-    comparator/challenges.json, which lake comparator --paranoid accepted on 2026-11-21; the other
+    comparator/challenges.json, which lake comparator --paranoid accepted on 2026-11-23; the other
     two say that the fast search of the program ratpoints-lean (Ratpoints.FastMask.fastPoints, not
     a model of the C code, with two primitives on bit masks in C whose Lean bodies are the
     reference definitions the proofs use) lists, assuming Sturm's theorem, exactly the points of
@@ -216,11 +216,16 @@ automation:
         planned in a blueprint chapter (components, contracts, proposed names), drafted from
         research and a prototype in a separate copy and reviewed by the author, and its code was
         pushed only after his review. A review of the whole development at the end simplified the
-        proofs, and the blueprint describes the result.
+        proofs, and the blueprint describes the result. For release 3.2.0 of ratpoints, one session
+        worked on both repositories: each change of the C code was made and tested on a branch of
+        ratpoints and followed, item by item, by the model, its proofs, the record of the
+        correspondence and the differential tests, before the release.
   spend_usd: "subscription-based usage (no metered API spend)"
   notes: >
-    The model is that of ratpoints 3.1.1, which fixes the defects of the C code that the analysis
-    for this project found, so that the specification describes the fixed behaviour.
+    The model is that of ratpoints 3.2.0. Release 3.1.1 fixed the defects of the C code that the
+    analysis for this project found, so that the specification describes the fixed behaviour; the
+    changes of release 3.2.0 were made together with their counterparts in the model, and the test
+    modulo sixteen primes before the exact check came with the proof that it loses no point.
 
 # fidelity
 fidelity:

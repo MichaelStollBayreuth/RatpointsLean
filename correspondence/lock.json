@@ -1,5 +1,5 @@
 {
-  "commit": "63720c6e2b4c8eac0c30bfb71c3184d6e6c45896",
+  "commit": "1763c627ebc5e09971f3f03916bec765945a2cf2",
   "ranges": {
     "find_points.c:1008-1008": {
       "hash": "268bc81d902a426fe6a8b9f3e17225c2eb8892c0a6cb7f0ac56f7b950f67827b",
@@ -3637,7 +3637,7 @@
       ]
     },
     "main.c:44-49": {
-      "hash": "68f1467346b3eea05826977ba83410cf52afdbede12c93405bc715e8e626b94f",
+      "hash": "786451bdd6e73a354ddf61e30af28e26cf49449562659b55aa670b89c0d64f77",
       "owners": [
         "Ratpoints.Cli.banner"
       ]

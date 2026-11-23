@@ -73,7 +73,7 @@ namespace Cli
 
 /-- The version of `ratpoints-lean`, which its banner names: that of the release of `ratpoints` that
 it models. -/
-def version : String := "3.1.1"
+def version : String := "3.2.0"
 
 /-- The banner of `ratpoints-lean`, which it prints with the usage. Its first line names the
 program and its version, as that of `ratpoints` does, so that the test scripts of `ratpoints`, which
@@ -85,7 +85,7 @@ C: `main.c:44-49`
 Deviation: the text is that of `ratpoints-lean`. -/
 def banner : String :=
   s!"This is ratpoints-lean-{version} Copyright (C) 2026 by Michael Stoll.\n\n" ++
-    "This program is a model of ratpoints 3.1.1 in Lean:\n" ++
+    "This program is a model of ratpoints 3.2.0 in Lean:\n" ++
     "https://github.com/MichaelStollBayreuth/RatpointsLean\n" ++
     "It comes with ABSOLUTELY NO WARRANTY. It is free software, released\n" ++
     "under the Apache License 2.0.\n\n"
@@ -1020,7 +1020,7 @@ def main (args : List String) : IO UInt32 := do
 
 /-! ### Examples
 
-Each of them is what `ratpoints` 3.1.1 does, but for the banner, also under `-v`, with the report of
+Each of them is what `ratpoints` 3.2.0 does, but for the banner, also under `-v`, with the report of
 the library. -/
 
 #guard (coefficients " +1\t0  -1 ").toOption == some [1, 0, -1]

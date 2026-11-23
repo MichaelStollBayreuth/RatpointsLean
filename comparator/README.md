@@ -87,7 +87,7 @@ hypothesis on `s`, from which and from the curve the search chooses its moduli:
   the count of `Delivery.deliver` of the list of `findPoints` to the callback, its calls for the
   points in their order up to and including the first that stops the search.
 
-On 2026-11-21 `lake comparator --paranoid` accepted the thirteen statements, with Lean's kernel
+On 2026-11-23 `lake comparator --paranoid` accepted the thirteen statements, with Lean's kernel
 and the five external checkers.
 
 Comparator certifies these statements and their proofs; it does not certify that the executables

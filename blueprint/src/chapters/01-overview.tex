@@ -57,9 +57,9 @@ after a test of the value of the form modulo sixteen large primes. The loop over
 runs in blocks, between which \ratpoints{} may correct its choice of the moduli by what the sieve
 has counted, and which it may hand to a pool of threads.
 
-The C code is that of \ratpoints{}~3.1.1, from its repository
+The C code is that of \ratpoints{}~3.2.0, from its repository
 \url{https://github.com/MichaelStollBayreuth/ratpoints}. Its manual,
-\href{https://github.com/MichaelStollBayreuth/ratpoints/blob/\ratpointscommit/ratpoints-doc-3.1.pdf}{\texttt{ratpoints-doc-3.1.pdf}},
+\href{https://github.com/MichaelStollBayreuth/ratpoints/blob/\ratpointscommit/ratpoints-doc-3.2.pdf}{\texttt{ratpoints-doc-3.2.pdf}},
 describes the program, its options and the library function. Every line number in this blueprint
 refers to one commit of the repository, the one that the record of the correspondence pins
 (Chapter~\ref{chap:ccode}); the link to the manual points to that commit too.
@@ -101,7 +101,7 @@ theorems claim without reading how \ratpoints{} works.
 
 The specification is the one part whose correctness no proof can check. Wherever there was a
 choice, it therefore copies what the C code computes, and Chapter~\ref{chap:spec} compares each of
-its clauses with \ratpoints{}~3.1.1.
+its clauses with \ratpoints{}~3.2.0.
 
 \emph{Points.} The binary form~$F_c$ above is Definition~\ref{def:binaryForm}. A triple
 $(x, y, z)$ of integers is a \emph{normalized point of height at most~$H$} on the curve

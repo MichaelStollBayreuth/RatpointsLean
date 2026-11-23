@@ -3,7 +3,7 @@
 Lean has no semantics of C, and no theorem of this blueprint speaks about the C code of \ratpoints{}:
 the theorems speak about the model, which mirrors the C code component by component, with the same
 loops, tables, bit arrays of 64-bit words and index arithmetic. This chapter describes what ties
-the model to the C code of release~3.1.1: the record of which declaration models which lines of C,
+the model to the C code of release~3.2.0: the record of which declaration models which lines of C,
 and its checks; the lines that no declaration models; the departures of the model from the C code;
 the differential tests of the program \verb|ratpoints-model| against the C program; the builds with
 other values of the compile-time constants; and CI. The nodes of the chapters before this one cite
@@ -19,8 +19,8 @@ certifies the statements about the model and says nothing about the C code
 
 \section{The record}\label{sec:ccodeRecord}
 
-Every line number refers to one commit of \ratpoints{}, the pin: release~3.1.1, tag \verb|v3.1.1|,
-commit \verb|1a99853|, named in \verb|correspondence/ratpoints.toml| and, for the links of the
+Every line number refers to one commit of \ratpoints{}, the pin: release~3.2.0, tag \verb|v3.2.0|,
+commit \verb|1763c62|, named in \verb|correspondence/ratpoints.toml| and, for the links of the
 blueprint, in the macro \verb|\ratpointscommit|. The record covers \verb|find_points.c|,
 \verb|sift.c|, \verb|init.c|, \verb|sturm.c|, the headers \verb|rp-private.h|, \verb|ratpoints.h|
 and \verb|primes.h|, the generators of tables \verb|gen_find_points_h.c| and
@@ -119,7 +119,7 @@ compiles the arm with \verb|unsigned __int128|.
 
 The \verb|Deviation:| paragraphs record, declaration by declaration, where the model departs from
 its lines of C. Most of the departures are of the following kinds. None corrects the C code: the
-model is that of release~3.1.1 as it is.
+model is that of release~3.2.0 as it is.
 
 \emph{Integer types.} The model computes with natural numbers and integers where the C code has
 \verb|long|s, \verb|int|s, \verb|unsigned long|s and GMP integers, and with rational numbers for GMP
